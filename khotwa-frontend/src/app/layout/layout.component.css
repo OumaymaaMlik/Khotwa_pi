@@ -40,7 +40,7 @@
 }
 .brand-name {
   display: block;
-  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800;
   letter-spacing: 0.08em; color: #E8E4DC;
 }
 .brand-role { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
@@ -150,7 +150,7 @@
 }
 .topbar__search input {
   flex: 1; border: none; background: none; outline: none;
-  font-size: 13px; color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: var(--text-primary); font-family: 'Inter', sans-serif;
 }
 .topbar__search input::placeholder { color: var(--text-muted); }
 .topbar__search svg { color: var(--text-muted); flex-shrink: 0; }

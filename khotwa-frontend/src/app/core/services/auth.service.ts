@@ -3,7 +3,7 @@ import { User, UserRole } from '../models';
 
 const MOCK_USERS: User[] = [
   { id: 'u1', nom: 'Bensalem', prenom: 'Karim', email: 'admin@khotwa.tn', role: 'admin' },
-  { id: 'u2', nom: 'Trabelsi', prenom: 'Sara', email: 'sara@startup.tn', role: 'entrepreneur', startup: 'EduTech Pro' },
+  { id: 'u2', nom: 'Trabelsi', prenom: 'Sara', email: 'sara@startup.tn', role: 'entrepreneur', startup: 'EduTech Pro', planType: 'FREE' as const },
   { id: 'u3', nom: 'Mansouri', prenom: 'Ahmed', email: 'ahmed@coach.tn', role: 'coach' },
 ];
 

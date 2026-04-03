@@ -15,9 +15,9 @@ export class AdminMessagesComponent {
     return list;
   }
   users = [
-    {id:'u1',nom:'Bensalem',prenom:'Karim',email:'admin@khotwa.tn',role:'admin',statut:'actif',createdAt:'2024-01-01'},
-    {id:'u2',nom:'Trabelsi',prenom:'Sara',email:'sara@startup.tn',role:'entrepreneur',statut:'actif',createdAt:'2024-02-15'},
-    {id:'u3',nom:'Mansouri',prenom:'Ahmed',email:'ahmed@coach.tn',role:'coach',statut:'actif',createdAt:'2024-03-01'},
+    {id:'u1',nom:'Bensalem',prenom:'Karim',email:'admin@khotwa.tn',role:'admin',statut:'ACTIVE',createdAt:'2024-01-01'},
+    {id:'u2',nom:'Trabelsi',prenom:'Sara',email:'sara@startup.tn',role:'entrepreneur',statut:'ACTIVE',createdAt:'2024-02-15'},
+    {id:'u3',nom:'Mansouri',prenom:'Ahmed',email:'ahmed@coach.tn',role:'coach',statut:'ACTIVE',createdAt:'2024-03-01'},
     {id:'u4',nom:'Ben Ali',prenom:'Nadia',email:'nadia@edu.tn',role:'entrepreneur',statut:'inactif',createdAt:'2024-04-10'},
   ];
   events = [
@@ -26,9 +26,9 @@ export class AdminMessagesComponent {
     {id:'ev3',titre:'Training Design Thinking',type:'formation',date:'2024-12-20',heure:'09h00',intervenant:'Ahmed Mansouri',places:20,restantes:5},
   ];
   abonnements = [
-    {id:'a1',user:'Sara Trabelsi',email:'sara@startup.tn',plan:'premium',statut:'actif',debut:'2024-09-01',fin:'2025-09-01'},
-    {id:'a2',user:'Omar Chaabane',email:'omar@agri.tn',plan:'gratuit',statut:'actif',debut:'2024-10-15',fin:'2025-10-15'},
-    {id:'a3',user:'Nadia Ben Ali',email:'nadia@edu.tn',plan:'institutionnel',statut:'expire',debut:'2023-11-01',fin:'2024-11-01'},
+    {id:'a1',user:'Sara Trabelsi',email:'sara@startup.tn',plan:'PREMIUM',statut:'ACTIVE',debut:'2024-09-01',fin:'2025-09-01'},
+    {id:'a2',user:'Omar Chaabane',email:'omar@agri.tn',plan:'FREE',statut:'ACTIVE',debut:'2024-10-15',fin:'2025-10-15'},
+    {id:'a3',user:'Nadia Ben Ali',email:'nadia@edu.tn',plan:'INSTITUTIONAL',statut:'EXPIRED',debut:'2023-11-01',fin:'2024-11-01'},
   ];
   talents = [
     {id:'t1',nom:'Karim Dridi',poste:'Full Stack Developer',competences:['Angular','Node.js'],score:92,disponible:true},

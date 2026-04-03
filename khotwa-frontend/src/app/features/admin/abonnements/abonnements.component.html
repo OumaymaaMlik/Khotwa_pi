@@ -11,9 +11,9 @@
   </div>
   <div class="filters animate-3">
     <button class="tab" [class.active]="filtre==='tous'" (click)="filtre='tous'">Tous</button>
-    <button class="tab" [class.active]="filtre==='gratuit'" (click)="filtre='gratuit'">Gratuit</button>
-    <button class="tab" [class.active]="filtre==='premium'" (click)="filtre='premium'">Premium</button>
-    <button class="tab" [class.active]="filtre==='institutionnel'" (click)="filtre='institutionnel'">Institutionnel</button>
+    <button class="tab" [class.active]="filtre==='FREE'" (click)="filtre='FREE'">Gratuit</button>
+    <button class="tab" [class.active]="filtre==='PREMIUM'" (click)="filtre='PREMIUM'">Premium</button>
+    <button class="tab" [class.active]="filtre==='INSTITUTIONAL'" (click)="filtre='INSTITUTIONAL'">Institutionnel</button>
   </div>
   <div class="table-wrap animate-4">
     <table>
@@ -21,10 +21,10 @@
       <tbody>
         <tr *ngFor="let a of filteredAbonnements">
           <td><strong>{{ a.user }}</strong><br><span style="color:var(--text-muted);font-size:11px">{{ a.email }}</span></td>
-          <td><span class="kh-badge" [class]="a.plan==='premium'?'kh-badge--orange':a.plan==='institutionnel'?'kh-badge--violet':'kh-badge--gray'">{{ a.plan }}</span></td>
-          <td><span class="kh-badge" [class]="a.statut==='actif'?'kh-badge--green':'kh-badge--red'">{{ a.statut }}</span></td>
+          <td><span class="kh-badge" [class]="a.plan==='PREMIUM'?'kh-badge--orange':a.plan==='INSTITUTIONAL'?'kh-badge--violet':'kh-badge--gray'">{{ a.plan }}</span></td>
+          <td><span class="kh-badge" [class]="a.statut==='ACTIVE'?'kh-badge--green':'kh-badge--red'">{{ a.statut }}</span></td>
           <td style="color:var(--text-secondary)">{{ a.debut }}</td>
-          <td [style.color]="a.statut==='expire'?'var(--red)':'var(--text-secondary)'">{{ a.fin }}</td>
+          <td [style.color]="a.statut==='EXPIRED'?'var(--red)':'var(--text-secondary)'">{{ a.fin }}</td>
           <td><div class="actions"><button class="kh-btn kh-btn--ghost kh-btn--sm">Renouveler</button><button class="kh-btn kh-btn--danger kh-btn--sm">Suspendre</button></div></td>
         </tr>
       </tbody>

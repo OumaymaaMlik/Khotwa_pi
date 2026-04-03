@@ -5,7 +5,7 @@
       <span class="nav-logo-name">KHOTWA</span>
     </a>
     <ul class="nav-menu">
-      <li *ngFor="let item of navItems"><a [href]="item.anchor">{{ item.label }}</a></li>
+      <li *ngFor="let item of navItems; trackBy: trackByLabel"><a [href]="item.anchor">{{ item.label }}</a></li>
     </ul>
     <div class="nav-right">
       <button class="btn-ghost-sm" (click)="goLogin()">Sign in</button>
@@ -19,11 +19,11 @@
       <h1 class="hero-title">Launch your startup<br><em>without friction</em></h1>
       <p class="hero-sub">The all-in-one platform for incubators, entrepreneurs and coaches — smart workflows, real-time tracking, automated certification.</p>
       <div class="hero-actions">
-        <button class="btn-primary-lg" (click)="goLogin()">
+        <button class="btn-primary-lg" type="button" (click)="goLogin()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           Start for free
         </button>
-        <button class="btn-outline-lg" (click)="goLogin()">Explore the demo →</button>
+        <button class="btn-outline-lg" type="button" (click)="goLogin()">Explore the demo →</button>
       </div>
       <div class="hero-stats">
         <div class="stat"><span class="stat-value">120+</span><span class="stat-label">Active projects</span></div>
@@ -42,7 +42,7 @@
         <p class="section-sub">KHOTWA adapts each interface to the user's exact role for an optimal experience.</p>
       </div>
       <div class="roles-grid">
-        <div *ngFor="let r of roles" class="role-card" [style.--rc]="r.color" (click)="loginAs(r.role)">
+        <div *ngFor="let r of roles; trackBy: trackByName" class="role-card" [style.--rc]="r.color" (click)="loginAs(r.role)">
           <div class="role-top">
             <div class="role-emoji-bg">{{ r.emoji }}</div>
             <p class="role-name">{{ r.name }}</p>
@@ -50,7 +50,7 @@
           </div>
           <div class="role-bottom">
             <ul class="role-list">
-              <li *ngFor="let feat of r.features">
+              <li *ngFor="let feat of r.features; trackBy: trackByText">
                 <div class="role-check-icon">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
@@ -72,7 +72,7 @@
         <p class="section-sub" style="margin-bottom:0">Built for teams who want to move fast and structure their growth from day one.</p>
       </div>
       <div class="features-grid">
-        <div *ngFor="let f of features" class="feat-card">
+        <div *ngFor="let f of features; trackBy: trackByTitle" class="feat-card">
           <div class="feat-icon-wrap" [style.background]="f.bg">{{ f.icon }}</div>
           <h3 class="feat-title">{{ f.title }}</h3>
           <p class="feat-desc">{{ f.desc }}</p>
@@ -89,7 +89,7 @@
         <p class="section-sub">From registration to certification in 4 structured steps.</p>
       </div>
       <div class="steps-grid">
-        <div *ngFor="let s of steps" class="step-item">
+        <div *ngFor="let s of steps; trackBy: trackByStep" class="step-item">
           <div class="step-circle" [class]="s.cls">{{ s.n }}</div>
           <h3 class="step-title">{{ s.title }}</h3>
           <p class="step-desc">{{ s.desc }}</p>
@@ -107,7 +107,7 @@
         <p class="section-sub">Start for free, scale as you grow. No hidden fees.</p>
       </div>
       <div class="pricing-grid">
-        <div *ngFor="let plan of plans" class="pricing-card" [class.pricing-card--featured]="plan.featured" [style.--pc]="plan.color">
+        <div *ngFor="let plan of plans; trackBy: trackByName" class="pricing-card" [class.pricing-card--featured]="plan.featured" [style.--pc]="plan.color">
           <div class="pricing-header">
             <span class="plan-badge" *ngIf="plan.badge">{{ plan.badge }}</span>
             <div class="plan-icon">{{ plan.icon }}</div>
@@ -119,12 +119,12 @@
             </div>
           </div>
           <ul class="plan-features">
-            <li *ngFor="let feat of plan.features">
+            <li *ngFor="let feat of plan.features; trackBy: trackByText">
               <div class="plan-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
               {{ feat }}
             </li>
           </ul>
-          <button class="plan-cta" [class.plan-cta--featured]="plan.featured" (click)="goLogin()">
+          <button class="plan-cta" type="button" [class.plan-cta--featured]="plan.featured" (click)="goLogin()">
             {{ plan.cta }}
           </button>
         </div>
@@ -137,11 +137,11 @@
       <h2 class="cta-title">Ready to accelerate<br>your startup?</h2>
       <p class="cta-sub">Join teams who trust KHOTWA to turn their ideas into measurable success. Start in less than 5 minutes.</p>
       <div class="cta-btns">
-        <button class="btn-primary-lg" (click)="goLogin()">
+        <button class="btn-primary-lg" type="button" (click)="goLogin()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           Access the platform
         </button>
-        <button class="btn-outline-lg">Contact us →</button>
+        <button class="btn-outline-lg" type="button">Contact us →</button>
       </div>
     </div>
   </section>
@@ -169,7 +169,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy">© 2024 KHOTWA. All rights reserved.</p>
+      <p class="footer-copy">© 2026 KHOTWA. All rights reserved.</p>
     </div>
   </footer>
 </div>

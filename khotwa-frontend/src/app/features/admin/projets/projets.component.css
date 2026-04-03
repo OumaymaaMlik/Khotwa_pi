@@ -12,7 +12,7 @@
 .card:hover { box-shadow:var(--shadow-hover);transform:translateY(-2px); }
 .card-top { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px; }
 .card-icon { width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center; }
-.card-name { font-family:"Syne",sans-serif;font-size:15px;font-weight:700;margin-bottom:4px; }
+.card-name { font-family:"Plus Jakarta Sans",sans-serif;font-size:15px;font-weight:700;margin-bottom:4px; }
 .card-meta { font-size:12px;color:var(--text-secondary); }
 .card-progress { margin:14px 0 8px; }
 .card-footer { display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border); }

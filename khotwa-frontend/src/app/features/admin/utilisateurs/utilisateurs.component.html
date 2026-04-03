@@ -21,7 +21,7 @@
           <td><strong>{{ u.prenom }} {{ u.nom }}</strong></td>
           <td style="color:var(--text-secondary)">{{ u.email }}</td>
           <td><span class="kh-badge" [class]="u.role==='admin'?'kh-badge--orange':u.role==='entrepreneur'?'kh-badge--teal':'kh-badge--violet'">{{ u.role }}</span></td>
-          <td><span class="kh-badge" [class]="u.statut==='actif'?'kh-badge--green':'kh-badge--gray'">{{ u.statut }}</span></td>
+          <td><span class="kh-badge" [class]="u.statut==='ACTIVE'?'kh-badge--green':'kh-badge--gray'">{{ u.statut }}</span></td>
           <td style="color:var(--text-muted)">{{ u.createdAt }}</td>
           <td><div class="actions"><button class="kh-btn kh-btn--ghost kh-btn--sm">Edit</button><button class="kh-btn kh-btn--danger kh-btn--sm">Delete</button></div></td>
         </tr>

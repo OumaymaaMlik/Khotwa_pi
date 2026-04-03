@@ -43,10 +43,10 @@ export class CoachMessagesComponent {
   sendMsg(){if(!this.newMsg.trim()||!this.selectedConv)return;this.selectedConv.messages.push({from:'Moi',text:this.newMsg,time:'maintenant',mine:true});this.newMsg='';}
   onMsgKey(e:KeyboardEvent){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.sendMsg();}}
   workflows=[
-    {id:'w1',nom:'Validation par Preuve',desc:'Vérifie que le document requis est présent',trigger:'À la soumission',statut:'actif',etapes:['Soumission tâche','Vérif. document','Notification coach','Validation'],runs:34,icone:'✅',color:'#27AE7A'},
-    {id:'w2',nom:'Alerte SLA',desc:'Notification si blocage > 15 jours',trigger:'Cron quotidien',statut:'actif',etapes:['Scan BDD','Calcul délai','SLA > 15j?','Notification'],runs:87,icone:'⏰',color:'#E8622A'},
-    {id:'w3',nom:'Propagation Retard',desc:'Recalcule les dates en cas de retard critical',trigger:'Mise à jour tâche',statut:'actif',etapes:['Détection retard','Impact?','Recalcul dates','Notif équipe'],runs:12,icone:'📅',color:'#2ABFBF'},
-    {id:'w4',nom:'Alerte Deadline 24h',desc:'Push notification avant deadline',trigger:'Cron toutes 6h',statut:'actif',etapes:['Scan deadlines','< 24h?','Email + Push','Log'],runs:156,icone:'🔔',color:'#F5A623'},
+    {id:'w1',nom:'Validation par Preuve',desc:'Vérifie que le document requis est présent',trigger:'À la soumission',statut:'ACTIVE',etapes:['Soumission tâche','Vérif. document','Notification coach','Validation'],runs:34,icone:'✅',color:'#27AE7A'},
+    {id:'w2',nom:'Alerte SLA',desc:'Notification si blocage > 15 jours',trigger:'Cron quotidien',statut:'ACTIVE',etapes:['Scan BDD','Calcul délai','SLA > 15j?','Notification'],runs:87,icone:'⏰',color:'#E8622A'},
+    {id:'w3',nom:'Propagation Retard',desc:'Recalcule les dates en cas de retard critical',trigger:'Mise à jour tâche',statut:'ACTIVE',etapes:['Détection retard','Impact?','Recalcul dates','Notif équipe'],runs:12,icone:'📅',color:'#2ABFBF'},
+    {id:'w4',nom:'Alerte Deadline 24h',desc:'Push notification avant deadline',trigger:'Cron toutes 6h',statut:'ACTIVE',etapes:['Scan deadlines','< 24h?','Email + Push','Log'],runs:156,icone:'🔔',color:'#F5A623'},
   ];
   ressources=[
     {id:'r1',titre:'Business Plan Guide',desc:'Modèle complet',type:'pdf',acces:'incubes',categorie:'Strategy',taille:'2.4 MB',progression:100,lu:true},

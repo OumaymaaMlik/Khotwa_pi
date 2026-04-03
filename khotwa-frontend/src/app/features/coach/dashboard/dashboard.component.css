@@ -5,7 +5,7 @@
 .kpi-card { background:white;border-radius:var(--radius-md);padding:18px 20px;border:1px solid var(--border);transition:all 0.2s; }
 .kpi-card--coach { background:linear-gradient(135deg,#7C5CBF,#5a3a9f);border:none; }
 .kpi-card:hover { box-shadow:var(--shadow-hover);transform:translateY(-2px); }
-.kpi-value { font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text-primary); }
+.kpi-value { font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;color:var(--text-primary); }
 .kpi-alert { color:var(--red); }
 .kpi-label { font-size:12px;color:var(--text-secondary);margin-top:3px; }
 .bottom-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px; }

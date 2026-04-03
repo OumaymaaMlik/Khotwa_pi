@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { SafeUrlPipe } from './safe-url.pipe';
 
 @NgModule({
-  imports: [CommonModule, RouterModule, FormsModule],
-  exports: [CommonModule, RouterModule, FormsModule],
+  declarations: [SafeUrlPipe],
+  imports: [CommonModule],
+  exports: [SafeUrlPipe],
 })
 export class SharedModule {}
