@@ -12,7 +12,7 @@ import { EntrepreneurWorkflowsComponent }    from './workflows/workflows.compone
 import { EntrepreneurPlanningComponent }     from './planning/planning.component';
 import { EntrepreneurMessagesComponent }     from './messages/messages.component';
 import { EntrepreneurBibliothequeComponent } from './bibliotheque/bibliotheque.component';
-import { EntrepreneurProgressionsComponent } from './progressions/progressions.component';
+import { EntrepreneurProgresssComponent } from './progressions/progressions.component';
 import { EntrepreneurTalentComponent }       from './talent/talent.component';
 
 const routes: Routes = [
@@ -28,7 +28,7 @@ const routes: Routes = [
       { path: 'messages',     component: EntrepreneurMessagesComponent    },
       { path: 'bibliotheque', component: EntrepreneurBibliothequeComponent},
       { path: 'talent',       component: EntrepreneurTalentComponent      },
-      { path: 'progressions', component: EntrepreneurProgressionsComponent},
+      { path: 'progressions', component: EntrepreneurProgresssComponent},
     ],
   },
 ];
@@ -38,7 +38,7 @@ const routes: Routes = [
     EntrepreneurDashboardComponent, EntrepreneurProjetsComponent,
     EntrepreneurWorkflowsComponent, EntrepreneurPlanningComponent,
     EntrepreneurMessagesComponent,  EntrepreneurBibliothequeComponent,
-    EntrepreneurTalentComponent,    EntrepreneurProgressionsComponent,
+    EntrepreneurTalentComponent,    EntrepreneurProgresssComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

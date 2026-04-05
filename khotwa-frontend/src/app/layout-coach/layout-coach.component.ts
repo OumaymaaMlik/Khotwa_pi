@@ -20,13 +20,13 @@ export class LayoutCoachComponent implements OnInit {
 
   navItems: NavItem[] = [
     { label: 'Dashboard',   icon: 'dashboard', route: 'dashboard'    },
-    { label: 'Projets',     icon: 'folder',    route: 'projets'      },
-    { label: 'Mes Startups',icon: 'rocket',    route: 'startups'     },
+    { label: 'Projects',     icon: 'folder',    route: 'projets'      },
+    { label: 'My Startups',icon: 'rocket',    route: 'startups'     },
     { label: 'Validations', icon: 'check',     route: 'validations'  },
     { label: 'Planning',    icon: 'calendar',  route: 'planning'     },
     { label: 'Messages',    icon: 'message',   route: 'messages'     },
-    { label: 'Bibliothèque',icon: 'book',      route: 'bibliotheque' },
-    { label: 'Progression', icon: 'progress',  route: 'progressions' },
+    { label: 'Library',icon: 'book',      route: 'bibliotheque' },
+    { label: 'Progress', icon: 'progress',  route: 'progressions' },
     { label: 'Talent',      icon: 'people',    route: 'talent'       },
   ];
 

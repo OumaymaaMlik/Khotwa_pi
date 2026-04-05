@@ -20,12 +20,12 @@ export class LayoutEntrepreneurComponent implements OnInit {
 
   navItems: NavItem[] = [
     { label: 'Dashboard',   icon: 'dashboard', route: 'dashboard'    },
-    { label: 'Projets',     icon: 'folder',    route: 'projets'      },
+    { label: 'Projects',     icon: 'folder',    route: 'projets'      },
     { label: 'Workflows',   icon: 'workflow',  route: 'workflows'    },
     { label: 'Planning',    icon: 'calendar',  route: 'planning'     },
     { label: 'Messages',    icon: 'message',   route: 'messages'     },
-    { label: 'Bibliothèque',icon: 'book',      route: 'bibliotheque' },
-    { label: 'Progression', icon: 'progress',  route: 'progressions' },
+    { label: 'Library',icon: 'book',      route: 'bibliotheque' },
+    { label: 'Progress', icon: 'progress',  route: 'progressions' },
     { label: 'Talent',      icon: 'people',    route: 'talent'       },
   ];
 

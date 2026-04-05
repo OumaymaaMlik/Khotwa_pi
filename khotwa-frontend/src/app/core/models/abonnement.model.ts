@@ -6,7 +6,7 @@ export interface Abonnement {
   idSubscription: number;
   idUser: number;
   plan: PlanType;
-  statut: SubscriptionStatus;
+  status: SubscriptionStatus;
   dateDebut: string;
   dateFin: string | null;
   autoRenouvellement: boolean;

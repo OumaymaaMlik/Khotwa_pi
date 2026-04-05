@@ -2,7 +2,7 @@
 
   <div class="page-header">
     <div>
-      <h1 class="kh-page-title">My Progression</h1>
+      <h1 class="kh-page-title">My Progress</h1>
       <p class="page-sub">{{ progressions.length }} resource(s) started</p>
     </div>
     <button class="kh-btn kh-btn--primary" (click)="openBibliotheque()">
@@ -35,7 +35,7 @@
 
   <div *ngIf="loading" style="text-align:center;padding:40px;color:var(--text-muted)">Loading…</div>
 
-  <!-- En cours -->
+  <!-- In progress -->
   <div *ngIf="enCours.length > 0" class="animate-3">
     <h3 class="section-title">
       <span class="section-dot" style="background:var(--teal)"></span>

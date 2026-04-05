@@ -338,6 +338,8 @@
 .ent-main {
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 .ent-content {
   max-width: 1400px;
@@ -396,3 +398,7 @@
   border-color: var(--ent-teal) !important;
   box-shadow: 0 0 0 3px rgba(42,191,191,0.15) !important;
 }
+
+/* Responsive content area */
+@media (max-width: 1024px) { .ent-content { padding: 20px; } }
+@media (max-width: 640px)  { .ent-content { padding: 12px; } }

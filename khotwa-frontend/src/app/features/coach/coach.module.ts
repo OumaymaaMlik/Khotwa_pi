@@ -12,7 +12,7 @@ import { CoachStartupsComponent }      from './startups/startups.component';
 import { CoachValidationsComponent }   from './validations/validations.component';
 import { CoachPlanningComponent }      from './planning/planning.component';
 import { CoachMessagesComponent }      from './messages/messages.component';
-import { CoachProgressionsComponent }  from './progressions/progressions.component';
+import { CoachProgresssComponent }  from './progressions/progressions.component';
 import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
 import { CoachTalentComponent }        from './talent/talent.component';
 
@@ -29,7 +29,7 @@ const routes: Routes = [
       { path: 'planning',     component: CoachPlanningComponent     },
       { path: 'messages',     component: CoachMessagesComponent     },
       { path: 'bibliotheque', component: CoachBibliothequeComponent },
-      { path: 'progressions', component: CoachProgressionsComponent },
+      { path: 'progressions', component: CoachProgresssComponent },
       { path: 'talent',       component: CoachTalentComponent       },
     ],
   },
@@ -39,7 +39,7 @@ const routes: Routes = [
   declarations: [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
-    CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
+    CoachBibliothequeComponent, CoachProgresssComponent, CoachTalentComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

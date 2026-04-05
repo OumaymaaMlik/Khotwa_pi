@@ -37,6 +37,7 @@
 .brand-icon {
   width: 36px; height: 36px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  overflow: hidden;
 }
 .brand-name {
   display: block;
@@ -223,4 +224,5 @@ kbd {
 
 /* ═══════ CONTENT ═══════ */
 .content { flex: 1; overflow-y: auto; padding: 28px 28px; }
+.main-area > app-footer { flex-shrink: 0; }
 @media (max-width: 640px) { .content { padding: 16px; } }
