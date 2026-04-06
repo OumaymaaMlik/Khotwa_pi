@@ -23,12 +23,13 @@
   gap: 10px;
   margin-bottom: 12px;
 }
+.kh-footer__logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
 .kh-footer__name {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  color: #E8E4DC;
+  display: none; /* Le logo image contient déjà le texte KHOTWA */
 }
 .kh-footer__tagline {
   font-size: 12px;

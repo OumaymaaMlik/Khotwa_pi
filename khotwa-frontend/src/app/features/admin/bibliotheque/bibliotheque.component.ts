@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 import { RessourceService, Ressource, PlanType, ResourceType, Categorie } from '../../../core/services/ressource.service';
 
 export interface CourseFolder {
@@ -86,28 +84,16 @@ export class AdminBibliothequeComponent implements OnInit {
     const filters: any = { type: this.filterType, access: this.filterAccess, search: this.search };
     if (this.filterCategorieId) filters.categorieId = this.filterCategorieId;
 
+    // FIX: On n'appelle PLUS getRessourceByIdHttp ici car cet endpoint
+    // déclenche incrementerVues() côté backend → les vues montaient à chaque rechargement.
+    // La liste paginée suffit pour la vue admin.
     this.ressourceService.getRessourcesHttp(filters).subscribe({
       next: res => {
-        const list: Ressource[] = res.data ?? res;
-        const detailCalls = list.map(r =>
-          this.ressourceService.getRessourceByIdHttp(r.id, 1, 'ADMIN').pipe(catchError(() => of(null)))
-        );
-        if (detailCalls.length === 0) { this.ressources = []; this.folders = []; this.loading = false; return; }
-        forkJoin(detailCalls).subscribe({
-          next: (details: any[]) => {
-            this.ressources = list.map((r, i) => {
-              const d    = details[i]?.data?.ressource ?? details[i]?.data ?? null;
-              const tags = details[i]?.data?.tags ?? d?.tags ?? r.tags ?? [];
-              const prog = details[i]?.data?.maProgress ?? d?.maProgress ?? r.maProgress;
-              return { ...r, tags, maProgress: prog };
-            });
-            this.buildFolders();
-            this.loading = false;
-          },
-          error: () => { this.ressources = list; this.buildFolders(); this.loading = false; }
-        });
+        this.ressources = res.data ?? res;
+        this.buildFolders();
+        this.loading = false;
       },
-      error: () => { this.loading = false; this.error = 'Impossible de charger les ressources.'; }
+      error: () => { this.loading = false; this.error = 'Unable to load resources.'; }
     });
   }
 

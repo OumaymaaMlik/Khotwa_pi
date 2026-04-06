@@ -124,7 +124,7 @@
 
 /* ═══════ MAIN ═══════ */
 .main-area {
-  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  flex: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
   min-width: 0;
 }
 
@@ -223,6 +223,6 @@ kbd {
 }
 
 /* ═══════ CONTENT ═══════ */
-.content { flex: 1; overflow-y: auto; padding: 28px 28px; }
+.content { flex: 1; padding: 28px 28px; }
 .main-area > app-footer { flex-shrink: 0; }
 @media (max-width: 640px) { .content { padding: 16px; } }

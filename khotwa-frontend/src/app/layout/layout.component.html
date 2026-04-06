@@ -5,22 +5,9 @@
   <aside class="sidebar" [class.open]="sidebarOpen">
     <!-- Brand -->
     <div class="sidebar__brand">
-      <div class="brand-icon">
-        <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="10" fill="url(#adminLogoGrad)"/>
-          <path d="M13 29L20 9L27 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M15.5 23H24.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="20" cy="9" r="2.2" fill="white"/>
-          <defs>
-            <linearGradient id="adminLogoGrad" x1="0" y1="0" x2="40" y2="40">
-              <stop offset="0%" stop-color="#E8622A"/>
-              <stop offset="100%" stop-color="#C84F1F"/>
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
+      <img src="assets/khotwa-logo.png" alt="KHOTWA" style="height:36px;width:auto;object-fit:contain;" />
       <div class="brand-text">
-        <span class="brand-name">KHOTWA</span>
+        
         <span class="brand-role" [style.color]="roleColor">{{ roleLabel }}</span>
       </div>
     </div>
