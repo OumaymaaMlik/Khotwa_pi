@@ -1,12 +1,24 @@
-export type PlanType = 'gratuit' | 'premium' | 'institutionnel';
-export type AbonnementStatut = 'actif' | 'expire' | 'suspended';
+import { PlanType } from './user.model';
+
+export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
 
 export interface Abonnement {
-  id: string;
-  userId: string;
+  idSubscription: number;
+  idUser: number;
   plan: PlanType;
-  statut: AbonnementStatut;
-  dateDebut: Date;
-  dateFin: Date;
+  status: SubscriptionStatus;
+  dateDebut: string;
+  dateFin: string | null;
   autoRenouvellement: boolean;
+  paiementRef?: string;
+}
+
+export interface PlanOffer {
+  id: number;
+  type: PlanType;
+  label: string;
+  prix: number;
+  duree: number;
+  description: string;
+  avantages: string;
 }

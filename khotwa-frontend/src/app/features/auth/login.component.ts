@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UserRole } from '../../core/models';
 
 @Component({ selector:'app-login', templateUrl:'./login.component.html', styleUrls:['./login.component.css'] })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   mode: 'signin' | 'signup' = 'signin';
 
   email = '';
@@ -21,19 +21,21 @@ export class LoginComponent {
 
   constructor(private auth: AuthService, private router: Router) {}
 
+  ngOnInit(): void {
+    if (this.auth.currentUser) {
+      this.router.navigateByUrl(this.auth.getDefaultRoute());
+    }
+  }
+
   signIn() {
     this.error = '';
     if (!this.email || !this.password) { this.error = 'Please fill in all fields.'; return; }
-    // Mock: find user by email or fall back to role matching
-    const mockMap: Record<string, UserRole> = {
-      'admin@khotwa.tn': 'admin',
-      'sara@startup.tn': 'entrepreneur',
-      'ahmed@coach.tn': 'coach',
-    };
-    const role = mockMap[this.email.toLowerCase()];
-    if (!role) { this.error = 'Invalid credentials. Try sara@startup.tn or ahmed@coach.tn.'; return; }
-    this.auth.login(role);
-    this.router.navigateByUrl(this.auth.getDefaultRoute());
+    this.auth.loginWithEmail(this.email).subscribe({
+      next: () => this.router.navigateByUrl(this.auth.getDefaultRoute()),
+      error: () => {
+        this.error = 'Invalid credentials. Try admin@khotwa.tn, sara@startup.tn, or ahmed@coach.tn.';
+      },
+    });
   }
 
   signUp() {

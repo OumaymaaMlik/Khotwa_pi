@@ -1,40 +1,124 @@
 <div class="page animate-1">
   <div class="page-header">
-    <div><h1 class="kh-page-title">Gestion des Projets</h1><p class="page-sub">{{ filteredProjets.length }} project(s)</p></div>
-    <button class="kh-btn kh-btn--primary">+ New project</button>
+    <div><h1 class="kh-page-title">Project Management</h1><p class="page-sub">{{ filteredProjets.length }} project(s)</p></div>
+    <button class="kh-btn kh-btn--primary">Submitted projects workflow</button>
   </div>
+  <div class="assign-message" *ngIf="assignMessage">{{ assignMessage }}</div>
+  <div class="assign-message" *ngIf="projectsError">{{ projectsError }}</div>
   <div class="filters animate-2">
     <div class="search-box">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" placeholder="Search…" [(ngModel)]="search" />
     </div>
-    <button class="tab" [class.active]="filtre==='tous'" (click)="filtre='tous'">Tous</button>
-    <button class="tab" [class.active]="filtre==='en_cours'" (click)="filtre='en_cours'">En cours</button>
-    <button class="tab" [class.active]="filtre==='suspendu'" (click)="filtre='suspendu'">Suspendu</button>
-    <button class="tab" [class.active]="filtre==='termine'" (click)="filtre='termine'">Completed</button>
+    <button class="tab" [class.active]="filtre==='all'" (click)="filtre='all'">All</button>
+    <button class="tab" [class.active]="filtre==='submitted'" (click)="filtre='submitted'">Submitted</button>
+    <button class="tab" [class.active]="filtre==='assigned'" (click)="filtre='assigned'">Assigned</button>
+    <button class="tab" [class.active]="filtre==='in_progress'" (click)="filtre='in_progress'">In progress</button>
+    <button class="tab" [class.active]="filtre==='suspended'" (click)="filtre='suspended'">Suspended</button>
+    <button class="tab" [class.active]="filtre==='completed'" (click)="filtre='completed'">Completed</button>
   </div>
+  <div class="empty" *ngIf="loadingProjects">Loading projects from database...</div>
   <div class="grid animate-3">
-    <div *ngFor="let p of filteredProjets" class="card">
+    <div *ngFor="let p of filteredProjets" class="card" [style.opacity]="loadingProjects ? 0.6 : 1">
       <div class="card-top">
-        <div class="card-icon" [style.background]="p.statut==='en_cours'?'linear-gradient(135deg,#2ABFBF,#1a9999)':p.statut==='termine'?'linear-gradient(135deg,#27AE7A,#1a8a5e)':'linear-gradient(135deg,#F5A623,#d4881e)'">
+        <div class="card-icon" [style.background]="p.status==='in_progress'?'linear-gradient(135deg,#2ABFBF,#1a9999)':p.status==='completed'?'linear-gradient(135deg,#27AE7A,#1a8a5e)':'linear-gradient(135deg,#F5A623,#d4881e)'">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </div>
-        <span class="kh-badge" [class]="p.statut==='en_cours'?'kh-badge--teal':p.statut==='termine'?'kh-badge--green':'kh-badge--amber'">{{ p.statut }}</span>
+        <span class="kh-badge" [class]="p.status==='in_progress'?'kh-badge--teal':p.status==='completed'?'kh-badge--green':'kh-badge--amber'">{{ p.status | uppercase }}</span>
       </div>
       <p class="card-name">{{ p.titre }}</p>
       <p class="card-meta">{{ p.description }}</p>
+      <p class="assignment-line">{{ etatLabel(p) }}</p>
+      <p class="assignment-line">Sector: {{ p.secteur || 'N/A' }} · Stage: {{ p.stadeProjet || 'N/A' }}</p>
+      <p class="assignment-line">Submitted: {{ p.dateSoumission ? (p.dateSoumission | date:'short') : 'N/A' }}</p>
+      <p class="assignment-line">Entrepreneur: {{ p.entrepreneur }}</p>
       <div class="card-progress">
         <div class="kh-progress"><div class="kh-progress__fill" [style.width.%]="p.progression"></div></div>
-        <div style="display:flex;justify-content:space-between;margin-top:5px"><span style="font-size:11px;color:var(--text-muted)">Progression</span><strong style="font-size:12px">{{ p.progression }}%</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-top:5px"><span style="font-size:11px;color:var(--text-muted)">Progress</span><strong style="font-size:12px">{{ p.progression }}%</strong></div>
       </div>
       <div class="card-footer">
-        <span style="font-size:11px;color:var(--text-muted)">{{ p.etapes.length }} step(s)</span>
+        <span style="font-size:11px;color:var(--text-muted)">{{ p.etapesCount }} step(s)</span>
         <div class="actions">
+          <button class="kh-btn kh-btn--primary kh-btn--sm" *ngIf="canAssignCoach(p)" (click)="openAssignCoach(p)">Assign coach</button>
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" *ngIf="canReassignCoach(p)" (click)="openReassignCoach(p)">Reassign</button>
+          <span class="assigned-chip" *ngIf="canReassignCoach(p)">Assigned</span>
           <button class="kh-btn kh-btn--ghost kh-btn--sm kh-btn--icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          <button class="kh-btn kh-btn--danger kh-btn--sm kh-btn--icon" (click)="delete(p.id)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
         </div>
       </div>
     </div>
-    <div *ngIf="filteredProjets.length===0" class="empty" style="grid-column:1/-1">No projects found</div>
+    <div *ngIf="!loadingProjects && filteredProjets.length===0" class="empty" style="grid-column:1/-1">No submitted projects found in database</div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showAssignModal" (click)="closeAssignCoach()">
+    <div class="assign-modal" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Assign coach</h3>
+        <button class="assign-modal-close" (click)="closeAssignCoach()">×</button>
+      </div>
+      <p class="assign-modal-sub" *ngIf="selectedProjet">Select a coach for <strong>{{ selectedProjet.titre }}</strong>.</p>
+
+      <p class="assign-modal-sub" *ngIf="coachsLoading">Loading coaches...</p>
+      <p class="assign-modal-sub" *ngIf="coachsError">{{ coachsError }}</p>
+
+      <label class="assign-label">Principal coach</label>
+      <select [(ngModel)]="selectedPrincipalCoachId" class="assign-select">
+        <option value="">Choose a principal coach</option>
+        <option *ngFor="let coach of coachs" [value]="coach.id">{{ coach.nom }} · {{ coach.specialite }} · {{ coach.secteur }} · {{ coach.disponibilite }} · load {{ coach.chargeActuelle }}</option>
+      </select>
+
+      <label class="assign-label">Secondary coaches (optional)</label>
+      <select [(ngModel)]="selectedSecondaryCoachIds" class="assign-select" multiple>
+        <option *ngFor="let coach of coachs" [ngValue]="coach.id">{{ coach.nom }} · {{ coach.specialite }} · active {{ coach.nombreProjetsActifs }}</option>
+      </select>
+
+      <label class="assign-label">Business experts (optional)</label>
+      <select [(ngModel)]="selectedExpertCoachIds" class="assign-select" multiple>
+        <option *ngFor="let coach of coachs" [ngValue]="coach.id">{{ coach.nom }} · {{ coach.specialite }} · {{ coach.disponibilite }}</option>
+      </select>
+
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--ghost" (click)="closeAssignCoach()">Cancel</button>
+        <button class="kh-btn kh-btn--primary" [disabled]="!selectedPrincipalCoachId || coachsLoading || !!coachsError" (click)="confirmAssignCoach()">Confirm assignment</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showReassignModal" (click)="closeReassignCoach()">
+    <div class="assign-modal" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Reassign coach</h3>
+        <button class="assign-modal-close" (click)="closeReassignCoach()">×</button>
+      </div>
+      <p class="assign-modal-sub" *ngIf="selectedProjet">Reassign a coach for <strong>{{ selectedProjet.titre }}</strong>.</p>
+
+      <p class="assign-modal-sub" *ngIf="affectationsLoading">Loading active assignments...</p>
+
+      <label class="assign-label">Current coach</label>
+      <select [(ngModel)]="selectedOldCoachId" class="assign-select">
+        <option value="">Choose current coach</option>
+        <option *ngFor="let affectation of activeAffectations" [value]="affectation.coachId">{{ getCoachName(affectation.coachId) }} · {{ affectation.roleCoachProjet }}</option>
+      </select>
+
+      <label class="assign-label">New coach</label>
+      <select [(ngModel)]="selectedNewCoachId" class="assign-select">
+        <option value="">Choose new coach</option>
+        <option *ngFor="let coach of coachs" [value]="coach.id">{{ coach.nom }} · {{ coach.specialite }} · {{ coach.disponibilite }}</option>
+      </select>
+
+      <label class="assign-label">Role</label>
+      <select [(ngModel)]="selectedReassignRole" class="assign-select">
+        <option value="COACH_PRINCIPAL">COACH_PRINCIPAL</option>
+        <option value="COACH_SECONDAIRE">COACH_SECONDAIRE</option>
+        <option value="EXPERT_METIER">EXPERT_METIER</option>
+      </select>
+
+      <label class="assign-label">Reason</label>
+      <textarea [(ngModel)]="motifReaffectation" class="assign-select" rows="3" placeholder="Example: coach unavailable, overloaded, sector mismatch, need domain expert"></textarea>
+
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--ghost" (click)="closeReassignCoach()">Cancel</button>
+        <button class="kh-btn kh-btn--primary" [disabled]="!selectedOldCoachId || !selectedNewCoachId || !motifReaffectation.trim()" (click)="confirmReassignCoach()">Confirm reassignment</button>
+      </div>
+    </div>
   </div>
 </div>

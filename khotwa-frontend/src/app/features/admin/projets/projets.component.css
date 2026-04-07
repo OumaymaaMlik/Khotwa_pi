@@ -2,6 +2,7 @@
 .page { display:flex;flex-direction:column;gap:24px; }
 .page-header { display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px; }
 .page-sub { color:var(--text-secondary);margin-top:4px; }
+.assign-message { padding:10px 14px;border-radius:12px;background:rgba(39,174,122,0.1);border:1px solid rgba(39,174,122,0.22);color:#1e8a5b;font-size:12px;font-weight:700; }
 .filters { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
 .search-box { display:flex;align-items:center;gap:8px;background:white;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-family:inherit; }
 .search-box input { border:none;outline:none;font-size:13px;font-family:inherit;min-width:180px; }
@@ -12,11 +13,23 @@
 .card:hover { box-shadow:var(--shadow-hover);transform:translateY(-2px); }
 .card-top { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px; }
 .card-icon { width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center; }
-.card-name { font-family:"Syne",sans-serif;font-size:15px;font-weight:700;margin-bottom:4px; }
+.card-name { font-family:"Plus Jakarta Sans",sans-serif;font-size:15px;font-weight:700;margin-bottom:4px; }
 .card-meta { font-size:12px;color:var(--text-secondary); }
+.assignment-line { margin-top:8px;font-size:11px;color:var(--text-muted);font-weight:600; }
 .card-progress { margin:14px 0 8px; }
 .card-footer { display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border); }
 .actions { display:flex;gap:6px; }
+.assigned-chip { align-self:center;padding:4px 10px;border-radius:999px;background:rgba(42,191,191,0.12);color:#148080;font-size:11px;font-weight:700; }
 .empty { text-align:center;padding:60px 20px;color:var(--text-muted); }
 .empty svg { margin:0 auto 12px;display:block;opacity:0.3; }
+
+.assign-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.42);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px; }
+.assign-modal { width:min(480px,100%);background:white;border-radius:20px;padding:22px;border:1px solid var(--border);box-shadow:var(--shadow-lg); }
+.assign-modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
+.assign-modal-header h3 { font-family:"Plus Jakarta Sans",sans-serif;font-size:20px;font-weight:800; }
+.assign-modal-close { border:none;background:transparent;color:var(--text-muted);font-size:24px;line-height:1;cursor:pointer;padding:0 4px; }
+.assign-modal-sub { font-size:13px;color:var(--text-secondary);margin-bottom:14px; }
+.assign-label { display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px; }
+.assign-select { width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px; }
+.assign-actions { display:flex;justify-content:flex-end;gap:10px;margin-top:18px; }
 

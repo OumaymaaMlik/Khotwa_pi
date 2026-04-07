@@ -1,7 +1,9 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "./dist/out-tsc",
+    "ignoreDeprecations": "5.0",
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -22,7 +24,7 @@
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
-    "strictInputAccessModibility": true,
+    "strictInputAccessModifiers": true,
     "strictTemplates": false
   }
 }

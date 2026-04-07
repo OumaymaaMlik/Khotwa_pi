@@ -1,12 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProjetService } from '../../../core/services/projet.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({ selector:'app-coach-planning', templateUrl:'./planning.component.html', styleUrls:['./planning.component.css'] })
-export class CoachPlanningComponent {
+export class CoachPlanningComponent implements OnInit {
   constructor(public projetService: ProjetService, public auth: AuthService) {}
+
+  ngOnInit(): void {
+    this.projetService.loadCoachAssignedProjects().subscribe({
+      error: () => {
+        // Keep current UI state if backend data cannot be fetched.
+      }
+    });
+  }
+
   get projets() { return this.projetService.projets; }
-  filtre = 'tous';
+  filtre = 'all';
   search = '';
   selectedConv: any = null;
   newMsg = '';
@@ -43,10 +52,10 @@ export class CoachPlanningComponent {
   sendMsg(){if(!this.newMsg.trim()||!this.selectedConv)return;this.selectedConv.messages.push({from:'Moi',text:this.newMsg,time:'maintenant',mine:true});this.newMsg='';}
   onMsgKey(e:KeyboardEvent){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.sendMsg();}}
   workflows=[
-    {id:'w1',nom:'Validation par Preuve',desc:'Vérifie que le document requis est présent',trigger:'À la soumission',statut:'actif',etapes:['Soumission tâche','Vérif. document','Notification coach','Validation'],runs:34,icone:'✅',color:'#27AE7A'},
-    {id:'w2',nom:'Alerte SLA',desc:'Notification si blocage > 15 jours',trigger:'Cron quotidien',statut:'actif',etapes:['Scan BDD','Calcul délai','SLA > 15j?','Notification'],runs:87,icone:'⏰',color:'#E8622A'},
-    {id:'w3',nom:'Propagation Retard',desc:'Recalcule les dates en cas de retard critical',trigger:'Mise à jour tâche',statut:'actif',etapes:['Détection retard','Impact?','Recalcul dates','Notif équipe'],runs:12,icone:'📅',color:'#2ABFBF'},
-    {id:'w4',nom:'Alerte Deadline 24h',desc:'Push notification avant deadline',trigger:'Cron toutes 6h',statut:'actif',etapes:['Scan deadlines','< 24h?','Email + Push','Log'],runs:156,icone:'🔔',color:'#F5A623'},
+    {id:'w1',nom:'Proof-based validation',desc:'Verifies that the required document is present',trigger:'On submission',status:'ACTIVE',etapes:['Task submission','Doc verification','Coach notification','Validation'],runs:34,icone:'✅',color:'#27AE7A'},
+    {id:'w2',nom:'Alerte SLA',desc:'Notification if blocked > 15 days',trigger:'Daily cron',status:'ACTIVE',etapes:['DB scan','Delay calc','SLA > 15d?','Notification'],runs:87,icone:'⏰',color:'#E8622A'},
+    {id:'w3',nom:'Propagation Retard',desc:'Recalculates dates when critically delayed',trigger:'Task update',status:'ACTIVE',etapes:['Delay detection','Impact?','Date recalc','Team notif'],runs:12,icone:'📅',color:'#2ABFBF'},
+    {id:'w4',nom:'Alerte Deadline 24h',desc:'Push notification before deadline',trigger:'Cron every 6h',status:'ACTIVE',etapes:['Deadline scan','< 24h?','Email + Push','Log'],runs:156,icone:'🔔',color:'#F5A623'},
   ];
   ressources=[
     {id:'r1',titre:'Business Plan Guide',desc:'Modèle complet',type:'pdf',acces:'incubes',categorie:'Strategy',taille:'2.4 MB',progression:100,lu:true},
@@ -56,15 +65,15 @@ export class CoachPlanningComponent {
   ];
   get filteredRessources(){
     let l=this.ressources;
-    if(this.filtre!=='tous')l=l.filter((r:any)=>r.type===this.filtre||r.acces===this.filtre);
+    if(this.filtre!=='all')l=l.filter((r:any)=>r.type===this.filtre||r.acces===this.filtre);
     if(this.search)l=l.filter((r:any)=>r.titre.toLowerCase().includes(this.search.toLowerCase()));
     return l;
   }
   validations=[
-    {id:'v1',tache:'Prototype UI — E-Learning',startup:'EduTech Pro (Sara)',doc:'maquette_v2.pdf',statut:'en_attente',date:'2024-12-01'},
-    {id:'v2',tache:'Tests QA HealthMobile',startup:'HealthMobile (Sara)',doc:'rapport_tests.pdf',statut:'en_attente',date:'2024-12-02'},
-    {id:'v3',tache:'Business Plan AgriSmart',startup:'AgriSmart (Sara)',doc:'business_plan_v3.pdf',statut:'valide',date:'2024-11-28'},
+    {id:'v1',task:'Prototype UI — E-Learning',startup:'EduTech Pro (Sara)',doc:'maquette_v2.pdf',status:'pending',date:'2024-12-01'},
+    {id:'v2',task:'Tests QA HealthMobile',startup:'HealthMobile (Sara)',doc:'rapport_tests.pdf',status:'pending',date:'2024-12-02'},
+    {id:'v3',task:'Business Plan AgriSmart',startup:'AgriSmart (Sara)',doc:'business_plan_v3.pdf',status:'approved',date:'2024-11-28'},
   ];
-  validate(id:string){const v=this.validations.find(x=>x.id===id);if(v)v.statut='valide';}
-  reject(id:string){const v=this.validations.find(x=>x.id===id);if(v)v.statut='rejete';}
+  validate(id:string){const v=this.validations.find(x=>x.id===id);if(v)v.status='approved';}
+  reject(id:string){const v=this.validations.find(x=>x.id===id);if(v)v.status='rejected';}
 }
