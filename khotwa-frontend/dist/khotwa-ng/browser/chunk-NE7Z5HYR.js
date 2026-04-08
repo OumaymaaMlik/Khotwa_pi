@@ -1,0 +1,1 @@
+import{k as i,p as r,ya as e}from"./chunk-U744GJFP.js";var f=(()=>{class t{static{this.\u0275fac=function(o){return new(o||t)}}static{this.\u0275mod=r({type:t})}static{this.\u0275inj=i({imports:[e]})}}return t})();export{f as a};

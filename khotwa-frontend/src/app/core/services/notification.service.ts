@@ -1,21 +1,64 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 export interface Notification {
-  id: string; titre: string; message: string;
+  id: string;
+  titre: string;
+  message: string;
   type: 'info' | 'warning' | 'success' | 'error';
-  date: Date; lu: boolean;
+  date: Date;
+  lu: boolean;
+  link?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private _notifs: Notification[] = [
-    { id:'n1', titre:'SLA Alert', message:'Task "Prototype UI" blocked for 16 days', type:'warning', date:new Date(), lu:false },
-    { id:'n2', titre:'Deadline demain', message:'Livraison des maquettes — 24h restantes', type:'error', date:new Date(), lu:false },
-    { id:'n3', titre:'Validation required', message:'Sara submitted a task for validation', type:'info', date:new Date(), lu:false },
-  ];
 
-  notifs() { return this._notifs; }
-  nonLus() { return this._notifs.filter(n => !n.lu).length; }
-  markAllRead() { this._notifs = this._notifs.map(n => ({ ...n, lu: true })); }
-  markRead(id: string) { this._notifs = this._notifs.map(n => n.id === id ? { ...n, lu: true } : n); }
+  private base = 'http://localhost:8084/khotwa';
+
+  private _notifs: Notification[] = [];
+
+  constructor(private http: HttpClient) {}
+
+  // ── Called once on layout init with the connected user's id ──────────────
+  loadExpirationAlert(userId: number): void {
+    this.http.get<any>(`${this.base}/subscriptions/user/${userId}/expiration-alert`)
+      .subscribe({
+        next: (data) => {
+          if (data?.hasAlert) {
+            const daysLeft: number = data.daysLeft;
+            const planLabel: string = data.planLabel ?? 'your plan';
+
+            // Remove any previous expiration notification to avoid duplicates
+            this._notifs = this._notifs.filter(n => n.id !== 'expiration-alert');
+
+            const notif: Notification = {
+              id: 'expiration-alert',
+              titre: daysLeft === 0
+                ? 'Subscription expires today!'
+                : `Subscription expires in ${daysLeft} day(s)`,
+              message: `Your ${planLabel} subscription expires on ${data.dateFin}. Renew now to avoid interruption.`,
+              type: daysLeft <= 1 ? 'error' : 'warning',
+              date: new Date(),
+              lu: false,
+              link: '/entrepreneur/profile'
+            };
+
+            // Insert at the beginning so it appears first
+            this._notifs = [notif, ...this._notifs];
+          }
+        },
+        error: (err) => console.error('Could not load expiration alert', err)
+      });
+  }
+
+  // ── Static notifs (existing) ──────────────────────────────────────────────
+  addNotif(notif: Notification): void {
+    this._notifs = [notif, ...this._notifs];
+  }
+
+  notifs(): Notification[] { return this._notifs; }
+  nonLus(): number { return this._notifs.filter(n => !n.lu).length; }
+  markAllRead(): void { this._notifs = this._notifs.map(n => ({ ...n, lu: true })); }
+  markRead(id: string): void { this._notifs = this._notifs.map(n => n.id === id ? { ...n, lu: true } : n); }
 }

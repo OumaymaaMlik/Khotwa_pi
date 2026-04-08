@@ -25,7 +25,7 @@ export class LayoutComponent implements OnInit {
     { label: 'Validations',  icon: 'check',     route: 'validations',  roles: ['coach'] },
     { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['admin'] },
     { label: 'Talent Market',icon: 'people',    route: 'talent',       roles: ['admin','entrepreneur','coach'] },
-    { label: 'Subscriptions',icon: 'card',      route: 'abonnements',  roles: ['admin'] },
+    { label: 'Subscriptions', icon: 'card2',     route: 'subscriptions',roles: ['admin'] },
     { label: 'Users',        icon: 'users',     route: 'utilisateurs', roles: ['admin'] },
   ];
 
@@ -42,6 +42,7 @@ export class LayoutComponent implements OnInit {
     people:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     card:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
     progress:  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+    card2:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1"/></svg>',
     users:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   };
 

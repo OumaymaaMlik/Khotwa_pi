@@ -14,21 +14,23 @@ import { EntrepreneurMessagesComponent }     from './messages/messages.component
 import { EntrepreneurBibliothequeComponent } from './bibliotheque/bibliotheque.component';
 import { EntrepreneurProgressionsComponent } from './progressions/progressions.component';
 import { EntrepreneurTalentComponent }       from './talent/talent.component';
+import { ProfileComponent }                  from './profile/profile.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: LayoutEntrepreneurComponent,   // ← nouveau layout entrepreneur
+    component: LayoutEntrepreneurComponent,
     children: [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard',    component: EntrepreneurDashboardComponent  },
-      { path: 'projets',      component: EntrepreneurProjetsComponent     },
-      { path: 'workflows',    component: EntrepreneurWorkflowsComponent   },
-      { path: 'planning',     component: EntrepreneurPlanningComponent    },
-      { path: 'messages',     component: EntrepreneurMessagesComponent    },
-      { path: 'bibliotheque', component: EntrepreneurBibliothequeComponent},
-      { path: 'talent',       component: EntrepreneurTalentComponent      },
-      { path: 'progressions', component: EntrepreneurProgressionsComponent},
+      { path: 'dashboard',    component: EntrepreneurDashboardComponent },
+      { path: 'projets',      component: EntrepreneurProjetsComponent },
+      { path: 'workflows',    component: EntrepreneurWorkflowsComponent },
+      { path: 'planning',     component: EntrepreneurPlanningComponent },
+      { path: 'messages',     component: EntrepreneurMessagesComponent },
+      { path: 'bibliotheque', component: EntrepreneurBibliothequeComponent },
+      { path: 'talent',       component: EntrepreneurTalentComponent },
+      { path: 'progressions', component: EntrepreneurProgressionsComponent },
+      { path: 'profile',      component: ProfileComponent },
     ],
   },
 ];
@@ -39,6 +41,7 @@ const routes: Routes = [
     EntrepreneurWorkflowsComponent, EntrepreneurPlanningComponent,
     EntrepreneurMessagesComponent,  EntrepreneurBibliothequeComponent,
     EntrepreneurTalentComponent,    EntrepreneurProgressionsComponent,
+    ProfileComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

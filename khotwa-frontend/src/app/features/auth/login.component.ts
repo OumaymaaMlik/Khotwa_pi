@@ -29,10 +29,16 @@ export class LoginComponent {
       'admin@khotwa.tn': 'admin',
       'sara@startup.tn': 'entrepreneur',
       'ahmed@coach.tn': 'coach',
+      'amirachamsi9@gmail.com': 'entrepreneur',
     };
-    const role = mockMap[this.email.toLowerCase()];
-    if (!role) { this.error = 'Invalid credentials. Try sara@startup.tn or ahmed@coach.tn.'; return; }
-    this.auth.login(role);
+    const exists = mockMap[this.email.toLowerCase()];
+if (!exists) {
+  this.error = 'Invalid credentials. Try sara@startup.tn or ahmed@coach.tn.';
+  return;
+}
+
+this.auth.loginByEmail(this.email);
+this.router.navigateByUrl(this.auth.getDefaultRoute());
     this.router.navigateByUrl(this.auth.getDefaultRoute());
   }
 
@@ -42,7 +48,7 @@ export class LoginComponent {
       this.error = 'Please fill in all fields.'; return;
     }
     // Mock registration: log in with chosen role
-    this.auth.login(this.selectedRole);
+    this.auth.loginByEmail(this.email);
     this.router.navigateByUrl(this.auth.getDefaultRoute());
   }
 }
