@@ -1,0 +1,13 @@
+package tn.khotwa;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class KhotwaBackendApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
