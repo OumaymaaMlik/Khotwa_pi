@@ -1,4 +1,4 @@
-package tn.khotwa.biblio.entity;
+package tn.khotwa.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,16 +7,20 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.biblio.enums.Role;
+import tn.khotwa.enums.PlanType;
+import tn.khotwa.enums.Role;
 
 @Entity
-@Table(name = "users")
+@Table(name = "user")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,7 +30,14 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id_user")
+    private Long idUser;
+
+    @Column(name = "avatar")
+    private String avatar;
+
+    @Column(name = "email_address", nullable = false, unique = true)
+    private String emailAddress;
 
     @Column(name = "first_name", nullable = false)
     private String firstName;
@@ -34,22 +45,36 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "email_address", nullable = false, unique = true)
-    private String emailAddress;
-
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
-
-    @Column
-    private String avatar;
-
-    @Column
-    private String startup;
+    @Column(name = "pending_plan")
+    private PlanType pendingPlan;
 
     @Column(name = "phone_number")
     private String phoneNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type")
+    private PlanType planType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
+
+    @Column(name = "startup")
+    private String startup;
+
+    @Default
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = true;
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeEmailAddress() {
+        if (emailAddress != null) {
+            emailAddress = emailAddress.trim().toLowerCase();
+        }
+    }
 }

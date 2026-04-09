@@ -1,4 +1,8 @@
-package tn.khotwa.biblio.exception;
+package tn.khotwa.exception;
+
 public class AccessDeniedException extends RuntimeException {
-    public AccessDeniedException(String msg) { super(msg); }
+
+    public AccessDeniedException(String message) {
+        super(message);
+    }
 }

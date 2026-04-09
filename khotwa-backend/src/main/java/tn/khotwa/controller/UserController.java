@@ -1,26 +1,22 @@
-package tn.khotwa.biblio.controller;
+package tn.khotwa.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tn.khotwa.biblio.dto.user.AdminUpdateUserRequest;
-import tn.khotwa.biblio.dto.user.AuthResponse;
-import tn.khotwa.biblio.dto.user.SignInRequest;
-import tn.khotwa.biblio.dto.user.SignUpRequest;
-import tn.khotwa.biblio.dto.user.UpdateProfileRequest;
-import tn.khotwa.biblio.dto.user.UserResponse;
-import tn.khotwa.biblio.security.AppUserPrincipal;
-import tn.khotwa.biblio.service.user.IUserService;
+import tn.khotwa.dto.user.ChangePasswordRequest;
+import tn.khotwa.dto.user.UpdateProfileRequest;
+import tn.khotwa.dto.user.UpdateUserByAdminRequest;
+import tn.khotwa.dto.user.UpdateUserPlanRequest;
+import tn.khotwa.dto.user.UserResponse;
+import tn.khotwa.service.UserService;
 
 import java.util.List;
 
@@ -29,58 +25,56 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final IUserService userService;
-
-    @PostMapping("/signup")
-    public ResponseEntity<UserResponse> signUp(@Valid @RequestBody SignUpRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.signUp(request));
-    }
-
-    @PostMapping("/signin")
-    public ResponseEntity<AuthResponse> signIn(@Valid @RequestBody SignInRequest request) {
-        return ResponseEntity.ok(userService.signIn(request));
-    }
+    private final UserService userService;
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getMyProfile(
-            @AuthenticationPrincipal AppUserPrincipal currentUser) {
-        return ResponseEntity.ok(userService.getMyProfile(currentUser.getId()));
+    public ResponseEntity<UserResponse> getMyProfile() {
+        return ResponseEntity.ok(userService.getCurrentUserProfile());
     }
 
     @PutMapping("/me")
-    public ResponseEntity<UserResponse> updateMyProfile(
-            @AuthenticationPrincipal AppUserPrincipal currentUser,
-            @Valid @RequestBody UpdateProfileRequest request) {
-        return ResponseEntity.ok(userService.updateMyProfile(currentUser.getId(), request));
+    public ResponseEntity<UserResponse> updateMyProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(userService.updateCurrentUserProfile(request));
     }
 
-    @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteMyAccount(
-            @AuthenticationPrincipal AppUserPrincipal currentUser) {
-        userService.deleteMyAccount(currentUser.getId());
+    @PutMapping("/me/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changeCurrentUserPassword(request);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> adminUpdateUser(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUserByAdmin(
             @PathVariable Long id,
-            @Valid @RequestBody AdminUpdateUserRequest request) {
-        return ResponseEntity.ok(userService.adminUpdateUser(id, request));
+            @Valid @RequestBody UpdateUserByAdminRequest request) {
+        return ResponseEntity.ok(userService.updateUserByAdmin(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> adminDeleteUser(@PathVariable Long id) {
-        userService.adminDeleteUser(id);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUserByAdmin(@PathVariable Long id) {
+        userService.deleteUserByAdmin(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/plan")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUserPlan(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserPlanRequest request) {
+        return ResponseEntity.ok(userService.updateUserPlan(id, request));
     }
 }

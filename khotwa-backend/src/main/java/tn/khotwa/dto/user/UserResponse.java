@@ -1,24 +1,19 @@
-package tn.khotwa.biblio.dto.user;
+package tn.khotwa.dto.user;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import tn.khotwa.enums.PlanType;
+import tn.khotwa.enums.Role;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class UserResponse {
-
-    private Long id;
-    private String firstName;
-    private String lastName;
-    private String emailAddress;
-    private String role;
-    private String avatar;
-    private String startup;
-    private String phoneNumber;
+public record UserResponse(
+        Long idUser,
+        String avatar,
+        String emailAddress,
+        String firstName,
+        String lastName,
+        PlanType pendingPlan,
+        String phoneNumber,
+        PlanType planType,
+        Role role,
+        String startup,
+        boolean mustChangePassword
+) {
 }

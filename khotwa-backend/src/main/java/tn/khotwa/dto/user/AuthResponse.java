@@ -1,4 +1,12 @@
-package tn.khotwa.biblio.dto.user;
+package tn.khotwa.dto.user;
 
-public record AuthResponse(String token, long expiresIn, UserResponse user) {
+import tn.khotwa.enums.Role;
+
+public record AuthResponse(
+	String token,
+	Long idUser,
+	String email,
+	Role role,
+	boolean mustChangePassword
+) {
 }

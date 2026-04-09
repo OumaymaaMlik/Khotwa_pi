@@ -1,6 +1,7 @@
-package tn.khotwa.biblio.enums;
+package tn.khotwa.enums;
 
 public enum Role {
     ADMIN,
-    USER
+    COACH,
+    ENTREPRENEUR
 }
