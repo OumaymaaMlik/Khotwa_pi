@@ -1,0 +1,152 @@
+<div class="login">
+  <div class="bg"></div>
+  <div class="glow"></div>
+  <div class="content">
+
+    <!-- Brand -->
+    <div class="brand">
+      <img src="assets/khotwa-logo.png" alt="KHOTWA" class="brand-logo"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" />
+      <!-- Fallback SVG si le logo image n'est pas dispo -->
+      <div class="brand-icon" style="display:none">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </div>
+      <span class="brand-name">KHOTWA</span>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="auth-tabs">
+      <button class="tab-btn" [class.active]="mode==='signin'" (click)="mode='signin'; error=''; success=''">Sign In</button>
+      <button class="tab-btn" [class.active]="mode==='signup'" (click)="mode='signup'; error=''; success=''">Sign Up</button>
+    </div>
+
+    <!-- ══ SIGN IN ══════════════════════════════════════════════ -->
+    <div class="auth-form" *ngIf="mode==='signin'">
+      <h1>Welcome back</h1>
+      <p class="subtitle">Sign in to your KHOTWA account</p>
+
+      <div class="form-group">
+        <label>Email address</label>
+        <!-- FIX: était [(ngModel)]="emailAddress" mais la variable s'appelait "email" -->
+        <input type="email" [(ngModel)]="emailAddress"
+               placeholder="you@example.com" class="form-input"
+               [class.input-err]="error && !emailAddress"
+               (keyup.enter)="signIn()" />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" [(ngModel)]="password"
+               placeholder="••••••••" class="form-input"
+               [class.input-err]="error && !password"
+               (keyup.enter)="signIn()" />
+      </div>
+
+      <p class="form-error" *ngIf="error">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </p>
+
+      <button class="btn-submit" (click)="signIn()" [disabled]="loading">
+        <span *ngIf="!loading">Sign In →</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+
+      <!-- Visitor shortcut -->
+      <div class="visitor-divider"><span>or</span></div>
+      <button class="btn-visitor" (click)="continueAsVisitor()" [disabled]="loading">
+        <span>👀</span> Continue as Visitor
+      </button>
+
+      <p class="form-switch">Don't have an account?
+        <a (click)="mode='signup'; error=''; success=''">Sign up</a>
+      </p>
+    </div>
+
+    <!-- ══ SIGN UP ══════════════════════════════════════════════ -->
+    <div class="auth-form" *ngIf="mode==='signup'">
+      <h1>Create your account</h1>
+      <p class="subtitle">Join KHOTWA and start your journey</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>First name <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="firstName"
+                 placeholder="Sara" class="form-input"
+                 [class.input-err]="error && !firstName" />
+        </div>
+        <div class="form-group">
+          <label>Last name <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="lastName"
+                 placeholder="Trabelsi" class="form-input"
+                 [class.input-err]="error && !lastName" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email address <span class="req">*</span></label>
+        <!-- FIX: même binding corrigé -->
+        <input type="email" [(ngModel)]="emailAddress"
+               placeholder="you@example.com" class="form-input"
+               [class.input-err]="error && !emailAddress" />
+      </div>
+
+      <div class="form-group">
+        <label>Phone number</label>
+        <input type="text" [(ngModel)]="phoneNumber"
+               placeholder="+216 XX XXX XXX" class="form-input" />
+      </div>
+
+      <div class="form-group">
+        <label>Password <span class="req">*</span></label>
+        <input type="password" [(ngModel)]="password"
+               placeholder="Min. 8 characters" class="form-input"
+               [class.input-err]="error && password.length < 8 && password.length > 0" />
+        <span class="field-hint" *ngIf="password.length > 0 && password.length < 8">
+          {{ 8 - password.length }} more character(s) needed
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label>I am a… <span class="req">*</span></label>
+        <div class="role-pick">
+          <div *ngFor="let r of roles" class="role-pick-card"
+               [class.selected]="selectedRole===r.role"
+               [style.--c]="r.color"
+               (click)="selectedRole=r.role">
+            <span class="rp-icon">{{ r.icon }}</span>
+            <span class="rp-label">{{ r.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="form-error" *ngIf="error">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </p>
+
+      <p class="form-success" *ngIf="success">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        {{ success }}
+      </p>
+
+      <button class="btn-submit" (click)="signUp()" [disabled]="loading">
+        <span *ngIf="!loading">Create account →</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+
+      <p class="form-switch">Already have an account?
+        <a (click)="mode='signin'; error=''; success=''">Sign in</a>
+      </p>
+    </div>
+
+  </div>
+</div>
