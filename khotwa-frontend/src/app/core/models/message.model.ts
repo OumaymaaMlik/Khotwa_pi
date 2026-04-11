@@ -1,4 +1,4 @@
-export type MessageStatut = 'en_attente' | 'lu' | 'resolu';
+export type MessageStatut = 'pending' | 'lu' | 'resolu';
 
 export interface Message {
   id: string;
@@ -7,7 +7,7 @@ export interface Message {
   destinataireId: string;
   sujet: string;
   contenu: string;
-  statut: MessageStatut;
+  status: MessageStatut;
   date: Date;
   archive: boolean;
 }

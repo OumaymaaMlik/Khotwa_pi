@@ -5,20 +5,20 @@ import { ProjetService } from '../../../core/services/projet.service';
 export class AdminMessagesComponent {
   constructor(public projetService: ProjetService) {}
   get projets() { return this.projetService.projets; }
-  filtre = 'tous';
+  filtre = 'all';
   search = '';
   view = 'talents';
   get items() {
     let list = this.projets;
-    if (this.filtre !== 'tous') list = list.filter((p:any) => p.statut === this.filtre || p.plan === this.filtre || p.role === this.filtre || p.type === this.filtre);
+    if (this.filtre !== 'all') list = list.filter((p:any) => p.status === this.filtre || p.plan === this.filtre || p.role === this.filtre || p.type === this.filtre);
     if (this.search) list = list.filter((p:any) => JSON.stringify(p).toLowerCase().includes(this.search.toLowerCase()));
     return list;
   }
   users = [
-    {id:'u1',nom:'Bensalem',prenom:'Karim',email:'admin@khotwa.tn',role:'admin',statut:'actif',createdAt:'2024-01-01'},
-    {id:'u2',nom:'Trabelsi',prenom:'Sara',email:'sara@startup.tn',role:'entrepreneur',statut:'actif',createdAt:'2024-02-15'},
-    {id:'u3',nom:'Mansouri',prenom:'Ahmed',email:'ahmed@coach.tn',role:'coach',statut:'actif',createdAt:'2024-03-01'},
-    {id:'u4',nom:'Ben Ali',prenom:'Nadia',email:'nadia@edu.tn',role:'entrepreneur',statut:'inactif',createdAt:'2024-04-10'},
+    {id:'u1',nom:'Bensalem',prenom:'Karim',email:'admin@khotwa.tn',role:'admin',status:'ACTIVE',createdAt:'2024-01-01'},
+    {id:'u2',nom:'Trabelsi',prenom:'Sara',email:'sara@startup.tn',role:'entrepreneur',status:'ACTIVE',createdAt:'2024-02-15'},
+    {id:'u3',nom:'Mansouri',prenom:'Ahmed',email:'ahmed@coach.tn',role:'coach',status:'ACTIVE',createdAt:'2024-03-01'},
+    {id:'u4',nom:'Ben Ali',prenom:'Nadia',email:'nadia@edu.tn',role:'entrepreneur',status:'inactif',createdAt:'2024-04-10'},
   ];
   events = [
     {id:'ev1',titre:'Atelier Pitch Day',type:'pitch',date:'2024-12-10',heure:'14h00',intervenant:'Dr. Ben Salem',places:30,restantes:8},
@@ -26,9 +26,9 @@ export class AdminMessagesComponent {
     {id:'ev3',titre:'Training Design Thinking',type:'formation',date:'2024-12-20',heure:'09h00',intervenant:'Ahmed Mansouri',places:20,restantes:5},
   ];
   abonnements = [
-    {id:'a1',user:'Sara Trabelsi',email:'sara@startup.tn',plan:'premium',statut:'actif',debut:'2024-09-01',fin:'2025-09-01'},
-    {id:'a2',user:'Omar Chaabane',email:'omar@agri.tn',plan:'gratuit',statut:'actif',debut:'2024-10-15',fin:'2025-10-15'},
-    {id:'a3',user:'Nadia Ben Ali',email:'nadia@edu.tn',plan:'institutionnel',statut:'expire',debut:'2023-11-01',fin:'2024-11-01'},
+    {id:'a1',user:'Sara Trabelsi',email:'sara@startup.tn',plan:'PREMIUM',status:'ACTIVE',debut:'2024-09-01',fin:'2025-09-01'},
+    {id:'a2',user:'Omar Chaabane',email:'omar@agri.tn',plan:'FREE',status:'ACTIVE',debut:'2024-10-15',fin:'2025-10-15'},
+    {id:'a3',user:'Nadia Ben Ali',email:'nadia@edu.tn',plan:'INSTITUTIONAL',status:'EXPIRED',debut:'2023-11-01',fin:'2024-11-01'},
   ];
   talents = [
     {id:'t1',nom:'Karim Dridi',poste:'Full Stack Developer',competences:['Angular','Node.js'],score:92,disponible:true},
@@ -47,7 +47,7 @@ export class AdminMessagesComponent {
   ];
   get filteredRessources() {
     let l = this.ressources;
-    if (this.filtre !== 'tous') l = l.filter((r:any)=>r.type===this.filtre||r.acces===this.filtre);
+    if (this.filtre !== 'all') l = l.filter((r:any)=>r.type===this.filtre||r.acces===this.filtre);
     if (this.search) l = l.filter((r:any)=>r.titre.toLowerCase().includes(this.search.toLowerCase()));
     return l;
   }

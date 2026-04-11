@@ -1,0 +1,97 @@
+/* ════════════════════════════════════════════════
+   KHOTWA — Footer global partagé
+════════════════════════════════════════════════ */
+.kh-footer {
+  background: #070A12;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 40px 32px 20px;
+  flex-shrink: 0;
+}
+
+.kh-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.kh-footer__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.kh-footer__logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+.kh-footer__name {
+  display: none; /* Le logo image contient déjà le texte KHOTWA */
+}
+.kh-footer__tagline {
+  font-size: 12px;
+  color: rgba(232,228,220,0.4);
+  line-height: 1.7;
+  max-width: 280px;
+}
+
+.kh-footer__col-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: rgba(232,228,220,0.35);
+  margin-bottom: 12px;
+}
+.kh-footer__col ul {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.kh-footer__col ul li a {
+  font-size: 13px;
+  color: rgba(232,228,220,0.5);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.kh-footer__col ul li a:hover {
+  color: rgba(232,228,220,0.9);
+}
+
+.kh-footer__bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 16px;
+}
+.kh-footer__bottom p {
+  font-size: 12px;
+  color: rgba(232,228,220,0.3);
+}
+.kh-footer__socials {
+  display: flex;
+  gap: 12px;
+}
+.kh-footer__socials a {
+  color: rgba(232,228,220,0.3);
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.kh-footer__socials a:hover { color: rgba(232,228,220,0.8); }
+
+@media (max-width: 768px) {
+  .kh-footer__inner { grid-template-columns: 1fr 1fr; }
+  .kh-footer__brand { grid-column: 1 / -1; }
+  .kh-footer__bottom { flex-direction: column; gap: 10px; text-align: center; }
+}
+@media (max-width: 480px) {
+  .kh-footer__inner { grid-template-columns: 1fr; }
+  .kh-footer { padding: 32px 16px 16px; }
+}

@@ -11,6 +11,6 @@ export interface Evenement {
   description: string;
   placesTotal: number;
   placesRestantes: number;
-  inscrits: string[];
+  registered: string[];
   listeAttente: string[];
 }

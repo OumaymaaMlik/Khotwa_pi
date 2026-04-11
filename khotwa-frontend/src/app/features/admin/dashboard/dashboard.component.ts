@@ -8,7 +8,7 @@ export class AdminDashboardComponent {
   get stats() {
     return {
       totalProjets: this.projets.length,
-      enCours: this.projets.filter(p=>p.statut==='in_progress').length,
+      enCours: this.projets.filter(p=>p.status==='in_progress').length,
       utilisateurs: 24, events: 3, abonnements: 18, talents: 12,
     };
   }

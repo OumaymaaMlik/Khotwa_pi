@@ -1,6 +1,6 @@
 <div class="page animate-1">
   <div class="page-header">
-    <div><h1 class="kh-page-title">Talent Marketplace</h1><p class="page-sub">Connectez startups et talents</p></div>
+    <div><h1 class="kh-page-title">Talent Marketplace</h1><p class="page-sub">Connect startups with talent</p></div>
     <button class="kh-btn kh-btn--primary">+ Post listing</button>
   </div>
   <div class="tabs animate-2">
@@ -15,7 +15,7 @@
           <p class="card-name" style="font-size:14px">{{ t.nom }}</p>
           <p class="card-meta">{{ t.poste }}</p>
         </div>
-        <span class="kh-badge" [class]="t.disponible?'kh-badge--green':'kh-badge--gray'" style="margin-left:auto">{{ t.disponible ? 'Dispo' : 'Indispo' }}</span>
+        <span class="kh-badge" [class]="t.disponible?'kh-badge--green':'kh-badge--gray'" style="margin-left:auto">{{ t.disponible ? 'Available' : 'Unavailable' }}</span>
       </div>
       <div class="skills">
         <span *ngFor="let c of t.competences" class="skill-tag">{{ c }}</span>
