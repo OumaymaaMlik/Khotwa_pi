@@ -68,15 +68,15 @@
         <div class="ent-user" (click)="userMenuOpen=!userMenuOpen" #userMenu>
           <div class="ent-user__avatar">{{ userInitials }}</div>
           <div class="ent-user__info">
-            <span class="ent-user__name">{{ auth.currentUser?.prenom }}</span>
+            <span class="ent-user__name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</span>
             <span class="ent-user__role">Entrepreneur</span>
           </div>
           <svg class="ent-user__chevron" [class.rotated]="userMenuOpen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
 
           <div class="ent-user__menu" *ngIf="userMenuOpen">
             <div class="ent-user__menu-header">
-              <p class="menu-name">{{ auth.currentUser?.prenom }} {{ auth.currentUser?.nom }}</p>
-              <p class="menu-email">{{ auth.currentUser?.email }}</p>
+              <p class="menu-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
+              <p class="menu-email">{{ auth.currentUser?.emailAddress }}</p>
             </div>
             <button class="menu-item menu-item--logout" (click)="logout()">
               <span [innerHTML]="getIcon('logout')"></span>Logout

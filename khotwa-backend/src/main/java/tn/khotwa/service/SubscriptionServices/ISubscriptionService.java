@@ -1,7 +1,7 @@
 package tn.khotwa.service.SubscriptionServices;
 
 import tn.khotwa.entity.SubscriptionEntities.PlanOffer;
-import tn.khotwa.entity.SubscriptionEntities.User;
+import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.entity.SubscriptionEntities.Subscription;
 
@@ -34,10 +34,9 @@ public interface ISubscriptionService {
 
     List<Map<String, Object>> getAdminSubscriptions();
 
-
     void syncUserFromSubscription(User user, Subscription subscription);
-    void changePlanSubscription(Subscription subscription, PlanOffer offer);
 
+    void changePlanSubscription(Subscription subscription, PlanOffer offer);
 
     Subscription cancelPendingSubscription(Long subscriptionId);
 
@@ -46,9 +45,16 @@ public interface ISubscriptionService {
     Subscription adminPending(Long subscriptionId);
 
     Subscription requestPlanChange(Long userId, PlanType targetPlan);
+
     List<Map<String, Object>> getTotalRevenueByUser();
+
     List<Map<String, Object>> getRevenueByUser();
+
     List<Map<String, Object>> getRevenueByMonth();
+
     List<Map<String, Object>> getRevenueByDay();
+
     Map<String, Object> getRevenueSummary();
+
+    Subscription createFreeSubscription(User user);
 }

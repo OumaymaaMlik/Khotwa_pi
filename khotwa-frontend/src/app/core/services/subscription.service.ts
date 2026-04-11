@@ -11,7 +11,7 @@ import {
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private base = 'http://localhost:8084/khotwa';
+  private base = '/khotwa';  // ✅ URL relative — passe par le proxy Angular
 
   constructor(private http: HttpClient) {}
 
@@ -50,9 +50,7 @@ export class SubscriptionService {
   }
 
   getAvailablePlans(): Observable<PlanOffer[]> {
-    return this.http.get<PlanOffer[]>(
-      `${this.base}/plans`
-    );
+    return this.http.get<PlanOffer[]>(`${this.base}/plans`);
   }
 
   selectPlan(userId: number, planOfferId: number): Observable<Subscription> {
@@ -80,12 +78,9 @@ export class SubscriptionService {
       { userId, planOfferId, paypalOrderId, payerId }
     );
   }
-  
 
   getPaymentStatus(subscriptionId: number): Observable<any> {
-    return this.http.get<any>(
-      `${this.base}/payments/status/${subscriptionId}`
-    );
+    return this.http.get<any>(`${this.base}/payments/status/${subscriptionId}`);
   }
 
   cancelPending(subscriptionId: number): Observable<Subscription> {
@@ -103,44 +98,32 @@ export class SubscriptionService {
   }
 
   suspendSubscription(id: number): Observable<void> {
-    return this.http.delete<void>(
-      `${this.base}/subscriptions/${id}`
+    return this.http.delete<void>(`${this.base}/subscriptions/${id}`);
+  }
+
+  addPlan(plan: PlanOffer): Observable<PlanOffer> {
+    return this.http.post<PlanOffer>(`${this.base}/plans/add`, plan);
+  }
+
+  updatePlan(id: number, plan: PlanOffer): Observable<PlanOffer> {
+    return this.http.put<PlanOffer>(`${this.base}/plans/${id}`, plan);
+  }
+
+  deletePlan(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/plans/${id}`);
+  }
+
+  requestPlanChange(userId: number, planType: PlanType): Observable<Subscription> {
+    return this.http.post<Subscription>(
+      `${this.base}/subscriptions/request-plan-change`,
+      { idUser: userId, plan: planType }
     );
   }
 
-
- addPlan(plan: PlanOffer): Observable<PlanOffer> {
-  return this.http.post<PlanOffer>(
-    `${this.base}/plans/add`,  
-    plan
-  );
-}
-
-updatePlan(id: number, plan: PlanOffer): Observable<PlanOffer> {
-  return this.http.put<PlanOffer>(
-    `${this.base}/plans/${id}`, 
-    plan
-  );
-}
-
-deletePlan(id: number): Observable<void> {
-  return this.http.delete<void>(
-    `${this.base}/plans/${id}`  
-  );
-}
-
- 
-  
-  requestPlanChange(userId: number, planType: PlanType): Observable<Subscription> {
-  return this.http.post<Subscription>(
-    `${this.base}/subscriptions/request-plan-change`,
-    { idUser: userId, plan: planType }
-  );
-}
-adminPending(subscriptionId: number): Observable<Subscription> {
-  return this.http.put<Subscription>(
-    `${this.base}/subscriptions/${subscriptionId}/admin-pending`,
-    null
-  );
-}
+  adminPending(subscriptionId: number): Observable<Subscription> {
+    return this.http.put<Subscription>(
+      `${this.base}/subscriptions/${subscriptionId}/admin-pending`,
+      null
+    );
+  }
 }

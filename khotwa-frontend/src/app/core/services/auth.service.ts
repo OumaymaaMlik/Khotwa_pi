@@ -1,126 +1,141 @@
 import { Injectable } from '@angular/core';
-import { User, UserRole } from '../models';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Observable, tap, catchError, throwError } from 'rxjs';
+import {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  User,
+  UserResponse,
+  UserRole,
+  PlanType,
+} from '../models/user.model';
 
-const MOCK_USERS: User[] = [
-  {
-    idUser: 1,
-    nom: 'Bensalem',
-    prenom: 'Karim',
-    emailAddress: 'admin@khotwa.tn',
-    role: 'admin'
-  },
-  {
-    idUser: 2,
-    nom: 'Trabelsi',
-    prenom: 'Sara',
-    emailAddress: 'sara@startup.tn',
-    role: 'entrepreneur',
-    startup: 'EduTech Pro',
-    planType: 'FREE'
-  },
-  {
-    idUser: 3,
-    nom: 'Mansouri',
-    prenom: 'Ahmed',
-    emailAddress: 'ahmed@coach.tn',
-    role: 'coach',
-    planType: 'INSTITUTIONAL'
-  },
-  {
-    idUser: 4,
-    nom: 'Chamsi',
-    prenom: 'Amira',
-    emailAddress: 'amirachamsi9@gmail.com',
-    role: 'entrepreneur',
-    startup: 'TechNova',
-    planType: 'FREE'
-  },
-  {
-    idUser: 5,
-    nom: 'Ben Yedder',
-    prenom: 'Amine',
-    emailAddress: 'amine@smartbiz.tn',
-    role: 'entrepreneur',
-    startup: 'SmartBiz',
-    planType: 'PREMIUM'
-  }
-];
+const API_BASE  = '/khotwa/api';
+const TOKEN_KEY = 'khotwa_token';
+const USER_KEY  = 'khotwa_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  currentUser: User | null = null;
 
-  constructor() {
-    const saved = localStorage.getItem('currentUser');
+  private _currentUser: User | null = null;
+
+  constructor(private http: HttpClient, private router: Router) {
+    const saved = localStorage.getItem(USER_KEY);
     if (saved) {
-      this.currentUser = JSON.parse(saved);
+      try { this._currentUser = JSON.parse(saved); } catch { this.clearSession(); }
     }
   }
 
-  get role(): UserRole | null {
-    return this.currentUser?.role ?? null;
+  // ── Getters ───────────────────────────────────────────────────────────────
+
+  get currentUser(): User | null  { return this._currentUser; }
+  get token(): string | null      { return localStorage.getItem(TOKEN_KEY); }
+  get role(): UserRole | null     { return this._currentUser?.role ?? null; }
+  get isAdmin(): boolean          { return this._currentUser?.role === 'ADMIN'; }
+  get isEntrepreneur(): boolean   { return this._currentUser?.role === 'ENTREPRENEUR'; }
+  get isCoach(): boolean          { return this._currentUser?.role === 'COACH'; }
+  get isLoggedIn(): boolean       { return !!this.token && !!this._currentUser; }
+  get planType(): PlanType | null { return this._currentUser?.planType ?? null; }
+
+  get hasActiveSubscription(): boolean {
+    if (!this._currentUser) return false;
+    if (this.isCoach || this.isAdmin) return true;
+    return this._currentUser.planType !== 'FREE' && this._currentUser.planType !== null;
   }
 
-  get isAdmin(): boolean {
-    return this.currentUser?.role === 'admin';
-  }
-
-  get isEntrepreneur(): boolean {
-    return this.currentUser?.role === 'entrepreneur';
-  }
-
-  get isCoach(): boolean {
-    return this.currentUser?.role === 'coach';
-  }
-
-  login(role: UserRole): void {
-    this.currentUser = MOCK_USERS.find(u => u.role === role) ?? null;
-    localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-  }
-
-  loginByEmail(email: string): void {
-    this.currentUser =
-      MOCK_USERS.find(u => (u.emailAddress ?? '').toLowerCase() === email.toLowerCase()) ?? null;
-    localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-  }
-
-  logout(): void {
-    this.currentUser = null;
-    localStorage.removeItem('currentUser');
+  canAccess(requiredPlan: PlanType): boolean {
+    if (!this._currentUser) return false;
+    if (this.isCoach || this.isAdmin) return true;
+    const hierarchy: Record<PlanType, number> = { FREE: 1, PREMIUM: 2, INSTITUTIONAL: 3 };
+    const userPlan = this._currentUser.planType ?? 'FREE';
+    return hierarchy[userPlan] >= hierarchy[requiredPlan];
   }
 
   getDefaultRoute(): string {
-    const r = this.currentUser?.role;
-    return r === 'admin'
-      ? '/khotwaadmin/dashboard'
-      : r === 'entrepreneur'
-      ? '/entrepreneur/dashboard'
-      : r === 'coach'
-      ? '/coach/dashboard'
-      : '/';
+    switch (this._currentUser?.role) {
+      case 'ADMIN':        return '/khotwaadmin/dashboard';
+      case 'ENTREPRENEUR': return '/entrepreneur/dashboard';
+      case 'COACH':        return '/coach/dashboard';
+      default:             return '/login';
+    }
   }
 
-  get planType(): string | null {
-    return this.currentUser?.planType ?? null;
+  // ── Auth methods ──────────────────────────────────────────────────────────
+
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${API_BASE}/auth/login`, credentials).pipe(
+      tap(response => this.handleAuthResponse(response)),
+      catchError(err => throwError(() => this.extractError(err)))
+    );
   }
 
-  get hasActiveSubscription(): boolean {
-    if (!this.currentUser) return false;
-    if (this.isCoach) return true;
-    return this.currentUser.planType !== 'FREE';
+  register(payload: RegisterRequest): Observable<UserResponse> {
+    return this.http.post<UserResponse>(`${API_BASE}/auth/register`, payload).pipe(
+      catchError(err => throwError(() => this.extractError(err)))
+    );
   }
 
-  canAccess(requiredPlan: 'FREE' | 'PREMIUM' | 'INSTITUTIONAL'): boolean {
-    if (!this.currentUser) return false;
-    if (this.isCoach) return true;
+  refreshProfile(): Observable<UserResponse> {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const headers = token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
+      : new HttpHeaders();
 
-    const hierarchy = {
-      FREE: 1,
-      PREMIUM: 2,
-      INSTITUTIONAL: 3
+    return this.http.get<UserResponse>(`${API_BASE}/users/me`, { headers }).pipe(
+      tap(profile => {
+        this._currentUser = {
+          idUser:             profile.idUser,
+          firstName:          profile.firstName,
+          lastName:           profile.lastName,
+          emailAddress:       profile.emailAddress,
+          role:               profile.role,
+          planType:           profile.planType,
+          pendingPlan:        profile.pendingPlan,
+          avatar:             profile.avatar,
+          startup:            profile.startup,
+          phoneNumber:        profile.phoneNumber,
+          mustChangePassword: profile.mustChangePassword,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
+      }),
+      catchError(err => throwError(() => this.extractError(err)))
+    );
+  }
+
+  logout(): void {
+    this.clearSession();
+    this.router.navigateByUrl('/login');
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  private handleAuthResponse(response: AuthResponse): void {
+    localStorage.setItem(TOKEN_KEY, response.token);
+    this._currentUser = {
+      idUser:             response.idUser,
+      firstName:          '',
+      lastName:           '',
+      emailAddress:       response.emailAddress,
+      role:               response.role,
+      planType:           null,
+      pendingPlan:        null,
+      avatar:             null,
+      startup:            null,
+      phoneNumber:        null,
+      mustChangePassword: response.mustChangePassword,
     };
+    localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
+  }
 
-    const userPlan = this.currentUser.planType ?? 'FREE';
-    return hierarchy[userPlan] >= hierarchy[requiredPlan];
+  private clearSession(): void {
+    this._currentUser = null;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+
+  private extractError(err: any): string {
+    return err?.error?.message || err?.message || 'Une erreur est survenue.';
   }
 }

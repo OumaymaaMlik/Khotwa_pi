@@ -161,19 +161,19 @@ export class SubscriptionsComponent implements OnInit {
         (s.plan ?? '').toLowerCase().includes(q) ||
         (s.statut ?? '').toLowerCase().includes(q) ||
         (s.paiementRef ?? '').toLowerCase().includes(q) ||
-        (s.user?.nom ?? '').toLowerCase().includes(q) ||
-        (s.user?.prenom ?? '').toLowerCase().includes(q);
+        (s.user?.lastName ?? '').toLowerCase().includes(q) ||
+        (s.user?.firstName ?? '').toLowerCase().includes(q);
       return matchFilter && matchSearch;
     });
   }
 
   // ── User helpers ──────────────────────────────────────────────────────────
   getUserInitials(s: Subscription): string {
-    const p = s.user?.prenom?.trim() ?? ''; const n = s.user?.nom?.trim() ?? '';
+    const p = s.user?.firstName?.trim() ?? ''; const n = s.user?.lastName?.trim() ?? '';
     return `${p ? p.charAt(0).toUpperCase() : ''}${n ? n.charAt(0).toUpperCase() : ''}` || 'U';
   }
   getFullName(s: Subscription): string {
-    const full = `${s.user?.prenom?.trim() ?? ''} ${s.user?.nom?.trim() ?? ''}`.trim();
+    const full = `${s.user?.firstName?.trim() ?? ''} ${s.user?.lastName?.trim() ?? ''}`.trim();
     return full || `User #${s.idUser ?? '-'}`;
   }
   getUserEmail(s: Subscription): string { return (s.user as any)?.email?.trim() || '-'; }

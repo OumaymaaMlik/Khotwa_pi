@@ -14,20 +14,20 @@ export class LayoutComponent implements OnInit {
   currentUrl = '';
 
   navItems: NavItem[] = [
-    { label: 'Dashboard',    icon: 'dashboard', route: 'dashboard',    roles: ['admin','entrepreneur','coach'] },
-    { label: 'Projects',     icon: 'folder',    route: 'projets',      roles: ['admin','entrepreneur','coach'] },
-    { label: 'Workflows',    icon: 'workflow',  route: 'workflows',    roles: ['entrepreneur'] },
-    { label: 'Planning',     icon: 'calendar',  route: 'planning',     roles: ['admin','entrepreneur','coach'] },
-    { label: 'Messages',     icon: 'message',   route: 'messages',     roles: ['admin','entrepreneur','coach'] },
-    { label: 'Library',      icon: 'book',      route: 'bibliotheque', roles: ['admin','entrepreneur','coach'] },
-    { label: 'My Progress',   icon: 'progress',  route: 'progressions', roles: ['entrepreneur','coach'] },
-    { label: 'My Startups',  icon: 'rocket',    route: 'startups',     roles: ['coach'] },
-    { label: 'Validations',  icon: 'check',     route: 'validations',  roles: ['coach'] },
-    { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['admin'] },
-    { label: 'Talent Market',icon: 'people',    route: 'talent',       roles: ['admin','entrepreneur','coach'] },
-    { label: 'Subscriptions', icon: 'card2',     route: 'subscriptions',roles: ['admin'] },
-    { label: 'Users',        icon: 'users',     route: 'utilisateurs', roles: ['admin'] },
-  ];
+  { label: 'Dashboard',     icon: 'dashboard', route: 'dashboard',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+  { label: 'Projects',      icon: 'folder',    route: 'projets',       roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+  { label: 'Workflows',     icon: 'workflow',  route: 'workflows',     roles: ['ENTREPRENEUR'] },
+  { label: 'Planning',      icon: 'calendar',  route: 'planning',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+  { label: 'Messages',      icon: 'message',   route: 'messages',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+  { label: 'Library',       icon: 'book',      route: 'bibliotheque',  roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+  { label: 'My Progress',   icon: 'progress',  route: 'progressions',  roles: ['ENTREPRENEUR','COACH'] },
+  { label: 'My Startups',   icon: 'rocket',    route: 'startups',      roles: ['COACH'] },
+  { label: 'Validations',   icon: 'check',     route: 'validations',   roles: ['COACH'] },
+  { label: 'Events',        icon: 'event',     route: 'evenements',    roles: ['ADMIN'] },
+  { label: 'Talent Market', icon: 'people',    route: 'talent',        roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+  { label: 'Subscriptions', icon: 'card2',     route: 'subscriptions', roles: ['ADMIN'] },
+  { label: 'Users',         icon: 'users',     route: 'utilisateurs',  roles: ['ADMIN'] },
+];
 
   svgIcons: Record<string, string> = {
     dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>',
@@ -51,6 +51,11 @@ export class LayoutComponent implements OnInit {
   ngOnInit() {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
+
+    // Si le profil n'est pas encore chargé (firstName vide), le recharger
+    if (!this.auth.currentUser?.firstName) {
+      this.auth.refreshProfile().subscribe({ next: () => {}, error: () => {} });
+    }
   }
 
   get visibleNav(): NavItem[] {
@@ -60,23 +65,22 @@ export class LayoutComponent implements OnInit {
 
   get roleLabel(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'admin' ? 'Administrator' : r === 'entrepreneur' ? 'Entrepreneur' : r === 'coach' ? 'Coach' : '';
+    return r === 'ADMIN' ? 'Administrator' : r === 'ENTREPRENEUR' ? 'Entrepreneur' : r === 'COACH' ? 'Coach' : '';
   }
 
   get roleColor(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'admin' ? '#E8622A' : r === 'entrepreneur' ? '#2ABFBF' : '#7C5CBF';
+    return r === 'ADMIN' ? '#E8622A' : r === 'ENTREPRENEUR' ? '#2ABFBF' : '#7C5CBF';
   }
 
   get rolePrefix(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'admin' ? '/khotwaadmin' : r === 'entrepreneur' ? '/entrepreneur' : '/coach';
+    return r === 'ADMIN' ? '/khotwaadmin' : r === 'ENTREPRENEUR' ? '/entrepreneur' : '/coach';
   }
 
   getRoute(item: NavItem): string { return `${this.rolePrefix}/${item.route}`; }
   getIcon(name: string): string { return this.svgIcons[name] || ''; }
   isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
-  switchRole(role: UserRole) { this.auth.login(role); this.router.navigateByUrl(this.auth.getDefaultRoute()); }
   logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
   get nonLus(): number { return this.notifService.nonLus(); }
   get notifs() { return this.notifService.notifs(); }

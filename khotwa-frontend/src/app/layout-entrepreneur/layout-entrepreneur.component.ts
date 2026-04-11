@@ -60,6 +60,14 @@ export class LayoutEntrepreneurComponent implements OnInit {
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
 
+    // Si le profil n'est pas encore chargé (firstName vide), le recharger
+    if (!this.auth.currentUser?.firstName) {
+      this.auth.refreshProfile().subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    }
+
     // ── Load expiration alert for the connected entrepreneur ──────────────
     const userId = this.auth.currentUser?.idUser;
     if (userId && this.auth.isEntrepreneur) {
@@ -94,6 +102,6 @@ export class LayoutEntrepreneurComponent implements OnInit {
   get notifs() { return this.notifService.notifs(); }
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.prenom?.[0] ?? ''}${u?.nom?.[0] ?? ''}`.toUpperCase();
+    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`.toUpperCase();
   }
 }

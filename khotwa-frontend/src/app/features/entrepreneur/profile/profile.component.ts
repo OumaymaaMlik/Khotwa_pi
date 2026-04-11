@@ -48,12 +48,21 @@ export class ProfileComponent implements OnInit {
 }
 
   loadCurrentSubscription(): void {
-    if (!this.currentUserId) return;
-    this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
-      next: (data: Subscription) => { this.currentSubscription = data; },
-      error: () => { this.currentSubscription = null; }
-    });
-  }
+  if (!this.currentUserId) return;
+
+  console.log('currentUserId =', this.currentUserId);
+
+  this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
+    next: (data: Subscription) => {
+      console.log('subscription returned by backend =', data);
+      this.currentSubscription = data;
+    },
+    error: (err) => {
+      console.error('subscription error =', err);
+      this.currentSubscription = null;
+    }
+  });
+}
 
   loadPlans(): void {
     this.subscriptionService.getAvailablePlans().subscribe({
@@ -83,6 +92,10 @@ export class ProfileComponent implements OnInit {
     if (!this.currentSubscription) return 'Choose Plan';
     return this.isUpgrade(plan.type) ? 'Upgrade now' : 'Switch at renewal';
   }
+  getDuration(plan: PlanOffer): string {
+  if (!plan.duree || plan.duree <= 0) return 'Unlimited';
+  return `${plan.duree} days`;
+}
 
   canChangePlan(type: PlanType): boolean {
     if (!this.currentSubscription) return true;
@@ -108,11 +121,18 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  getRemainingDays(): number {
-    if (!this.currentSubscription?.dateFin) return 0;
-    const diff = new Date(this.currentSubscription.dateFin).getTime() - Date.now();
-    return Math.max(Math.ceil(diff / 86_400_000), 0);
+  getRemainingDays(): number | string {
+  if (!this.currentSubscription) return 0;
+
+  if (this.currentSubscription.plan === 'FREE') {
+    return '∞';
   }
+
+  if (!this.currentSubscription.dateFin) return 0;
+
+  const diff = new Date(this.currentSubscription.dateFin).getTime() - Date.now();
+  return Math.max(Math.ceil(diff / 86_400_000), 0);
+}
 
   getAvantagesList(avantages: string): string[] {
     if (!avantages) return [];

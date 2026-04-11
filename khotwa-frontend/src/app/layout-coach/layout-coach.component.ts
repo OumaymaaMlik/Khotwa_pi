@@ -51,6 +51,11 @@ export class LayoutCoachComponent implements OnInit {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
+
+    // Si le profil n'est pas encore chargé (firstName vide), le recharger
+    if (!this.auth.currentUser?.firstName) {
+      this.auth.refreshProfile().subscribe({ next: () => {}, error: () => {} });
+    }
   }
 
   @HostListener('window:scroll', [])
@@ -65,6 +70,8 @@ export class LayoutCoachComponent implements OnInit {
   get notifs() { return this.notifService.notifs(); }
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.prenom?.[0] ?? ''}${u?.nom?.[0] ?? ''}`;
+    return `${u?.firstName
+      
+      ?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`;
   }
 }

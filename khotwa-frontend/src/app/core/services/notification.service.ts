@@ -14,13 +14,12 @@ export interface Notification {
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
 
-  private base = 'http://localhost:8084/khotwa';
+  private base = '/khotwa';  // ✅ URL relative — passe par le proxy Angular
 
   private _notifs: Notification[] = [];
 
   constructor(private http: HttpClient) {}
 
-  // ── Called once on layout init with the connected user's id ──────────────
   loadExpirationAlert(userId: number): void {
     this.http.get<any>(`${this.base}/subscriptions/user/${userId}/expiration-alert`)
       .subscribe({
@@ -29,7 +28,6 @@ export class NotificationService {
             const daysLeft: number = data.daysLeft;
             const planLabel: string = data.planLabel ?? 'your plan';
 
-            // Remove any previous expiration notification to avoid duplicates
             this._notifs = this._notifs.filter(n => n.id !== 'expiration-alert');
 
             const notif: Notification = {
@@ -44,21 +42,19 @@ export class NotificationService {
               link: '/entrepreneur/profile'
             };
 
-            // Insert at the beginning so it appears first
             this._notifs = [notif, ...this._notifs];
           }
         },
-        error: (err) => console.error('Could not load expiration alert', err)
+        error: () => {} // silencieux — pas d'alerte si l'endpoint échoue
       });
   }
 
-  // ── Static notifs (existing) ──────────────────────────────────────────────
   addNotif(notif: Notification): void {
     this._notifs = [notif, ...this._notifs];
   }
 
-  notifs(): Notification[] { return this._notifs; }
-  nonLus(): number { return this._notifs.filter(n => !n.lu).length; }
-  markAllRead(): void { this._notifs = this._notifs.map(n => ({ ...n, lu: true })); }
+  notifs(): Notification[]  { return this._notifs; }
+  nonLus(): number          { return this._notifs.filter(n => !n.lu).length; }
+  markAllRead(): void       { this._notifs = this._notifs.map(n => ({ ...n, lu: true })); }
   markRead(id: string): void { this._notifs = this._notifs.map(n => n.id === id ? { ...n, lu: true } : n); }
 }

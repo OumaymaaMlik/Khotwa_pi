@@ -1,333 +1,404 @@
-<!-- ── Pending payment banner ── -->
-<div class="pending-banner" *ngIf="currentSubscription?.statut === 'PENDING'">
-  <span class="pending-banner__icon">⏳</span>
-  <div class="pending-banner__text">
-    <strong>Payment in progress</strong>
-    <span>Your subscription will activate automatically once your payment is confirmed.</span>
-  </div>
-</div>
+<div class="page">
 
-<!-- ══ MAIN PAGE ══ -->
-<div class="page animate-1">
-
-  <!-- Header -->
+  <!-- Page Header -->
   <div class="page-header">
-    <div>
-      <h1 class="kh-page-title">Profile & Subscription</h1>
-      <p class="page-sub" *ngIf="currentSubscription">
-        Manage your current plan and explore available upgrades
-      </p>
-      <p class="page-sub" *ngIf="!currentSubscription">
-        No active subscription — choose a plan to get started
-      </p>
+    <h1>Profile &amp; Subscription</h1>
+    <p>Manage your current plan and explore available upgrades</p>
+  </div>
+
+  <!-- ── Overview Banner ── -->
+  <div class="overview" *ngIf="currentSubscription as sub">
+    <div class="overview-left overview-left--current">
+      <span class="overview-eyebrow">Current subscription</span>
+      <div class="overview-plan-name">
+        {{ sub.planOffer?.label || sub.plan }}
+      </div>
+      <div class="overview-status-badge overview-status-badge--current">
+        <i class="bi bi-check-circle-fill"></i>
+        {{ getStatusLabel(sub.statut) }}
+      </div>
+    </div>
+
+    <div class="overview-right">
+      <div class="overview-stat">
+        <span class="overview-stat-label">Your current plan</span>
+        <p class="overview-stat-desc">
+          Manage your subscription, billing and renewal settings.
+        </p>
+      </div>
+
+      <div class="overview-stat">
+        <span class="overview-stat-label">Days Remaining</span>
+        <span class="overview-stat-value">{{ getRemainingDays() }}</span>
+      </div>
+
+      <div class="overview-stat">
+        <span class="overview-stat-label">Expiration Date</span>
+        <span class="overview-stat-date" *ngIf="sub.plan !== 'FREE'; else freeExpiration">
+          {{ sub.dateFin | date:'dd MMM' }}<br>
+          {{ sub.dateFin | date:'yyyy' }}
+        </span>
+        <ng-template #freeExpiration>
+          <span class="overview-stat-date">Unlimited</span>
+        </ng-template>
+      </div>
     </div>
   </div>
 
-  <!-- ── KPIs (only when subscription exists) ── -->
-  <div class="kpi-row animate-2" *ngIf="currentSubscription">
-    <div class="mini-kpi mini-kpi--primary">
-      <span class="mini-kpi__val">{{ currentSubscription.plan }}</span>
-      <span class="mini-kpi__label">Current plan</span>
-    </div>
+  <!-- ── Subscription Details Card ── -->
+  <div class="card" *ngIf="currentSubscription as sub">
+    <div class="card-head">
+      <div>
+        <h2>Subscription Details</h2>
+        <p>Manage your subscription, billing and renewal settings</p>
+      </div>
 
-    <div class="mini-kpi">
-      <span
-        class="kh-badge"
-        [ngClass]="{
-          'kh-badge--green':  currentSubscription.statut === 'ACTIVE',
-          'kh-badge--red':    currentSubscription.statut === 'EXPIRED' || currentSubscription.statut === 'CANCELLED',
-          'kh-badge--orange': currentSubscription.statut === 'PENDING'
-        }">
-        {{ getStatusLabel(currentSubscription.statut) }}
-      </span>
-      <span class="mini-kpi__label">Status</span>
-    </div>
-
-    <div class="mini-kpi" [class.mini-kpi--red]="getRemainingDays() <= 7 && getRemainingDays() > 0">
-      <span class="mini-kpi__val">{{ getRemainingDays() === 0 ? '∞' : getRemainingDays() }}</span>
-      <span class="mini-kpi__label">Days remaining</span>
-    </div>
-
-    <div class="mini-kpi">
-      <span class="mini-kpi__val" style="font-size:16px;font-weight:700;">
-        {{ currentSubscription.dateFin | date:'dd MMM yyyy' }}
-      </span>
-      <span class="mini-kpi__label">Expiration date</span>
-    </div>
-  </div>
-
-  <!-- ── Current subscription card ── -->
-  <div class="current-card animate-3" *ngIf="currentSubscription">
-
-    <div class="section-head">
-      <h2>Current Subscription</h2>
-      <span
-        class="kh-badge"
-        [ngClass]="{
-          'kh-badge--green':  currentSubscription.statut === 'ACTIVE',
-          'kh-badge--red':    currentSubscription.statut === 'EXPIRED' || currentSubscription.statut === 'CANCELLED',
-          'kh-badge--orange': currentSubscription.statut === 'PENDING'
-        }">
-        {{ getStatusLabel(currentSubscription.statut) }}
-      </span>
-    </div>
-
-    <!-- Pending plan change notice -->
-    <div class="pending-banner" *ngIf="currentSubscription?.pendingPlan" style="margin-bottom:16px">
-      <span class="pending-banner__icon">⏳</span>
-      <div class="pending-banner__text">
-        <strong>Plan change scheduled</strong>
-        <span>
-          Your subscription will switch to <strong>{{ currentSubscription?.pendingPlan }}</strong>
-          at the end of the current period.
+      <div class="card-head-right">
+        <span class="badge badge--current">
+          <i class="bi bi-check-circle-fill"></i>
+          {{ getStatusLabel(sub.statut) }}
         </span>
       </div>
     </div>
 
-    <div class="subscription-info-grid">
-      <div class="info-box">
-        <span class="info-label">Plan</span>
-        <strong>{{ currentSubscription.planOffer?.label ?? currentSubscription.plan }}</strong>
-      </div>
-      <div class="info-box">
-        <span class="info-label">Start date</span>
-        <strong>{{ currentSubscription.dateDebut | date:'dd MMM yyyy' }}</strong>
-      </div>
-      <div class="info-box">
-        <span class="info-label">End date</span>
-        <strong>{{ currentSubscription.dateFin | date:'dd MMM yyyy' }}</strong>
-      </div>
-      <div class="info-box">
-        <span class="info-label">Auto-renewal</span>
-        <div class="auto-renew-inline">
-          <strong>{{ currentSubscription.autoRenouvellement ? 'Enabled' : 'Disabled' }}</strong>
-          <button
-            class="kh-btn kh-btn--sm"
-            [class.kh-btn--danger]="currentSubscription.autoRenouvellement"
-            [class.kh-btn--primary]="!currentSubscription.autoRenouvellement"
-            (click)="toggleAutoRenew()"
-            [disabled]="isProcessing">
-            {{ currentSubscription.autoRenouvellement ? 'Disable' : 'Enable' }}
-          </button>
+    <div class="detail-grid">
+      <!-- Left col -->
+      <div class="detail-col">
+        <div class="detail-row">
+          <span class="detail-label">Plan</span>
+          <span class="detail-value">{{ sub.planOffer?.label || sub.plan }}</span>
+          <span class="detail-sub detail-sub--current">
+            <i class="bi bi-check-circle-fill"></i>
+            {{ getStatusLabel(sub.statut) }}
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-dates">
+            <div class="detail-date-item">
+              <span class="detail-label"><i class="bi bi-calendar3"></i> Start date</span>
+              <span class="detail-value" style="font-size:13px;">
+                {{ sub.dateDebut | date:'dd MMM yyyy' }}
+              </span>
+              <span class="detail-sub detail-sub--current">
+                <i class="bi bi-check-circle-fill"></i>
+              </span>
+            </div>
+
+            <div class="detail-date-item">
+              <span class="detail-label"><i class="bi bi-calendar3"></i> End date</span>
+              <span class="detail-value" style="font-size:13px;">
+                {{ sub.plan === 'FREE' ? 'Unlimited' : (sub.dateFin | date:'MMM yyyy') }}
+              </span>
+              <span class="detail-sub detail-sub--current">
+                <i class="bi bi-check-circle-fill"></i>
+                {{ getStatusLabel(sub.statut) }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="info-box" *ngIf="currentSubscription.paiementRef">
-        <span class="info-label">Payment ref</span>
-        <strong style="font-size:12px;word-break:break-all">{{ currentSubscription.paiementRef }}</strong>
+
+      <!-- Right col -->
+      <div class="detail-col">
+        <div class="detail-row detail-row--inline">
+          <div>
+            <span class="detail-label">Auto-renewal</span>
+            <span class="detail-value">
+              {{ sub.autoRenouvellement ? 'Enabled' : 'Disabled' }}
+            </span>
+          </div>
+
+          <button
+            class="kh-btn kh-btn--outline-current kh-btn--sm"
+            [disabled]="isProcessing"
+            (click)="toggleAutoRenew()"
+          >
+            <i class="bi bi-arrow-repeat"></i>
+            {{ sub.autoRenouvellement ? 'Disable Auto-Renewal' : 'Enable Auto-Renewal' }}
+          </button>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label"><i class="bi bi-credit-card"></i> Payment ref</span>
+          <div class="ref-box">
+            {{ sub.paiementRef || 'No payment reference' }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ── Available plans ── -->
-  <div class="plans-section animate-4">
-    <div class="section-head">
-      <h2>Available Plans</h2>
-      <p class="page-sub">Choose the best subscription for your business needs</p>
+  <!-- ── Plans ── -->
+  <div>
+    <div class="plans-header">
+      <div>
+        <h2>Choose Your Plan</h2>
+        <p>Choose the best subscription for your business needs</p>
+      </div>
     </div>
 
     <div class="plans-grid">
       <div
-        class="plan-card"
         *ngFor="let plan of plans"
-        [class.plan-card--current]="isCurrentPlan(plan)">
+        class="plan-card"
+        [ngClass]="{
+          'plan-card--premium': plan.type === 'PREMIUM',
+          'plan-card--institutional': plan.type === 'INSTITUTIONAL',
+          'plan-card--current': isCurrentPlan(plan)
+        }"
+      >
+        <!-- Ribbon current -->
+        <div class="plan-ribbon plan-ribbon--current" *ngIf="isCurrentPlan(plan)">
+          <i class="bi bi-check2-circle"></i>
+          Current Subscription
+        </div>
 
-        <div class="plan-card__top">
+        <!-- Ribbon institutional (only if NOT current) -->
+        <div class="plan-ribbon plan-ribbon--institutional" *ngIf="plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan)">
+          <i class="bi bi-star-fill"></i>
+          Enterprise
+        </div>
+
+        <div class="plan-top">
           <div>
             <h3>{{ plan.label }}</h3>
-            <p class="plan-desc">{{ plan.description }}</p>
+            <p>{{ plan.description }}</p>
           </div>
+
           <span
-            class="kh-badge"
+            class="plan-badge"
             [ngClass]="{
-              'kh-badge--orange': plan.type === 'PREMIUM',
-              'kh-badge--violet': plan.type === 'INSTITUTIONAL',
-              'kh-badge--neutral': plan.type === 'FREE'
-            }">
-            {{ plan.type }}
+              'plan-badge--free': plan.type === 'FREE',
+              'plan-badge--premium': plan.type === 'PREMIUM',
+              'plan-badge--institutional': plan.type === 'INSTITUTIONAL'
+            }"
+          >
+            {{ plan.type === 'FREE' ? 'Free' : (plan.type === 'PREMIUM' ? 'Premium' : 'Gold') }}
           </span>
         </div>
 
         <div class="plan-price">
-          <span class="plan-price__value">{{ plan.prix === 0 ? 'Free' : plan.prix }}</span>
-          <span class="plan-price__unit" *ngIf="plan.prix > 0">DT / period</span>
+          <span
+            class="plan-price-val"
+            [ngClass]="{
+              'plan-price-val--orange': isCurrentPlan(plan),
+              'plan-price-val--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan)
+            }"
+          >
+            {{ plan.prix === 0 ? 'Free' : plan.prix }}
+          </span>
+          <span class="plan-price-unit" *ngIf="plan.prix !== 0">DT / month</span>
         </div>
 
         <div class="plan-duration">
-          🕐 {{ plan.duree === -1 ? 'Unlimited' : (plan.duree + ' days') }}
-        </div>
+  <i class="bi bi-clock"></i>
+  {{ getDuration(plan) }}
+</div>
+
+        <div class="plan-divider"></div>
 
         <ul class="plan-features">
-          <li *ngFor="let adv of getAvantagesList(plan.avantages)">{{ adv }}</li>
-        </ul>
-
-        <div class="plan-actions">
-          <button
-            class="kh-btn kh-btn--primary"
-            (click)="openPlanModal(plan)"
-            [disabled]="!canChangePlan(plan.type) || isProcessing || isCurrentPlan(plan)">
-            <span class="kh-spinner" *ngIf="isProcessing && selectedPlan?.id === plan.id"></span>
-            {{ getButtonLabel(plan) }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ══ MODAL — Plan selection ══ -->
-<div class="modal-overlay" *ngIf="showModal" (click)="onOverlayClick($event)">
-  <div class="modal-panel">
-
-    <button class="modal-close" (click)="closeModal()">✕</button>
-
-    <!-- Step 1: Plan details -->
-    <div *ngIf="!showPayment && !paymentSuccess">
-
-      <div class="modal-header">
-        <div class="modal-plan-icon"
-          [class.icon--free]="selectedPlan?.type === 'FREE'"
-          [class.icon--premium]="selectedPlan?.type === 'PREMIUM'"
-          [class.icon--institutional]="selectedPlan?.type === 'INSTITUTIONAL'">
-          <span *ngIf="selectedPlan?.type === 'FREE'">🎁</span>
-          <span *ngIf="selectedPlan?.type === 'PREMIUM'">⭐</span>
-          <span *ngIf="selectedPlan?.type === 'INSTITUTIONAL'">🏛️</span>
-        </div>
-        <div class="modal-header-text">
-          <h2>{{ selectedPlan?.label }}</h2>
-          <p class="modal-subtitle">{{ selectedPlan?.description }}</p>
-        </div>
-        <div class="modal-price-tag">
-          <span class="modal-price-val">{{ selectedPlan?.prix === 0 ? 'Free' : selectedPlan?.prix }}</span>
-          <span class="modal-price-unit" *ngIf="selectedPlan && selectedPlan.prix > 0">DT / period</span>
-        </div>
-      </div>
-
-      <!-- Downgrade warning -->
-      <div class="modal-alert modal-alert--warn" *ngIf="isDowngrade">
-        <span>⚠️</span>
-        <div>
-          <strong>Switching to a lower plan</strong>
-          <p>Your current plan stays active until the end of the period. The new plan starts on the date you choose below.</p>
-        </div>
-      </div>
-
-      <div class="modal-info-grid">
-        <div class="modal-info-item">
-          <span class="info-label">Duration</span>
-          <strong>{{ selectedPlan?.duree === -1 ? 'Unlimited' : (selectedPlan?.duree + ' days') }}</strong>
-        </div>
-        <div class="modal-info-item">
-          <span class="info-label">Price</span>
-          <strong>{{ selectedPlan?.prix === 0 ? 'Free' : (selectedPlan?.prix + ' DT') }}</strong>
-        </div>
-        <div class="modal-info-item">
-          <span class="info-label">Type</span>
-          <span class="kh-badge"
+          <li
+            *ngFor="let item of getAvantagesList(plan.avantages || '')"
             [ngClass]="{
-              'kh-badge--orange': selectedPlan?.type === 'PREMIUM',
-              'kh-badge--violet': selectedPlan?.type === 'INSTITUTIONAL',
-              'kh-badge--neutral': selectedPlan?.type === 'FREE'
-            }">{{ selectedPlan?.type }}</span>
-        </div>
-      </div>
-
-      <div class="modal-features">
-        <p class="modal-features-title">What's included:</p>
-        <ul class="modal-features-list">
-          <li *ngFor="let adv of getAvantagesList(selectedPlan?.avantages || '')">✓ {{ adv }}</li>
+              'plan-features--orange': isCurrentPlan(plan),
+              'plan-features--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan)
+            }"
+          >
+            <i
+              class="bi bi-check2"
+              [ngClass]="{
+                'icon--orange': isCurrentPlan(plan),
+                'icon--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan),
+                'icon--teal': !isCurrentPlan(plan) && plan.type !== 'INSTITUTIONAL'
+              }"
+            ></i>
+            <span>{{ item }}</span>
+          </li>
         </ul>
-      </div>
 
-      <hr class="modal-divider">
-
-      <div class="modal-options">
-        <h3 class="modal-options-title">Subscription options</h3>
-
-        <div class="modal-option-row">
-          <div class="modal-option-info">
-            <span class="modal-option-label">🔄 Auto-renewal</span>
-            <span class="modal-option-desc">Automatically renew when your plan expires</span>
-          </div>
-          <label class="modal-toggle">
-            <input type="checkbox" [(ngModel)]="modalAutoRenew">
-            <span class="modal-toggle__slider"></span>
-          </label>
-        </div>
-
-        <div class="modal-option-row">
-          <div class="modal-option-info">
-            <span class="modal-option-label">🔔 Expiry notification</span>
-            <span class="modal-option-desc">Receive an email 7 days before expiration</span>
-          </div>
-          <label class="modal-toggle">
-            <input type="checkbox" [(ngModel)]="modalNotifyBefore">
-            <span class="modal-toggle__slider"></span>
-          </label>
-        </div>
-
-        <div class="modal-option-row" *ngIf="isDowngrade">
-          <div class="modal-option-info">
-            <span class="modal-option-label">📅 New plan start date</span>
-            <span class="modal-option-desc">When the new plan should take effect</span>
-          </div>
-          <input type="date" class="modal-date-input" [(ngModel)]="modalStartDate">
-        </div>
-      </div>
-      <div class="modal-alert modal-alert--error" *ngIf="paymentError">
-  {{ paymentError }}
-</div>
-
-      <div class="modal-footer">
-        <button class="kh-btn kh-btn--ghost" (click)="closeModal()">Cancel</button>
-        <button class="kh-btn kh-btn--primary" (click)="proceedToPayment()" [disabled]="isProcessing">
-          <span class="kh-spinner" *ngIf="isProcessing"></span>
-          <span *ngIf="selectedPlan && selectedPlan.prix === 0 && !isProcessing">Confirm for free</span>
-          <span *ngIf="selectedPlan && selectedPlan.prix > 0 && !isProcessing">Proceed to payment →</span>
+        <button
+          class="kh-btn kh-btn--full"
+          [ngClass]="{
+            'kh-btn--current-disabled': isCurrentPlan(plan),
+            'kh-btn--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan),
+            'kh-btn--action': !isCurrentPlan(plan) && plan.type !== 'INSTITUTIONAL'
+          }"
+          [disabled]="isCurrentPlan(plan) || isProcessing || !canChangePlan(plan.type)"
+          (click)="openPlanModal(plan)"
+          style="margin-top:auto;"
+        >
+          <i
+            class="bi"
+            [ngClass]="{
+              'bi-check2-circle': isCurrentPlan(plan),
+              'bi-arrow-up-right': !isCurrentPlan(plan) && isUpgrade(plan.type),
+              'bi-arrow-repeat': !isCurrentPlan(plan) && !isUpgrade(plan.type)
+            }"
+          ></i>
+          {{ getButtonLabel(plan) }}
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- Step 2: Payment -->
-    <div *ngIf="showPayment && !paymentSuccess">
-      <div class="modal-payment-header">
-        <button class="modal-back-btn" (click)="backToDetails()" [disabled]="paymentProcessing">← Back</button>
-        <h2>Secure Payment</h2>
-        <span class="modal-ssl-badge">🔒 SSL</span>
-      </div>
+  <!-- ── Modal ── -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="onOverlayClick($event)">
+    <div class="modal-card">
 
-      <div class="modal-payment-summary">
-        <span>Subscribing to</span>
-        <strong>{{ selectedPlan?.label }}</strong>
-        <span class="modal-payment-amount">{{ selectedPlan?.prix }} DT</span>
-      </div>
+      <!-- Step 1: Plan details -->
+      <div *ngIf="!showPayment && !paymentSuccess">
+        <div class="modal-head modal-head--orange">
+          <div>
+            <h3>{{ selectedPlan?.label }}</h3>
+            <p>{{ selectedPlan?.description }}</p>
+          </div>
+          <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        </div>
 
-      <div class="modal-paypal-processing" *ngIf="paymentProcessing">
-        <span class="kh-spinner kh-spinner--dark"></span>
-        <span>Processing your payment...</span>
-      </div>
+        <div class="modal-body" *ngIf="selectedPlan as plan">
+          <div class="modal-summary-grid">
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Plan</div>
+              <div class="modal-stat-value">{{ plan.label }}</div>
+            </div>
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Type</div>
+              <div class="modal-stat-value">{{ plan.type }}</div>
+            </div>
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Price</div>
+              <div class="modal-stat-value modal-stat-value--orange">
+                {{ plan.prix === 0 ? 'Free' : (plan.prix + ' DT') }}
+              </div>
+            </div>
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Duration</div>
+              <div class="modal-stat-value">{{ plan.duree === 0 ? 'Unlimited' : (plan.duree + ' days') }}</div>
+            </div>
+          </div>
 
-      <div id="paypal-button-container" [style.display]="paymentProcessing ? 'none' : 'block'"></div>
+          <label class="modal-check-row">
+            <input id="modalAutoRenew" type="checkbox" [(ngModel)]="modalAutoRenew" />
+            <label for="modalAutoRenew">Enable auto-renewal</label>
+          </label>
 
-      <div class="modal-footer" style="justify-content:center">
-        <button class="kh-btn kh-btn--ghost" (click)="closeModal()" [disabled]="paymentProcessing">Cancel</button>
-      </div>
-    </div>
+          <label class="modal-check-row">
+            <input id="modalNotifyBefore" type="checkbox" [(ngModel)]="modalNotifyBefore" />
+            <label for="modalNotifyBefore">Notify me before renewal</label>
+          </label>
 
-    <!-- Step 3: Success -->
-    <div *ngIf="paymentSuccess" class="modal-success">
-      <div class="modal-success-circle">✓</div>
-      <h2>Subscription activated!</h2>
-      <p>Your <strong>{{ selectedPlan?.label }}</strong> plan is now active.</p>
-      <div class="modal-success-options">
-        <div *ngIf="modalAutoRenew">🔄 Auto-renewal enabled</div>
-        <div *ngIf="modalNotifyBefore">🔔 Expiry notification enabled</div>
-        <div *ngIf="currentSubscription?.paiementRef">
-          💳 Ref: {{ currentSubscription?.paiementRef }}
+          <div class="form-group" *ngIf="isDowngrade">
+            <label for="modalStartDate">Start date</label>
+            <input id="modalStartDate" type="date" [(ngModel)]="modalStartDate" />
+          </div>
+
+          <p class="form-error" *ngIf="paymentError">{{ paymentError }}</p>
+
+          <div class="modal-actions">
+            <button type="button" class="kh-btn kh-btn--ghost" (click)="closeModal()">Cancel</button>
+            <button
+              type="button"
+              class="kh-btn kh-btn--orange"
+              [disabled]="isProcessing"
+              (click)="proceedToPayment()"
+            >
+              <i class="bi bi-credit-card"></i>
+              {{ plan.prix === 0 ? 'Confirm Plan' : 'Proceed to Payment' }}
+            </button>
+          </div>
         </div>
       </div>
-      <button class="kh-btn kh-btn--primary" style="margin-top:8px" (click)="closeModal()">Close</button>
-    </div>
 
+      <!-- Step 2: Payment -->
+      <div *ngIf="showPayment && !paymentSuccess">
+        <div class="modal-head modal-head--dark">
+          <div>
+            <h3>Secure Payment</h3>
+            <p>Choose your preferred payment method</p>
+          </div>
+          <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="amount-due">
+            <div>
+              <div class="amount-due-label">Amount due</div>
+              <div class="amount-due-sub">{{ selectedPlan?.label }} · {{ selectedPlan?.duree }} days</div>
+            </div>
+            <div class="amount-due-value">
+              <span class="amount-due-number">{{ selectedPlan?.prix }}</span>
+              <span class="amount-due-unit">DT</span>
+            </div>
+          </div>
+
+          <div id="paypal-button-container"></div>
+
+          <p class="form-error" *ngIf="paymentError">{{ paymentError }}</p>
+
+          <button
+            type="button"
+            class="kh-btn kh-btn--ghost kh-btn--full"
+            (click)="backToDetails()"
+          >
+            <i class="bi bi-arrow-left"></i> Back
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Payment success -->
+      <div *ngIf="paymentSuccess">
+        <div class="modal-head modal-head--green">
+          <div>
+            <h3>Payment Confirmed</h3>
+            <p>Your subscription has been activated</p>
+          </div>
+          <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="payment-success-box">
+            <div class="payment-success-icon">
+              <i class="bi bi-check-lg"></i>
+            </div>
+            <h4>Payment Successful!</h4>
+            <p>Your {{ selectedPlan?.label }} plan is now active. Welcome aboard!</p>
+
+            <div class="payment-ref-grid" *ngIf="currentSubscription">
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Payment reference</span>
+                <span class="payment-ref-value payment-ref-value--orange">{{ currentSubscription.paiementRef }}</span>
+              </div>
+              <div class="payment-ref-divider"></div>
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Subscription starts</span>
+                <span class="payment-ref-value">{{ currentSubscription.dateDebut | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="payment-ref-divider"></div>
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Subscription ends</span>
+                <span class="payment-ref-value">{{ currentSubscription.dateFin | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="payment-ref-divider"></div>
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Amount paid</span>
+                <span class="payment-ref-value payment-ref-value--green">{{ selectedPlan?.prix }} DT</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="kh-btn kh-btn--teal kh-btn--full"
+              (click)="closeModal()"
+            >
+              <i class="bi bi-check2-circle"></i> Done
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
+
 </div>

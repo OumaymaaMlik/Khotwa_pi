@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import tn.khotwa.entity.SubscriptionEntities.Subscription;
-import tn.khotwa.entity.SubscriptionEntities.User;
+import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
 
@@ -35,7 +35,7 @@ public class ExpirationNotificationScheduler {
 
         for (Subscription sub : subs) {
             User user = sub.getUser();
-            if (user == null || user.getEmail() == null) continue;
+            if (user == null || user.getEmailAddress() == null) continue;
 
             long daysLeft = ChronoUnit.DAYS.between(today, sub.getDateFin());
             if (daysLeft < 0) continue;
@@ -46,14 +46,14 @@ public class ExpirationNotificationScheduler {
 
             try {
                 emailService.sendExpirationWarning(
-                        user.getEmail(),
-                        user.getPrenom(),
+                        user.getEmailAddress(),
+                        user.getFirstName(),
                         planLabel,
                         daysLeft
                 );
-                log.info("Expiration email sent to {} ({}d left)", user.getEmail(), daysLeft);
+                log.info("Expiration email sent to {} ({}d left)", user.getEmailAddress(), daysLeft);
             } catch (Exception e) {
-                log.error("Failed to send email to {}: {}", user.getEmail(), e.getMessage());
+                log.error("Failed to send email to {}: {}", user.getEmailAddress(), e.getMessage());
             }
         }
     }

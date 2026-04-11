@@ -1,9 +1,9 @@
 package tn.khotwa.entity.SubscriptionEntities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
+import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 
@@ -45,8 +45,8 @@ public class Subscription {
     @Column(name = "paiement_ref")
     private String paiementRef;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Transient
