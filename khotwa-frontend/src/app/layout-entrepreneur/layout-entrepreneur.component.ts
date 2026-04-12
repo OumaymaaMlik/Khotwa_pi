@@ -1,8 +1,13 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
+import { MessageService } from '../core/services/message.service';
+import { WebSocketService } from '../core/services/websocket.service';
+import { OnlineStatusService } from '../core/services/online-status.service';
+import { UserRole } from '../core/models';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 interface NavItem { label: string; icon: string; route: string; }
 
@@ -11,21 +16,22 @@ interface NavItem { label: string; icon: string; route: string; }
   templateUrl: './layout-entrepreneur.component.html',
   styleUrls: ['./layout-entrepreneur.component.css']
 })
-export class LayoutEntrepreneurComponent implements OnInit {
-  notifOpen   = false;
-  mobileOpen  = false;
+export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
+  notifOpen    = false;
+  mobileOpen   = false;
   userMenuOpen = false;
-  currentUrl  = '';
-  scrolled    = false;
+  currentUrl   = '';
+  scrolled     = false;
+  private wsSubscriptions: Subscription[] = [];
 
   navItems: NavItem[] = [
     { label: 'Dashboard',   icon: 'dashboard', route: 'dashboard'    },
-    { label: 'Projects',     icon: 'folder',    route: 'projets'      },
+    { label: 'Projects',    icon: 'folder',    route: 'projets'      },
     { label: 'Workflows',   icon: 'workflow',  route: 'workflows'    },
     { label: 'Planning',    icon: 'calendar',  route: 'planning'     },
     { label: 'Messages',    icon: 'message',   route: 'messages'     },
-    { label: 'Library',icon: 'book',      route: 'bibliotheque' },
-    { label: 'Progress', icon: 'progress',  route: 'progressions' },
+    { label: 'Library',     icon: 'book',      route: 'bibliotheque' },
+    { label: 'Progress',    icon: 'progress',  route: 'progressions' },
     { label: 'Talent',      icon: 'people',    route: 'talent'       },
   ];
 
@@ -43,13 +49,45 @@ export class LayoutEntrepreneurComponent implements OnInit {
     logout:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
   };
 
-  constructor(public auth: AuthService, public notifService: NotificationService, private router: Router) {}
+  constructor(
+    public auth: AuthService, 
+    public notifService: NotificationService, 
+    private messageService: MessageService, 
+    private wsService: WebSocketService, 
+    private onlineStatusService: OnlineStatusService, 
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
+
+    // Messaging and Notification Subscriptions
+    this.wsSubscriptions.push(
+      this.wsService.newNotification$.subscribe(n => this.notifService.addNotification(n)),
+      this.wsService.status$.subscribe(event => {
+        event.online ? this.onlineStatusService.addOnlineUser(event.userId) : this.onlineStatusService.removeOnlineUser(event.userId);
+      })
+    );
+
+    // Sync online users from backend
+    this.messageService.getOnlineUsers().subscribe({
+      next: (users) => { if (users) this.onlineStatusService.updateOnlineUsers(new Set(users)); }
+    });
   }
+
+  ngOnDestroy() {
+    this.wsSubscriptions.forEach(s => s.unsubscribe());
+  }
+
+  get rolePrefix(): string {
+  const r = this.auth.role;
+  if (r === 'ADMIN') return '/khotwaadmin';
+  if (r === 'ENTREPRENEUR') return '/entrepreneur';
+  if (r === 'COACH') return '/coach';
+  return '';
+}
 
   @HostListener('window:scroll', [])
   onScroll() { this.scrolled = window.scrollY > 10; }
@@ -57,12 +95,41 @@ export class LayoutEntrepreneurComponent implements OnInit {
   isActive(route: string): boolean { return this.currentUrl.includes(`/${route}`); }
   getIcon(name: string): string { return this.svgIcons[name] || ''; }
   getRoute(route: string): string { return `/entrepreneur/${route}`; }
-  logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
 
-  get nonLus(): number { return this.notifService.nonLus(); }
-  get notifs() { return this.notifService.notifs(); }
+  logout() { 
+    const user = this.auth.currentUser;
+    if (user?.idUser) {
+      this.messageService.announceOffline(user.idUser).subscribe({
+        next: () => { this.auth.logout(); },
+        error: () => { this.auth.logout(); } // Logout anyway if API fails
+      });
+    } else {
+      this.auth.logout();
+    }
+  }
+
+  private performLogout() {
+    this.auth.logout();
+    this.router.navigateByUrl('/');
+  }
+
+  onNotificationClick(notification: any) {
+    this.notifService.markRead(notification.id);
+    this.notifOpen = false;
+    
+    // senderId is now the numeric ID (idUser) from the database
+    if (notification.senderId) {
+      this.router.navigateByUrl(`${this.rolePrefix}/messages?conversationId=${notification.senderId}`);
+    } else {
+      this.router.navigateByUrl(`${this.rolePrefix}/messages`);
+    }
+  }
+
+  get nonLus(): number { return Math.min(this.notifService.nonLus(), 99); }
+  get notifs() { return this.notifService.latestFive(); }
+
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.prenom?.[0] ?? ''}${u?.nom?.[0] ?? ''}`;
+    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`.toUpperCase();
   }
 }

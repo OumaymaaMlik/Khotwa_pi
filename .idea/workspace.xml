@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="9cea7d6a-7d57-4f1b-8b98-94094c4df2c4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/biblio/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/config/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/khotwa-ng/.tsbuildinfo" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/khotwa-ng/.tsbuildinfo" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common_http.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common_http.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common_http.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_common_http.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_core.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_core.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_core.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_core.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_forms.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_forms.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_forms.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_forms.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_platform-browser.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_platform-browser.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_platform-browser.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_platform-browser.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_router.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_router.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_router.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/@angular_router.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/_metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/_metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-2DJJH5CC.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-2DJJH5CC.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-APQJ6POP.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-APQJ6POP.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-CONQKHOI.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-CONQKHOI.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-FGIJWRIL.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-FGIJWRIL.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-GC5FLHL6.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-GC5FLHL6.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-IGJZNA3K.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-IGJZNA3K.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-V4GYEGQC.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/chunk-V4GYEGQC.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs_operators.js" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs_operators.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs_operators.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/17.3.17/vite/deps/rxjs_operators.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/angular.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/angular.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/models/message.model.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/models/message.model.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/auth.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/auth.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/notification.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/notification.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/admin.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/admin.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/coach.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/coach.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/entrepreneur.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/entrepreneur.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-entrepreneur/layout-entrepreneur.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-entrepreneur/layout-entrepreneur.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/tsconfig.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 8
+}]]></component>
+  <component name="ProjectId" id="3CDr6WWcRrotQ85Ief4xVRJ7aAz" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "hazem",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Mega-Pc/Desktop/Esprit/4ArcTIC2/PI/Git/Khotwa_pi/khotwa-backend",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-125ca727e0f0-intellij.indexing.shared.core-IU-243.23654.153" />
+        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-IU-243.23654.153" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9cea7d6a-7d57-4f1b-8b98-94094c4df2c4" name="Changes" comment="" />
+      <created>1775930806796</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1775930806796</updated>
+      <workItem from="1775930807835" duration="15000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

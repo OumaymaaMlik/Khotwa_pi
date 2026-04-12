@@ -1,32 +1,41 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { UserRole } from '../core/models';
 import { filter } from 'rxjs/operators';
+import { MessageService } from '../core/services/message.service';
+import { WebSocketService } from '../core/services/websocket.service';
+import { OnlineStatusService } from '../core/services/online-status.service';
+import { Subscription } from 'rxjs';
 
 interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
 
-@Component({ selector: 'app-layout', templateUrl: './layout.component.html', styleUrls: ['./layout.component.css'] })
-export class LayoutComponent implements OnInit {
+@Component({ 
+  selector: 'app-layout', 
+  templateUrl: './layout.component.html', 
+  styleUrls: ['./layout.component.css'] 
+})
+export class LayoutComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
   notifOpen = false;
   currentUrl = '';
+  private wsSubscriptions: Subscription[] = [];
 
   navItems: NavItem[] = [
-    { label: 'Dashboard',    icon: 'dashboard', route: 'dashboard',    roles: ['admin','entrepreneur','coach'] },
-    { label: 'Projects',     icon: 'folder',    route: 'projets',      roles: ['admin','entrepreneur','coach'] },
-    { label: 'Workflows',    icon: 'workflow',  route: 'workflows',    roles: ['entrepreneur'] },
-    { label: 'Planning',     icon: 'calendar',  route: 'planning',     roles: ['admin','entrepreneur','coach'] },
-    { label: 'Messages',     icon: 'message',   route: 'messages',     roles: ['admin','entrepreneur','coach'] },
-    { label: 'Library',      icon: 'book',      route: 'bibliotheque', roles: ['admin','entrepreneur','coach'] },
-    { label: 'My Progress',   icon: 'progress',  route: 'progressions', roles: ['entrepreneur','coach'] },
-    { label: 'My Startups',  icon: 'rocket',    route: 'startups',     roles: ['coach'] },
-    { label: 'Validations',  icon: 'check',     route: 'validations',  roles: ['coach'] },
-    { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['admin'] },
-    { label: 'Talent Market',icon: 'people',    route: 'talent',       roles: ['admin','entrepreneur','coach'] },
-    { label: 'Subscriptions',icon: 'card',      route: 'abonnements',  roles: ['admin'] },
-    { label: 'Users',        icon: 'users',     route: 'utilisateurs', roles: ['admin'] },
+    { label: 'Dashboard',     icon: 'dashboard', route: 'dashboard',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Projects',      icon: 'folder',    route: 'projets',       roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Workflows',     icon: 'workflow',  route: 'workflows',     roles: ['ENTREPRENEUR'] },
+    { label: 'Planning',      icon: 'calendar',  route: 'planning',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Messages',      icon: 'message',   route: 'messages',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Library',       icon: 'book',      route: 'bibliotheque',  roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'My Progress',   icon: 'progress',  route: 'progressions',  roles: ['ENTREPRENEUR','COACH'] },
+    { label: 'My Startups',   icon: 'rocket',    route: 'startups',      roles: ['COACH'] },
+    { label: 'Validations',   icon: 'check',     route: 'validations',   roles: ['COACH'] },
+    { label: 'Events',        icon: 'event',     route: 'evenements',    roles: ['ADMIN'] },
+    { label: 'Talent Market', icon: 'people',    route: 'talent',        roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Subscriptions', icon: 'card2',     route: 'subscriptions', roles: ['ADMIN'] },
+    { label: 'Users',         icon: 'users',     route: 'utilisateurs',  roles: ['ADMIN'] },
   ];
 
   svgIcons: Record<string, string> = {
@@ -45,11 +54,35 @@ export class LayoutComponent implements OnInit {
     users:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   };
 
-  constructor(public auth: AuthService, public notifService: NotificationService, private router: Router) {}
+  constructor(
+    public auth: AuthService, 
+    public notifService: NotificationService,  
+    private messageService: MessageService, 
+    private wsService: WebSocketService, 
+    private onlineStatusService: OnlineStatusService, 
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
+
+    // WebSocket subscriptions
+    this.wsSubscriptions.push(
+      this.wsService.newNotification$.subscribe(n => this.notifService.addNotification(n)),
+      this.wsService.status$.subscribe(event => {
+        event.online ? this.onlineStatusService.addOnlineUser(event.userId) : this.onlineStatusService.removeOnlineUser(event.userId);
+      })
+    );
+
+    // Initial online users list from backend
+    this.messageService.getOnlineUsers().subscribe({
+      next: (users) => { if (users) this.onlineStatusService.updateOnlineUsers(new Set(users)); }
+    });
+  }
+
+  ngOnDestroy() {
+    this.wsSubscriptions.forEach(s => s.unsubscribe());
   }
 
   get visibleNav(): NavItem[] {
@@ -59,24 +92,51 @@ export class LayoutComponent implements OnInit {
 
   get roleLabel(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'admin' ? 'Administrator' : r === 'entrepreneur' ? 'Entrepreneur' : r === 'coach' ? 'Coach' : '';
+    return r === 'ADMIN' ? 'Administrator' : r === 'ENTREPRENEUR' ? 'Entrepreneur' : r === 'COACH' ? 'Coach' : '';
   }
 
   get roleColor(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'admin' ? '#E8622A' : r === 'entrepreneur' ? '#2ABFBF' : '#7C5CBF';
+    return r === 'ADMIN' ? '#E8622A' : r === 'ENTREPRENEUR' ? '#2ABFBF' : '#7C5CBF';
   }
 
   get rolePrefix(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'admin' ? '/khotwaadmin' : r === 'entrepreneur' ? '/entrepreneur' : '/coach';
+    return r === 'ADMIN' ? '/khotwaadmin' : r === 'ENTREPRENEUR' ? '/entrepreneur' : '/coach';
   }
 
   getRoute(item: NavItem): string { return `${this.rolePrefix}/${item.route}`; }
   getIcon(name: string): string { return this.svgIcons[name] || ''; }
   isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
-  switchRole(role: UserRole) { this.auth.login(role); this.router.navigateByUrl(this.auth.getDefaultRoute()); }
-  logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
-  get nonLus(): number { return this.notifService.nonLus(); }
-  get notifs() { return this.notifService.notifs(); }
+
+  logout() { 
+    const currentUser = this.auth.currentUser;
+    if (currentUser?.idUser) {
+      this.messageService.announceOffline(currentUser.idUser).subscribe({
+        next: () => { this.performLogout(); },
+        error: () => { this.performLogout(); }
+      });
+    } else {
+      this.performLogout();
+    }
+  }
+
+  private performLogout() {
+    this.auth.logout();
+    this.router.navigateByUrl('/');
+  }
+
+  onNotificationClick(notification: any) {
+    this.notifService.markRead(notification.id);
+    this.notifOpen = false;
+    // senderId from backend is now the numeric idUser
+    if (notification.senderId) {
+      this.router.navigateByUrl(`${this.rolePrefix}/messages?conversationId=${notification.senderId}`);
+    } else {
+      this.router.navigateByUrl(`${this.rolePrefix}/messages`);
+    }
+  }
+
+  get nonLus(): number { return Math.min(this.notifService.nonLus(), 99); }
+  get notifs() { return this.notifService.latestFive(); }
 }
