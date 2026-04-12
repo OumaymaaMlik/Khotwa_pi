@@ -1,0 +1,239 @@
+<div class="page animate-1">
+  <div class="page-header">
+    <div>
+      <h1 class="kh-page-title">Events & Workshops</h1>
+      <p class="page-sub">{{ filteredEvents.length }} événement(s) trouvé(s)</p>
+    </div>
+    <button class="kh-btn kh-btn--primary" (click)="openCreate()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Créer un événement
+    </button>
+  </div>
+
+  <div class="stats-bar animate-2">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ totalEvents }}</span>
+        <span class="stat-label">ÉVÉNEMENTS</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--orange">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ totalParticipants }}</span>
+        <span class="stat-label">INSCRIPTIONS</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ totalSeatsAvailable }}</span>
+        <span class="stat-label">PLACES LIBRES</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar animate-3" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+    <div class="search-wrap" style="flex: 1;">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="Titre, intervenant..." [(ngModel)]="searchQuery" />
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <div class="filter-wrap">
+        <select class="filter-select" [(ngModel)]="filtre">
+          <option value="TOUS">Tous les types</option>
+          <option *ngFor="let t of types" [value]="t">{{ typeLabel(t) }}</option>
+        </select>
+      </div>
+
+      <div class="filter-wrap">
+        <select class="filter-select" [(ngModel)]="filtrePlan">
+          <option value="tous">Tous les Plans</option>
+          <option *ngFor="let p of plans" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <button class="view-toggle" [class.active]="viewMode==='calendar'" (click)="toggleView()" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Calendrier</span>
+      </button>
+    </div>
+  </div>
+
+ <div class="grid" *ngIf="viewMode === 'grid'">
+  <div *ngFor="let ev of filteredEvents" class="card">
+    
+    <!-- Top badges -->
+    <div class="card-top">
+      <span class="kh-badge" [ngClass]="badgeClass(ev.type)">{{ typeLabel(ev.type) }}</span>
+      <span class="kh-badge" [ngClass]="placeBadgeClass(ev.placesRestantes)">
+        {{ ev.placesRestantes }} places
+      </span>
+      <!-- Badge statut -->
+      <span class="kh-badge" [ngClass]="{
+        'kh-badge--amber': ev.statut === 'PENDING',
+        'kh-badge--green': ev.statut === 'ACCEPTED',
+        'kh-badge--red':   ev.statut === 'REJECTED'
+      }">{{ ev.statut }}</span>
+    </div>
+
+    <!-- Titre -->
+    <h3 class="card-name">{{ ev.titre }}</h3>
+    <p class="card-desc">{{ ev.description }}</p>
+
+    <!-- Infos clés -->
+    <div class="card-meta">
+      <div class="meta-row" *ngIf="ev.date">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+        </svg>
+        <span>{{ ev.date | date:'dd/MM/yyyy' }} &nbsp;·&nbsp; {{ ev.heure }}</span>
+      </div>
+      <div class="meta-row" *ngIf="ev.intervenant">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+        <span>{{ ev.intervenant }}</span>
+      </div>
+      <div class="meta-row" *ngIf="ev.planType">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/>
+        </svg>
+        <span>{{ ev.planType }}</span>
+      </div>
+      <div class="meta-row" *ngIf="ev.lienMeet">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 10l4.553-2.277A1 1 0 0121 8.65v6.7a1 1 0 01-1.447.898L15 14"/>
+          <rect x="2" y="7" width="13" height="10" rx="2"/>
+        </svg>
+        <a [href]="ev.lienMeet" target="_blank" style="color: #0d9488; font-size: 12px;">Rejoindre</a>
+      </div>
+    </div>
+
+    <!-- Barre remplissage -->
+    <div class="capacity-bar">
+      <div class="capacity-fill" 
+           [style.width.%]="((ev.placesTotal - ev.placesRestantes) / ev.placesTotal) * 100"
+           [style.background]="ev.placesRestantes === 0 ? '#ef4444' : ev.placesRestantes < 5 ? '#f59e0b' : '#0d9488'">
+      </div>
+    </div>
+    <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 10px;">
+      {{ ev.placesTotal - ev.placesRestantes }}/{{ ev.placesTotal }} inscrits
+    </span>
+
+    <!-- Actions CRUD -->
+    <div class="card-footer">
+      <!-- Boutons statut si PENDING -->
+      <ng-container *ngIf="ev.statut === 'PENDING'">
+        <button class="kh-btn kh-btn--sm" 
+                style="background:#dcfce7; color:#16a34a; border:none;"
+                (click)="changeStatus(ev, 'ACCEPTED')">✓ Accepter</button>
+        <button class="kh-btn kh-btn--sm"
+                style="background:#fee2e2; color:#dc2626; border:none;"
+                (click)="changeStatus(ev, 'REJECTED')">✗ Rejeter</button>
+      </ng-container>
+      <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openEdit(ev)">Modifier</button>
+      <button class="kh-btn kh-btn--danger kh-btn--sm" (click)="deleteTarget=ev; showDelete=true">Supprimer</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="overlay" *ngIf="showCreate">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Nouvel Événement</h2>
+      <button class="modal-x" (click)="showCreate=false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Titre</label>
+        <input class="kh-input" [(ngModel)]="newEvent.titre" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea class="kh-input" [(ngModel)]="newEvent.description"></textarea>
+      </div>
+      <div class="field">
+        <label>Intervenant / Speaker</label>
+        <input class="kh-input" [(ngModel)]="newEvent.intervenant" placeholder="Nom de l'expert..." />
+        <small class="error-text" *ngIf="createErrors['intervenant']">{{ createErrors['intervenant'] }}</small>
+      </div>
+      <div class="field-row" style="display: flex; gap: 10px;">
+        <div class="field" style="flex: 1;">
+          <label>Type</label>
+          <select class="kh-input" [(ngModel)]="newEvent.type">
+            <option *ngFor="let t of types" [value]="t">{{ typeLabel(t) }}</option>
+          </select>
+        </div>
+        <div class="field" style="flex: 1;">
+          <label>Plan</label>
+          <select class="kh-input" [(ngModel)]="newEvent.planType">
+            <option *ngFor="let p of plans" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row" style="display: flex; gap: 10px;">
+        <div class="field" style="flex: 1;">
+          <label>Date</label>
+          <input type="date" class="kh-input" [(ngModel)]="newEvent.date" />
+        </div>
+        <div class="field" style="flex: 1;">
+          <label>Heure</label>
+          <input type="time" class="kh-input" [(ngModel)]="newEvent.heure" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Places Totales</label>
+        <input type="number" class="kh-input" [(ngModel)]="newEvent.placesTotal" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="showCreate=false">Annuler</button>
+      <button class="kh-btn kh-btn--primary" (click)="submitCreate()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" *ngIf="showEdit">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Modifier l'Événement</h2>
+        <button class="modal-x" (click)="showEdit=false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label>Titre</label>
+          <input class="kh-input" [(ngModel)]="editForm.titre" />
+        </div>
+        <div class="field">
+            <label>Intervenant</label>
+            <input class="kh-input" [(ngModel)]="editForm.intervenant" />
+        </div>
+        <div class="field">
+          <label>Places Totales</label>
+          <input type="number" class="kh-input" [(ngModel)]="editForm.placesTotal" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="kh-btn kh-btn--ghost" (click)="showEdit=false">Annuler</button>
+        <button class="kh-btn kh-btn--primary" (click)="submitEdit()">Enregistrer</button>
+      </div>
+    </div>
+</div>

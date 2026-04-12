@@ -1,0 +1,264 @@
+<div class="page-container">
+
+  <div class="hero-section" *ngIf="!isPlanSelected">
+    <div class="hero-content">
+      <span class="hero-icon">🎭</span>
+      <h1>Discover our Events</h1>
+      <p>
+        Become an expert in the performing arts with our certified
+        training programs, pitches, and workshops.
+      </p>
+      <button class="btn-main" (click)="togglePlanSelector()">
+        Our Events
+      </button>
+
+      <div class="plan-selector-inline" *ngIf="showPlanSelection">
+
+        <div class="plan-card-selector" (click)="selectPlanView('FREE')">
+          <span class="plan-icon-big">🎟</span>
+          <h4>Free</h4>
+          <small>Free access</small>
+        </div>
+
+        <div class="plan-card-selector featured" (click)="selectPlanView('PREMIUM')">
+          <span class="plan-popular-badge">Most popular</span>
+          <span class="plan-icon-big">💎</span>
+          <h4>Premium</h4>
+          <small>All events</small>
+        </div>
+
+        <div class="plan-card-selector" (click)="selectPlanView('INSTITUTIONAL')">
+          <span class="plan-icon-big">🏛</span>
+          <h4>Institutional</h4>
+          <small>Group access</small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <div class="dashboard-area" *ngIf="isPlanSelected">
+
+    <div class="header-stats-card">
+      <div class="header-main">
+        <div class="icon-square">📅</div>
+        <div>
+          <h2>Upcoming Events</h2>
+          <p>Browse and register for events matching your plan</p>
+        </div>
+      </div>
+
+      <div class="stats-group">
+        <div class="stat-item">
+          <strong>{{ filteredEvents.length }}</strong>
+          <span>EVENTS</span>
+        </div>
+        <div class="stat-item">
+          <strong>{{ bookings.length }}</strong>
+          <span>MY BOOKINGS</span>
+        </div>
+        <div class="stat-plan-box">
+          <span class="plan-tag" [ngClass]="currentUserPlan.toLowerCase()">
+            {{ currentUserPlan }}
+          </span>
+          <span>MY PLAN</span>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngFor="let booking of recentBookings">
+      <div class="booking-toast">
+        <div class="toast-check">✓</div>
+        <div class="toast-body">
+          <h4>Booking confirmed!</h4>
+          <p>Your seat for "{{ booking.titre }}" has been reserved.</p>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="search-bar-pill">
+      <div class="search-col">
+        <label>DATE</label>
+        <select [(ngModel)]="monthFilter">
+          <option value="ALL">All dates</option>
+          <option *ngFor="let m of months; let i = index" [value]="i">
+            {{ m }}
+          </option>
+        </select>
+      </div>
+
+      <div class="v-divider"></div>
+
+      <div class="search-col">
+        <label>TYPE</label>
+        <select [(ngModel)]="typeFilter">
+          <option value="ALL">All types (Pitch, Webinar…)</option>
+          <option value="WEBINAR">Webinar</option>
+          <option value="PITCH">Pitch</option>
+          <option value="FORMATION">Formation</option>
+          <option value="COACHING">Coaching</option>
+        </select>
+      </div>
+
+      <button class="btn-search-pill" (click)="onSearch()">Search</button>
+    </div>
+
+
+    <div class="events-list" *ngIf="filteredEvents.length > 0; else emptyState">
+
+      <div
+        class="workflow-card"
+        *ngFor="let ev of filteredEvents"
+        [class.locked]="isLocked(ev)"
+      >
+        <div
+          class="side-accent"
+          [ngClass]="ev.planType === 'PREMIUM' ? 'premium' : 'free'"
+        ></div>
+
+        <div class="card-content">
+          <div class="card-left">
+            <div class="card-title">{{ ev.titre }}</div>
+            <div class="card-meta">
+              <span>{{ ev.date | date:'MMM d, y' }}</span>
+              <span class="meta-sep">·</span>
+              <span>{{ ev.lieu || 'Online' }}</span>
+            </div>
+          </div>
+
+          <div class="card-right">
+            <span class="type-pill" [ngClass]="ev.type?.toLowerCase()">{{ ev.type }}</span>
+
+            <span class="lock-badge" *ngIf="isLocked(ev)">
+              🔒 {{ ev.planType }}
+            </span>
+
+            <ng-container *ngIf="!isLocked(ev)">
+              <button class="btn-view-details" (click)="openDetails(ev)">
+                Details
+              </button>
+              <button
+                class="btn-reserve"
+                [class.premium-btn]="ev.planType === 'PREMIUM'"
+                (click)="openBookingModal(ev)"
+                [disabled]="isAlreadyBooked(ev)"
+              >
+                {{ isAlreadyBooked(ev) ? 'Booked ✓' : 'Reserve a seat' }}
+              </button>
+            </ng-container>
+
+            <button class="btn-upgrade" *ngIf="isLocked(ev)" (click)="upgrade()">
+              Upgrade to unlock
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <span class="empty-icon">📂</span>
+        <h3>No events found</h3>
+        <p>Try adjusting your filters or check back later.</p>
+        <button
+          *ngIf="currentUserPlan === 'FREE'"
+          class="btn-upgrade"
+          (click)="upgrade()"
+        >
+          Unlock Premium events
+        </button>
+        <button
+          *ngIf="currentUserPlan !== 'FREE'"
+          class="btn-main"
+          (click)="resetFilters()"
+        >
+          Clear filters
+        </button>
+      </div>
+    </ng-template>
+
+  </div>
+
+
+  <div class="modal-backdrop" *ngIf="bookingTarget" (click)="closeBookingModal()">
+    <div class="booking-modal" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h3>{{ bookingTarget.titre }}</h3>
+        <p>Please confirm your reservation for this event.</p>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-detail-row">
+          <span>Date</span>
+          <span>{{ bookingTarget.date | date:'MMMM d, y' }}</span>
+        </div>
+        <div class="modal-detail-row">
+          <span>Location</span>
+          <span>{{ bookingTarget.lieu || 'Online' }}</span>
+        </div>
+        <div class="modal-detail-row">
+          <span>Type</span>
+          <span>{{ bookingTarget.type }}</span>
+        </div>
+        <div class="modal-detail-row">
+          <span>Access level</span>
+          <span>{{ bookingTarget.planType || 'FREE' }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="closeBookingModal()">Cancel</button>
+        <button class="btn-modal-confirm" (click)="confirmBooking()">
+          Confirm booking
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="modal-backdrop" *ngIf="selectedEvent" (click)="closeDetails()">
+    <div class="booking-modal" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h3>{{ selectedEvent.titre }}</h3>
+        <p>{{ selectedEvent.description }}</p>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-detail-row">
+          <span>Date</span>
+          <span>{{ selectedEvent.date | date:'MMMM d, y' }}</span>
+        </div>
+        <div class="modal-detail-row">
+          <span>Location</span>
+          <span>{{ selectedEvent.lieu || 'Online' }}</span>
+        </div>
+        <div class="modal-detail-row">
+          <span>Type</span>
+          <span>{{ selectedEvent.type }}</span>
+        </div>
+        <div class="modal-detail-row">
+          <span>Capacity</span>
+          <span>{{ selectedEvent.capacite || '—' }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="closeDetails()">Close</button>
+        <button
+          class="btn-modal-confirm"
+          (click)="openBookingModal(selectedEvent); closeDetails()"
+          *ngIf="!isLocked(selectedEvent) && !isAlreadyBooked(selectedEvent)"
+        >
+          Reserve a seat
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

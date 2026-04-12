@@ -1,0 +1,596 @@
+/* ============================================
+   ENTREPRENEUR EVENTS COMPONENT - FULL STYLES
+   ============================================ */
+
+/* ---- TOKENS ---- */
+:host {
+  --teal:        #1D9E75;
+  --teal-light:  #E1F5EE;
+  --teal-dark:   #085041;
+  --orange:      #BA7517;
+  --orange-light:#FAEEDA;
+  --slate:       #1E293B;
+  --blue:        #185FA5;
+  --blue-light:  #E6F1FB;
+  --blue-dark:   #0C447C;
+  --border:      rgba(0, 0, 0, 0.09);
+  --muted:       #64748B;
+  --subtle:      #94A3B8;
+  --bg-page:     #F8FAFC;
+}
+
+.page-container {
+  background: var(--bg-page);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--slate);
+}
+
+/* ============================================================
+   1. HERO SECTION
+   ============================================================ */
+.hero-section {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  flex-direction: column;
+}
+
+.hero-icon {
+  font-size: 42px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.hero-content h1 {
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 14px;
+  letter-spacing: -0.5px;
+}
+
+.hero-content p {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 520px;
+  margin: 0 auto 28px;
+  line-height: 1.7;
+}
+
+.btn-main {
+  background: var(--slate);
+  color: white;
+  border: none;
+  padding: 13px 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-main:hover { background: #334155; }
+
+/* ---- INLINE PLAN SELECTOR (appears below hero button) ---- */
+.plan-selector-inline {
+  margin-top: 32px;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fadeSlideIn 0.25s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.plan-card-selector {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 22px;
+  width: 160px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.plan-card-selector:hover {
+  border-color: var(--teal);
+  transform: translateY(-4px);
+}
+
+.plan-card-selector.featured {
+  border: 2px solid var(--teal);
+}
+
+.plan-card-selector .plan-popular-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--teal);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.plan-card-selector .plan-icon-big {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.plan-card-selector h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 4px;
+}
+
+.plan-card-selector small {
+  font-size: 12px;
+  color: var(--subtle);
+}
+
+/* ============================================================
+   2. DASHBOARD AREA
+   ============================================================ */
+.dashboard-area {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 36px 20px 60px;
+}
+
+/* ---- Header stats card ---- */
+.header-stats-card {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.icon-square {
+  background: var(--blue-light);
+  font-size: 22px;
+  padding: 14px;
+  border-radius: 12px;
+  line-height: 1;
+}
+
+.header-main h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.header-main p {
+  font-size: 13px;
+  color: var(--subtle);
+  margin: 0;
+}
+
+.stats-group {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--slate);
+}
+
+.stat-item span {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--subtle);
+  letter-spacing: 0.5px;
+}
+
+.stat-plan-box {
+  text-align: center;
+}
+
+.plan-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.plan-tag.FREE          { background: #F1F5F9; color: var(--slate); }
+.plan-tag.PREMIUM       { background: var(--teal-light); color: var(--teal-dark); }
+.plan-tag.INSTITUTIONAL { background: var(--blue-light); color: var(--blue-dark); }
+
+.stat-plan-box > span:last-child {
+  display: block;
+  font-size: 10px;
+  color: var(--subtle);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ---- Search bar pill ---- */
+.search-bar-pill {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  padding: 10px 10px 10px 28px;
+  margin-bottom: 32px;
+}
+
+.search-col {
+  flex: 1;
+}
+
+.search-col label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--subtle);
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.search-col select {
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--slate);
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  appearance: none;
+}
+
+.v-divider {
+  width: 1px;
+  height: 36px;
+  background: #E2E8F0;
+  margin: 0 24px;
+}
+
+.btn-search-pill {
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 13px 42px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-search-pill:hover { background: var(--blue-dark); }
+
+/* ============================================================
+   3. EVENT CARDS (workflow row style)
+   ============================================================ */
+.events-list { }
+
+.workflow-card {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 14px;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+
+.workflow-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+.side-accent          { width: 5px; flex-shrink: 0; background: var(--orange); }
+.side-accent.premium  { background: var(--blue); }
+.side-accent.free     { background: var(--teal); }
+
+.card-content {
+  flex: 1;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.card-left {}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 5px;
+}
+
+.card-meta {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.card-meta .meta-sep { color: #CBD5E1; }
+
+.card-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.type-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.type-pill.WEBINAR    { background: var(--orange-light); color: var(--orange); }
+.type-pill.PITCH      { background: var(--blue-light);   color: var(--blue-dark); }
+.type-pill.FORMATION  { background: var(--teal-light);   color: var(--teal-dark); }
+.type-pill.COACHING   { background: #F5F3FF; color: #3C3489; }
+.type-pill.PREMIUM    { background: var(--teal-light);   color: var(--teal-dark); }
+.type-pill.FREE       { background: #F1F5F9; color: var(--slate); }
+
+.btn-view-details {
+  background: white;
+  border: 0.5px solid #CBD5E1;
+  color: var(--muted);
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.btn-view-details:hover { border-color: var(--slate); color: var(--slate); }
+
+.btn-reserve {
+  background: var(--teal);
+  color: white;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-reserve:hover { background: var(--teal-dark); }
+
+.btn-reserve.premium-btn { background: var(--blue); }
+.btn-reserve.premium-btn:hover { background: var(--blue-dark); }
+
+/* ============================================================
+   4. BOOKING CONFIRMATION TOAST CARD
+   ============================================================ */
+.booking-toast {
+  background: white;
+  border: 0.5px solid #5DCAA5;
+  border-radius: 12px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.toast-check {
+  width: 40px;
+  height: 40px;
+  background: var(--teal-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  color: var(--teal);
+}
+
+.toast-body h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin-bottom: 3px;
+}
+
+.toast-body p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ============================================================
+   5. BOOKING MODAL (Event detail + confirm)
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.booking-modal {
+  background: white;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.15);
+  overflow: hidden;
+  animation: fadeSlideIn 0.25s ease;
+}
+
+.modal-header {
+  padding: 28px 28px 20px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.modal-header h3 {
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.modal-header p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.modal-body {
+  padding: 24px 28px;
+}
+
+.modal-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.modal-detail-row:last-child { border-bottom: none; }
+
+.modal-detail-row span:first-child { color: var(--muted); }
+.modal-detail-row span:last-child  { font-weight: 500; color: var(--slate); }
+
+.modal-footer {
+  padding: 20px 28px 28px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-modal-cancel {
+  background: white;
+  border: 0.5px solid #CBD5E1;
+  color: var(--muted);
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-modal-confirm {
+  background: var(--teal);
+  color: white;
+  border: none;
+  padding: 11px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-modal-confirm:hover { background: var(--teal-dark); }
+
+/* ============================================================
+   6. EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+}
+
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 16px; display: block; }
+.empty-state h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.empty-state p  { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+.btn-upgrade {
+  background: var(--orange-light);
+  color: var(--orange);
+  border: 1px solid #FAC775;
+  padding: 11px 26px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-upgrade:hover { background: #FAC775; }
+
+/* ============================================================
+   7. LOCK OVERLAY (premium events visible to free users)
+   ============================================================ */
+.workflow-card.locked {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.lock-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--orange-light);
+  color: var(--orange);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #FAC775;
+}
+
+/* ============================================================
+   8. RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+  .header-stats-card  { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .stats-group        { gap: 20px; }
+  .search-bar-pill    { flex-direction: column; border-radius: 14px; padding: 16px; gap: 12px; }
+  .v-divider          { width: 100%; height: 1px; margin: 0; }
+  .card-content       { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .card-right         { width: 100%; }
+  .plan-card-selector { width: 140px; }
+  .hero-content h1    { font-size: 28px; }
+}

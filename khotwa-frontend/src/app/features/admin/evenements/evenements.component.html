@@ -1,34 +1,529 @@
+<!-- ═══════════════════════════════════════════════════
+     PAGE WRAPPER
+     ═══════════════════════════════════════════════════ -->
 <div class="page animate-1">
+
+  <!-- ── Toast notification ── -->
+  <div class="kh-toast" *ngIf="toast" [ngClass]="'kh-toast--' + toast.type">
+    <svg *ngIf="toast.type==='success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <svg *ngIf="toast.type==='error'"   width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ toast.message }}
+  </div>
+
+  <!-- ── Header ── -->
   <div class="page-header">
-    <div><h1 class="kh-page-title">Events & Workshops</h1><p class="page-sub">{{ filteredEvents.length }} event(s)</p></div>
-    <button class="kh-btn kh-btn--primary">+ Create event</button>
+    <div>
+      <h1 class="kh-page-title">Events & Workshops</h1>
+      <p class="page-sub">{{ filteredEvents.length }} event(s) found</p>
+    </div>
+    <button class="kh-btn kh-btn--primary" (click)="openCreate()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Create Event
+    </button>
   </div>
-  <div class="filters animate-2">
-    <button class="tab" [class.active]="filtre==='tous'" (click)="filtre='tous'">Tous</button>
-    <button class="tab" [class.active]="filtre==='pitch'" (click)="filtre='pitch'">Pitch</button>
-    <button class="tab" [class.active]="filtre==='webinar'" (click)="filtre='webinar'">Webinar</button>
-    <button class="tab" [class.active]="filtre==='formation'" (click)="filtre='formation'">Formation</button>
-    <button class="tab" [class.active]="filtre==='coaching'" (click)="filtre='coaching'">Coaching</button>
-  </div>
-  <div class="grid animate-3">
-    <div *ngFor="let ev of filteredEvents" class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-        <span class="kh-badge" [class]="ev.type==='pitch'?'kh-badge--orange':ev.type==='webinar'?'kh-badge--teal':ev.type==='formation'?'kh-badge--violet':'kh-badge--green'">{{ ev.type }}</span>
-        <span class="kh-badge" [class]="ev.restantes===0?'kh-badge--red':ev.restantes<5?'kh-badge--amber':'kh-badge--gray'">{{ ev.restantes===0 ? 'Complet' : ev.restantes+' places' }}</span>
+
+  <!-- ── Stats bar ── -->
+  <div class="stats-bar animate-2">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
-      <p class="card-name">{{ ev.titre }}</p>
-      <p class="card-meta" style="margin-top:6px">📅 {{ ev.date }} · {{ ev.heure }}</p>
-      <p class="card-meta">🎤 {{ ev.intervenant }}</p>
-      <ng-container *ngIf="ev.restantes > 0">
-        <div class="kh-progress" style="margin:14px 0 4px"><div class="kh-progress__fill" [style.width.%]="((ev.places - ev.restantes)/ev.places)*100"></div></div>
-        <p style="font-size:11px;color:var(--text-muted)">{{ ev.places - ev.restantes }}/{{ ev.places }} inscrits</p>
-      </ng-container>
-      <div class="card-footer">
-        <div class="actions">
-          <button class="kh-btn kh-btn--ghost kh-btn--sm">Edit</button>
-          <button class="kh-btn kh-btn--danger kh-btn--sm">Cancel</button>
+      <div class="stat-body">
+        <span class="stat-value">{{ totalEvents }}</span>
+        <span class="stat-label">Events</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--orange">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ totalParticipants }}</span>
+        <span class="stat-label">Registrations</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ totalSeatsAvailable }}</span>
+        <span class="stat-label">Seats Available</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--violet">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ acceptedCount }}</span>
+        <span class="stat-label">Accepted</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ pendingCount }}</span>
+        <span class="stat-label">Pending</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toolbar ── -->
+  <div class="toolbar animate-3">
+    <div class="search-wrap">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="Title, speaker, description..." [(ngModel)]="searchQuery" />
+      <button class="search-clear" *ngIf="searchQuery" (click)="clearSearch()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="filter-wrap">
+      <svg class="filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <select class="filter-select" [(ngModel)]="filtre">
+        <option value="TOUS">All Types</option>
+        <option *ngFor="let t of types" [value]="t">{{ typeLabel(t) }}</option>
+      </select>
+    </div>
+
+    <div class="filter-wrap">
+      <svg class="filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+      <select class="filter-select" [(ngModel)]="filtrePlan">
+        <option value="tous">All Plans</option>
+        <option *ngFor="let p of plans" [value]="p">{{ p }}</option>
+      </select>
+    </div>
+
+    <button class="view-toggle" [class.active]="viewMode==='calendar'" (click)="toggleView()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       GRID VIEW
+       ═══════════════════════════════════ -->
+  <div class="grid animate-4" *ngIf="viewMode === 'grid'">
+
+    <!-- Loading skeleton -->
+    <ng-container *ngIf="isLoading">
+      <div class="card card--skeleton" *ngFor="let i of [1,2,3,4,5,6]">
+        <div class="skel skel--badge"></div>
+        <div class="skel skel--title"></div>
+        <div class="skel skel--line"></div>
+        <div class="skel skel--line skel--short"></div>
+      </div>
+    </ng-container>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="!isLoading && filteredEvents.length === 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+      <strong>No events found</strong>
+      <span>Modify your filters or create your first event</span>
+      <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="openCreate()">+ Create an Event</button>
+    </div>
+
+    <!-- Event cards -->
+    <div *ngFor="let ev of filteredEvents" class="card" [ngClass]="'card--' + ev.statut?.toLowerCase()">
+
+      <!-- Accent stripe -->
+      <div class="card-stripe" [style.background]="typeColor(ev.type)"></div>
+
+      <!-- Top badges -->
+      <div class="card-top">
+        <div class="badges-left">
+          <span class="kh-badge" [ngClass]="badgeClass(ev.type)">{{ typeLabel(ev.type) }}</span>
+          <span class="kh-badge kh-badge--plan">{{ ev.planType }}</span>
+        </div>
+        <span class="status-pill" [ngClass]="{
+          'status-pill--pending':   ev.statut === 'PENDING',
+          'status-pill--accepted':  ev.statut === 'ACCEPTED',
+          'status-pill--rejected':  ev.statut === 'REJECTED' || ev.statut === 'CANCELLED'
+        }">
+          <span class="status-dot"></span>
+          {{ ev.statut }}
+        </span>
+      </div>
+
+      <!-- Title + description -->
+      <h3 class="card-name">{{ ev.titre }}</h3>
+      <p class="card-desc">{{ ev.description }}</p>
+
+      <!-- Meta info -->
+      <div class="card-meta">
+        <div class="meta-row" *ngIf="ev.date">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>{{ ev.date | date:'dd/MM/yyyy' }} &nbsp;·&nbsp; {{ ev.heure }}</span>
+        </div>
+        <div class="meta-row" *ngIf="ev.intervenant">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span>{{ ev.intervenant }}</span>
+        </div>
+        <div class="meta-row" *ngIf="ev.lienMeet">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.277A1 1 0 0121 8.65v6.7a1 1 0 01-1.447.898L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
+          <a [href]="ev.lienMeet" target="_blank" class="meet-link">Join Meeting</a>
         </div>
       </div>
+
+      <!-- Capacity bar -->
+      <div class="capacity-wrap">
+        <div class="capacity-bar">
+          <div class="capacity-fill"
+               [style.width.%]="fillRate(ev)"
+               [style.background]="ev.placesRestantes === 0 ? '#ef4444' : ev.placesRestantes < 5 ? '#f59e0b' : '#0d9488'">
+          </div>
+        </div>
+        <div class="capacity-label">
+          <span>{{ ev.placesTotal - ev.placesRestantes }}/{{ ev.placesTotal }} registered</span>
+          <span class="kh-badge kh-badge--sm" [ngClass]="placeBadgeClass(ev.placesRestantes)">
+            {{ ev.placesRestantes }} seats left
+          </span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card-footer">
+        <div class="crud-actions">
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openEdit(ev)" title="Edit">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button class="kh-btn kh-btn--danger kh-btn--sm" (click)="deleteTarget=ev; showDelete=true" title="Delete">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       CALENDAR VIEW
+       ═══════════════════════════════════ -->
+  <div class="calendar-wrap animate-4" *ngIf="viewMode === 'calendar'">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" (click)="prevMonth()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="cal-nav-title">
+        <span class="cal-month">{{ monthNames[calendarMonth] }}</span>
+        <span class="cal-year">{{ calendarYear }}</span>
+      </div>
+      <button class="cal-today-btn" (click)="goToToday()">Today</button>
+      <button class="cal-nav-btn" (click)="nextMonth()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div class="cal-grid">
+      <div class="cal-header-row" *ngFor="let d of dayNames">
+        <div class="cal-day-header">{{ d }}</div>
+      </div>
+
+      <ng-container *ngFor="let cell of calendarCells">
+        <div *ngIf="!cell" class="cal-cell cal-cell--empty"></div>
+        <div *ngIf="cell"
+             class="cal-cell"
+             [class.cal-cell--today]="isToday(cell)"
+             [class.cal-cell--selected]="selectedDay === dateKey(cell)"
+             [class.cal-cell--has-events]="hasEventOnDay(cell)"
+             (click)="selectDay(cell)">
+          <div class="cal-date-num">{{ cell.getDate() }}</div>
+          <div class="cal-event-pills">
+            <ng-container *ngFor="let ev of eventsForDay(cell); let i = index">
+              <span *ngIf="i < 2" class="cal-pill"
+                    [style.background]="typeColor(ev.type) + '18'"
+                    [style.color]="typeColor(ev.type)"
+                    [style.borderColor]="typeColor(ev.type) + '40'">
+                {{ ev.titre | slice:0:18 }}
+              </span>
+              <span *ngIf="i === 2" class="cal-pill cal-pill--more">
+                +{{ eventsForDay(cell).length - 2 }} more
+              </span>
+            </ng-container>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Day panel -->
+    <div class="cal-day-panel" *ngIf="selectedDay && selectedDayEvents.length > 0">
+      <div class="cal-panel-header">
+        <strong>{{ selectedDayLabel }}</strong>
+        <span class="cal-panel-count">{{ selectedDayEvents.length }} event(s)</span>
+      </div>
+      <div class="cal-panel-list">
+        <div class="cal-panel-item" *ngFor="let ev of selectedDayEvents">
+          <div class="cal-panel-stripe" [style.background]="typeColor(ev.type)"></div>
+          <div class="cal-panel-body">
+            <div class="cal-panel-row">
+              <span class="cal-panel-title">{{ ev.titre }}</span>
+              <span class="kh-badge kh-badge--sm" [ngClass]="badgeClass(ev.type)">{{ typeLabel(ev.type) }}</span>
+            </div>
+            <div class="cal-panel-meta">
+              <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> {{ ev.heure }}</span>
+              <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> {{ ev.intervenant }}</span>
+              <span>{{ ev.placesRestantes }} seats available</span>
+            </div>
+            <div class="cal-panel-actions">
+              <!-- FIX: changeStatus() now exists in the component -->
+              <button class="kh-btn kh-btn--sm kh-btn--accept" *ngIf="ev.statut==='PENDING'" (click)="changeStatus(ev, 'ACCEPTED')">✓ Accept</button>
+              <button class="kh-btn kh-btn--sm kh-btn--reject" *ngIf="ev.statut==='PENDING'" (click)="changeStatus(ev, 'CANCELLED')">✗ Reject</button>
+              <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openEdit(ev)">Edit</button>
+              <button class="kh-btn kh-btn--danger kh-btn--sm" (click)="deleteTarget=ev; showDelete=true">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cal-empty-day" *ngIf="selectedDay && selectedDayEvents.length === 0">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>No events on this day</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL — CREATE EVENT
+     ═══════════════════════════════════════════════════ -->
+<div class="overlay" *ngIf="showCreate" (click)="showCreate=false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <div>
+        <h2>New Event</h2>
+        <p class="modal-subtitle">Fill in the information below</p>
+      </div>
+      <button class="modal-x" (click)="showCreate=false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-section-label">General Information</div>
+
+      <div class="field" [class.field--error]="createErrors['titre']">
+        <label>Event Title <span class="required">*</span></label>
+        <input class="kh-input" [(ngModel)]="newEvent.titre" placeholder="Ex: AI Workshop" />
+        <small class="field-error" *ngIf="createErrors['titre']">{{ createErrors['titre'] }}</small>
+      </div>
+
+      <div class="field" [class.field--error]="createErrors['description']">
+        <label>Description <span class="required">*</span></label>
+        <textarea class="kh-input kh-textarea" [(ngModel)]="newEvent.description" rows="3" placeholder="Describe the objective and content of the event..."></textarea>
+        <small class="field-error" *ngIf="createErrors['description']">{{ createErrors['description'] }}</small>
+      </div>
+
+      <div class="field" [class.field--error]="createErrors['intervenant']">
+        <label>Speaker <span class="required">*</span></label>
+        <input class="kh-input" [(ngModel)]="newEvent.intervenant" placeholder="Ex: Dr. John Smith" />
+        <small class="field-error" *ngIf="createErrors['intervenant']">{{ createErrors['intervenant'] }}</small>
+      </div>
+
+      <div class="modal-section-label">Categorization</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Event Type <span class="required">*</span></label>
+          <select class="kh-input" [(ngModel)]="newEvent.type">
+            <option *ngFor="let t of types" [value]="t">{{ typeLabel(t) }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Access Plan <span class="required">*</span></label>
+          <select class="kh-input" [(ngModel)]="newEvent.planType">
+            <option value="FREE">🎟 Free</option>
+            <option value="PREMIUM">💎 Premium</option>
+            <option value="INSTITUTIONAL">🏛 Institutional</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-section-label">Date & Time</div>
+      <div class="field-row">
+        <div class="field" [class.field--error]="createErrors['date']">
+          <label>Date <span class="required">*</span></label>
+          <input type="date" class="kh-input" [(ngModel)]="newEvent.date" />
+          <small class="field-error" *ngIf="createErrors['date']">{{ createErrors['date'] }}</small>
+        </div>
+        <div class="field" [class.field--error]="createErrors['heure']">
+          <label>Time <span class="required">*</span></label>
+          <input type="time" class="kh-input" [(ngModel)]="newEvent.heure" />
+          <small class="field-error" *ngIf="createErrors['heure']">{{ createErrors['heure'] }}</small>
+        </div>
+      </div>
+
+      <div class="modal-section-label">Capacity & Access</div>
+      <div class="field-row">
+        <div class="field" [class.field--error]="createErrors['placesTotal']">
+          <label>Total Seats <span class="required">*</span></label>
+          <input type="number" min="1" class="kh-input" [(ngModel)]="newEvent.placesTotal" placeholder="Ex: 50" />
+          <small class="field-error" *ngIf="createErrors['placesTotal']">{{ createErrors['placesTotal'] }}</small>
+        </div>
+        <div class="field" [class.field--error]="createErrors['lienMeet']">
+          <label>Meeting Link (optional)</label>
+          <input class="kh-input" [(ngModel)]="newEvent.lienMeet" placeholder="https://meet.google.com/..." />
+          <small class="field-error" *ngIf="createErrors['lienMeet']">{{ createErrors['lienMeet'] }}</small>
+        </div>
+      </div>
+
+      <div class="modal-info-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        The event will be created with <strong>PENDING</strong> status and must be accepted before it becomes visible.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="showCreate=false">Cancel</button>
+      <button class="kh-btn kh-btn--primary" (click)="submitCreate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Create Event
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL — EDIT EVENT
+     ═══════════════════════════════════════════════════ -->
+<div class="overlay" *ngIf="showEdit" (click)="showEdit=false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-header-icon modal-header-icon--edit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div>
+        <h2>Edit Event</h2>
+        <p class="modal-subtitle">{{ editTarget?.titre }}</p>
+      </div>
+      <button class="modal-x" (click)="showEdit=false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-section-label">General Information</div>
+
+      <div class="field" [class.field--error]="editErrors['titre']">
+        <label>Title <span class="required">*</span></label>
+        <input class="kh-input" [(ngModel)]="editForm.titre" />
+        <small class="field-error" *ngIf="editErrors['titre']">{{ editErrors['titre'] }}</small>
+      </div>
+
+      <div class="field" [class.field--error]="editErrors['description']">
+        <label>Description <span class="required">*</span></label>
+        <textarea class="kh-input kh-textarea" [(ngModel)]="editForm.description" rows="3"></textarea>
+        <small class="field-error" *ngIf="editErrors['description']">{{ editErrors['description'] }}</small>
+      </div>
+
+      <div class="field" [class.field--error]="editErrors['intervenant']">
+        <label>Speaker <span class="required">*</span></label>
+        <input class="kh-input" [(ngModel)]="editForm.intervenant" />
+        <small class="field-error" *ngIf="editErrors['intervenant']">{{ editErrors['intervenant'] }}</small>
+      </div>
+
+      <div class="modal-section-label">Categorization</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Type</label>
+          <select class="kh-input" [(ngModel)]="editForm.type">
+            <option *ngFor="let t of types" [value]="t">{{ typeLabel(t) }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Plan</label>
+          <select class="kh-input" [(ngModel)]="editForm.planType">
+            <option value="FREE">🎟 Free</option>
+            <option value="PREMIUM">💎 Premium</option>
+            <option value="INSTITUTIONAL">🏛 Institutional</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-section-label">Date & Time</div>
+      <div class="field-row">
+        <div class="field" [class.field--error]="editErrors['date']">
+          <label>Date <span class="required">*</span></label>
+          <input type="date" class="kh-input" [(ngModel)]="editForm.date" />
+          <small class="field-error" *ngIf="editErrors['date']">{{ editErrors['date'] }}</small>
+        </div>
+        <div class="field" [class.field--error]="editErrors['heure']">
+          <label>Time <span class="required">*</span></label>
+          <input type="time" class="kh-input" [(ngModel)]="editForm.heure" />
+          <small class="field-error" *ngIf="editErrors['heure']">{{ editErrors['heure'] }}</small>
+        </div>
+      </div>
+
+      <div class="modal-section-label">Capacity & Access</div>
+      <div class="field-row">
+        <div class="field" [class.field--error]="editErrors['placesTotal']">
+          <label>Total Seats <span class="required">*</span></label>
+          <input type="number" min="1" class="kh-input" [(ngModel)]="editForm.placesTotal" />
+          <small class="field-error" *ngIf="editErrors['placesTotal']">{{ editErrors['placesTotal'] }}</small>
+        </div>
+        <div class="field" [class.field--error]="editErrors['lienMeet']">
+          <label>Meeting Link</label>
+          <input class="kh-input" [(ngModel)]="editForm.lienMeet" placeholder="https://..." />
+          <small class="field-error" *ngIf="editErrors['lienMeet']">{{ createErrors['lienMeet'] }}</small>
+        </div>
+      </div>
+
+      <div class="modal-warning-note" *ngIf="editTarget && (editTarget.placesTotal - editTarget.placesRestantes) > 0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        {{ editTarget.placesTotal - editTarget.placesRestantes }} existing registration(s) — total seats cannot go below this number.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="showEdit=false">Cancel</button>
+      <button class="kh-btn kh-btn--primary" (click)="submitEdit()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL — CONFIRM DELETE
+     ═══════════════════════════════════════════════════ -->
+<div class="overlay" *ngIf="showDelete" (click)="showDelete=false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-header-icon modal-header-icon--danger">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </div>
+      <div>
+        <h2>Delete Event</h2>
+        <p class="modal-subtitle">This action is irreversible</p>
+      </div>
+      <button class="modal-x" (click)="showDelete=false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-confirm-body">
+        <p>You are about to permanently delete:</p>
+        <div class="delete-target-name">« {{ deleteTarget?.titre }} »</div>
+        <p class="delete-sub">All registrations associated with this event will also be removed.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="showDelete=false">Cancel</button>
+      <button class="kh-btn kh-btn--danger-solid" (click)="confirmDelete()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Delete Permanently
+      </button>
     </div>
   </div>
 </div>

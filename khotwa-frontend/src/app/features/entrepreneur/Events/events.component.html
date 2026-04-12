@@ -1,0 +1,626 @@
+<div class="page-container">
+
+  <!-- ═══════════════════════════════════════════
+       PLAN SWITCHER BAR (internal navbar)
+       ─────────────────────────────────────────────
+       Display rules:
+       - FREE user    : PREMIUM & INSTITUTIONAL buttons shown as "upgrade required"
+                        → click = back to hero-section (3 cards)
+       - PREMIUM user : FREE & INSTITUTIONAL buttons locked (silent access denied)
+       - INSTITUTIONAL: FREE & PREMIUM buttons locked
+       ═══════════════════════════════════════════ -->
+  <div class="plan-switcher-bar" *ngIf="isPlanSelected">
+    <div class="psb-left">
+      <div class="psb-badge" [ngClass]="planColorClass">
+        <svg *ngIf="planColorClass==='free'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/></svg>
+        <svg *ngIf="planColorClass==='premium'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg *ngIf="planColorClass==='institutional'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/></svg>
+        {{ planLabel }}
+      </div>
+      <span class="psb-desc">{{ planDescription }}</span>
+    </div>
+
+    <div class="psb-actions">
+
+      <!-- ── FREE Button ──────────────────────────────────────────────────── -->
+      <button
+        class="psb-plan-btn"
+        [class.active]="selectedPlanView==='FREE'"
+        [class.psb-plan-btn--locked]="isNavbarBtnBlocked('FREE')"
+        [title]="isNavbarBtnBlocked('FREE') ? 'Your plan does not allow access to the Free space' : 'Free Space'"
+        (click)="selectPlanView('FREE', true)">
+        🆓 Free
+        <span class="psb-lock-icon" *ngIf="isNavbarBtnBlocked('FREE')">🔒</span>
+      </button>
+
+      <!-- ── PREMIUM Button ───────────────────────────────────────────────── -->
+      <button
+        class="psb-plan-btn"
+        [class.active]="selectedPlanView==='PREMIUM'"
+        [class.psb-plan-btn--upgrade]="!isNavbarBtnBlocked('PREMIUM') === false && currentUserPlan==='FREE'"
+        [class.psb-plan-btn--locked]="isNavbarBtnBlocked('PREMIUM')"
+        [title]="isNavbarBtnBlocked('PREMIUM') ? (currentUserPlan === 'FREE' ? 'Upgrade to access Premium' : 'Your plan does not allow access to Premium') : 'Premium Space'"
+        (click)="selectPlanView('PREMIUM', true)">
+        ⭐ Premium
+        <span class="psb-lock-icon" *ngIf="isNavbarBtnBlocked('PREMIUM')">
+          {{ currentUserPlan === 'FREE' ? '↑' : '🔒' }}
+        </span>
+      </button>
+
+      <!-- ── INSTITUTIONAL Button ─────────────────────────────────────────── -->
+      <button
+        class="psb-plan-btn"
+        [class.active]="selectedPlanView==='INSTITUTIONAL'"
+        [class.psb-plan-btn--locked]="isNavbarBtnBlocked('INSTITUTIONAL')"
+        [title]="isNavbarBtnBlocked('INSTITUTIONAL') ? (currentUserPlan === 'FREE' ? 'Upgrade to access Institutional' : 'Your plan does not allow access to Institutional') : 'Institutional Space'"
+        (click)="selectPlanView('INSTITUTIONAL', true)">
+        🏛️ Institutional
+        <span class="psb-lock-icon" *ngIf="isNavbarBtnBlocked('INSTITUTIONAL')">
+          {{ currentUserPlan === 'FREE' ? '↑' : '🔒' }}
+        </span>
+      </button>
+
+    </div>
+
+    <!-- Upgrade toast (FREE to higher plans) -->
+    <div class="psb-upgrade-toast" *ngIf="upgradeToastPlan">
+      <span>🔒 {{ upgradeToastPlan }} plan required</span>
+      <button (click)="upgrade()">Upgrade →</button>
+      <button class="psb-toast-close" (click)="upgradeToastPlan=null">✕</button>
+    </div>
+
+    <!-- Blocked access toast (PREMIUM/INSTITUTIONAL) -->
+    <div class="psb-block-toast" *ngIf="navbarBlockToastMsg">
+      <span>{{ navbarBlockToastMsg }}</span>
+      <button class="psb-toast-close" (click)="navbarBlockToastMsg=null">✕</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       HERO — plan selection
+       ═══════════════════════════════ -->
+  <div class="hero-section" *ngIf="!isPlanSelected">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Khotwa Platform
+      </div>
+      <h1>Events &amp; Workshops</h1>
+      <p>Develop your entrepreneurial skills with our certified events — pitches, webinars, training sessions and coaching.</p>
+
+      <div class="plan-selector-label">Choose your access level</div>
+      <div class="plan-cards">
+
+        <!-- ── FREE Card ─────────────────────────────────────────────────── -->
+        <div class="plan-card" (click)="selectPlanView('FREE')">
+          <div class="plan-card-icon plan-card-icon--free">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/></svg>
+          </div>
+          <h4>Free</h4>
+          <p>Free events only</p>
+          <span class="plan-cta">Get started →</span>
+        </div>
+
+        <!-- ── PREMIUM Card ──────────────────────────────────────────────── -->
+        <div class="plan-card"
+             [class.plan-card--featured]="true"
+             (click)="selectPlanView('PREMIUM')">
+          <div class="plan-popular">⭐ Recommended</div>
+
+          <div class="plan-card-icon plan-card-icon--premium">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+
+          <h4>Premium</h4>
+          <p>Free &amp; Premium Events</p>
+
+          <span class="plan-cta" *ngIf="currentUserPlan === 'PREMIUM' || currentUserPlan === 'INSTITUTIONAL'">
+            Access →
+          </span>
+          <span class="plan-cta plan-cta--locked" *ngIf="currentUserPlan === 'FREE'">
+            🔒 Verify access
+          </span>
+        </div>
+
+        <!-- ── INSTITUTIONAL Card ────────────────────────────────────────── -->
+        <div class="plan-card"
+             [class.plan-card--locked]="isLockedPlan('INSTITUTIONAL')"
+             (click)="selectPlanView('INSTITUTIONAL')">
+          <div class="plan-card-icon plan-card-icon--institutional">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V8"/><path d="M16 21V8"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          </div>
+          <h4>Institutional</h4>
+          <p>Institutional events only</p>
+          <span class="plan-cta" *ngIf="currentUserPlan === 'INSTITUTIONAL'">Explore →</span>
+          <span class="plan-cta plan-cta--locked" *ngIf="currentUserPlan !== 'INSTITUTIONAL'">
+            🔒 Verify access
+          </span>
+        </div>
+
+      </div>
+
+      <div class="hero-upgrade-toast" *ngIf="upgradeToastPlan">
+        <span>🔒 A <strong>{{ upgradeToastPlan }}</strong> plan is required to access this section.</span>
+        <button (click)="upgrade()">Upgrade</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       DASHBOARD
+       ═══════════════════════════════ -->
+  <div class="dashboard" *ngIf="isPlanSelected">
+
+    <!-- Header -->
+    <div class="dash-header" [ngClass]="'dash-header--' + planColorClass">
+      <div class="dash-title-area">
+        <h2>
+          <span *ngIf="planColorClass==='free'">🆓</span>
+          <span *ngIf="planColorClass==='premium'">⭐</span>
+          <span *ngIf="planColorClass==='institutional'">🏛️</span>
+          {{ planLabel }} Events
+        </h2>
+        <p>{{ planDescription }}</p>
+      </div>
+      <div class="dash-stats">
+        <div class="dash-stat">
+          <strong>{{ filteredEvents.length }}</strong>
+          <span>Events</span>
+        </div>
+        <div class="dash-stat-divider"></div>
+        <div class="dash-stat">
+          <strong>{{ bookings.length }}</strong>
+          <span>Bookings</span>
+        </div>
+        <div class="dash-stat-divider"></div>
+        <div class="view-toggle">
+          <button [class.active]="viewMode==='grid'" (click)="switchView('grid')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Grid
+          </button>
+          <button [class.active]="viewMode==='calendar'" (click)="switchView('calendar')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="toast-stack">
+      <div class="booking-toast" *ngFor="let b of recentBookings">
+        <div class="toast-check">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="toast-body">
+          <strong>Booking confirmed!</strong>
+          <span>Your spot for "{{ b.titre }}" is reserved.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         SEARCH & FILTER BAR
+         ═══════════════════════════════ -->
+    <div class="filter-bar">
+      <div class="filter-search-wrap">
+        <svg class="filter-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          type="text"
+          class="filter-search-input"
+          placeholder="Search by name, speaker..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="applyFilters()"/>
+        <button class="filter-search-clear" *ngIf="searchText" (click)="searchText=''; applyFilters()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <label>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Month
+        </label>
+        <select [(ngModel)]="monthFilter" (ngModelChange)="applyFilters()">
+          <option value="ALL">All months</option>
+          <option *ngFor="let m of months; let i = index" [value]="i + 1">{{ m }}</option>
+        </select>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <label>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Type
+        </label>
+        <select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
+          <option value="ALL">All types</option>
+          <option value="WEBINAR">Webinar</option>
+          <option value="PITCH">Pitch</option>
+          <option value="FORMATION">Training</option>
+          <option value="COACHING">Coaching</option>
+        </select>
+      </div>
+      <button class="filter-reset-btn" (click)="resetFilters()" *ngIf="hasActiveFilters">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear
+      </button>
+      <span class="filter-results-count" *ngIf="hasActiveFilters">
+        {{ filteredEvents.length }} result(s)
+      </span>
+    </div>
+
+    <!-- GRID VIEW -->
+    <ng-container *ngIf="viewMode === 'grid'">
+      <div class="events-grid" *ngIf="filteredEvents.length > 0; else emptyState">
+        <div class="ev-card" *ngFor="let ev of filteredEvents" [ngClass]="'ev-card--' + (ev.planType?.toLowerCase() || 'free')">
+          <div class="ev-accent" [ngClass]="ev.type?.toLowerCase()"></div>
+          <div class="ev-body">
+            <div class="ev-top">
+              <div class="ev-badges">
+                <span class="ev-type-pill" [ngClass]="ev.type?.toLowerCase()">{{ ev.type }}</span>
+                <span class="ev-plan-pill" [ngClass]="ev.planType?.toLowerCase()" *ngIf="ev.planType">{{ ev.planType }}</span>
+              </div>
+              <span class="ev-booked-badge" *ngIf="isAlreadyBooked(ev)">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Booked
+              </span>
+            </div>
+            <h3 class="ev-title">{{ ev.titre }}</h3>
+            <div class="ev-meta">
+              <div class="ev-meta-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                {{ ev.date | date:'dd MMM yyyy' }}
+              </div>
+              <div class="ev-meta-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{ ev.heure }}
+              </div>
+              <div class="ev-meta-item" *ngIf="ev.intervenant">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                {{ ev.intervenant }}
+              </div>
+              <div class="ev-meta-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                {{ ev.placesRestantes }} spots
+              </div>
+            </div>
+            <div class="ev-actions">
+              <button class="ev-btn-details" (click)="openDetails(ev)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Details
+              </button>
+              <button
+                class="ev-btn-reserve"
+                [class.ev-btn-reserve--booked]="isAlreadyBooked(ev)"
+                [class.ev-btn-reserve--full]="ev.placesRestantes === 0 && !isAlreadyBooked(ev)"
+                (click)="isAlreadyBooked(ev) ? cancelBooking(ev) : openBookingModal(ev)"
+                [disabled]="ev.placesRestantes === 0 && !isAlreadyBooked(ev)">
+                <svg *ngIf="isAlreadyBooked(ev)" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg *ngIf="!isAlreadyBooked(ev) && ev.placesRestantes > 0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/></svg>
+                {{ isAlreadyBooked(ev) ? 'Cancel ✕' : ev.placesRestantes === 0 ? 'Full' : 'Book' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- CALENDAR VIEW -->
+    <ng-container *ngIf="viewMode === 'calendar'">
+      <div class="calendar-wrapper" [ngClass]="'calendar-wrapper--' + planColorClass">
+        <div class="cal-header">
+          <button class="cal-nav-btn" (click)="prevMonth()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="cal-title">
+            <span class="cal-month">{{ months[calendarMonth] }}</span>
+            <span class="cal-year">{{ calendarYear }}</span>
+          </div>
+          <button class="cal-nav-btn" (click)="nextMonth()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="cal-stats-bar">
+          <div class="cal-stat-item">
+            <span class="cal-stat-num">{{ filteredEvents.length }}</span>
+            <span class="cal-stat-lbl">events</span>
+          </div>
+          <div class="cal-stat-item">
+            <span class="cal-stat-num">{{ bookings.length }}</span>
+            <span class="cal-stat-lbl">bookings</span>
+          </div>
+        </div>
+        <div class="cal-weekdays">
+          <div *ngFor="let d of weekDays">{{ d }}</div>
+        </div>
+        <div class="cal-days">
+          <div
+            *ngFor="let day of calendarDays"
+            class="cal-day"
+            [class.cal-day--empty]="day === null"
+            [class.cal-day--today]="isToday(day)"
+            [class.cal-day--has-events]="getDayEvents(day).length > 0"
+            [class.cal-day--booked]="hasDayBooking(day)"
+            (click)="openDayPopup(day)">
+            <span class="cal-day-num" *ngIf="day">{{ day }}</span>
+            <div class="cal-dots" *ngIf="getDayEvents(day).length > 0">
+              <span *ngFor="let ev of getDayEvents(day).slice(0,3)" class="cal-dot" [ngClass]="ev.type?.toLowerCase()"></span>
+              <span class="cal-dot-more" *ngIf="getDayEvents(day).length > 3">+{{ getDayEvents(day).length - 3 }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="cal-day-popup" *ngIf="calendarDayDetails">
+          <div class="cal-popup-header">
+            <span>{{ calendarDetailDay }} {{ months[calendarMonth] }}</span>
+            <button (click)="closeDayPopup()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="cal-popup-events">
+            <div class="cal-popup-ev" *ngFor="let ev of calendarDayDetails" [ngClass]="ev.type?.toLowerCase()">
+              <div class="cal-popup-ev-info">
+                <span class="cal-popup-ev-type">{{ ev.type }}</span>
+                <strong>{{ ev.titre }}</strong>
+                <span class="cal-popup-ev-time">{{ ev.heure }} — {{ ev.intervenant }}</span>
+                <span class="cal-popup-ev-places">{{ ev.placesRestantes }} spots remaining</span>
+              </div>
+              <div class="cal-popup-ev-actions">
+                <button class="cal-popup-details-btn" (click)="openDetails(ev); closeDayPopup()">Details</button>
+                <button
+                  class="cal-popup-reserve-btn"
+                  [class.reserved]="isAlreadyBooked(ev)"
+                  [disabled]="ev.placesRestantes === 0 && !isAlreadyBooked(ev)"
+                  (click)="isAlreadyBooked(ev) ? cancelBooking(ev) : openBookingModal(ev); closeDayPopup()">
+                  {{ isAlreadyBooked(ev) ? 'Cancel' : 'Book' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cal-legend">
+          <div class="cal-legend-item"><span class="cal-dot webinar"></span> Webinar</div>
+          <div class="cal-legend-item"><span class="cal-dot pitch"></span> Pitch</div>
+          <div class="cal-legend-item"><span class="cal-dot formation"></span> Training</div>
+          <div class="cal-legend-item"><span class="cal-dot coaching"></span> Coaching</div>
+          <div class="cal-legend-item"><span class="cal-today-indicator"></span> Today</div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Empty state -->
+    <ng-template #emptyState>
+      <div class="empty-state-box">
+        <div class="empty-icon-wrap">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <h3>No events found</h3>
+        <p>No {{ planLabel }} events match your search.</p>
+        <button class="ev-btn-reset" (click)="resetFilters()">Reset filters</button>
+      </div>
+    </ng-template>
+
+  </div><!-- end .dashboard -->
+
+
+  <!-- ═══════════════════════════════════════════════════
+       OTP MODAL — Premium / Institutional access verification
+       ═══════════════════════════════════════════════════ -->
+  <div class="modal-backdrop otp-backdrop" *ngIf="showOtpModal" (click)="closeOtpModal()">
+    <div class="otp-modal" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="otp-modal-header" [ngClass]="otpTargetPlan === 'PREMIUM' ? 'otp-header--premium' : 'otp-header--institutional'">
+        <div class="otp-header-icon">
+          <span *ngIf="otpTargetPlan === 'PREMIUM'">⭐</span>
+          <span *ngIf="otpTargetPlan === 'INSTITUTIONAL'">🏛️</span>
+        </div>
+        <div>
+          <h3>{{ otpTargetPlan === 'PREMIUM' ? 'Premium' : 'Institutional' }} Access</h3>
+          <p>Subscription verification</p>
+        </div>
+        <button class="otp-close-btn" (click)="closeOtpModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- ── Step 1 : Email entry ──────────────────────────────────────── -->
+      <div class="otp-step" *ngIf="otpStep === 'EMAIL_CHECK'">
+        <div class="otp-step-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+        </div>
+        <h4>Enter your email</h4>
+        <p class="otp-step-desc">
+          Enter the email address linked to your
+          <strong>{{ otpTargetPlan === 'PREMIUM' ? 'Premium' : 'Institutional' }}</strong>
+          subscription. A verification code will be sent to you.
+        </p>
+
+        <div class="otp-field-wrap" [class.otp-field-error]="otpError">
+          <svg class="otp-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+          <input
+            type="email"
+            class="otp-input-field"
+            placeholder="your@email.com"
+            [(ngModel)]="otpEmail"
+            (keyup.enter)="submitOtpEmail()"
+            autocomplete="email"/>
+        </div>
+        <div class="otp-error-msg" *ngIf="otpError">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {{ otpError }}
+        </div>
+
+        <button class="otp-submit-btn" (click)="submitOtpEmail()" [disabled]="otpLoading">
+          <span class="otp-spinner" *ngIf="otpLoading"></span>
+          <span *ngIf="!otpLoading">Send code →</span>
+          <span *ngIf="otpLoading">Verifying...</span>
+        </button>
+
+        <div class="otp-footer-note">
+          Don't have a subscription?
+          <button class="otp-link-btn" (click)="closeOtpModal(); upgrade()">Upgrade →</button>
+        </div>
+      </div>
+
+      <!-- ── Step 2 : OTP code entry ──────────────────────────────────── -->
+      <div class="otp-step" *ngIf="otpStep === 'OTP_VERIFY'">
+        <div class="otp-step-icon otp-step-icon--success">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <h4>Code sent!</h4>
+        <p class="otp-step-desc">
+          A 6-digit code has been sent to <strong>{{ otpEmail }}</strong>.
+          Enter it below.
+        </p>
+
+        <div class="otp-field-wrap" [class.otp-field-error]="otpError">
+          <svg class="otp-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          <input
+            type="text"
+            class="otp-input-field otp-code-field"
+            placeholder="— — — — — —"
+            [(ngModel)]="otpInput"
+            maxlength="6"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            (keyup.enter)="submitOtpCode()"
+            autocomplete="one-time-code"/>
+        </div>
+        <div class="otp-error-msg" *ngIf="otpError">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {{ otpError }}
+        </div>
+
+        <button class="otp-submit-btn" (click)="submitOtpCode()" [disabled]="otpLoading">
+          <span class="otp-spinner" *ngIf="otpLoading"></span>
+          <span *ngIf="!otpLoading">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Verify code
+          </span>
+          <span *ngIf="otpLoading">Verifying...</span>
+        </button>
+
+        <div class="otp-resend-row">
+          <button class="otp-back-btn" (click)="goBackToEmailStep()">
+            ← Change email
+          </button>
+          <button
+            class="otp-resend-btn"
+            [disabled]="otpResendTimer > 0 || otpLoading"
+            (click)="resendOtp()">
+            <span *ngIf="otpResendTimer > 0">Resend in {{ otpResendTimer }}s</span>
+            <span *ngIf="otpResendTimer === 0">↻ Resend code</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Step 3 : Email not registered ─────────────────────────────── -->
+      <div class="otp-step otp-step--not-found" *ngIf="otpStep === 'NOT_REGISTERED'">
+        <div class="otp-step-icon otp-step-icon--error">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <h4>Email not found</h4>
+        <p class="otp-step-desc">
+          The address <strong>{{ otpEmail }}</strong> is not linked to a
+          <strong>{{ otpTargetPlan === 'PREMIUM' ? 'Premium' : 'Institutional' }}</strong> subscription.
+        </p>
+
+        <div class="otp-not-found-actions">
+          <button class="otp-submit-btn" (click)="goBackToEmailStep()">
+            ← Try another email
+          </button>
+          <button class="otp-upgrade-action-btn" (click)="closeOtpModal(); upgrade()">
+            ⭐ Subscribe to a plan →
+          </button>
+        </div>
+
+        <div class="otp-footer-note">
+          Need help? Contact Khotwa support.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       MODAL — BOOKING
+       ═══════════════════════════════ -->
+  <div class="modal-backdrop" *ngIf="bookingTarget" (click)="closeBookingModal()">
+    <div class="ev-modal" (click)="$event.stopPropagation()">
+      <div class="ev-modal-header">
+        <div class="ev-modal-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/></svg>
+        </div>
+        <div>
+          <h3>{{ bookingTarget.titre }}</h3>
+          <p>Confirm your booking</p>
+        </div>
+        <button class="ev-modal-close" (click)="closeBookingModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ev-modal-body">
+        <div class="ev-modal-row"><span>Date</span><strong>{{ bookingTarget.date | date:'dd MMMM yyyy' }}</strong></div>
+        <div class="ev-modal-row"><span>Time</span><strong>{{ bookingTarget.heure }}</strong></div>
+        <div class="ev-modal-row"><span>Speaker</span><strong>{{ bookingTarget.intervenant || '—' }}</strong></div>
+        <div class="ev-modal-row"><span>Type</span><strong>{{ bookingTarget.type }}</strong></div>
+        <div class="ev-modal-row"><span>Plan</span><strong>{{ bookingTarget.planType || 'FREE' }}</strong></div>
+        <div class="ev-modal-row"><span>Spots remaining</span><strong>{{ bookingTarget.placesRestantes }}</strong></div>
+      </div>
+      <div class="ev-modal-footer">
+        <button class="ev-btn-cancel" (click)="closeBookingModal()">Cancel</button>
+        <button class="ev-btn-confirm" (click)="confirmBooking()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       MODAL — DETAILS
+       ═══════════════════════════════ -->
+  <div class="modal-backdrop" *ngIf="selectedEvent" (click)="closeDetails()">
+    <div class="ev-modal" (click)="$event.stopPropagation()">
+      <div class="ev-modal-header">
+        <div class="ev-modal-icon ev-modal-icon--info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <h3>{{ selectedEvent.titre }}</h3>
+          <p>{{ selectedEvent.description }}</p>
+        </div>
+        <button class="ev-modal-close" (click)="closeDetails()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ev-modal-body">
+        <div class="ev-modal-row"><span>Date</span><strong>{{ selectedEvent.date | date:'dd MMMM yyyy' }}</strong></div>
+        <div class="ev-modal-row"><span>Time</span><strong>{{ selectedEvent.heure }}</strong></div>
+        <div class="ev-modal-row"><span>Speaker</span><strong>{{ selectedEvent.intervenant || '—' }}</strong></div>
+        <div class="ev-modal-row"><span>Type</span><strong>{{ selectedEvent.type }}</strong></div>
+        <div class="ev-modal-row"><span>Spots</span><strong>{{ selectedEvent.placesRestantes }}/{{ selectedEvent.placesTotal }}</strong></div>
+        <div class="ev-modal-row" *ngIf="selectedEvent.lienMeet">
+          <span>Meet Link</span>
+          <a [href]="selectedEvent.lienMeet" target="_blank" class="ev-meet-link">Join →</a>
+        </div>
+      </div>
+      <div class="ev-modal-footer">
+        <button class="ev-btn-cancel" (click)="closeDetails()">Close</button>
+        <button class="ev-btn-confirm"
+          (click)="openBookingModal(selectedEvent); closeDetails()"
+          *ngIf="!isAlreadyBooked(selectedEvent) && selectedEvent.placesRestantes > 0">
+          Book
+        </button>
+        <button class="ev-btn-cancel"
+          (click)="cancelBooking(selectedEvent); closeDetails()"
+          *ngIf="isAlreadyBooked(selectedEvent)">
+          Cancel booking
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
