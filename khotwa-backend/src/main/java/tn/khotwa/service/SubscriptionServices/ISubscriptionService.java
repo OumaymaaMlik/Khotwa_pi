@@ -57,4 +57,6 @@ public interface ISubscriptionService {
     Map<String, Object> getRevenueSummary();
 
     Subscription createFreeSubscription(User user);
+
+    Map<String, Object> getUpgradeSuggestion(Long userId, int premiumThreshold, int discountPercent);
 }

@@ -24,11 +24,9 @@ public class SubscriptionService implements ISubscriptionService {
     private final UserRepository         userRepository;
     private final PlanOfferRepository    planOfferRepository;
 
-    // ✅ NOUVEAU : appelé depuis AuthServiceImpl lors du register
     @Override
     @Transactional
     public Subscription createFreeSubscription(User user) {
-        // Si l'utilisateur a déjà une souscription (ex: re-register tentative), ne pas en créer une autre
         Optional<Subscription> existing = subscriptionRepository.findByUser_IdUser(user.getIdUser());
         if (existing.isPresent()) {
             return existing.get();
@@ -399,8 +397,6 @@ public class SubscriptionService implements ISubscriptionService {
         return saved;
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     private Subscription getOrCreateSubscriptionForUser(User user) {
         return subscriptionRepository.findByUser_IdUser(user.getIdUser())
                 .orElseGet(() -> buildFreeSubscription(user));
@@ -596,5 +592,63 @@ public class SubscriptionService implements ISubscriptionService {
         result.put("totalPaidSubscriptions", totalPaidSubscriptions);
 
         return result;
+    }
+
+
+    @Override
+    public Map<String, Object> getUpgradeSuggestion(Long userId, int premiumThreshold, int discountPercent) {
+
+        Map<String, Object> noSuggestion = new HashMap<>();
+        noSuggestion.put("shouldSuggest", false);
+
+        LocalDate today = LocalDate.now();
+
+        Optional<Subscription> userPremiumSub = subscriptionRepository
+                .findActiveSubscriptionByUserAndPlan(userId, PlanType.PREMIUM, SubscriptionStatus.ACTIVE, today);
+
+        if (userPremiumSub.isEmpty()) {
+            return noSuggestion;
+        }
+
+        long premiumCount = subscriptionRepository
+                .countActiveByPlan(SubscriptionStatus.ACTIVE, PlanType.PREMIUM, today);
+
+        long institutionalCount = subscriptionRepository
+                .countActiveByPlan(SubscriptionStatus.ACTIVE, PlanType.INSTITUTIONAL, today);
+
+        if (premiumCount < premiumThreshold || institutionalCount >= premiumCount) {
+            return noSuggestion;
+        }
+
+        PlanOffer institutionalOffer = planOfferRepository
+                .findFirstByType(PlanType.INSTITUTIONAL)
+                .orElse(null);
+
+        if (institutionalOffer == null || institutionalOffer.getPrix() == null) {
+            return noSuggestion;
+        }
+
+        double originalPrice   = institutionalOffer.getPrix();
+        double discountedPrice = Math.round(originalPrice * (1.0 - discountPercent / 100.0) * 100.0) / 100.0;
+
+        String message = String.format(
+                "Our Premium offer is in high demand (%d active subscribers)! " +
+                        "Enjoy a %d%% discount to upgrade to the %s plan and take advantage of exclusive benefits.",
+                premiumCount, discountPercent, institutionalOffer.getLabel()
+        );
+
+        Map<String, Object> suggestion = new HashMap<>();
+        suggestion.put("shouldSuggest",              true);
+        suggestion.put("institutionalPlanOfferId",   institutionalOffer.getId());
+        suggestion.put("institutionalPlanLabel",     institutionalOffer.getLabel());
+        suggestion.put("institutionalDescription",   institutionalOffer.getDescription());
+        suggestion.put("originalPrice",              originalPrice);
+        suggestion.put("discountedPrice",            discountedPrice);
+        suggestion.put("discountPercent",            discountPercent);
+        suggestion.put("premiumCount",               premiumCount);
+        suggestion.put("institutionalCount",         institutionalCount);
+        suggestion.put("message",                    message);
+
+        return suggestion;
     }
 }

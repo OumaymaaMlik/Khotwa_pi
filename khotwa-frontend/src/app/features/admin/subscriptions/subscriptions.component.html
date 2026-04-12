@@ -83,9 +83,17 @@
             <td><span class="days-badge" [class.days-badge--low]="getRemainingDays(s.dateFin) <= 7">{{ getRemainingDays(s.dateFin) }}d</span></td>
             <td><span class="renew-pill" [class.renew-pill--on]="s.autoRenouvellement">{{ s.autoRenouvellement ? 'ON' : 'OFF' }}</span></td>
             <td>
-              <span *ngIf="s.paiementRef" class="ref-chip" [title]="s.paiementRef">
-                <span [innerHTML]="icon('card')"></span>{{ getPaymentRef(s) }}{{ (s.paiementRef?.length ?? 0) > 20 ? '…' : '' }}
-              </span>
+              <div *ngIf="s.paiementRef" class="ref-cell">
+                <!-- Badge remise si présente dans la ref -->
+                <span *ngIf="hasDiscount(s)" class="discount-badge">
+                  −{{ getDiscountFromRef(s.paiementRef) }}
+                </span>
+                <!-- Bouton cliquable qui ouvre la modal de détails -->
+                <button class="ref-chip" [title]="s.paiementRef" (click)="viewPaymentDetails(s)">
+                  <span [innerHTML]="icon('card')"></span>
+                  <span class="ref-order-id">{{ s.paiementRef | slice:14:30 }}…</span>
+                </button>
+              </div>
               <span *ngIf="!s.paiementRef" class="td-muted">—</span>
             </td>
             <td>
@@ -163,15 +171,22 @@
       </div>
 
       <!-- ══ SUMMARY ══ -->
-      <div *ngIf="revenueView === 'summary'">
+      <div *ngIf="revenueView === 'summary'" class="summary-layout">
+
+        <!-- ── KPI row ── -->
         <div class="analytics-grid">
-          <div class="analytics-card">
+
+          <div class="analytics-card analytics-card--hero">
             <div class="analytics-card__icon analytics-card__icon--teal"><span [innerHTML]="icon('dollar')"></span></div>
             <div class="analytics-card__body">
               <span class="analytics-card__val">{{ (revenueSummary?.totalRevenue ?? 0) | number:'1.2-2' }} DT</span>
               <span class="analytics-card__label">Total Revenue</span>
+              <span class="analytics-card__sub" *ngIf="paymentsWithDiscount.length > 0">
+                incl. {{ paymentsWithDiscount.length }} discounted
+              </span>
             </div>
           </div>
+
           <div class="analytics-card">
             <div class="analytics-card__icon analytics-card__icon--green"><span [innerHTML]="icon('card')"></span></div>
             <div class="analytics-card__body">
@@ -179,13 +194,18 @@
               <span class="analytics-card__label">Paid Subscriptions</span>
             </div>
           </div>
+
           <div class="analytics-card">
             <div class="analytics-card__icon analytics-card__icon--orange"><span [innerHTML]="icon('trending')"></span></div>
             <div class="analytics-card__body">
               <span class="analytics-card__val">{{ activeRate }}%</span>
               <span class="analytics-card__label">Active Rate</span>
+              <div class="analytics-mini-bar">
+                <div class="analytics-mini-bar__fill analytics-mini-bar__fill--orange" [style.width.%]="activeRate"></div>
+              </div>
             </div>
           </div>
+
           <div class="analytics-card">
             <div class="analytics-card__icon analytics-card__icon--red"><span [innerHTML]="icon('chart')"></span></div>
             <div class="analytics-card__body">
@@ -193,29 +213,92 @@
               <span class="analytics-card__label">Expired</span>
             </div>
           </div>
+
         </div>
 
-        <!-- Plan distribution -->
-        <div class="analytics-breakdown">
-          <h3 class="breakdown-title">Plan Distribution</h3>
-          <div class="breakdown-bars" *ngIf="kpiTotal > 0; else noData">
-            <div class="breakdown-row">
-              <span class="breakdown-label">Free</span>
-              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--neutral" [style.width.%]="(kpiFree / kpiTotal) * 100"></div></div>
-              <span class="breakdown-count">{{ kpiFree }}</span>
+        <!-- ── Bottom row: distribution + discounts ── -->
+        <div class="summary-bottom">
+
+          <!-- Plan distribution -->
+          <div class="analytics-breakdown summary-breakdown">
+            <h3 class="breakdown-title">Plan Distribution</h3>
+            <div class="breakdown-bars" *ngIf="kpiTotal > 0; else noData">
+
+              <div class="breakdown-row">
+                <div class="breakdown-label-group">
+                  <span class="breakdown-dot breakdown-dot--neutral"></span>
+                  <span class="breakdown-label">Free</span>
+                </div>
+                <div class="breakdown-bar-wrap">
+                  <div class="breakdown-bar breakdown-bar--neutral" [style.width.%]="(kpiFree / kpiTotal) * 100"></div>
+                </div>
+                <span class="breakdown-count">{{ kpiFree }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiFree / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+
+              <div class="breakdown-row">
+                <div class="breakdown-label-group">
+                  <span class="breakdown-dot breakdown-dot--orange"></span>
+                  <span class="breakdown-label">Premium</span>
+                </div>
+                <div class="breakdown-bar-wrap">
+                  <div class="breakdown-bar breakdown-bar--orange" [style.width.%]="(kpiPremium / kpiTotal) * 100"></div>
+                </div>
+                <span class="breakdown-count">{{ kpiPremium }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiPremium / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+
+              <div class="breakdown-row">
+                <div class="breakdown-label-group">
+                  <span class="breakdown-dot breakdown-dot--violet"></span>
+                  <span class="breakdown-label">Institutional</span>
+                </div>
+                <div class="breakdown-bar-wrap">
+                  <div class="breakdown-bar breakdown-bar--violet" [style.width.%]="(kpiInstitution / kpiTotal) * 100"></div>
+                </div>
+                <span class="breakdown-count">{{ kpiInstitution }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiInstitution / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+
             </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Premium</span>
-              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--orange" [style.width.%]="(kpiPremium / kpiTotal) * 100"></div></div>
-              <span class="breakdown-count">{{ kpiPremium }}</span>
+            <ng-template #noData><p class="empty-row">No data yet.</p></ng-template>
+          </div>
+
+          <!-- Discounts panel -->
+          <div class="analytics-breakdown summary-discounts">
+            <h3 class="breakdown-title">
+              Discount Campaigns
+              <span class="discount-badge discount-badge--lg" *ngIf="paymentsWithDiscount.length > 0">
+                {{ paymentsWithDiscount.length }}
+              </span>
+            </h3>
+
+            <div *ngIf="paymentsWithDiscount.length === 0" class="empty-row">
+              No discounted payments yet.
             </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Institutional</span>
-              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--violet" [style.width.%]="(kpiInstitution / kpiTotal) * 100"></div></div>
-              <span class="breakdown-count">{{ kpiInstitution }}</span>
+
+            <div class="discount-list" *ngIf="paymentsWithDiscount.length > 0">
+              <div class="discount-row" *ngFor="let d of paymentsWithDiscount">
+                <div class="user-cell">
+                  <div class="user-avatar" [style.background]="getAvatarColorFromId(d.userId ?? 0)">
+                    {{ (d.prenom ?? '?').charAt(0).toUpperCase() }}{{ (d.nom ?? '').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="user-meta">
+                    <div class="user-name">{{ d.prenom }} {{ d.nom }}</div>
+                    <div class="user-sub">{{ d.plan }} · {{ d.dateDebut | date:'dd MMM yyyy' }}</div>
+                  </div>
+                </div>
+                <div class="discount-row-right">
+                  <span class="discount-badge">−{{ d.discountPercent }}%</span>
+                  <div class="discount-prices">
+                    <span class="discount-original">{{ d.prixOriginal | number:'1.2-2' }} DT</span>
+                    <span class="discount-paid">{{ d.montant | number:'1.2-2' }} DT</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <ng-template #noData><p class="empty-row">No data yet.</p></ng-template>
+
         </div>
       </div>
 
@@ -347,6 +430,92 @@
     <div class="confirm-actions">
       <button class="kh-btn kh-btn--ghost" (click)="cancelSuspend()">Cancel</button>
       <button class="kh-btn kh-btn--danger" (click)="executeSuspend()">Confirm suspend</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal — Payment Details ══ -->
+<div class="modal-overlay" *ngIf="showPaymentDetailsModal" (click)="onOverlayClick($event)">
+  <div class="modal-panel modal-panel--sm">
+    <button class="modal-close" (click)="closePaymentDetailsModal()">✕</button>
+    <div class="modal-header-block">
+      <h2>Payment Details</h2>
+      <p class="modal-subtitle">Information stored in the payment reference</p>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="paymentDetailsLoading" style="text-align:center;padding:2rem">
+      <span class="kh-spinner kh-spinner--dark"></span>
+    </div>
+
+    <!-- Details -->
+    <ng-container *ngIf="!paymentDetailsLoading && selectedPaymentDetails">
+      <div class="payment-details-grid">
+
+        <div class="payment-detail-row">
+          <span class="pd-label">Plan</span>
+          <span class="kh-badge" [ngClass]="getPlanBadgeClass(selectedPaymentDetails.plan)">
+            {{ selectedPaymentDetails.plan }}
+          </span>
+        </div>
+
+        <div class="payment-detail-row">
+          <span class="pd-label">Status</span>
+          <span class="kh-badge" [ngClass]="getStatusBadgeClass(selectedPaymentDetails.statut)">
+            {{ selectedPaymentDetails.statut }}
+          </span>
+        </div>
+
+        <div class="payment-detail-row">
+          <span class="pd-label">PayPal Order ID</span>
+          <code class="pd-code">{{ selectedPaymentDetails.paypalOrderId ?? '—' }}</code>
+        </div>
+
+        <div class="payment-detail-row">
+          <span class="pd-label">Payer ID</span>
+          <code class="pd-code">{{ selectedPaymentDetails.payerId ?? '—' }}</code>
+        </div>
+
+        <div class="payment-detail-row">
+          <span class="pd-label">Original price</span>
+          <span class="pd-value">{{ selectedPaymentDetails.prixOriginal | number:'1.2-2' }} DT</span>
+        </div>
+
+        <ng-container *ngIf="selectedPaymentDetails.hasDiscount">
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Discount applied</span>
+            <span class="discount-badge discount-badge--lg">−{{ selectedPaymentDetails.discountPercent }}%</span>
+          </div>
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Amount paid</span>
+            <strong class="pd-value pd-value--green">{{ selectedPaymentDetails.montant | number:'1.2-2' }} DT</strong>
+          </div>
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Savings</span>
+            <span class="pd-value pd-value--green">
+              {{ (selectedPaymentDetails.prixOriginal - selectedPaymentDetails.montant) | number:'1.2-2' }} DT
+            </span>
+          </div>
+        </ng-container>
+
+        <div class="payment-detail-row" *ngIf="!selectedPaymentDetails.hasDiscount">
+          <span class="pd-label">Amount paid</span>
+          <strong class="pd-value">{{ selectedPaymentDetails.montant ?? selectedPaymentDetails.prixOriginal | number:'1.2-2' }} DT</strong>
+        </div>
+
+        <div class="payment-detail-row">
+          <span class="pd-label">Period</span>
+          <span class="pd-value">
+            {{ selectedPaymentDetails.dateDebut | date:'dd MMM yyyy' }} →
+            {{ selectedPaymentDetails.dateFin | date:'dd MMM yyyy' }}
+          </span>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="closePaymentDetailsModal()">Close</button>
     </div>
   </div>
 </div>

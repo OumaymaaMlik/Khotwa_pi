@@ -173,3 +173,219 @@ tr:hover td{background:rgba(0,0,0,.015)}
 .kh-spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
 .kh-spinner--dark{border-color:rgba(0,0,0,.15);border-top-color:var(--text-primary)}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── Payment ref cell ─────────────────────────────────────────── */
+.ref-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: #f0f4ff;
+  border: 1px solid #d0d9f5;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: #3b5bdb;
+  cursor: pointer;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ref-chip:hover {
+  background: #e0e8ff;
+  border-color: #3b5bdb;
+}
+
+.ref-order-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+  display: inline-block;
+}
+
+/* ── Discount badge ───────────────────────────────────────────── */
+.discount-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: #d3f9d8;
+  color: #1a7f3c;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.discount-badge--lg {
+  font-size: 13px;
+  padding: 3px 10px;
+}
+
+/* ── Payment details modal ────────────────────────────────────── */
+.payment-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.payment-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f3f5;
+  gap: 12px;
+}
+.payment-detail-row:last-child { border-bottom: none; }
+
+.payment-detail-row--highlight {
+  background: #f0fff4;
+}
+
+.pd-label {
+  font-size: 12px;
+  color: #868e96;
+  font-weight: 500;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+
+.pd-code {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  background: #f8f9fa;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: #495057;
+  word-break: break-all;
+  text-align: right;
+}
+
+.pd-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #212529;
+  text-align: right;
+}
+.pd-value--green { color: #1a7f3c; }
+
+/* ── Analytics Summary layout ─────────────────────────────────── */
+.summary-layout { display: flex; flex-direction: column; gap: 20px; }
+
+.analytics-card--hero { border-left: 3px solid #2ABFBF; }
+
+.analytics-card__sub {
+  font-size: 10px;
+  color: #2ABFBF;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.analytics-mini-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-app);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.analytics-mini-bar__fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .6s ease;
+}
+.analytics-mini-bar__fill--orange { background: var(--orange); }
+
+/* ── Summary bottom 2-col ─────────────────────────────────────── */
+.summary-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 860px) {
+  .summary-bottom { grid-template-columns: 1fr; }
+}
+
+.summary-breakdown, .summary-discounts { height: fit-content; }
+
+/* ── Breakdown label with dot ─────────────────────────────────── */
+.breakdown-label-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 110px;
+  flex-shrink: 0;
+}
+.breakdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.breakdown-dot--neutral  { background: var(--text-muted); }
+.breakdown-dot--orange   { background: var(--orange); }
+.breakdown-dot--violet   { background: #7850c8; }
+
+.breakdown-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 34px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Discount list ────────────────────────────────────────────── */
+.discount-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.discount-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fffe;
+  border: 1px solid rgba(39,174,122,.15);
+  border-radius: 10px;
+}
+
+.discount-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.discount-prices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.discount-original {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.discount-paid {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a7f3c;
+}

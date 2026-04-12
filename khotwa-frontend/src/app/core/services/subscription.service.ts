@@ -11,7 +11,7 @@ import {
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private base = '/khotwa';  // ✅ URL relative — passe par le proxy Angular
+  private base = 'http://localhost:8084/khotwa';
 
   constructor(private http: HttpClient) {}
 
@@ -71,11 +71,21 @@ export class SubscriptionService {
     userId: number,
     planOfferId: number,
     paypalOrderId: string,
-    payerId: string
+    payerId: string,
+    montantPaye?: number | null,
+    discountPercent?: number | null
   ): Observable<Subscription> {
     return this.http.post<Subscription>(
       `${this.base}/payments/confirm`,
-      { userId, planOfferId, paypalOrderId, payerId }
+      {
+        userId,
+        planOfferId,
+        paypalOrderId,
+        payerId,
+        // Inclus dans paiementRef côté backend si une remise était active
+        montantPaye:     montantPaye     ?? null,
+        discountPercent: discountPercent ?? null
+      }
     );
   }
 
@@ -124,6 +134,28 @@ export class SubscriptionService {
     return this.http.put<Subscription>(
       `${this.base}/subscriptions/${subscriptionId}/admin-pending`,
       null
+    );
+  }
+
+  /** Détails parsés d'un paiement (orderId, payerId, montant, remise…) */
+  getPaymentDetails(subscriptionId: number): Observable<any> {
+    return this.http.get<any>(`${this.base}/payments/details/${subscriptionId}`);
+  }
+
+  /** Tous les abonnements qui ont bénéficié d'une remise */
+  getPaymentsWithDiscount(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/payments/with-discount`);
+  }
+
+
+  getUpgradeSuggestion(
+    userId: number,
+    premiumThreshold: number = 0,
+    discountPercent: number = 20
+  ): Observable<any> {
+    return this.http.get<any>(
+      `${this.base}/subscriptions/user/${userId}/upgrade-suggestion` +
+      `?premiumThreshold=${premiumThreshold}&discountPercent=${discountPercent}`
     );
   }
 }

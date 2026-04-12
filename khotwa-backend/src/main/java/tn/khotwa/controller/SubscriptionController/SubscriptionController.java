@@ -120,7 +120,6 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.getTotalRevenueByUser());
     }
 
-    // Alerte  dexpiration
 
 
     @GetMapping("/user/{userId}/expiration-alert")
@@ -134,7 +133,6 @@ public class SubscriptionController {
             return ResponseEntity.ok(result);
         }
 
-        // FREE with date 2099 → never expires
         if (sub.getDateFin().getYear() >= 2099) {
             result.put("hasAlert", false);
             return ResponseEntity.ok(result);
@@ -154,6 +152,18 @@ public class SubscriptionController {
                 : sub.getPlan().name());
 
         return ResponseEntity.ok(result);
+    }
+
+
+    @GetMapping("/user/{userId}/upgrade-suggestion")
+    public ResponseEntity<Map<String, Object>> getUpgradeSuggestion(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1")  int premiumThreshold,
+            @RequestParam(defaultValue = "20") int discountPercent) {
+
+        return ResponseEntity.ok(
+                subscriptionService.getUpgradeSuggestion(userId, premiumThreshold, discountPercent)
+        );
     }
 
 }

@@ -39,3 +39,52 @@
     </div>
   </div>
 </div>
+<div class="popup-overlay" *ngIf="suggestionPopupVisible">
+  <div class="popup-card">
+    <div class="popup-badge">Suggested upgrade</div>
+
+    <h2 class="popup-title">
+      Passez à l’offre {{ upgradeSuggestion?.institutionalPlanLabel }}
+    </h2>
+
+    <p class="popup-text">
+      {{ upgradeSuggestion?.message }}
+    </p>
+
+    <div class="popup-pricing" *ngIf="upgradeSuggestion?.discountedPrice != null">
+      <span class="old-price" *ngIf="upgradeSuggestion?.originalPrice != null">
+        {{ upgradeSuggestion?.originalPrice }} DT
+      </span>
+      <span class="new-price">
+        {{ upgradeSuggestion?.discountedPrice }} DT
+      </span>
+      <span class="discount-chip" *ngIf="upgradeSuggestion?.discountPercent != null">
+        -{{ upgradeSuggestion?.discountPercent }}%
+      </span>
+    </div>
+
+    <p class="popup-description" *ngIf="upgradeSuggestion?.institutionalDescription">
+      {{ upgradeSuggestion?.institutionalDescription }}
+    </p>
+
+    <div class="popup-stats">
+      <div class="stat-box">
+        <strong>{{ upgradeSuggestion?.premiumCount || 0 }}</strong>
+        <span>Premium actifs</span>
+      </div>
+      <div class="stat-box">
+        <strong>{{ upgradeSuggestion?.institutionalCount || 0 }}</strong>
+        <span>Institutional actifs</span>
+      </div>
+    </div>
+
+    <div class="popup-actions">
+      <button class="kh-btn kh-btn--ghost" (click)="closeSuggestionPopup()">
+        Plus tard
+      </button>
+      <button class="kh-btn kh-btn--primary" (click)="goToSubscriptionPage()">
+        Voir l’offre
+      </button>
+    </div>
+  </div>
+</div>

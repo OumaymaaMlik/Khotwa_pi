@@ -37,6 +37,12 @@ export class SubscriptionsComponent implements OnInit {
   analyticsLoading = false;
   private analyticsCallsDone = 0;
 
+  // ── Remise / payment details ──────────────────────────────────────────────
+  paymentsWithDiscount: any[] = [];
+  selectedPaymentDetails: any | null = null;
+  showPaymentDetailsModal = false;
+  paymentDetailsLoading = false;
+
   showPlanModal = false;
   showConfirmSuspend = false;
   editMode = false;
@@ -68,6 +74,7 @@ export class SubscriptionsComponent implements OnInit {
   ngOnInit(): void {
     this.loadSubscriptions();
     this.loadPlans();
+    this.loadPaymentsWithDiscount();
   }
 
   icon(name: string): SafeHtml {
@@ -82,6 +89,9 @@ export class SubscriptionsComponent implements OnInit {
     this.activeTab = tab;
     if (tab === 'analytics' && !this.revenueSummary && !this.analyticsLoading) {
       this.loadAllAnalytics();
+    }
+    if (tab === 'subscribers' && !this.paymentsWithDiscount.length) {
+      this.loadPaymentsWithDiscount();
     }
   }
 
@@ -139,6 +149,48 @@ export class SubscriptionsComponent implements OnInit {
       next: (data: Subscription[]) => { this.subscriptions = data ?? []; this.applyFilters(); },
       error: (err: HttpErrorResponse) => console.error(err)
     });
+  }
+
+  /** Charge la liste de tous les paiements avec remise (pour l'admin) */
+  loadPaymentsWithDiscount(): void {
+    this.subscriptionService.getPaymentsWithDiscount().subscribe({
+      next: (data: any[]) => { this.paymentsWithDiscount = data ?? []; },
+      error: () => { this.paymentsWithDiscount = []; }
+    });
+  }
+
+  /** Ouvre la modal de détails d'un paiement pour un abonnement donné */
+  viewPaymentDetails(s: Subscription): void {
+    if (!s.idSubscription) return;
+    this.paymentDetailsLoading = true;
+    this.showPaymentDetailsModal = true;
+    this.selectedPaymentDetails = null;
+    this.subscriptionService.getPaymentDetails(s.idSubscription).subscribe({
+      next: (data: any) => { this.selectedPaymentDetails = data; this.paymentDetailsLoading = false; },
+      error: () => { this.paymentDetailsLoading = false; }
+    });
+  }
+
+  closePaymentDetailsModal(): void {
+    this.showPaymentDetailsModal = false;
+    this.selectedPaymentDetails = null;
+  }
+
+  /** Vérifie si un abonnement a une remise dans sa référence de paiement */
+  hasDiscount(s: Subscription): boolean {
+    return !!(s.paiementRef && s.paiementRef.includes('|REMISE:'));
+  }
+
+  /** Extrait le % de remise depuis la ref sans appel HTTP */
+  getDiscountFromRef(ref: string): string {
+    const match = ref?.match(/\|REMISE:(\d+)%/);
+    return match ? match[1] + '%' : '';
+  }
+
+  /** Extrait le montant payé depuis la ref */
+  getMontantFromRef(ref: string): string {
+    const match = ref?.match(/\|MONTANT:([\d.]+)/);
+    return match ? match[1] + ' TND' : '';
   }
 
   loadPlans(): void {
@@ -258,6 +310,7 @@ export class SubscriptionsComponent implements OnInit {
     if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
       if (this.showPlanModal) this.closePlanModal();
       if (this.showConfirmSuspend) this.cancelSuspend();
+      if (this.showPaymentDetailsModal) this.closePaymentDetailsModal();
     }
   }
 
