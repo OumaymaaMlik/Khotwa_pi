@@ -93,19 +93,30 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
   handleNewMessage(msg: Message) {
     const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
     const conv = this.conversations.find(c => c.participantId === otherId);
-    
     const newMsgObj = this.mapToUIMessage(msg);
 
     if (conv) {
-      conv.messages.push(newMsgObj);
-      conv.lastMsg = msg.body;
-      if (msg.receiverId === this.currentUserId) conv.unread++;
-      if (this.selectedConv?.participantId === otherId) {
-        this.selectedConv.messages.push(newMsgObj);
-        if (msg.receiverId === this.currentUserId && msg.status === 'PENDING') {
-          this.messageService.updateStatus(msg.id, 'READ').subscribe();
+      if (!conv.messages.some((m: any) => m.id === msg.id)) {
+        conv.messages.push(newMsgObj);
+        conv.time = newMsgObj.time;    
+        const isActuallyEmpty = !newMsgObj.text || newMsgObj.text.trim() === '' || newMsgObj.text === '\u00A0';
+
+    conv.lastMsg = isActuallyEmpty ? '📎 Attachment' : newMsgObj.text;
+        conv.lastUpdate = new Date();  
+        if (msg.receiverId === this.currentUserId) {
+          if (this.selectedConv?.participantId !== otherId) {
+            conv.unread++;
+          }
         }
-        this.shouldScroll = true;
+        if (this.selectedConv?.participantId === otherId) {
+          if (msg.receiverId === this.currentUserId && msg.status === 'PENDING') {
+            this.messageService.updateStatus(msg.id, 'READ').subscribe();
+          }
+          this.shouldScroll = true;
+        }
+        this.conversations.sort((a, b) => 
+        new Date(b.lastUpdate || 0).getTime() - new Date(a.lastUpdate || 0).getTime()
+      );
       }
     } else {
       this.conversations.unshift({
@@ -115,27 +126,41 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
         initials: `U${otherId}`,
         color: this.getColor(otherId),
         lastMsg: msg.body,
-        time: this.formatTime(msg.createdAt),
         unread: msg.receiverId === this.currentUserId ? 1 : 0,
         messages: [newMsgObj]
       });
     }
+    
+    // Important: Trigger UI update
+    this.cdr.markForCheck();
   }
 
   handleMessageUpdate(msg: Message) {
     const update = (m: any) => {
       if (m.id === msg.id) {
+        const isDeleted = msg.deletedForAll || msg.deletedForUsers?.split(',').includes(String(this.currentUserId));
         m.status = msg.status;
-        m.deleted = msg.deletedForAll || msg.deletedForUsers?.split(',').includes(String(this.currentUserId));
-        if (m.deleted) {
+        m.deleted = isDeleted;
+
+        if (isDeleted) {
           m.text = 'message deleted';
           m.fileUrl = null;
+          const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
+          const conv = this.conversations.find(c => c.participantId === otherId);
+          if (conv && conv.lastMsg !== 'message deleted') {
+            const lastInArray = conv.messages[conv.messages.length - 1];
+            if (lastInArray && lastInArray.id === msg.id) {
+              conv.lastMsg = 'message deleted';
+            }
+          }
         }
       }
     };
 
     this.conversations.forEach(c => c.messages.forEach(update));
     if (this.selectedConv) this.selectedConv.messages.forEach(update);
+    
+    this.cdr.markForCheck();
   }
 
 
@@ -207,6 +232,18 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
     };
   }
 
+  private updateConversationPreview(conversationId: number, lastMsg: string, time: string) {
+    const conv = this.conversations.find(c => c.id === conversationId);
+    if (conv) {
+      conv.lastMsg = lastMsg.trim() === '\u00A0' ? '📎 Attachment' : lastMsg;
+      conv.time = time;
+      conv.lastUpdate = new Date(); 
+          this.conversations.sort((a, b) => 
+        new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime()
+      );
+    }
+  }
+
   private formatTime(date: any) {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
@@ -243,31 +280,34 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
   }
 
   sendMsg() {
-    if ((!this.newMsg.trim() && !this.pendingFileUrl) || !this.selectedConv) return;
-    const message: any = {
-      subject: 'Direct Message',
-      body: this.newMsg || '📎 File attachment',
-      senderId: this.currentUserId,
-      receiverId: this.selectedConv.participantId,
-      type: 'DIRECT_MESSAGE',
-      fileUrl: this.pendingFileUrl || null,
-      parentMessage: this.replyingTo ? { id: this.replyingTo.id } : null
-    };
-    
-    this.wsService.sendTyping(this.currentUserId, this.selectedConv.participantId, false);
-    this.messageService.sendMessage(message).subscribe({
-      next: (saved) => {
-        const uiMsg = this.mapToUIMessage(saved);
-        this.selectedConv.messages.push(uiMsg);
-        this.newMsg = '';
-        this.replyingTo = null;
-        this.pendingFile = null;
-        this.pendingFileUrl = null;
-        this.shouldScroll = true;
-      },
-      error: (err) => console.error('Failed to send message', err)
-    });
-  }
+  if ((!this.newMsg.trim() && !this.pendingFileUrl) || !this.selectedConv) return;
+
+  const message: any = {
+    subject: 'Direct Message',
+    body: this.newMsg.trim() || (this.pendingFileUrl ? '\u00A0' : '📎 File attachment'),
+    senderId: this.currentUserId,
+    receiverId: this.selectedConv.participantId,
+    type: 'DIRECT_MESSAGE',
+    fileUrl: this.pendingFileUrl || null,
+    parentMessage: this.replyingTo ? { id: this.replyingTo.id } : null
+  };
+  this.wsService.sendTyping(this.currentUserId, this.selectedConv.participantId, false);
+  this.messageService.sendMessage(message).subscribe({
+    next: (saved) => {
+      const uiMsg = this.mapToUIMessage(saved);
+      this.selectedConv.messages.push(uiMsg);
+      this.updateConversationPreview(this.selectedConv.id, uiMsg.text, uiMsg.time);
+      this.newMsg = '';
+      this.replyingTo = null;   
+      this.pendingFile = null;
+      this.pendingFileUrl = null;
+      this.shouldScroll = true;
+      
+      this.cdr.markForCheck(); 
+    },
+    error: (err) => console.error('Failed to send message', err)
+  });
+}
 
   onMsgKey(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -327,5 +367,13 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
       (c.nom && c.nom.toLowerCase().includes(q)) ||
       (c.lastMsg && c.lastMsg.toLowerCase().includes(q))
     );
+  }
+
+  cancelFile() {
+    this.pendingFile = null;
+    this.pendingFileUrl = null;
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = ''; // Reset the hidden input
+    }
   }
 }

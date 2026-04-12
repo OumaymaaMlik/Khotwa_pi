@@ -17,10 +17,10 @@ public class FileUploadController {
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
             Files.createDirectories(Paths.get(uploadDir));
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String fileName = file.getOriginalFilename();
             Path filePath = Paths.get(uploadDir + fileName);
             Files.write(filePath, file.getBytes());
-            String fileUrl = "http://localhost:8080/api/files/" + fileName;
+            String fileUrl = "http://localhost:8084/khotwa/api/files/" + fileName;
             return ResponseEntity.ok(fileUrl);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body("Failed to upload file");

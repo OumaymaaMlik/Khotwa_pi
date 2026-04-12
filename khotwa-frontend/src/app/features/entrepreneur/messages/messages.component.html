@@ -47,11 +47,27 @@
                   <p class="reply-text">{{ m.parentMessageContent | slice:0:50 }}{{ m.parentMessageContent.length > 50 ? '...' : '' }}</p>
                 </div>
 
-                <p>{{ m.deleted ? 'message deleted' : m.text }}</p>
+                <ng-container *ngIf="!m.deleted; else deletedTemplate">
+                  
+                  <div *ngIf="m.fileUrl" class="attachment-wrapper">
+                    <div class="file-card">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                      <div class="file-info">
+                        <span class="file-name">Attachment</span>
+                        <a [href]="m.fileUrl" target="_blank" class="download-link">View File</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p *ngIf="m.text && m.text !== '📎 File attachment'">{{ m.text }}</p>
+                </ng-container>
+
+                <ng-template #deletedTemplate>
+                  <p class="deleted-note">message deleted</p>
+                </ng-template>
                 
                 <div class="msg-footer">
                   <span class="msg-time">{{ m.time }}</span>
-                  
                   <span *ngIf="m.mine && !m.deleted" class="msg-status">
                     @if (m.status === 'PENDING') {
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -86,6 +102,13 @@
         <div class="typing-indicator" *ngIf="isTyping">
           <span></span><span></span><span></span>
           <p>{{ selectedConv.nom }} is typing...</p>
+        </div>
+        <div class="file-preview" *ngIf="pendingFileUrl">
+          <div class="file-preview-content">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            <span>File ready: {{ pendingFile?.name || 'Attachment' }}</span>
+            <button (click)="cancelFile()">&times;</button>
+          </div>
         </div>
         <div class="chat-input">
           <input #fileInput type="file" style="display:none" (change)="onFileSelected($event)" />

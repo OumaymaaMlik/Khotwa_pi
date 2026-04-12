@@ -29,7 +29,7 @@ export class WebSocketService {
 
   constructor() {
     this.client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS('/khotwa/ws'),
       reconnectDelay: 5000,
       onDisconnect: () => {
         console.log('WebSocket disconnected');

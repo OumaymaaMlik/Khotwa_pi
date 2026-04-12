@@ -1,5 +1,6 @@
 package tn.khotwa.messaging.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import tn.khotwa.messaging.config.WebSocketEventPublisher;
 import tn.khotwa.messaging.dto.MessageDTO;
 import tn.khotwa.messaging.dto.MessageMapper;
@@ -20,21 +21,34 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+
 public class MessageService {
 
     private final MessageRepository messageRepository;
     private final NotificationService notificationService;
     private final WebSocketEventPublisher eventPublisher;
+    @Autowired
+    private ProfanityFilterService profanityFilterService;
 
     public MessageDTO sendMessage(Message message) {
+        if (message.getBody() != null) {
+            String cleanBody = profanityFilterService.filter(message.getBody());
+            message.setBody(cleanBody);
+        }
+        if (message.getSubject() != null) {
+            String cleanSubject = profanityFilterService.filter(message.getSubject());
+            message.setSubject(cleanSubject);
+        }
         if (message.getParentMessage() != null && message.getParentMessage().getId() != null) {
             Message parent = messageRepository.findById(message.getParentMessage().getId())
                     .orElseThrow(() -> new RuntimeException("Parent message not found"));
             message.setParentMessage(parent);
         }
         Message saved = messageRepository.save(message);
+
         MessageDTO dto = MessageMapper.toMessageDTO(saved);
         eventPublisher.publishNewMessage(dto);
+
         NotificationDTO notif = notificationService.createNotification(
                 saved.getReceiverId(),
                 saved.getSenderId(),
@@ -43,6 +57,17 @@ public class MessageService {
         );
         eventPublisher.publishNotification(notif);
         return dto;
+    }
+
+    public MessageDTO sendSystemAutoMessage(Long senderId, Long receiverId, String content) {
+        Message autoMsg = new Message();
+        autoMsg.setSenderId(senderId);
+        autoMsg.setReceiverId(receiverId);
+        autoMsg.setSubject("Nouvelle Collaboration");
+        autoMsg.setBody(content);
+        autoMsg.setType(MessageType.DIRECT_MESSAGE);
+        autoMsg.setStatus(MessageStatus.PENDING);
+        return this.sendMessage(autoMsg);
     }
 
     public Page<MessageDTO> getInbox(Long receiverId, int page, int size) {
@@ -142,4 +167,6 @@ public class MessageService {
         return messageRepository.searchMessages(userId, query)
                 .stream().map(MessageMapper::toMessageDTO).collect(Collectors.toList());
     }
+
+
 }
