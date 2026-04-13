@@ -1,9 +1,10 @@
+// ...existing imports...
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProjetService, ProjetDraftInput } from '../../../core/services/projet.service';
-import { Projet, getDisciplineLevelClass, formatProjetStatusLabel } from '../../../core/models';
+import { Projet, SecteurProjet, SECTEUR_PROJET_OPTIONS, getDisciplineLevelClass, formatProjetStatusLabel } from '../../../core/models';
 
 type StatutTache = 'A_FAIRE' | 'EN_COURS' | 'A_CORRIGER' | 'EN_CORRECTION' | 'TERMINEE' | 'EN_RETARD' | 'BLOQUEE';
 type WorkspaceView = 'KANBAN' | 'CALENDAR' | 'DELIVERABLES';
@@ -55,6 +56,62 @@ interface WorkflowBoardColumn {
   tone: 'teal' | 'amber' | 'green' | 'red';
 }
 
+interface ProjectInfoField {
+  key: string;
+  label: string;
+  value: string;
+  missing: boolean;
+}
+
+interface CoachCorrectionFeedItem {
+  level: 'TASK' | 'SUBTASK';
+  title: string;
+  comment: string;
+  status: StatutTache;
+}
+
+interface ProjectCorrectionHint {
+  fieldKey: string;
+  fieldLabel: string;
+  comment: string;
+}
+
+interface CorrectionGuideItem {
+  level: 'PROJECT' | 'TASK' | 'SUBTASK';
+  title: string;
+  comment: string;
+  status: StatutTache | 'A_CORRIGER';
+}
+
+type EditableProjectFieldKey =
+  | 'nomStartup'
+  | 'description'
+  | 'secteur'
+  | 'stadeProjet'
+  | 'dateDebutProjet'
+  | 'dateFinProjet'
+  | 'problemeAdresse'
+  | 'solutionProposee'
+  | 'businessModel'
+  | 'innovationDescription'
+  | 'scalabiliteDescription'
+  | 'pocDisponible';
+
+const EDITABLE_PROJECT_FIELDS: EditableProjectFieldKey[] = [
+  'nomStartup',
+  'description',
+  'secteur',
+  'stadeProjet',
+  'dateDebutProjet',
+  'dateFinProjet',
+  'problemeAdresse',
+  'solutionProposee',
+  'businessModel',
+  'innovationDescription',
+  'scalabiliteDescription',
+  'pocDisponible',
+];
+
 interface CalendarDayCell {
   date: Date | null;
   tasks: WorkflowTache[];
@@ -62,9 +119,14 @@ interface CalendarDayCell {
   isToday: boolean;
 }
 
+type SecteurProjetInput = SecteurProjet | '';
+
 @Component({ selector:'app-entrepreneur-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
 export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly selectedProjectStorageKey = 'entrepreneur-selected-project-id';
+  private readonly pendingCoachApprovalStorageKey = 'entrepreneur-pending-coach-approval-project-ids';
+  private waitingApprovalPollHandle: ReturnType<typeof setInterval> | null = null;
 
   readonly boardColumns: WorkflowBoardColumn[] = [
     { key: 'A_FAIRE', title: 'A_FAIRE', subtitle: 'Waiting to start', tone: 'teal' },
@@ -76,6 +138,13 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   showProjectModal = false;
   showCreateProjectModal = false;
+  showSubmitProjectModal = false;
+  showDeleteProjectModal = false;
+  showCorrectionSubmitModal = false;
+  showSaveEditModal = false;
+  pendingProjectSubmission: Projet | null = null;
+  pendingProjectDeletion: Projet | null = null;
+  pendingCorrectionSubmission: Projet | null = null;
   editingProject: Projet | null = null;
   submitMessage = '';
   isSubmitting = false;
@@ -96,9 +165,12 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   selectedDeliverableForPreview: WorkflowDocument | null = null;
   selectedDeliverablePreviewUrl = '';
   selectedDeliverablePreviewMimeType = '';
+  showCorrectionGuideModal = false;
+  correctionGuideSeenByProjectId: Record<string, boolean> = {};
   currentCalendarCursor = this.createMonthAnchor(new Date());
   createProjectStep = 1;
   readonly createProjectStepCount = 4;
+  readonly minProjectDurationDays = 30;
 
   selectedWorkflowProject: Projet | null = null;
   assignedCoachs: AssignedCoach[] = [];
@@ -120,17 +192,27 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   readonly taskStatusOptions: StatutTache[] = ['A_FAIRE', 'EN_COURS', 'A_CORRIGER', 'EN_CORRECTION', 'TERMINEE', 'EN_RETARD', 'BLOQUEE'];
   readonly stageOptions: Array<{ value: ProjetDraftInput['stadeProjet']; label: string }> = [
     { value: 'IDEE', label: 'Idée' },
-    { value: 'PROTOTYPE', label: 'Prototype' },
+    { value: 'POC', label: 'Preuve de concept' },
     { value: 'MVP', label: 'MVP' },
-    { value: 'COMMERCIALISATION', label: 'Traction' },
+    { value: 'PROTOTYPE', label: 'Prototype' },
+    { value: 'COMMERCIALISATION', label: 'Commercialisation' },
+    { value: 'SCALING', label: "Passage à l'échelle" },
   ];
+  readonly secteurOptions = SECTEUR_PROJET_OPTIONS;
 
   form: ProjetDraftInput = this.createEmptyForm();
   conversationForm = {
     nomStartup: '',
-    secteur: '',
+    secteur: '' as SecteurProjetInput,
     stadeProjet: 'IDEE' as ProjetDraftInput['stadeProjet'],
     pitch: '',
+    dateDebutProjet: '',
+    dateFinProjet: '',
+    solutionProposee: '',
+    businessModel: '',
+    innovationDescription: '',
+    scalabiliteDescription: '',
+    pocDisponible: false,
   };
 
   constructor(
@@ -156,11 +238,15 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     this.projetService.loadEntrepreneurProjects().subscribe({
       next: (projects) => {
+        const persistedProjectId = this.getPersistedSelectedProjectId();
+        const persistedProject = persistedProjectId
+          ? projects.find((project) => project.id === persistedProjectId)
+          : null;
         if (projects.length > 0) {
           const currentProject = this.selectedWorkflowProject
             ? projects.find((project) => project.id === this.selectedWorkflowProject?.id)
             : null;
-          this.selectProject(currentProject ?? projects[0]);
+          this.selectProject(persistedProject ?? currentProject ?? projects[0]);
         }
       },
       error: () => {
@@ -170,6 +256,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopWaitingApprovalPolling();
     this.revokeDeliverablePreviewUrl();
   }
   get filteredProjets(): Projet[] {
@@ -199,6 +286,13 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       secteur: '',
       stadeProjet: 'IDEE',
       pitch: '',
+      dateDebutProjet: '',
+      dateFinProjet: '',
+      solutionProposee: '',
+      businessModel: '',
+      innovationDescription: '',
+      scalabiliteDescription: '',
+      pocDisponible: false,
     };
     this.showCreateProjectModal = true;
   }
@@ -226,21 +320,42 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       return this.conversationForm.nomStartup.trim().length >= 3;
     }
     if (this.createProjectStep === 2) {
-      return this.conversationForm.secteur.trim().length >= 2;
+      return !!this.conversationForm.secteur;
     }
     if (this.createProjectStep === 3) {
       return !!this.conversationForm.stadeProjet;
     }
-    return this.conversationForm.pitch.trim().length >= 10;
+    if (this.conversationForm.pitch.trim().length < 10) {
+      return false;
+    }
+
+    return this.getProjectTimelineValidationError(
+      this.conversationForm.dateDebutProjet,
+      this.conversationForm.dateFinProjet,
+      true,
+    ) === null;
+  }
+
+  getConversationTimelineValidationError(): string | null {
+    return this.getProjectTimelineValidationError(
+      this.conversationForm.dateDebutProjet,
+      this.conversationForm.dateFinProjet,
+      true,
+    );
   }
 
   createProjectFromConversation(): void {
     const name = this.conversationForm.nomStartup.trim();
-    const secteur = this.conversationForm.secteur.trim();
+    const secteur = this.conversationForm.secteur;
     const pitch = this.conversationForm.pitch.trim();
+    const timelineError = this.getProjectTimelineValidationError(
+      this.conversationForm.dateDebutProjet,
+      this.conversationForm.dateFinProjet,
+      true,
+    );
 
-    if (name.length < 3 || secteur.length < 2 || pitch.length < 10) {
-      this.submitMessage = 'Complétez les étapes requises avant de valider.';
+    if (name.length < 3 || !secteur || pitch.length < 10 || timelineError) {
+      this.submitMessage = timelineError ?? 'Complétez les étapes requises avant de valider.';
       return;
     }
 
@@ -249,12 +364,14 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       description: pitch,
       secteur,
       problemeAdresse: pitch,
-      solutionProposee: `Solution proposée pour ${name}`,
-      businessModel: `Modèle économique initial de ${name}`,
+      solutionProposee: this.conversationForm.solutionProposee.trim() || `Solution proposée pour ${name}`,
+      businessModel: this.conversationForm.businessModel.trim() || `Modèle économique initial de ${name}`,
       stadeProjet: this.conversationForm.stadeProjet,
-      innovationDescription: 'Initial draft generated from conversational flow.',
-      scalabiliteDescription: 'Scalability plan to be detailed with coach.',
-      pocDisponible: false,
+      innovationDescription: this.conversationForm.innovationDescription.trim() || 'Initial draft generated from conversational flow.',
+      scalabiliteDescription: this.conversationForm.scalabiliteDescription.trim() || 'Scalability plan to be detailed with coach.',
+      pocDisponible: this.conversationForm.pocDisponible,
+      dateDebutProjet: this.conversationForm.dateDebutProjet,
+      dateFinProjet: this.conversationForm.dateFinProjet,
     };
 
     this.isSubmitting = true;
@@ -288,6 +405,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       innovationDescription: project.innovationDescription ?? '',
       scalabiliteDescription: project.scalabiliteDescription ?? '',
       pocDisponible: project.pocDisponible ?? false,
+      dateDebutProjet: this.toDateInputValue(project.dateDebutProjet),
+      dateFinProjet: this.toDateInputValue(project.dateFinProjet),
     };
     this.showProjectModal = true;
   }
@@ -314,32 +433,66 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.isSubmitting = true;
-    this.submitMessage = '';
-
     if (!this.editingProject) {
-      this.isSubmitting = false;
       this.submitMessage = 'Use the create button in the right panel to add a new project.';
       return;
     }
 
+    this.showSaveEditModal = true;
+  }
+
+  closeSaveEditModal(): void {
+    if (this.isSubmitting) {
+      return;
+    }
+    this.showSaveEditModal = false;
+  }
+
+  confirmSaveProject(): void {
+    if (!this.editingProject) {
+      this.showSaveEditModal = false;
+      this.submitMessage = 'Use the create button in the right panel to add a new project.';
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.submitMessage = '';
+
     this.projetService.updateProjet(this.editingProject.id, this.form).subscribe({
       next: () => {
         this.isSubmitting = false;
+        this.showSaveEditModal = false;
         this.submitMessage = 'Project updated as draft.';
-        setTimeout(() => this.closeProjectModal(), 1500);
+        this.closeProjectModal();
+        this.refreshWithSelectedProject(this.editingProject?.id);
       },
       error: (err) => {
         this.isSubmitting = false;
+        this.showSaveEditModal = false;
         this.submitMessage = this.parseHttpError(err, 'Project update failed. Please try again.');
       }
     });
   }
 
   submitProject(project: Projet): void {
-    if (!confirm('Are you sure you want to submit this project for review? You won\'t be able to edit it afterward.')) {
+    this.pendingProjectSubmission = project;
+    this.showSubmitProjectModal = true;
+  }
+
+  closeSubmitProjectModal(): void {
+    if (this.isSubmitting) {
       return;
     }
+    this.showSubmitProjectModal = false;
+    this.pendingProjectSubmission = null;
+  }
+
+  confirmProjectSubmission(): void {
+    if (!this.pendingProjectSubmission) {
+      return;
+    }
+
+    const project = this.pendingProjectSubmission;
 
     this.isSubmitting = true;
     this.submitMessage = '';
@@ -347,20 +500,39 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.projetService.submitProjet(project.id).subscribe({
       next: () => {
         this.isSubmitting = false;
+        this.showSubmitProjectModal = false;
+        this.pendingProjectSubmission = null;
         this.submitMessage = 'Project submitted for review successfully.';
-        setTimeout(() => this.projetService.loadEntrepreneurProjects().subscribe(), 1500);
+        this.refreshWithSelectedProject(project.id);
       },
       error: (err) => {
         this.isSubmitting = false;
+        this.showSubmitProjectModal = false;
+        this.pendingProjectSubmission = null;
         this.submitMessage = this.parseHttpError(err, 'Project submission failed. Please try again.');
       }
     });
   }
 
   deleteProject(project: Projet): void {
-    if (!confirm('Are you sure you want to delete this draft? This action cannot be undone.')) {
+    this.pendingProjectDeletion = project;
+    this.showDeleteProjectModal = true;
+  }
+
+  closeDeleteProjectModal(): void {
+    if (this.isSubmitting) {
       return;
     }
+    this.showDeleteProjectModal = false;
+    this.pendingProjectDeletion = null;
+  }
+
+  confirmDeleteProject(): void {
+    if (!this.pendingProjectDeletion) {
+      return;
+    }
+
+    const project = this.pendingProjectDeletion;
 
     this.isSubmitting = true;
     this.submitMessage = '';
@@ -368,11 +540,27 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.projetService.deleteProjet(project.id).subscribe({
       next: () => {
         this.isSubmitting = false;
+        this.showDeleteProjectModal = false;
+        this.pendingProjectDeletion = null;
         this.submitMessage = 'Draft deleted successfully.';
-        setTimeout(() => this.projetService.loadEntrepreneurProjects().subscribe(), 1500);
+        this.projetService.loadEntrepreneurProjects().subscribe({
+          next: (projects) => {
+            const nextProject = projects.find((row) => row.id !== project.id) ?? projects[0];
+            if (nextProject) {
+              this.refreshWithSelectedProject(nextProject.id);
+            } else {
+              setTimeout(() => window.location.reload(), 800);
+            }
+          },
+          error: () => {
+            setTimeout(() => window.location.reload(), 800);
+          },
+        });
       },
       error: (err) => {
         this.isSubmitting = false;
+        this.showDeleteProjectModal = false;
+        this.pendingProjectDeletion = null;
         this.submitMessage = this.parseHttpError(err, 'Unable to delete draft project. Please try again.');
       }
     });
@@ -380,6 +568,13 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   openAssignedWorkflow(project: Projet): void {
     this.selectedWorkflowProject = project;
+    this.showCorrectionGuideModal = false;
+
+    if (project.etatValidation === 'A_CORRIGER' || project.etatValidation === 'VALIDE' || project.etatValidation === 'REFUSE') {
+      this.clearPendingCoachApproval(project.id);
+    }
+
+    this.persistSelectedProjectId(project.id);
     this.projectSelectorOpen = false;
     this.expandedTaskId = null;
     this.activeWorkspaceView = 'KANBAN';
@@ -394,10 +589,386 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     this.loadAssignedCoachs(project.id);
     this.loadWorkflowTaches(project.id);
+    this.updateWaitingApprovalPolling(project);
+
+    if (this.needsCorrection(project) && !this.correctionGuideSeenByProjectId[project.id]) {
+      this.openCorrectionGuide();
+    }
+  }
+
+  private persistSelectedProjectId(projectId: string): void {
+    try {
+      sessionStorage.setItem(this.selectedProjectStorageKey, projectId);
+    } catch {
+      // Ignore storage access issues in private browsing or locked environments.
+    }
+  }
+
+  private getPersistedSelectedProjectId(): string | null {
+    try {
+      return sessionStorage.getItem(this.selectedProjectStorageKey);
+    } catch {
+      return null;
+    }
+  }
+
+  private refreshWithSelectedProject(projectId?: string): void {
+    const idToPersist = projectId ?? this.selectedWorkflowProject?.id;
+    if (idToPersist) {
+      this.persistSelectedProjectId(idToPersist);
+    }
+    setTimeout(() => window.location.reload(), 800);
+  }
+
+  private persistPendingCoachApproval(projectId: string): void {
+    try {
+      const existing = this.readPendingCoachApprovalIds();
+      if (!existing.includes(projectId)) {
+        existing.push(projectId);
+      }
+      sessionStorage.setItem(this.pendingCoachApprovalStorageKey, JSON.stringify(existing));
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  private clearPendingCoachApproval(projectId: string): void {
+    try {
+      const updated = this.readPendingCoachApprovalIds().filter((id) => id !== projectId);
+      sessionStorage.setItem(this.pendingCoachApprovalStorageKey, JSON.stringify(updated));
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  private readPendingCoachApprovalIds(): string[] {
+    try {
+      const raw = sessionStorage.getItem(this.pendingCoachApprovalStorageKey);
+      if (!raw) {
+        return [];
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  isWaitingCoachApproval(project: Projet | null): boolean {
+    if (!project || project.etatValidation !== 'EN_REVUE') {
+      return false;
+    }
+    if (project.correctionResoumiseEnAttenteCoach) {
+      return true;
+    }
+    return this.readPendingCoachApprovalIds().includes(project.id);
+  }
+
+  refreshCurrentProjectStatus(): void {
+    this.refreshSelectedProjectInPlace();
+  }
+
+  private updateWaitingApprovalPolling(project: Projet | null): void {
+    if (!project || !this.isWaitingCoachApproval(project)) {
+      this.stopWaitingApprovalPolling();
+      return;
+    }
+    this.startWaitingApprovalPolling();
+  }
+
+  private startWaitingApprovalPolling(): void {
+    if (this.waitingApprovalPollHandle) {
+      return;
+    }
+    this.waitingApprovalPollHandle = setInterval(() => {
+      this.refreshSelectedProjectInPlace();
+    }, 10000);
+  }
+
+  private stopWaitingApprovalPolling(): void {
+    if (!this.waitingApprovalPollHandle) {
+      return;
+    }
+    clearInterval(this.waitingApprovalPollHandle);
+    this.waitingApprovalPollHandle = null;
+  }
+
+  private refreshSelectedProjectInPlace(): void {
+    const selectedId = this.selectedWorkflowProject?.id;
+    if (!selectedId) {
+      return;
+    }
+
+    this.projetService.loadEntrepreneurProjects().subscribe({
+      next: (projects) => {
+        const updated = projects.find((project) => project.id === selectedId);
+        if (!updated) {
+          this.stopWaitingApprovalPolling();
+          return;
+        }
+
+        this.selectedWorkflowProject = updated;
+
+        if (updated.etatValidation !== 'EN_REVUE') {
+          this.clearPendingCoachApproval(updated.id);
+          this.stopWaitingApprovalPolling();
+          this.submitMessage = updated.etatValidation === 'VALIDE'
+            ? 'Coach approved your correction.'
+            : this.submitMessage;
+        }
+      },
+      error: () => {
+        // Keep silent retry behavior during background polling.
+      }
+    });
   }
 
   selectProject(project: Projet): void {
     this.openAssignedWorkflow(project);
+  }
+
+  openCorrectionGuide(): void {
+    if (!this.selectedWorkflowProject) {
+      return;
+    }
+    this.showCorrectionGuideModal = true;
+    this.correctionGuideSeenByProjectId[this.selectedWorkflowProject.id] = true;
+  }
+
+  closeCorrectionGuide(): void {
+    this.showCorrectionGuideModal = false;
+  }
+
+  hasUnreadCorrectionGuide(project: Projet): boolean {
+    return this.needsCorrection(project) && !this.correctionGuideSeenByProjectId[project.id];
+  }
+
+  hasProjectLevelCorrection(project: Projet | null): boolean {
+    if (!project) {
+      return false;
+    }
+    return typeof project.commentaireCorrectionCoach === 'string' && project.commentaireCorrectionCoach.trim().length > 0;
+  }
+
+  getProjectCorrectionSummary(project: Projet | null): string {
+    if (!project || !this.hasProjectLevelCorrection(project)) {
+      return 'Correction state is active. The coach feedback will appear here once available.';
+    }
+
+    return 'Coach feedback received: update the requested fields, then re-submit for review.';
+  }
+
+  getCompactText(value: string, maxLength = 140): string {
+    const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+    return `${normalized.slice(0, Math.max(0, maxLength - 3))}...`;
+  }
+
+  getTotalCorrectionSignals(project: Projet | null): number {
+    const projectItems = this.getProjectCorrectionHints(project).length;
+    const workflowItems = this.getCoachCorrectionsFeed().filter((item) => item.status === 'A_CORRIGER' || item.status === 'EN_CORRECTION').length;
+    return projectItems + workflowItems;
+  }
+
+  hasActionableCorrection(project: Projet | null): boolean {
+    if (!project || !this.needsCorrection(project)) {
+      return false;
+    }
+    return this.getCorrectionGuideItems(project).length > 0;
+  }
+
+  getMissingActionableCorrectionHint(project: Projet | null): string {
+    if (!project || !this.needsCorrection(project)) {
+      return '';
+    }
+    if (this.hasActionableCorrection(project)) {
+      return '';
+    }
+    return 'No actionable correction details from coach yet. Ask for explicit items before re-submitting.';
+  }
+
+  getCorrectionGuideItems(project: Projet | null): CorrectionGuideItem[] {
+    const projectItems = this.getProjectCorrectionHints(project).map((hint) => ({
+      level: 'PROJECT' as const,
+      title: hint.fieldLabel,
+      comment: hint.comment,
+      status: 'A_CORRIGER' as const,
+    }));
+
+    const workflowItems = this.getCoachCorrectionsFeed()
+      .filter((item) => item.status === 'A_CORRIGER' || item.status === 'EN_CORRECTION')
+      .map((item) => ({
+        level: item.level,
+        title: item.title,
+        comment: item.comment,
+        status: item.status,
+      }));
+
+    const items = [...projectItems, ...workflowItems].filter((item) => item.comment.trim().length > 0);
+    return items;
+  }
+
+  getProjectSnapshotFields(project: Projet): ProjectInfoField[] {
+    return this.getProjectInfoFields(project).slice(0, 4);
+  }
+
+  getProjectCorrectionHints(project: Projet | null): ProjectCorrectionHint[] {
+    if (!project || !this.hasProjectLevelCorrection(project)) {
+      return [];
+    }
+
+    const raw = project.commentaireCorrectionCoach!;
+    const blocks = raw
+      .split(/\n\s*--------------------\s*\n/g)
+      .map((chunk) => chunk.trim())
+      .filter((chunk) => chunk.length > 0);
+
+    const hints: ProjectCorrectionHint[] = [];
+
+    for (const block of blocks) {
+      const lines = block.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 0);
+      if (!lines.length) {
+        continue;
+      }
+
+      const label = lines[0];
+      const field = this.getProjectInfoFields(project).find((item) => item.label.toLowerCase() === label.toLowerCase());
+      const requestedLine = lines.find((line) => /^Requested correction:/i.test(line));
+      const extracted = requestedLine
+        ? requestedLine.replace(/^Requested correction:\s*/i, '').trim()
+        : lines.slice(1).join(' ');
+
+      if (!extracted) {
+        continue;
+      }
+
+      hints.push({
+        fieldKey: field?.key ?? this.toProjectFormFieldKeyFromLabel(label),
+        fieldLabel: field?.label ?? label,
+        comment: extracted,
+      });
+    }
+
+    if (hints.length) {
+      return hints;
+    }
+
+    return [{
+      fieldKey: 'global',
+      fieldLabel: 'General project correction',
+      comment: raw.trim(),
+    }];
+  }
+
+  isCorrectionScopedEdit(project: Projet | null): boolean {
+    if (!project || !this.needsCorrection(project)) {
+      return false;
+    }
+
+    return this.getRequestedCorrectionFieldKeys(project).size > 0;
+  }
+
+  canEditProjectField(fieldKey: EditableProjectFieldKey): boolean {
+    const project = this.editingProject;
+    if (!project) {
+      return false;
+    }
+
+    if (!this.needsCorrection(project)) {
+      return true;
+    }
+
+    if (!this.isCorrectionScopedEdit(project)) {
+      return true;
+    }
+
+    const requestedKeys = this.getRequestedCorrectionFieldKeys(project);
+    // Fail-open: if parsing is ambiguous, never block entrepreneur editing.
+    if (!requestedKeys.size) {
+      return true;
+    }
+
+    return requestedKeys.has(fieldKey);
+  }
+
+  isCorrectionRequestedForField(fieldKey: EditableProjectFieldKey): boolean {
+    const project = this.editingProject;
+    if (!project || !this.needsCorrection(project)) {
+      return false;
+    }
+    return this.getRequestedCorrectionFieldKeys(project).has(fieldKey);
+  }
+
+  shouldShowRequestedBadge(fieldKey: EditableProjectFieldKey): boolean {
+    return this.isCorrectionRequestedForField(fieldKey);
+  }
+
+  shouldShowLockedBadge(fieldKey: EditableProjectFieldKey): boolean {
+    const project = this.editingProject;
+    if (!project || !this.needsCorrection(project) || !this.isCorrectionScopedEdit(project)) {
+      return false;
+    }
+    return !this.isCorrectionRequestedForField(fieldKey);
+  }
+
+  private getRequestedCorrectionFieldKeys(project: Projet): Set<EditableProjectFieldKey> {
+    const keys = new Set<EditableProjectFieldKey>();
+    for (const hint of this.getProjectCorrectionHints(project)) {
+      const normalized = this.normalizeToEditableProjectFieldKey(hint.fieldKey);
+      if (normalized) {
+        keys.add(normalized);
+      }
+    }
+    return keys;
+  }
+
+  private normalizeToEditableProjectFieldKey(value: string): EditableProjectFieldKey | null {
+    const normalized = (value ?? '').trim();
+    if (!normalized) {
+      return null;
+    }
+    if ((EDITABLE_PROJECT_FIELDS as string[]).includes(normalized)) {
+      return normalized as EditableProjectFieldKey;
+    }
+    const fromLabel = this.toProjectFormFieldKeyFromLabel(normalized);
+    if ((EDITABLE_PROJECT_FIELDS as string[]).includes(fromLabel)) {
+      return fromLabel as EditableProjectFieldKey;
+    }
+    return null;
+  }
+
+  private toProjectFormFieldKeyFromLabel(label: string): string {
+    const normalized = label.trim().toLowerCase();
+    if (normalized === 'problem addressed') {
+      return 'problemeAdresse';
+    }
+    if (normalized === 'proposed solution') {
+      return 'solutionProposee';
+    }
+    if (normalized === 'business model') {
+      return 'businessModel';
+    }
+    if (normalized === 'innovation') {
+      return 'innovationDescription';
+    }
+    if (normalized === 'scalability') {
+      return 'scalabiliteDescription';
+    }
+    if (normalized === 'poc') {
+      return 'pocDisponible';
+    }
+    return label;
+  }
+
+  getCorrectionHintForField(project: Projet, fieldKey: string): string {
+    const match = this.getProjectCorrectionHints(project).find((hint) => hint.fieldKey === fieldKey);
+    return match?.comment ?? '';
+  }
+
+  hasCorrectionHintForField(project: Projet, fieldKey: string): boolean {
+    return this.getCorrectionHintForField(project, fieldKey).length > 0;
   }
 
   isSelectedProject(project: Projet): boolean {
@@ -604,14 +1175,112 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     return 'Risk level. The project needs immediate attention.';
   }
 
+  getProjectInfoFields(project: Projet): ProjectInfoField[] {
+    const toValue = (value?: string | boolean | null): string => {
+      if (typeof value === 'boolean') {
+        return value ? 'Yes' : 'No';
+      }
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+      return 'Not provided';
+    };
+
+    const fields: ProjectInfoField[] = [
+      { key: 'problemeAdresse', label: 'Problem addressed', value: toValue(project.problemeAdresse), missing: !project.problemeAdresse?.trim() },
+      { key: 'solutionProposee', label: 'Proposed solution', value: toValue(project.solutionProposee), missing: !project.solutionProposee?.trim() },
+      { key: 'businessModel', label: 'Business model', value: toValue(project.businessModel), missing: !project.businessModel?.trim() },
+      { key: 'innovationDescription', label: 'Innovation', value: toValue(project.innovationDescription), missing: !project.innovationDescription?.trim() },
+      { key: 'scalabiliteDescription', label: 'Scalability', value: toValue(project.scalabiliteDescription), missing: !project.scalabiliteDescription?.trim() },
+      { key: 'stadeProjet', label: 'Project stage', value: toValue(project.stadeProjet), missing: !project.stadeProjet },
+      { key: 'secteur', label: 'Sector', value: toValue(project.secteur), missing: !project.secteur },
+      { key: 'pocDisponible', label: 'POC available', value: toValue(project.pocDisponible), missing: false },
+    ];
+
+    return fields;
+  }
+
+  getCoachCorrectionsFeed(): CoachCorrectionFeedItem[] {
+    const feed: CoachCorrectionFeedItem[] = [];
+
+    this.workflowTaches.forEach((task) => {
+      const taskComment = (task.commentaireCoach ?? '').trim();
+      if (taskComment) {
+        feed.push({
+          level: 'TASK',
+          title: task.titre,
+          comment: taskComment,
+          status: task.statutTache,
+        });
+      }
+
+      const subTasks = this.getSousTachesForTask(task.id);
+      subTasks.forEach((subTask) => {
+        const subTaskComment = (subTask.commentaireCoach ?? '').trim();
+        if (!subTaskComment) {
+          return;
+        }
+        feed.push({
+          level: 'SUBTASK',
+          title: `${task.titre} / ${subTask.titre}`,
+          comment: subTaskComment,
+          status: subTask.statutSousTache,
+        });
+      });
+    });
+
+    return feed.sort((a, b) => {
+      const rank = (status: StatutTache): number => {
+        if (status === 'A_CORRIGER') {
+          return 0;
+        }
+        if (status === 'EN_RETARD' || status === 'BLOQUEE') {
+          return 1;
+        }
+        if (status === 'EN_CORRECTION') {
+          return 2;
+        }
+        return 3;
+      };
+      return rank(a.status) - rank(b.status);
+    });
+  }
+
   resendCorrection(project: Projet): void {
+    if (!this.hasActionableCorrection(project)) {
+      this.submitMessage = this.getMissingActionableCorrectionHint(project);
+      return;
+    }
+
     const entrepreneurId = this.getCurrentEntrepreneurId();
     if (!entrepreneurId) {
       this.submitMessage = 'Entrepreneur session not found. Please sign in again.';
       return;
     }
 
-    if (!confirm('Are you sure you want to submit your corrections for coach review?')) {
+    this.pendingCorrectionSubmission = project;
+    this.showCorrectionSubmitModal = true;
+  }
+
+  closeCorrectionSubmitModal(): void {
+    if (this.isSubmitting) {
+      return;
+    }
+    this.showCorrectionSubmitModal = false;
+    this.pendingCorrectionSubmission = null;
+  }
+
+  confirmCorrectionSubmission(): void {
+    const project = this.pendingCorrectionSubmission;
+    if (!project) {
+      return;
+    }
+
+    const entrepreneurId = this.getCurrentEntrepreneurId();
+    if (!entrepreneurId) {
+      this.showCorrectionSubmitModal = false;
+      this.pendingCorrectionSubmission = null;
+      this.submitMessage = 'Entrepreneur session not found. Please sign in again.';
       return;
     }
 
@@ -623,17 +1292,23 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.isSubmitting = false;
+        this.showCorrectionSubmitModal = false;
+        this.pendingCorrectionSubmission = null;
+        this.persistPendingCoachApproval(project.id);
         this.submitMessage = 'Correction submitted to coach review successfully.';
-        this.projetService.loadEntrepreneurProjects().subscribe();
+        this.refreshWithSelectedProject(project.id);
       },
       error: (err) => {
         this.isSubmitting = false;
+        this.showCorrectionSubmitModal = false;
+        this.pendingCorrectionSubmission = null;
         this.submitMessage = this.parseHttpError(err, 'Unable to re-submit corrections. Please try again.');
       }
     });
   }
 
   closeAssignedWorkflow(): void {
+    this.stopWaitingApprovalPolling();
     this.selectedWorkflowProject = null;
   }
 
@@ -943,7 +1618,9 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     return project.etatValidation === 'BROUILLON';
   }
 
-  canEdit(project: Projet): boolean { return this.isDraft(project); }
+  canEdit(project: Projet): boolean {
+    return this.isDraft(project) || this.needsCorrection(project);
+  }
 
   statusLabel(project: Projet): string {
     return formatProjetStatusLabel(project);
@@ -1077,8 +1754,17 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       return 'Business model is required.';
     }
 
-    if (!form.secteur?.trim()) {
+    if (!form.secteur) {
       return 'Sector is required.';
+    }
+
+    const timelineError = this.getProjectTimelineValidationError(
+      form.dateDebutProjet,
+      form.dateFinProjet,
+      false,
+    );
+    if (timelineError) {
+      return timelineError;
     }
 
     return null;
@@ -1096,7 +1782,55 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       innovationDescription: '',
       scalabiliteDescription: '',
       pocDisponible: false,
+      dateDebutProjet: '',
+      dateFinProjet: '',
     };
+  }
+
+  private getProjectTimelineValidationError(startDate: string, endDate: string, enforceFutureStart: boolean): string | null {
+    if (!startDate || !endDate) {
+      return 'Project start and end dates are required.';
+    }
+
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return 'Project dates are invalid.';
+    }
+
+    if (end < start) {
+      return 'Project end date must be after start date.';
+    }
+
+    if (enforceFutureStart) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (start < today) {
+        return 'Project start date cannot be in the past.';
+      }
+    }
+
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const durationDays = Math.floor((end.getTime() - start.getTime()) / msPerDay);
+    if (durationDays < this.minProjectDurationDays) {
+      return `Project duration must be at least ${this.minProjectDurationDays} days.`;
+    }
+
+    return null;
+  }
+
+  private toDateInputValue(date?: Date): string {
+    if (!date) {
+      return '';
+    }
+
+    const d = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(d.getTime())) {
+      return '';
+    }
+
+    return d.toISOString().slice(0, 10);
   }
 
   private loadAssignedCoachs(projetId: string): void {

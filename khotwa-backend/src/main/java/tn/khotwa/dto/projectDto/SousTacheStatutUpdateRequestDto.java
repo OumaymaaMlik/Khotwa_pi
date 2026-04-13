@@ -1,0 +1,13 @@
+package tn.khotwa.dto.projectDto;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import tn.khotwa.enums.projectEnum.StatutTache;
+
+@Data
+public class SousTacheStatutUpdateRequestDto {
+    @NotNull
+    private StatutTache statutSousTache;
+    private String justificationEntrepreneur;
+    private String commentaireCoach;
+}

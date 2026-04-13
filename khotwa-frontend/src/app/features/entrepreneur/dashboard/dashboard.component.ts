@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProjetService, ProjetDraftInput } from '../../../core/services/projet.service';
-import { Projet } from '../../../core/models';
+import { Projet, SECTEUR_PROJET_OPTIONS } from '../../../core/models';
 
 @Component({ selector:'app-entrepreneur-dashboard', templateUrl:'./dashboard.component.html', styleUrls:['./dashboard.component.css'] })
 export class EntrepreneurDashboardComponent implements OnInit {
   showProjectModal = false;
   editingProject: Projet | null = null;
   submitMessage = '';
+  readonly minProjectDurationDays = 30;
+  readonly secteurOptions = SECTEUR_PROJET_OPTIONS;
 
   form: ProjetDraftInput = this.createEmptyForm();
 
@@ -47,6 +49,8 @@ export class EntrepreneurDashboardComponent implements OnInit {
       innovationDescription: project.innovationDescription ?? '',
       scalabiliteDescription: project.scalabiliteDescription ?? '',
       pocDisponible: project.pocDisponible ?? false,
+      dateDebutProjet: this.toDateInputValue(project.dateDebutProjet),
+      dateFinProjet: this.toDateInputValue(project.dateFinProjet),
     };
     this.showProjectModal = true;
   }
@@ -62,6 +66,17 @@ export class EntrepreneurDashboardComponent implements OnInit {
 
     if (!this.form.nomStartup.trim() || !this.form.problemeAdresse.trim() || !this.form.solutionProposee.trim() || !this.form.businessModel.trim()) {
       this.submitMessage = 'Please fill in the required fields before saving.';
+      return;
+    }
+
+    if (!this.form.secteur) {
+      this.submitMessage = 'Please choose a sector before saving.';
+      return;
+    }
+
+    const timelineError = this.validateProjectTimeline(this.form.dateDebutProjet, this.form.dateFinProjet);
+    if (timelineError) {
+      this.submitMessage = timelineError;
       return;
     }
 
@@ -114,6 +129,46 @@ export class EntrepreneurDashboardComponent implements OnInit {
       innovationDescription: '',
       scalabiliteDescription: '',
       pocDisponible: false,
+      dateDebutProjet: '',
+      dateFinProjet: '',
     };
+  }
+
+  private validateProjectTimeline(startDate: string, endDate: string): string | null {
+    if (!startDate || !endDate) {
+      return 'Project start and end dates are required.';
+    }
+
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return 'Project dates are invalid.';
+    }
+
+    if (end < start) {
+      return 'Project end date must be after start date.';
+    }
+
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const durationDays = Math.floor((end.getTime() - start.getTime()) / msPerDay);
+    if (durationDays < this.minProjectDurationDays) {
+      return `Project duration must be at least ${this.minProjectDurationDays} days.`;
+    }
+
+    return null;
+  }
+
+  private toDateInputValue(date?: Date): string {
+    if (!date) {
+      return '';
+    }
+
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      return '';
+    }
+
+    return parsed.toISOString().slice(0, 10);
   }
 }

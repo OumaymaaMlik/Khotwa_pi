@@ -30,10 +30,10 @@ export class LoginComponent implements OnInit {
   signIn() {
     this.error = '';
     if (!this.email || !this.password) { this.error = 'Please fill in all fields.'; return; }
-    this.auth.loginWithEmail(this.email).subscribe({
+    this.auth.loginWithEmailAndPassword(this.email, this.password).subscribe({
       next: () => this.router.navigateByUrl(this.auth.getDefaultRoute()),
       error: () => {
-        this.error = 'Invalid credentials. Try admin@khotwa.tn, sara@startup.tn, or ahmed@coach.tn.';
+        this.error = 'Invalid credentials. Please try again.';
       },
     });
   }
@@ -43,8 +43,20 @@ export class LoginComponent implements OnInit {
     if (!this.email || !this.password || !this.firstName || !this.lastName) {
       this.error = 'Please fill in all fields.'; return;
     }
-    // Mock registration: log in with chosen role
-    this.auth.login(this.selectedRole);
-    this.router.navigateByUrl(this.auth.getDefaultRoute());
+    this.auth.register({
+      firstName: this.firstName,
+      middleName: this.lastName,
+      email: this.email,
+      password: this.password,
+      role: this.selectedRole,
+    }).subscribe({
+      next: () => {
+        this.mode = 'signin';
+        this.error = 'Registration successful. Please check your email.';
+      },
+      error: (err) => {
+        this.error = err?.error || 'Registration failed.';
+      }
+    });
   }
 }

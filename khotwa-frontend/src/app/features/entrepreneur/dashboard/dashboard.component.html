@@ -75,18 +75,29 @@
         </div>
         <div class="project-form-field">
           <label>Sector</label>
-          <input [(ngModel)]="form.secteur" class="project-input" placeholder="EdTech, Health, AI..." />
+          <select [(ngModel)]="form.secteur" class="project-input">
+            <option value="">Choose a sector</option>
+            <option *ngFor="let sector of secteurOptions" [value]="sector.value">{{ sector.label }}</option>
+          </select>
         </div>
         <div class="project-form-field">
           <label>Project stage</label>
           <select [(ngModel)]="form.stadeProjet" class="project-input">
-            <option value="IDEE">Idea</option>
-            <option value="POC">POC</option>
+            <option value="IDEE">Idée</option>
+            <option value="POC">Preuve de concept</option>
             <option value="MVP">MVP</option>
             <option value="PROTOTYPE">Prototype</option>
             <option value="COMMERCIALISATION">Commercialisation</option>
-            <option value="SCALING">Scaling</option>
+            <option value="SCALING">Passage à l'échelle</option>
           </select>
+        </div>
+        <div class="project-form-field">
+          <label>Project start date</label>
+          <input type="date" [(ngModel)]="form.dateDebutProjet" class="project-input" />
+        </div>
+        <div class="project-form-field">
+          <label>Project end date</label>
+          <input type="date" [(ngModel)]="form.dateFinProjet" class="project-input" />
         </div>
         <div class="project-form-field project-form-field--full">
           <label>Problem addressed</label>

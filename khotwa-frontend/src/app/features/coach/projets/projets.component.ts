@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProjetService } from '../../../core/services/projet.service';
 
@@ -77,6 +78,28 @@ interface SousTacheForm {
   commentaireCoach: string;
 }
 
+interface ProjectCorrectionField {
+  key: string;
+  label: string;
+  currentValue: string;
+}
+
+interface ReceivedCorrectionEvidence {
+  level: 'TASK' | 'SUBTASK';
+  itemId: number;
+  taskId: number;
+  title: string;
+  status: TaskStatus;
+  coachComment?: string;
+  entrepreneurJustification?: string;
+}
+
+interface ProjectCorrectionSummarySection {
+  label: string;
+  currentValue: string;
+  requestedCorrection: string;
+}
+
 @Component({ selector:'app-coach-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
 export class CoachProjetsComponent implements OnInit {
   private readonly apiUrl = 'http://localhost:8084/khotwa';
@@ -96,9 +119,17 @@ export class CoachProjetsComponent implements OnInit {
   showCreateTaskModal = false;
   showCreateSubTaskModal = false;
   selectedTaskForSubTaskCreation: BackendTache | null = null;
+  showTaskDetailsModal = false;
+  selectedTaskForDetails: BackendTache | null = null;
   showCorrectionModal = false;
   correctionTarget: { type: 'PROJECT' | 'TASK' | 'SUBTASK'; id: number } | null = null;
   correctionComment = '';
+  projectCorrectionCommentByField: Record<string, string> = {};
+  projectCorrectionPanelOpen = false;
+  showProjectCorrectionSuccessPopup = false;
+  projectCorrectionSuccessMessage = '';
+  refreshingWorkspace = false;
+  showReceivedCorrectionDetailsInline = false;
   showDocumentPreviewModal = false;
   selectedDocumentForPreview: BackendDocument | null = null;
   selectedDocumentPreviewUrl = '';
@@ -171,12 +202,16 @@ export class CoachProjetsComponent implements OnInit {
     this.expandedTaskId = null;
     this.showCreateSubTaskModal = false;
     this.selectedTaskForSubTaskCreation = null;
+    this.showTaskDetailsModal = false;
+    this.selectedTaskForDetails = null;
     this.sousTachesByTache = {};
     this.documentsBySousTache = {};
     this.workflowProjectDocuments = [];
     this.taskStatusDraft = {};
     this.subTaskStatusDraft = {};
     this.activeTriageFilter = 'ALL';
+    this.showReceivedCorrectionDetailsInline = false;
+    this.closeProjectCorrectionPanel();
     this.loadTachesForSelectedProjet();
     this.loadProjectDocuments();
   }
@@ -201,6 +236,10 @@ export class CoachProjetsComponent implements OnInit {
   }
 
   openCreateTaskModal(): void {
+    this.closeProjectCorrectionPanel();
+    this.closeCorrectionModal();
+    this.closeCreateSubTaskModal();
+    this.closeDocumentPreviewModal();
     this.tacheForm = this.createTacheForm();
     this.createdParentTaskId = null;
     this.quickSousTacheTitre = '';
@@ -220,7 +259,12 @@ export class CoachProjetsComponent implements OnInit {
       this.message = 'Please select a project first.';
       return;
     }
-    this.openCorrectionModal('PROJECT', Number(this.selectedProjetId));
+    this.showCreateTaskModal = false;
+    this.showCreateSubTaskModal = false;
+    this.showDocumentPreviewModal = false;
+    this.showCorrectionModal = false;
+    this.projectCorrectionPanelOpen = true;
+    this.message = 'Write correction comments under each project field, then submit.';
   }
 
   passerProjetEnRevue(): void {
@@ -230,7 +274,7 @@ export class CoachProjetsComponent implements OnInit {
     }
 
     if (!this.canPassProjectToReview()) {
-      this.message = 'All tasks must be started before moving the project to review.';
+      this.message = 'Project can move to review only from assigned state, and tasks must be started when they exist.';
       return;
     }
 
@@ -258,7 +302,7 @@ export class CoachProjetsComponent implements OnInit {
 
     this.http.post<unknown>(`${this.apiUrl}/coach/projets/${this.selectedProjetId}/valider`, {}).subscribe({
       next: () => {
-        this.message = 'Project validated.';
+        this.message = 'Project approved and returned to assignment phase.';
         this.refreshProjects();
       },
       error: (err) => {
@@ -445,6 +489,7 @@ export class CoachProjetsComponent implements OnInit {
   openCreateSubTaskModalForTask(task: BackendTache): void {
     this.selectedTaskForSubTaskCreation = task;
     this.sousTacheForm = this.createSousTacheForm();
+    this.showTaskDetailsModal = false;
     this.showCreateSubTaskModal = true;
     this.message = '';
   }
@@ -453,6 +498,9 @@ export class CoachProjetsComponent implements OnInit {
     this.showCreateSubTaskModal = false;
     this.selectedTaskForSubTaskCreation = null;
     this.sousTacheForm = this.createSousTacheForm();
+    if (this.selectedTaskForDetails) {
+      this.showTaskDetailsModal = true;
+    }
   }
 
   createSousTacheFromModal(): void {
@@ -555,6 +603,35 @@ export class CoachProjetsComponent implements OnInit {
     });
   }
 
+  openOrLoadSubTaskDocuments(subTask: BackendSousTache): void {
+    if (this.loadingDocuments[subTask.id]) {
+      return;
+    }
+
+    const docs = this.documentsBySousTache[subTask.id] ?? [];
+    if (docs.length > 0) {
+      this.openDocumentPreview(docs[0]);
+      return;
+    }
+
+    this.loadingDocuments[subTask.id] = true;
+    this.http.get<BackendDocument[]>(`${this.apiUrl}/coach/sous-taches/${subTask.id}/documents`).subscribe({
+      next: (rows) => {
+        this.documentsBySousTache[subTask.id] = rows;
+        this.loadingDocuments[subTask.id] = false;
+        if (rows.length > 0) {
+          this.openDocumentPreview(rows[0]);
+          return;
+        }
+        this.message = 'No documents found for this sub-task.';
+      },
+      error: () => {
+        this.loadingDocuments[subTask.id] = false;
+        this.message = 'Unable to load documents.';
+      }
+    });
+  }
+
   loadProjectDocuments(): void {
     if (!this.selectedProjetId) {
       this.workflowProjectDocuments = [];
@@ -626,18 +703,55 @@ export class CoachProjetsComponent implements OnInit {
 
   openTaskWorkspace(task: BackendTache): void {
     this.activeWorkspaceView = 'KANBAN';
-    this.expandedTaskId = this.expandedTaskId === task.id ? null : task.id;
-    if (this.expandedTaskId === task.id) {
-      this.loadSousTaches(task.id);
-    }
+    this.selectedTaskForDetails = task;
+    this.showTaskDetailsModal = true;
+    this.expandedTaskId = task.id;
+    this.loadSousTaches(task.id);
   }
 
   closeTaskWorkspace(): void {
+    this.showTaskDetailsModal = false;
+    this.selectedTaskForDetails = null;
     this.expandedTaskId = null;
   }
 
   isTaskExpanded(taskId: number): boolean {
     return this.expandedTaskId === taskId;
+  }
+
+  getSelectedTaskSubTasks(): BackendSousTache[] {
+    if (!this.selectedTaskForDetails) {
+      return [];
+    }
+    return this.getSubTasksForTask(this.selectedTaskForDetails.id);
+  }
+
+  getSelectedTask(): BackendTache | null {
+    return this.selectedTaskForDetails;
+  }
+
+  getTaskPriorityBadgeClass(priority: PrioriteTache): string {
+    if (priority === 'HAUTE' || priority === 'CRITIQUE') {
+      return 'kh-badge--red';
+    }
+    if (priority === 'MOYENNE') {
+      return 'kh-badge--amber';
+    }
+    return 'kh-badge--teal';
+  }
+
+  getTaskDelayLabel(task: BackendTache): string {
+    if (!task.retardJours || task.retardJours <= 0) {
+      return 'On time';
+    }
+    return `Delay ${task.retardJours}d`;
+  }
+
+  getSubTaskDelayLabel(subTask: BackendSousTache): string {
+    if (!subTask.retardJours || subTask.retardJours <= 0) {
+      return 'On time';
+    }
+    return `Delay ${subTask.retardJours}d`;
   }
 
   getWorkflowTasksByStatus(status: TaskStatus): BackendTache[] {
@@ -665,9 +779,145 @@ export class CoachProjetsComponent implements OnInit {
   }
 
   openCorrectionModal(type: 'PROJECT' | 'TASK' | 'SUBTASK', id: number): void {
+    if (type === 'PROJECT') {
+      this.demanderCorrectionProjet();
+      return;
+    }
+    if (this.showCorrectionModal) {
+      return;
+    }
+    this.closeProjectCorrectionPanel();
+    this.showCreateTaskModal = false;
+    this.showCreateSubTaskModal = false;
+    this.showDocumentPreviewModal = false;
+    this.expandedTaskId = null;
     this.correctionTarget = { type, id };
     this.correctionComment = '';
     this.showCorrectionModal = true;
+  }
+
+  getProjectCorrectionFields(): ProjectCorrectionField[] {
+    const p = this.selectedProjet;
+    if (!p) {
+      return [];
+    }
+
+    return [
+      { key: 'problemeAdresse', label: 'Problem addressed', currentValue: p.problemeAdresse?.trim() || 'N/A' },
+      { key: 'solutionProposee', label: 'Proposed solution', currentValue: p.solutionProposee?.trim() || 'N/A' },
+      { key: 'businessModel', label: 'Business model', currentValue: p.businessModel?.trim() || 'N/A' },
+      { key: 'innovationDescription', label: 'Innovation', currentValue: p.innovationDescription?.trim() || 'N/A' },
+      { key: 'scalabiliteDescription', label: 'Scalability', currentValue: p.scalabiliteDescription?.trim() || 'N/A' },
+      { key: 'pocDisponible', label: 'POC', currentValue: p.pocDisponible ? 'Available' : 'Not available' },
+    ];
+  }
+
+  getProjectFieldCorrectionComment(fieldKey: string): string {
+    return this.projectCorrectionCommentByField[fieldKey] ?? '';
+  }
+
+  setProjectFieldCorrectionComment(fieldKey: string, value: string): void {
+    this.projectCorrectionCommentByField[fieldKey] = value;
+  }
+
+  canSubmitProjectFieldCorrections(): boolean {
+    return this.getProjectCorrectionFields().some((field) => {
+      const comment = this.projectCorrectionCommentByField[field.key];
+      return typeof comment === 'string' && comment.trim().length > 0;
+    });
+  }
+
+  submitProjectFieldCorrections(): void {
+    if (!this.selectedProjetId) {
+      this.message = 'Please select a project first.';
+      return;
+    }
+
+    const lines = this.getProjectCorrectionFields()
+      .map((field) => {
+        const comment = (this.projectCorrectionCommentByField[field.key] ?? '').trim();
+        if (!comment) {
+          return '';
+        }
+        return `${field.label}\nCurrent value: ${field.currentValue}\nRequested correction: ${comment}`;
+      })
+      .filter((chunk) => chunk.length > 0);
+
+    if (!lines.length) {
+      this.message = 'Add at least one correction comment.';
+      return;
+    }
+
+    const commentaire = lines.join('\n\n--------------------\n\n');
+
+    this.http.post(`${this.apiUrl}/coach/projets/${this.selectedProjetId}/demander-correction`, { commentaire }).subscribe({
+      next: () => {
+        this.closeProjectCorrectionPanel();
+        this.loadTachesForSelectedProjet();
+        this.refreshProjects();
+        this.openProjectCorrectionSuccessPopup('Project correction request sent with field-level details.');
+      },
+      error: (err) => {
+        this.message = this.parseHttpError(err, 'Unable to request project correction.');
+      }
+    });
+  }
+
+  closeProjectCorrectionPanel(): void {
+    this.projectCorrectionPanelOpen = false;
+    this.projectCorrectionCommentByField = {};
+  }
+
+  openProjectCorrectionSuccessPopup(message: string): void {
+    this.projectCorrectionSuccessMessage = message;
+    this.showProjectCorrectionSuccessPopup = true;
+  }
+
+  closeProjectCorrectionSuccessPopup(refreshData = false): void {
+    this.showProjectCorrectionSuccessPopup = false;
+    if (refreshData) {
+      this.refreshCoachWorkspace();
+    }
+  }
+
+  refreshCoachWorkspace(): void {
+    if (!this.selectedProjetId) {
+      return;
+    }
+
+    this.refreshingWorkspace = true;
+    this.message = 'Refreshing workspace...';
+
+    forkJoin({
+      projets: this.projetService.loadCoachAssignedProjects(),
+      taches: this.http.get<BackendTache[]>(`${this.apiUrl}/coach/projets/${this.selectedProjetId}/taches`),
+      documents: this.http.get<BackendDocument[]>(`${this.apiUrl}/coach/projets/${this.selectedProjetId}/documents`),
+    }).subscribe({
+      next: ({ projets, taches, documents }) => {
+        const stillSelected = projets.find((p) => p.id === this.selectedProjetId);
+        if (!stillSelected && projets.length > 0) {
+          this.selectedProjetId = projets[0].id;
+        }
+
+        this.taches = this.sortTaskQueue(taches);
+        this.taskStatusDraft = taches.reduce((acc, row) => {
+          acc[row.id] = row.statutTache;
+          return acc;
+        }, {} as Record<number, TaskStatus>);
+        this.workflowProjectDocuments = documents;
+
+        for (const task of taches) {
+          this.loadSousTaches(task.id);
+        }
+
+        this.message = 'Workspace refreshed.';
+        this.refreshingWorkspace = false;
+      },
+      error: () => {
+        this.refreshingWorkspace = false;
+        this.message = 'Unable to refresh assigned projects.';
+      }
+    });
   }
 
   closeCorrectionModal(): void {
@@ -758,6 +1008,35 @@ export class CoachProjetsComponent implements OnInit {
     return this.taches.filter((task) => task.statutTache === 'A_CORRIGER' || task.statutTache === 'EN_CORRECTION');
   }
 
+  hasProjectLevelCorrectionInReview(): boolean {
+    return this.getCorrectionTasks().length === 0
+      && this.selectedProjet?.etatValidation === 'EN_REVUE'
+      && this.selectedProjet?.correctionResoumiseEnAttenteCoach === true;
+  }
+
+  approveResubmittedProjectCorrection(): void {
+    if (!this.hasReceivedProjectCorrectionSubmission()) {
+      this.message = 'No resubmitted correction available for approval.';
+      return;
+    }
+    this.validerProjet();
+  }
+
+  askReCorrectionForProject(): void {
+    if (!this.selectedProjetId) {
+      this.message = 'Please select a project first.';
+      return;
+    }
+
+    if (!this.hasReceivedProjectCorrectionSubmission()) {
+      this.message = 'No received correction found to send back.';
+      return;
+    }
+
+    this.activeWorkspaceView = 'CORRECTIONS';
+    this.demanderCorrectionProjet();
+  }
+
   getKanbanHealthHint(): string {
     if (this.getCorrectionQueueCount() === 0) {
       return 'Workflow is stable. No pending correction queue.';
@@ -838,9 +1117,130 @@ export class CoachProjetsComponent implements OnInit {
     return subTask.statutSousTache === 'EN_CORRECTION';
   }
 
+  hasReceivedProjectCorrectionSubmission(): boolean {
+    if (this.selectedProjet?.correctionResoumiseEnAttenteCoach) {
+      return true;
+    }
+
+    const hasTaskResubmission = this.taches.some((task) => task.statutTache === 'EN_CORRECTION');
+    if (hasTaskResubmission) {
+      return true;
+    }
+
+    return Object.values(this.sousTachesByTache)
+      .flat()
+      .some((subTask) => subTask.statutSousTache === 'EN_CORRECTION');
+  }
+
+  reviewReceivedCorrections(): void {
+    this.activeWorkspaceView = 'CORRECTIONS';
+
+    const resubmittedTask = this.taches.find((task) => task.statutTache === 'EN_CORRECTION');
+    if (resubmittedTask) {
+      this.openTaskWorkspace(resubmittedTask);
+      this.message = `Opened resubmitted task: ${resubmittedTask.titre}.`;
+      return;
+    }
+
+    const resubmittedSubTask = Object.values(this.sousTachesByTache)
+      .flat()
+      .find((subTask) => subTask.statutSousTache === 'EN_CORRECTION');
+    if (resubmittedSubTask) {
+      const parentTask = this.taches.find((task) => task.id === resubmittedSubTask.tacheId);
+      if (parentTask) {
+        this.openTaskWorkspace(parentTask);
+      }
+      this.message = `Opened parent task for resubmitted sub-task: ${resubmittedSubTask.titre}.`;
+      return;
+    }
+
+    if (this.selectedProjet?.commentaireCorrectionCoach?.trim()) {
+      this.openReceivedCorrectionDetails();
+      this.message = 'No task cards in queue. Displaying project-level correction request.';
+      return;
+    }
+
+    this.message = 'No received correction items found yet. Try refresh after entrepreneur submission.';
+  }
+
+  openReceivedCorrectionDetails(): void {
+    this.message = '';
+    this.showReceivedCorrectionDetailsInline = !this.showReceivedCorrectionDetailsInline;
+  }
+
+  closeReceivedCorrectionDetails(): void {
+    this.showReceivedCorrectionDetailsInline = false;
+  }
+
+  getReceivedCorrectionEvidence(): ReceivedCorrectionEvidence[] {
+    const taskEvidence: ReceivedCorrectionEvidence[] = this.taches
+      .filter((task) => task.statutTache === 'EN_CORRECTION')
+      .map((task) => ({
+        level: 'TASK',
+        itemId: task.id,
+        taskId: task.id,
+        title: task.titre,
+        status: task.statutTache,
+        coachComment: task.commentaireCoach?.trim() || undefined,
+        entrepreneurJustification: task.justificationEntrepreneur?.trim() || undefined,
+      }));
+
+    const subTaskEvidence: ReceivedCorrectionEvidence[] = Object.values(this.sousTachesByTache)
+      .flat()
+      .filter((subTask) => subTask.statutSousTache === 'EN_CORRECTION')
+      .map((subTask) => ({
+        level: 'SUBTASK',
+        itemId: subTask.id,
+        taskId: subTask.tacheId,
+        title: subTask.titre,
+        status: subTask.statutSousTache,
+        coachComment: subTask.commentaireCoach?.trim() || undefined,
+        entrepreneurJustification: subTask.justificationEntrepreneur?.trim() || undefined,
+      }));
+
+    return [...taskEvidence, ...subTaskEvidence];
+  }
+
+  getProjectCorrectionSummarySections(): ProjectCorrectionSummarySection[] {
+    const raw = this.selectedProjet?.commentaireCorrectionCoach?.trim() ?? '';
+    if (!raw) {
+      return [];
+    }
+
+    return raw
+      .split(/\n\s*-{5,}\s*\n/)
+      .map((chunk) => chunk.trim())
+      .filter((chunk) => chunk.length > 0)
+      .map((chunk) => {
+        const lines = chunk
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        const label = lines[0]?.replace(/:$/, '') || 'Correction item';
+        const currentValueLine = lines.find((line) => line.toLowerCase().startsWith('current value:')) || '';
+        const requestedCorrectionLine = lines.find((line) => line.toLowerCase().startsWith('requested correction:')) || '';
+
+        return {
+          label,
+          currentValue: currentValueLine.replace(/^current value:\s*/i, '') || 'N/A',
+          requestedCorrection: requestedCorrectionLine.replace(/^requested correction:\s*/i, '') || 'N/A',
+        };
+      });
+  }
+
   canPassProjectToReview(): boolean {
-    if (!this.selectedProjetId || this.taches.length === 0) {
+    if (!this.selectedProjetId || !this.selectedProjet?.etatValidation) {
       return false;
+    }
+
+    if (this.selectedProjet.etatValidation !== 'AFFECTE_COACH') {
+      return false;
+    }
+
+    // First-time review can start even without task decomposition.
+    if (this.taches.length === 0) {
+      return true;
     }
 
     return this.taches.every((task) => task.statutTache !== 'A_FAIRE');
@@ -848,6 +1248,32 @@ export class CoachProjetsComponent implements OnInit {
 
   canValidateProject(): boolean {
     return this.selectedProjet?.etatValidation === 'EN_REVUE';
+  }
+
+  canAskProjectCorrection(): boolean {
+    if (!this.selectedProjet || !this.selectedProjet.etatValidation) {
+      return false;
+    }
+    // The coach can ask corrections from first assignment through review cycles.
+    const allowedStates: string[] = ['AFFECTE_COACH', 'EN_REVUE', 'A_CORRIGER'];
+    return allowedStates.includes(this.selectedProjet.etatValidation);
+  }
+
+  getProjectCorrectionHint(): string {
+    if (!this.selectedProjet) {
+      return '';
+    }
+    const state = this.selectedProjet.etatValidation;
+    if (state === 'BROUILLON') {
+      return 'Project is in draft - awaiting entrepreneur submission';
+    } else if (state === 'SOUMIS_ADMIN') {
+      return 'Project is under admin review';
+    } else if (state === 'VALIDE') {
+      return 'Project is validated';
+    } else if (state === 'REFUSE') {
+      return 'Project has been refused';
+    }
+    return '';
   }
 
   private loadTachesForSelectedProjet(): void {
@@ -887,6 +1313,7 @@ export class CoachProjetsComponent implements OnInit {
         if (!stillSelected && this.projets.length > 0) {
           this.selectedProjetId = this.projets[0].id;
           this.loadTachesForSelectedProjet();
+          this.loadProjectDocuments();
         }
       },
       error: () => {

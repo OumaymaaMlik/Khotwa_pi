@@ -3,11 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
 import { User, UserRole } from '../models';
 
-const MOCK_USERS: User[] = [
-  { id: 'u1', nom: 'Bensalem', prenom: 'Karim', email: 'admin@khotwa.tn', role: 'admin' },
-  { id: 'u2', nom: 'Trabelsi', prenom: 'Sara', email: 'sara@startup.tn', role: 'entrepreneur', startup: 'EduTech Pro', planType: 'FREE' as const },
-  { id: 'u3', nom: 'Mansouri', prenom: 'Ahmed', email: 'ahmed@coach.tn', role: 'coach' },
-];
+
 
 interface BackendAuthUser {
   id: number;
@@ -35,17 +31,18 @@ export class AuthService {
   get isEntrepreneur(): boolean { return this.currentUser?.role === 'entrepreneur'; }
   get isCoach(): boolean { return this.currentUser?.role === 'coach'; }
 
-  loginWithEmail(email: string): Observable<User> {
-    const params = new HttpParams().set('email', email.trim());
-    return this.http.post<BackendAuthUser>(`${this.apiUrl}/login`, null, { params }).pipe(
-      map(user => this.toFrontendUser(user)),
-      tap(user => this.setCurrentUser(user))
+
+  loginWithEmailAndPassword(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/api/auth/login`, { email, password }).pipe(
+      tap(() => {
+        // Optionally fetch user profile after login if needed
+        this.setCurrentUser({ id: email, nom: '', prenom: '', email, role: 'entrepreneur' });
+      })
     );
   }
 
-  login(role: UserRole): void {
-    this.currentUser = MOCK_USERS.find(u => u.role === role) ?? null;
-    this.persistUser(this.currentUser);
+  register(data: { firstName: string; middleName: string; email: string; password: string; role: string; birthday?: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/api/auth/register`, data);
   }
 
   logout(): void {

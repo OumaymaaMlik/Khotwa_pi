@@ -42,6 +42,9 @@
                 type="button"
               >
                 <span>{{ project.titre }}</span>
+                @if (hasUnreadCorrectionGuide(project)) {
+                  <span class="correction-unread-pill">new</span>
+                }
                 <span class="score-pill" [class]="'score-pill--' + disciplineLevel(project.disciplineScore)">{{ project.disciplineScore }}</span>
               </button>
             } @empty {
@@ -89,6 +92,27 @@
         </div>
       </div>
 
+      @if (selectedWorkflowProject && (needsCorrection(selectedWorkflowProject) || isWaitingCoachApproval(selectedWorkflowProject))) {
+        <section class="correction-sticky-bar" [class.correction-sticky-bar--waiting]="isWaitingCoachApproval(selectedWorkflowProject)">
+          <div class="correction-sticky-bar__head">
+            <span class="correction-sticky-bar__eyebrow">Correction center</span>
+            <strong>{{ isWaitingCoachApproval(selectedWorkflowProject) ? 'Correction sent to coach' : 'Project requires correction' }}</strong>
+          </div>
+          <p>{{ isWaitingCoachApproval(selectedWorkflowProject) ? 'Correction sent to the coach. Waiting for approval now.' : 'Please update the project details, then submit correction to coach review.' }}</p>
+          <div class="correction-sticky-bar__actions">
+            @if (!isWaitingCoachApproval(selectedWorkflowProject)) {
+              <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="openCorrectionGuide()" type="button">Open correction guide</button>
+              <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openEditProject(selectedWorkflowProject)" type="button">Correct now</button>
+            } @else {
+              <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="refreshCurrentProjectStatus()" type="button">Refresh status</button>
+            }
+          </div>
+          @if (isWaitingCoachApproval(selectedWorkflowProject)) {
+            <small class="correction-sticky-bar__poll-hint">Status auto-refreshes every 10 seconds.</small>
+          }
+        </section>
+      }
+
       @if (!selectedWorkflowProject) {
         <div class="empty-state workspace-empty">
           <p>Select a project to load the workspace.</p>
@@ -114,29 +138,26 @@
 
               <div class="board-column__cards">
                 @for (task of getWorkflowTasksByStatus(column.key); track task.id) {
-                  <article class="kanban-card" draggable="true" (dragstart)="onTaskDragStart(task)">
+                  <article class="kanban-card" [class.kanban-card--risk]="task.statutTache === 'EN_RETARD' || task.statutTache === 'BLOQUEE' || task.statutTache === 'A_CORRIGER'" draggable="true" (dragstart)="onTaskDragStart(task)">
                     <button class="kanban-card__toggle" (click)="openTaskModal(task)" type="button">
-                      <div class="kanban-card__top">
+                      <div class="kanban-card__top kanban-card__top--compact">
                         <div>
                           <p class="kanban-card__title">{{ task.titre }}</p>
-                          <p class="kanban-card__desc">{{ task.description || 'No description' }}</p>
+                          <p class="kanban-card__subtitle">{{ getTaskSubtaskCount(task.id) }} sous-tâche{{ getTaskSubtaskCount(task.id) !== 1 ? 's' : '' }}</p>
                         </div>
+                        <span class="kanban-card__view" title="View task details" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 5C6.5 5 2.1 8.3 1 12c1.1 3.7 5.5 7 11 7s9.9-3.3 11-7c-1.1-3.7-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"></path>
+                          </svg>
+                        </span>
+                      </div>
+
+                      <div class="kanban-card__meta kanban-card__meta--compact">
+                        <span>{{ task.priorite }}</span>
                         <span class="kh-badge" [class]="(task.statutTache === 'EN_RETARD' || task.statutTache === 'BLOQUEE' || task.statutTache === 'A_CORRIGER') ? 'kh-badge--red' : (task.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--teal')">
                           {{ getTaskStatusLabel(task) }}
                         </span>
                       </div>
-
-                      <div class="kanban-card__meta">
-                        <span>Priority: {{ task.priorite }}</span>
-                        <span>Deadline: {{ task.dateFin || 'N/A' }}</span>
-                        <span>Sub-tasks: {{ getTaskSubtaskCount(task.id) }}</span>
-                      </div>
-
-                      <p class="kanban-card__impact">{{ impactHintTask(task) }}</p>
-
-                      @if (task.commentaireCoach) {
-                        <p class="kanban-card__comment">Coach comment: {{ task.commentaireCoach }}</p>
-                      }
                     </button>
                   </article>
                 }
@@ -238,6 +259,37 @@
         </div>
 
         <div class="inspector-section">
+          <h4>Project snapshot</h4>
+          <div class="project-brief-list project-brief-list--compact">
+            @for (field of getProjectSnapshotFields(selectedWorkflowProject); track field.key) {
+              <article class="project-brief-item" [class.project-brief-item--missing]="field.missing">
+                <div class="project-brief-item__head">
+                  <strong>{{ field.label }}</strong>
+                </div>
+                <p>{{ getCompactText(field.value, 90) }}</p>
+              </article>
+            }
+          </div>
+        </div>
+
+        <div class="inspector-section">
+          <h4>Correction status</h4>
+          @if (selectedWorkflowProject && needsCorrection(selectedWorkflowProject)) {
+            <div class="compact-correction-summary">
+              <span class="kh-badge kh-badge--red">Action required</span>
+              <p>{{ getCompactText(getProjectCorrectionSummary(selectedWorkflowProject), 110) }}</p>
+              <small>{{ getTotalCorrectionSignals(selectedWorkflowProject) }} item(s) in correction guide</small>
+              <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openCorrectionGuide()" type="button">Open correction guide</button>
+              @if (!hasActionableCorrection(selectedWorkflowProject)) {
+                <small class="correction-warning">{{ getMissingActionableCorrectionHint(selectedWorkflowProject) }}</small>
+              }
+            </div>
+          } @else {
+            <p class="empty-note">No active correction cycle.</p>
+          }
+        </div>
+
+        <div class="inspector-section">
           <h4>Mon Coach Principal</h4>
           @if (assignedCoachs.length > 0) {
             <div class="coach-card">
@@ -264,9 +316,12 @@
               <button class="kh-btn kh-btn--ghost" (click)="deleteProject(selectedWorkflowProject)" [disabled]="isSubmitting">Delete</button>
             }
             @if (isAssignedToCoach(selectedWorkflowProject)) {
-              <button class="kh-btn kh-btn--ghost" (click)="resendCorrection(selectedWorkflowProject)" [disabled]="isSubmitting || !needsCorrection(selectedWorkflowProject)">Submit correction</button>
+              <button class="kh-btn kh-btn--ghost" (click)="resendCorrection(selectedWorkflowProject)" [disabled]="isSubmitting || !needsCorrection(selectedWorkflowProject) || !hasActionableCorrection(selectedWorkflowProject)">Submit correction</button>
             }
           </div>
+          @if (isAssignedToCoach(selectedWorkflowProject) && needsCorrection(selectedWorkflowProject) && !hasActionableCorrection(selectedWorkflowProject)) {
+            <p class="quick-actions-hint">Submit is disabled until coach sends actionable correction details.</p>
+          }
         </div>
 
         <button class="kh-btn kh-btn--primary create-project-cta" (click)="openCreateProjectConversation()" [disabled]="isSubmitting">+ Créer un Nouveau Projet</button>
@@ -422,6 +477,72 @@
     </div>
   }
 
+  @if (showCorrectionGuideModal && selectedWorkflowProject) {
+    <div class="project-modal-backdrop correction-guide-backdrop" (click)="closeCorrectionGuide()">
+      <div class="project-modal correction-guide-drawer" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow correction-guide-modal__eyebrow">Correction guide</span>
+            <h2>{{ selectedWorkflowProject.titre }}</h2>
+            <p class="project-modal__sub">Follow this checklist before re-submitting corrections to coach review.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeCorrectionGuide()">×</button>
+        </div>
+
+        <div class="correction-guide-modal__summary">
+          <strong>Coach feedback note</strong>
+          <p>{{ getProjectCorrectionSummary(selectedWorkflowProject) }}</p>
+        </div>
+
+        <div class="correction-guide-modal__list">
+          <div *ngIf="getProjectLevelCorrections().length">
+            <h4 class="correction-guide-section-title">Project corrections</h4>
+            @for (item of getProjectLevelCorrections(); track item.title + '-' + $index) {
+              <article class="correction-guide-item">
+                <div class="correction-guide-item__head">
+                  <strong>{{ item.title }}</strong>
+                  <span class="kh-badge kh-badge--red">PROJECT</span>
+                </div>
+                <p>{{ getCompactText(item.comment, 220) }}</p>
+              </article>
+            }
+            <div class="project-modal__footer">
+              <button class="kh-btn kh-btn--primary" (click)="openEditProject(selectedWorkflowProject); closeCorrectionGuide()">Correct project</button>
+            </div>
+          </div>
+          <div *ngIf="getTaskLevelCorrections().length">
+            <h4 class="correction-guide-section-title">Task corrections</h4>
+            @for (item of getTaskLevelCorrections(); track item.title + '-' + $index) {
+              <article class="correction-guide-item">
+                <div class="correction-guide-item__head">
+                  <strong>{{ item.title }}</strong>
+                  <span class="kh-badge kh-badge--teal">TASK</span>
+                </div>
+                <p>{{ getCompactText(item.comment, 220) }}</p>
+                <div class="correction-guide-item__actions">
+                  <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="openTaskModalByTitle(item.title); closeCorrectionGuide()">Correct task</button>
+                </div>
+              </article>
+            }
+          </div>
+          <div *ngIf="!getCorrectionGuideItems(selectedWorkflowProject).length">
+            <article class="correction-guide-item correction-guide-item--empty">
+              <div class="correction-guide-item__head">
+                <strong>No detailed correction text yet</strong>
+                <span class="kh-badge kh-badge--amber">Waiting details</span>
+              </div>
+              <p>The project is marked in correction state, but detailed comments are not yet available. Check task cards for coach notes, then re-open this guide.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="closeCorrectionGuide()">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (showCreateProjectModal) {
     <div class="project-modal-backdrop" (click)="closeCreateProjectConversation()">
       <div class="project-modal project-modal--conversation" (click)="$event.stopPropagation()">
@@ -445,7 +566,12 @@
         @if (createProjectStep === 2) {
           <div class="conversation-step">
             <h3>Quel est votre secteur d'activité ?</h3>
-            <input [(ngModel)]="conversationForm.secteur" class="project-input" placeholder="Ex: GreenTech" />
+            <select [(ngModel)]="conversationForm.secteur" class="project-input">
+              <option value="">Selectionnez un secteur</option>
+              @for (sector of secteurOptions; track sector.value) {
+                <option [value]="sector.value">{{ sector.label }}</option>
+              }
+            </select>
           </div>
         }
 
@@ -471,10 +597,51 @@
           <div class="conversation-step">
             <h3>Décrivez votre projet en quelques lignes.</h3>
             <textarea [(ngModel)]="conversationForm.pitch" rows="4" class="project-input project-textarea" placeholder="Objectif, problème, proposition de valeur..."></textarea>
+
+            <div class="project-form-grid">
+              <div class="project-form-field">
+                <label>Date de début souhaitée</label>
+                <input type="date" [(ngModel)]="conversationForm.dateDebutProjet" class="project-input" />
+              </div>
+              <div class="project-form-field">
+                <label>Date de fin souhaitée</label>
+                <input type="date" [(ngModel)]="conversationForm.dateFinProjet" class="project-input" />
+              </div>
+            </div>
+
+            @if (getConversationTimelineValidationError()) {
+              <p class="timeline-validation-hint">{{ getConversationTimelineValidationError() }}</p>
+            }
+
+            <div class="project-form-grid">
+              <div class="project-form-field project-form-field--full">
+                <label>Proposed solution</label>
+                <textarea [(ngModel)]="conversationForm.solutionProposee" class="project-input project-textarea" rows="3" placeholder="How does the solution work?"></textarea>
+              </div>
+              <div class="project-form-field project-form-field--full">
+                <label>Business model</label>
+                <textarea [(ngModel)]="conversationForm.businessModel" class="project-input project-textarea" rows="3" placeholder="Subscription, commission, B2B..."></textarea>
+              </div>
+              <div class="project-form-field project-form-field--full">
+                <label>Innovation description</label>
+                <textarea [(ngModel)]="conversationForm.innovationDescription" class="project-input project-textarea" rows="2" placeholder="What is unique in this project?"></textarea>
+              </div>
+              <div class="project-form-field project-form-field--full">
+                <label>Scalability description</label>
+                <textarea [(ngModel)]="conversationForm.scalabiliteDescription" class="project-input project-textarea" rows="2" placeholder="How can it scale?"></textarea>
+              </div>
+              <label class="project-form-check project-form-field--full">
+                <input type="checkbox" [(ngModel)]="conversationForm.pocDisponible" />
+                <span>POC available</span>
+              </label>
+            </div>
+
             <div class="conversation-summary">
               <p><strong>Startup:</strong> {{ conversationForm.nomStartup || '-' }}</p>
               <p><strong>Secteur:</strong> {{ conversationForm.secteur || '-' }}</p>
               <p><strong>Stade:</strong> {{ conversationForm.stadeProjet }}</p>
+              <p><strong>Début:</strong> {{ conversationForm.dateDebutProjet || '-' }}</p>
+              <p><strong>Fin:</strong> {{ conversationForm.dateFinProjet || '-' }}</p>
             </div>
           </div>
         }
@@ -491,7 +658,7 @@
           }
 
           @if (createProjectStep === createProjectStepCount) {
-            <button class="kh-btn kh-btn--primary" (click)="createProjectFromConversation()" [disabled]="!canContinueCurrentCreateStep() || isSubmitting">
+            <button class="kh-btn kh-btn--primary" (click)="createProjectFromConversation()" [disabled]="isSubmitting">
               {{ isSubmitting ? 'Création...' : 'Valider et créer' }}
             </button>
           }
@@ -510,24 +677,48 @@
           </div>
           <button class="project-modal__close" (click)="closeProjectModal()">×</button>
         </div>
-        <p class="project-modal__sub">Update your draft project details here.</p>
+        <p class="project-modal__sub">Update your project details here (draft or correction cycle).</p>
+        @if (editingProject && needsCorrection(editingProject) && isCorrectionScopedEdit(editingProject)) {
+          <p class="quick-actions-hint">Only fields requested by coach are editable in this correction cycle.</p>
+        }
 
         <div class="project-form-grid">
           <div class="project-form-field project-form-field--full">
-            <label>Startup name</label>
-            <input [(ngModel)]="form.nomStartup" class="project-input" placeholder="My startup name" />
+            <div class="project-form-label-row">
+              <label>Startup name</label>
+              @if (shouldShowRequestedBadge('nomStartup')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('nomStartup')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <input [(ngModel)]="form.nomStartup" class="project-input" placeholder="My startup name" [disabled]="isSubmitting || !canEditProjectField('nomStartup')" />
           </div>
           <div class="project-form-field project-form-field--full">
-            <label>Description</label>
-            <textarea [(ngModel)]="form.description" class="project-input project-textarea" rows="3" placeholder="Describe the project in one paragraph"></textarea>
+            <div class="project-form-label-row">
+              <label>Description</label>
+              @if (shouldShowRequestedBadge('description')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('description')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <textarea [(ngModel)]="form.description" class="project-input project-textarea" rows="3" placeholder="Describe the project in one paragraph" [disabled]="isSubmitting || !canEditProjectField('description')"></textarea>
           </div>
           <div class="project-form-field">
-            <label>Sector</label>
-            <input [(ngModel)]="form.secteur" class="project-input" placeholder="EdTech, Health, AI..." />
+            <div class="project-form-label-row">
+              <label>Sector</label>
+              @if (shouldShowRequestedBadge('secteur')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('secteur')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <select [(ngModel)]="form.secteur" class="project-input" [disabled]="isSubmitting || !canEditProjectField('secteur')">
+              <option value="">Choose a sector</option>
+              @for (sector of secteurOptions; track sector.value) {
+                <option [value]="sector.value">{{ sector.label }}</option>
+              }
+            </select>
           </div>
           <div class="project-form-field">
-            <label>Project stage</label>
-            <select [(ngModel)]="form.stadeProjet" class="project-input">
+            <div class="project-form-label-row">
+              <label>Project stage</label>
+              @if (shouldShowRequestedBadge('stadeProjet')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('stadeProjet')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <select [(ngModel)]="form.stadeProjet" class="project-input" [disabled]="isSubmitting || !canEditProjectField('stadeProjet')">
               <option value="IDEE">Idea</option>
               <option value="POC">POC</option>
               <option value="MVP">MVP</option>
@@ -536,28 +727,64 @@
               <option value="SCALING">Scaling</option>
             </select>
           </div>
-          <div class="project-form-field project-form-field--full">
-            <label>Problem addressed</label>
-            <textarea [(ngModel)]="form.problemeAdresse" class="project-input project-textarea" rows="3" placeholder="Which problem are you solving?"></textarea>
+          <div class="project-form-field">
+            <div class="project-form-label-row">
+              <label>Project start date</label>
+              @if (shouldShowRequestedBadge('dateDebutProjet')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('dateDebutProjet')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <input type="date" [(ngModel)]="form.dateDebutProjet" class="project-input" [disabled]="isSubmitting || !canEditProjectField('dateDebutProjet')" />
+          </div>
+          <div class="project-form-field">
+            <div class="project-form-label-row">
+              <label>Project end date</label>
+              @if (shouldShowRequestedBadge('dateFinProjet')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('dateFinProjet')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <input type="date" [(ngModel)]="form.dateFinProjet" class="project-input" [disabled]="isSubmitting || !canEditProjectField('dateFinProjet')" />
           </div>
           <div class="project-form-field project-form-field--full">
-            <label>Proposed solution</label>
-            <textarea [(ngModel)]="form.solutionProposee" class="project-input project-textarea" rows="3" placeholder="How does the solution work?"></textarea>
+            <div class="project-form-label-row">
+              <label>Problem addressed</label>
+              @if (shouldShowRequestedBadge('problemeAdresse')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('problemeAdresse')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <textarea [(ngModel)]="form.problemeAdresse" class="project-input project-textarea" rows="3" placeholder="Which problem are you solving?" [disabled]="isSubmitting || !canEditProjectField('problemeAdresse')"></textarea>
           </div>
           <div class="project-form-field project-form-field--full">
-            <label>Business model</label>
-            <textarea [(ngModel)]="form.businessModel" class="project-input project-textarea" rows="3" placeholder="Subscription, commission, B2B..."></textarea>
+            <div class="project-form-label-row">
+              <label>Proposed solution</label>
+              @if (shouldShowRequestedBadge('solutionProposee')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('solutionProposee')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <textarea [(ngModel)]="form.solutionProposee" class="project-input project-textarea" rows="3" placeholder="How does the solution work?" [disabled]="isSubmitting || !canEditProjectField('solutionProposee')"></textarea>
           </div>
           <div class="project-form-field project-form-field--full">
-            <label>Innovation description</label>
-            <textarea [(ngModel)]="form.innovationDescription" class="project-input project-textarea" rows="2" placeholder="What is unique in this project?"></textarea>
+            <div class="project-form-label-row">
+              <label>Business model</label>
+              @if (shouldShowRequestedBadge('businessModel')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('businessModel')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <textarea [(ngModel)]="form.businessModel" class="project-input project-textarea" rows="3" placeholder="Subscription, commission, B2B..." [disabled]="isSubmitting || !canEditProjectField('businessModel')"></textarea>
           </div>
           <div class="project-form-field project-form-field--full">
-            <label>Scalability description</label>
-            <textarea [(ngModel)]="form.scalabiliteDescription" class="project-input project-textarea" rows="2" placeholder="How can it scale?"></textarea>
+            <div class="project-form-label-row">
+              <label>Innovation description</label>
+              @if (shouldShowRequestedBadge('innovationDescription')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('innovationDescription')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <textarea [(ngModel)]="form.innovationDescription" class="project-input project-textarea" rows="2" placeholder="What is unique in this project?" [disabled]="isSubmitting || !canEditProjectField('innovationDescription')"></textarea>
+          </div>
+          <div class="project-form-field project-form-field--full">
+            <div class="project-form-label-row">
+              <label>Scalability description</label>
+              @if (shouldShowRequestedBadge('scalabiliteDescription')) { <span class="field-state-badge field-state-badge--requested">Requested</span> }
+              @if (shouldShowLockedBadge('scalabiliteDescription')) { <span class="field-state-badge field-state-badge--locked">Locked</span> }
+            </div>
+            <textarea [(ngModel)]="form.scalabiliteDescription" class="project-input project-textarea" rows="2" placeholder="How can it scale?" [disabled]="isSubmitting || !canEditProjectField('scalabiliteDescription')"></textarea>
           </div>
           <label class="project-form-check project-form-field--full">
-            <input type="checkbox" [(ngModel)]="form.pocDisponible" />
+            <input type="checkbox" [(ngModel)]="form.pocDisponible" [disabled]="isSubmitting || !canEditProjectField('pocDisponible')" />
             <span>POC available</span>
           </label>
         </div>
@@ -566,6 +793,113 @@
           <button class="kh-btn kh-btn--ghost" (click)="closeProjectModal()" [disabled]="isSubmitting">Cancel</button>
           <button class="kh-btn kh-btn--primary" (click)="saveProject()" [disabled]="!isFormValid() || isSubmitting">
             {{ isSubmitting ? 'Saving...' : 'Save draft' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showSubmitProjectModal && pendingProjectSubmission) {
+    <div class="project-modal-backdrop" (click)="closeSubmitProjectModal()">
+      <div class="project-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Confirm submission</span>
+            <h2>Submit project for review?</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeSubmitProjectModal()" [disabled]="isSubmitting">×</button>
+        </div>
+
+        <p class="project-modal__sub">
+          You are about to submit
+          <strong>{{ pendingProjectSubmission.titre }}</strong>
+          for review. You will not be able to edit it afterward.
+        </p>
+
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="closeSubmitProjectModal()" [disabled]="isSubmitting">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="confirmProjectSubmission()" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Submitting...' : 'Confirm submit' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDeleteProjectModal && pendingProjectDeletion) {
+    <div class="project-modal-backdrop" (click)="closeDeleteProjectModal()">
+      <div class="project-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Confirm deletion</span>
+            <h2>Delete this draft project?</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeDeleteProjectModal()" [disabled]="isSubmitting">×</button>
+        </div>
+
+        <p class="project-modal__sub">
+          You are about to delete
+          <strong>{{ pendingProjectDeletion.titre }}</strong>.
+          This action cannot be undone.
+        </p>
+
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="closeDeleteProjectModal()" [disabled]="isSubmitting">Cancel</button>
+          <button class="kh-btn kh-btn--danger" (click)="confirmDeleteProject()" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Deleting...' : 'Delete draft' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showCorrectionSubmitModal && pendingCorrectionSubmission) {
+    <div class="project-modal-backdrop" (click)="closeCorrectionSubmitModal()">
+      <div class="project-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Confirm correction submission</span>
+            <h2>Submit corrections to coach review?</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeCorrectionSubmitModal()" [disabled]="isSubmitting">×</button>
+        </div>
+
+        <p class="project-modal__sub">
+          Corrections for
+          <strong>{{ pendingCorrectionSubmission.titre }}</strong>
+          will be re-submitted for coach validation.
+        </p>
+
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="closeCorrectionSubmitModal()" [disabled]="isSubmitting">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="confirmCorrectionSubmission()" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Submitting...' : 'Submit corrections' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showSaveEditModal && editingProject) {
+    <div class="project-modal-backdrop" (click)="closeSaveEditModal()">
+      <div class="project-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Confirm edit</span>
+            <h2>Save changes to this project?</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeSaveEditModal()" [disabled]="isSubmitting">×</button>
+        </div>
+
+        <p class="project-modal__sub">
+          You are about to save updates for
+          <strong>{{ editingProject.titre }}</strong>.
+        </p>
+
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="closeSaveEditModal()" [disabled]="isSubmitting">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="confirmSaveProject()" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Saving...' : 'Confirm save' }}
           </button>
         </div>
       </div>

@@ -2,12 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
 import { AuthService } from './auth.service';
-import { Projet, ProjetStatut } from '../models';
+import { Projet, ProjetStatut, SecteurProjet } from '../models';
+
+type SecteurProjetInput = SecteurProjet | '';
 
 export interface ProjetDraftInput {
   nomStartup: string;
   description: string;
-  secteur: string;
+  secteur: SecteurProjetInput;
   problemeAdresse: string;
   solutionProposee: string;
   businessModel: string;
@@ -15,13 +17,15 @@ export interface ProjetDraftInput {
   innovationDescription: string;
   scalabiliteDescription: string;
   pocDisponible: boolean;
+  dateDebutProjet: string;
+  dateFinProjet: string;
 }
 
 interface BackendProjetResponse {
   id: number;
   nomStartup: string;
   description: string;
-  secteur: string;
+  secteur: SecteurProjet;
   problemeAdresse: string;
   solutionProposee: string;
   businessModel: string;
@@ -29,10 +33,16 @@ interface BackendProjetResponse {
   innovationDescription: string;
   scalabiliteDescription: string;
   pocDisponible: boolean;
+  dateDebutProjet: string;
+  dateFinProjet: string;
   dateCreation: string;
   dateDerniereMiseAJour: string;
   statutProjet: 'EN_COURS' | 'SUSPENDU' | 'TERMINE' | 'ARCHIVE';
   etatValidation: 'BROUILLON' | 'SOUMIS_ADMIN' | 'AFFECTE_COACH' | 'EN_REVUE' | 'A_CORRIGER' | 'VALIDE' | 'REFUSE';
+  commentaireCorrectionCoach?: string;
+  dateDemandeCorrection?: string;
+  statutCorrectionProjet?: 'DEMANDEE' | 'RESOUMISE_PAR_ENTREPRENEUR' | 'APPROUVEE_PAR_COACH' | 'RECORRECTION_DEMANDEE';
+  correctionResoumiseEnAttenteCoach?: boolean;
   scoreDisciplineGlobal: number;
   entrepreneurId: number;
 }
@@ -123,6 +133,8 @@ export class ProjetService {
       innovationDescription: form.innovationDescription,
       scalabiliteDescription: form.scalabiliteDescription,
       pocDisponible: form.pocDisponible,
+      dateDebutProjet: form.dateDebutProjet,
+      dateFinProjet: form.dateFinProjet,
     };
 
     return this.http.post<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets`, payload, {
@@ -148,6 +160,8 @@ export class ProjetService {
       innovationDescription: form.innovationDescription,
       scalabiliteDescription: form.scalabiliteDescription,
       pocDisponible: form.pocDisponible,
+      dateDebutProjet: form.dateDebutProjet,
+      dateFinProjet: form.dateFinProjet,
     };
 
     return this.http.put<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets/${id}`, payload, {
@@ -209,6 +223,10 @@ export class ProjetService {
       status: this.toUiStatus(row.statutProjet),
       submitted: row.etatValidation !== 'BROUILLON',
       etatValidation: row.etatValidation,
+      commentaireCorrectionCoach: row.commentaireCorrectionCoach?.trim() || undefined,
+      dateDemandeCorrection: row.dateDemandeCorrection ? new Date(row.dateDemandeCorrection) : undefined,
+      statutCorrectionProjet: row.statutCorrectionProjet,
+      correctionResoumiseEnAttenteCoach: row.correctionResoumiseEnAttenteCoach === true,
       stadeProjet: row.stadeProjet,
       secteur: row.secteur,
       problemeAdresse: row.problemeAdresse,
@@ -217,6 +235,8 @@ export class ProjetService {
       innovationDescription: row.innovationDescription,
       scalabiliteDescription: row.scalabiliteDescription,
       pocDisponible: row.pocDisponible,
+      dateDebutProjet: row.dateDebutProjet ? new Date(row.dateDebutProjet) : undefined,
+      dateFinProjet: row.dateFinProjet ? new Date(row.dateFinProjet) : undefined,
       disciplineScore,
       progression: Math.max(0, Math.min(100, disciplineScore)),
       entrepreneurId: String(row.entrepreneurId),

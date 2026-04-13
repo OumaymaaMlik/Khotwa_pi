@@ -77,9 +77,46 @@ interface ReaffectationPayload {
   motifReaffectation: string;
 }
 
+interface BackendCoachRecommendation {
+  coachId: number;
+  coachNomAffiche: string;
+  scoreGlobal: number;
+  scoreTemps: number;
+  scoreMetier: number;
+  scoreDisponibilite: number;
+  scoreEquite: number;
+  chargeActuelle: number;
+}
+
+interface BackendAffectationRecommendation {
+  projetId: number;
+  principalCoachId: number | null;
+  secondaryCoachIds: number[];
+  expertCoachId: number | null;
+  candidats: BackendCoachRecommendation[];
+}
+
 @Component({ selector:'app-admin-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
 export class AdminProjetsComponent implements OnInit {
   private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly recPanelStorageKey = 'admin-projets-rec-panel-state';
+  private readonly secteurLabels: Record<string, string> = {
+    TECHNOLOGIE_LOGICIEL: 'Technologie & Logiciel',
+    FINTECH: 'FinTech',
+    ECOMMERCE_RETAIL: 'E-commerce & Retail',
+    SANTE_MEDTECH: 'Sante & MedTech',
+    EDUCATION_EDTECH: 'Education & EdTech',
+    AGRICULTURE_AGRITECH: 'Agriculture & AgriTech',
+    ENERGIE_CLEANTECH: 'Energie & CleanTech',
+    MOBILITE_LOGISTIQUE: 'Mobilite & Logistique',
+    INDUSTRIE_MANUFACTURING: 'Industrie & Manufacturing',
+    IMMOBILIER_PROPTECH: 'Immobilier & PropTech',
+    TOURISME_HOSPITALITE: 'Tourisme & Hospitalite',
+    MEDIA_COMMUNICATION: 'Media & Communication',
+    IA_DATA: 'IA & Data',
+    CYBERSECURITE: 'Cybersecurite',
+    SERVICES_B2B: 'Services B2B',
+  };
 
   filtre = 'all';
   search = '';
@@ -87,20 +124,31 @@ export class AdminProjetsComponent implements OnInit {
   projectsError = '';
   showAssignModal = false;
   showReassignModal = false;
+  showDetailsModal = false;
+  showAssignSuccessModal = false;
+  showReassignSuccessModal = false;
+  successModalMessage = '';
+  recommendationLoading = false;
   assignMessage = '';
   coachsLoading = false;
   coachsError = '';
   selectedProjet: AdminProject | null = null;
+  selectedProjectDetails: AdminProject | null = null;
   selectedPrincipalCoachId = '';
-  selectedSecondaryCoachIds: string[] = [];
-  selectedExpertCoachIds: string[] = [];
+  selectedSecondaryCoachId = '';
+  selectedExpertCoachId = '';
+  recommendedCoachIds = new Set<string>();
+  recommendationCandidates: BackendCoachRecommendation[] = [];
+  showRecommendationPanel = true;
 
   activeAffectations: BackendAffectationResponse[] = [];
   affectationsLoading = false;
+  reassignRecommendationLoading = false;
   selectedOldCoachId = '';
   selectedNewCoachId = '';
   selectedReassignRole: CoachRole = 'COACH_PRINCIPAL';
   motifReaffectation = '';
+  reassignRecommendationCandidates: BackendCoachRecommendation[] = [];
 
   projects: AdminProject[] = [];
   coachs: CoachOption[] = [];
@@ -139,22 +187,78 @@ export class AdminProjetsComponent implements OnInit {
   openAssignCoach(projet: AdminProject): void {
     this.selectedProjet = projet;
     this.selectedPrincipalCoachId = '';
-    this.selectedSecondaryCoachIds = [];
-    this.selectedExpertCoachIds = [];
+    this.selectedSecondaryCoachId = '';
+    this.selectedExpertCoachId = '';
+    this.recommendationCandidates = [];
+    this.showRecommendationPanel = this.getRecommendationPanelPreference(projet.id) ?? true;
     this.showAssignModal = true;
     this.assignMessage = '';
 
     if (this.coachs.length === 0 && !this.coachsLoading) {
       this.loadCoachs();
     }
+
+    this.loadRecommendations(projet.id);
+  }
+
+  openProjectDetails(projet: AdminProject): void {
+    this.selectedProjectDetails = projet;
+    this.showDetailsModal = true;
+    this.activeAffectations = [];
+    this.affectationsLoading = true;
+
+    this.http.get<BackendAffectationResponse[]>(`${this.apiUrl}/admin/projets/${projet.id}/affectations`).subscribe({
+      next: (rows) => {
+        this.activeAffectations = rows.filter((r) => r.actif);
+        this.affectationsLoading = false;
+      },
+      error: () => {
+        this.affectationsLoading = false;
+      }
+    });
+  }
+
+  closeProjectDetails(): void {
+    this.showDetailsModal = false;
+    this.selectedProjectDetails = null;
+    this.activeAffectations = [];
   }
 
   closeAssignCoach(): void {
     this.showAssignModal = false;
     this.selectedProjet = null;
     this.selectedPrincipalCoachId = '';
-    this.selectedSecondaryCoachIds = [];
-    this.selectedExpertCoachIds = [];
+    this.selectedSecondaryCoachId = '';
+    this.selectedExpertCoachId = '';
+    this.recommendedCoachIds.clear();
+    this.recommendationCandidates = [];
+    this.showRecommendationPanel = true;
+  }
+
+  get topRecommendationCandidates(): BackendCoachRecommendation[] {
+    return this.recommendationCandidates.slice(0, 3);
+  }
+
+  formatScore(value: number): string {
+    return Number.isFinite(value) ? value.toFixed(1) : '0.0';
+  }
+
+  scoreTone(value: number, max: number): 'good' | 'watch' | 'risk' {
+    const ratio = max > 0 ? value / max : 0;
+    if (ratio >= 0.75) {
+      return 'good';
+    }
+    if (ratio >= 0.45) {
+      return 'watch';
+    }
+    return 'risk';
+  }
+
+  scoreWidth(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    return Math.max(0, Math.min(100, value));
   }
 
   openReassignCoach(projet: AdminProject): void {
@@ -164,12 +268,19 @@ export class AdminProjetsComponent implements OnInit {
     this.motifReaffectation = '';
     this.selectedReassignRole = 'COACH_PRINCIPAL';
     this.activeAffectations = [];
+    this.reassignRecommendationCandidates = [];
     this.affectationsLoading = true;
+    this.reassignRecommendationLoading = false;
     this.showReassignModal = true;
 
     this.http.get<BackendAffectationResponse[]>(`${this.apiUrl}/admin/projets/${projet.id}/affectations`).subscribe({
       next: (rows) => {
         this.activeAffectations = rows.filter((r) => r.actif);
+        this.applyDefaultReassignSelection();
+        if (!this.selectedOldCoachId) {
+          this.selectedOldCoachId = this.getDefaultActiveCoachId();
+        }
+        this.loadReassignRecommendations(projet.id);
         this.affectationsLoading = false;
       },
       error: () => {
@@ -183,9 +294,148 @@ export class AdminProjetsComponent implements OnInit {
     this.showReassignModal = false;
     this.selectedProjet = null;
     this.activeAffectations = [];
+    this.reassignRecommendationCandidates = [];
     this.selectedOldCoachId = '';
     this.selectedNewCoachId = '';
     this.motifReaffectation = '';
+    this.reassignRecommendationLoading = false;
+  }
+
+  get currentCoachLabel(): string {
+    if (!this.selectedOldCoachId) {
+      return 'No active coach found';
+    }
+
+    const coachName = this.getCoachName(this.selectedOldCoachId);
+    const role = this.activeAffectations.find((affectation) => String(affectation.coachId) === this.selectedOldCoachId)?.roleCoachProjet;
+    return role ? `${coachName} · ${this.formatRoleLabel(role)}` : coachName;
+  }
+
+  get activeCoachAssignmentsLabel(): string {
+    if (this.activeAffectations.length === 0) {
+      return 'No active coach assignment';
+    }
+
+    return this.activeAffectations
+      .map((affectation) => `${this.getCoachName(affectation.coachId)} · ${this.formatRoleLabel(affectation.roleCoachProjet)}`)
+      .join(' | ');
+  }
+
+  get selectableSecondaryCoachs(): CoachOption[] {
+    return this.coachs.filter((coach) => coach.id !== this.selectedPrincipalCoachId);
+  }
+
+  get selectableExpertCoachs(): CoachOption[] {
+    return this.coachs.filter((coach) => coach.id !== this.selectedPrincipalCoachId);
+  }
+
+  get selectableReassignCoachs(): CoachOption[] {
+    const excluded = new Set(
+      this.activeAffectations
+        .map((row) => String(row.coachId))
+        .filter((coachId) => coachId !== this.selectedOldCoachId)
+    );
+    excluded.add(this.selectedOldCoachId);
+    return this.coachs.filter((coach) => !excluded.has(coach.id));
+  }
+
+  get topReassignRecommendations(): BackendCoachRecommendation[] {
+    return this.reassignRecommendationCandidates.slice(0, 3);
+  }
+
+  applyBestReassignRecommendation(): void {
+    const top = this.topReassignRecommendations[0];
+    if (top) {
+      this.selectedNewCoachId = String(top.coachId);
+    }
+  }
+
+  onPrincipalCoachChange(): void {
+    if (this.selectedSecondaryCoachId === this.selectedPrincipalCoachId) {
+      this.selectedSecondaryCoachId = '';
+    }
+    if (this.selectedExpertCoachId === this.selectedPrincipalCoachId) {
+      this.selectedExpertCoachId = '';
+    }
+    if (this.selectedPrincipalCoachId && this.selectedProjet && this.getRecommendationPanelPreference(this.selectedProjet.id) === null) {
+      this.showRecommendationPanel = false;
+      this.saveRecommendationPanelPreference(this.selectedProjet.id, false);
+    }
+  }
+
+  toggleRecommendationPanel(): void {
+    this.showRecommendationPanel = !this.showRecommendationPanel;
+    if (this.selectedProjet) {
+      this.saveRecommendationPanelPreference(this.selectedProjet.id, this.showRecommendationPanel);
+    }
+  }
+
+  isRecommendedCoach(coachId: string): boolean {
+    return this.recommendedCoachIds.has(coachId);
+  }
+
+  formatSecteurLabel(value: string | null | undefined): string {
+    if (!value) {
+      return 'N/A';
+    }
+    const key = value.trim().toUpperCase();
+    if (this.secteurLabels[key]) {
+      return this.secteurLabels[key];
+    }
+    return this.humanizeToken(value);
+  }
+
+  formatDisponibiliteLabel(value: string | null | undefined): string {
+    if (!value) {
+      return 'Non renseignee';
+    }
+    const key = value.trim().toUpperCase();
+    if (['OUI', 'YES', 'TRUE', 'DISPONIBLE', 'AVAILABLE'].includes(key)) {
+      return 'Disponible';
+    }
+    if (['NON', 'NO', 'FALSE', 'INDISPONIBLE', 'UNAVAILABLE'].includes(key)) {
+      return 'Indisponible';
+    }
+    if (['PARTIEL', 'PARTIELLE', 'PARTIAL'].includes(key)) {
+      return 'Partielle';
+    }
+    return this.humanizeToken(value);
+  }
+
+  formatRoleLabel(role: CoachRole): string {
+    if (role === 'COACH_PRINCIPAL') {
+      return 'Coach principal';
+    }
+    if (role === 'COACH_SECONDAIRE') {
+      return 'Coach secondaire';
+    }
+    return 'Expert metier';
+  }
+
+  formatStadeLabel(stade: string | null | undefined): string {
+    if (!stade) {
+      return 'N/A';
+    }
+    return this.humanizeToken(stade);
+  }
+
+  principalCoachOptionLabel(coach: CoachOption): string {
+    return `${coach.nom} - ${this.formatSecteurLabel(coach.specialite)} - charge ${coach.chargeActuelle}`;
+  }
+
+  secondaryCoachOptionLabel(coach: CoachOption): string {
+    return `${coach.nom} - ${this.formatSecteurLabel(coach.specialite)} - ${coach.nombreProjetsActifs} projet(s) actif(s)`;
+  }
+
+  expertCoachOptionLabel(coach: CoachOption): string {
+    return `${coach.nom} - ${this.formatSecteurLabel(coach.specialite)} - ${this.formatDisponibiliteLabel(coach.disponibilite)}`;
+  }
+
+  private humanizeToken(value: string): string {
+    return value
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   confirmAssignCoach(): void {
@@ -203,11 +453,11 @@ export class AdminProjetsComponent implements OnInit {
       { coachId: Number(this.selectedPrincipalCoachId), roleCoachProjet: 'COACH_PRINCIPAL' }
     ];
 
-    for (const coachId of this.selectedSecondaryCoachIds) {
-      coachsPayload.push({ coachId: Number(coachId), roleCoachProjet: 'COACH_SECONDAIRE' });
+    if (this.selectedSecondaryCoachId) {
+      coachsPayload.push({ coachId: Number(this.selectedSecondaryCoachId), roleCoachProjet: 'COACH_SECONDAIRE' });
     }
-    for (const coachId of this.selectedExpertCoachIds) {
-      coachsPayload.push({ coachId: Number(coachId), roleCoachProjet: 'EXPERT_METIER' });
+    if (this.selectedExpertCoachId) {
+      coachsPayload.push({ coachId: Number(this.selectedExpertCoachId), roleCoachProjet: 'EXPERT_METIER' });
     }
 
     const payload: AffectationMultiplePayload = {
@@ -217,9 +467,9 @@ export class AdminProjetsComponent implements OnInit {
 
     this.http.post(`${this.apiUrl}/admin/projets/${this.selectedProjet.id}/affectations/multiple`, payload).subscribe({
       next: () => {
-        this.assignMessage = `Coaches assigned to ${this.selectedProjet?.titre}.`;
+        this.successModalMessage = `Affectation réussie pour ${this.selectedProjet?.titre}.`;
         this.closeAssignCoach();
-        this.loadProjects();
+        this.showAssignSuccessModal = true;
       },
       error: () => {
         this.assignMessage = 'Assignment failed. Please try again.';
@@ -261,15 +511,34 @@ export class AdminProjetsComponent implements OnInit {
     this.http.post(`${this.apiUrl}/admin/projets/${this.selectedProjet.id}/reaffectations`, payload).subscribe({
       next: () => {
         console.log('[AdminProjets] Reassignment request succeeded');
-        this.assignMessage = `Coach reassigned for ${this.selectedProjet?.titre}.`;
+        this.successModalMessage = `Réaffectation réussie pour ${this.selectedProjet?.titre}.`;
         this.closeReassignCoach();
-        this.loadProjects();
+        this.showReassignSuccessModal = true;
       },
       error: (err) => {
         console.log('[AdminProjets] Reassignment request failed', err);
         this.assignMessage = 'Reassignment failed. Please try again.';
       }
     });
+  }
+
+  private applyDefaultReassignSelection(): void {
+    if (this.selectedOldCoachId || this.activeAffectations.length === 0) {
+      return;
+    }
+
+    const principal = this.activeAffectations.find((affectation) => affectation.roleCoachProjet === 'COACH_PRINCIPAL');
+    const fallback = principal ?? this.activeAffectations[0];
+    if (fallback) {
+      this.selectedOldCoachId = String(fallback.coachId);
+      this.selectedReassignRole = fallback.roleCoachProjet;
+    }
+  }
+
+  private getDefaultActiveCoachId(): string {
+    const principal = this.activeAffectations.find((affectation) => affectation.roleCoachProjet === 'COACH_PRINCIPAL');
+    const fallback = principal ?? this.activeAffectations[0];
+    return fallback ? String(fallback.coachId) : '';
   }
 
   getCoachName(coachId: string | number): string {
@@ -349,6 +618,107 @@ export class AdminProjetsComponent implements OnInit {
     });
   }
 
+  private loadRecommendations(projetId: string): void {
+    this.recommendationLoading = true;
+    this.http.get<BackendAffectationRecommendation>(`${this.apiUrl}/admin/projets/${projetId}/recommandations-coachs`).subscribe({
+      next: (recommendation) => {
+        this.applyRecommendationSelection(recommendation);
+        this.recommendationLoading = false;
+      },
+      error: () => {
+        this.recommendationLoading = false;
+      }
+    });
+  }
+
+  private loadReassignRecommendations(projetId: string): void {
+    this.reassignRecommendationLoading = true;
+    this.http.get<BackendAffectationRecommendation>(`${this.apiUrl}/admin/projets/${projetId}/recommandations-coachs`).subscribe({
+      next: (recommendation) => {
+        this.applyReassignRecommendationSelection(recommendation);
+        this.reassignRecommendationLoading = false;
+      },
+      error: () => {
+        this.reassignRecommendationLoading = false;
+      }
+    });
+  }
+
+  private applyRecommendationSelection(recommendation: BackendAffectationRecommendation): void {
+    this.recommendedCoachIds.clear();
+    this.recommendationCandidates = recommendation.candidats ?? [];
+
+    if (recommendation.principalCoachId) {
+      this.selectedPrincipalCoachId = String(recommendation.principalCoachId);
+      this.recommendedCoachIds.add(this.selectedPrincipalCoachId);
+    }
+
+    this.selectedSecondaryCoachId = (recommendation.secondaryCoachIds ?? [])
+      .map((id) => String(id))
+      .filter((id) => id !== this.selectedPrincipalCoachId)
+      [0] ?? '';
+    if (this.selectedSecondaryCoachId) {
+      this.recommendedCoachIds.add(this.selectedSecondaryCoachId);
+    }
+
+    this.selectedExpertCoachId = recommendation.expertCoachId
+      ? [String(recommendation.expertCoachId)].filter((id) => id !== this.selectedPrincipalCoachId)
+          [0] ?? ''
+      : '';
+    if (this.selectedExpertCoachId) {
+      this.recommendedCoachIds.add(this.selectedExpertCoachId);
+    }
+
+    if (this.selectedProjet && this.getRecommendationPanelPreference(this.selectedProjet.id) === null) {
+      this.showRecommendationPanel = !this.selectedPrincipalCoachId;
+      this.saveRecommendationPanelPreference(this.selectedProjet.id, this.showRecommendationPanel);
+    }
+
+    if (recommendation.principalCoachId) {
+      this.assignMessage = 'Les coachs recommandes ont ete pre-selectionnes automatiquement.';
+    } else {
+      this.assignMessage = 'Aucune recommandation automatique disponible pour ce projet.';
+    }
+  }
+
+  closeAssignSuccessModal(): void {
+    this.showAssignSuccessModal = false;
+    this.successModalMessage = '';
+    this.refreshAfterSuccess();
+  }
+
+  closeReassignSuccessModal(): void {
+    this.showReassignSuccessModal = false;
+    this.successModalMessage = '';
+    this.refreshAfterSuccess();
+  }
+
+  private refreshAfterSuccess(): void {
+    this.assignMessage = 'Données mises à jour.';
+    this.loadProjects();
+    if (this.coachs.length === 0) {
+      this.loadCoachs();
+    }
+  }
+
+  private applyReassignRecommendationSelection(recommendation: BackendAffectationRecommendation): void {
+    const excluded = new Set(
+      this.activeAffectations
+        .map((row) => String(row.coachId))
+        .filter((coachId) => coachId !== this.selectedOldCoachId)
+    );
+    excluded.add(this.selectedOldCoachId);
+
+    this.reassignRecommendationCandidates = (recommendation.candidats ?? []).filter(
+      (candidate) => !excluded.has(String(candidate.coachId))
+    );
+
+    const best = this.reassignRecommendationCandidates[0];
+    if (best && (!this.selectedNewCoachId || this.selectedNewCoachId === this.selectedOldCoachId)) {
+      this.selectedNewCoachId = String(best.coachId);
+    }
+  }
+
   private uniqueCoachRoleAssignments(items: AffectationMultiplePayload['coachs']): AffectationMultiplePayload['coachs'] {
     const seen = new Set<string>();
     const result: AffectationMultiplePayload['coachs'] = [];
@@ -389,5 +759,34 @@ export class AdminProjetsComponent implements OnInit {
       return 'completed';
     }
     return 'in_progress';
+  }
+
+  private getRecommendationPanelPreference(projectId: string): boolean | null {
+    try {
+      const raw = sessionStorage.getItem(this.recPanelStorageKey);
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as Record<string, boolean>;
+      if (!(projectId in parsed)) {
+        return null;
+      }
+
+      return !!parsed[projectId];
+    } catch {
+      return null;
+    }
+  }
+
+  private saveRecommendationPanelPreference(projectId: string, isOpen: boolean): void {
+    try {
+      const raw = sessionStorage.getItem(this.recPanelStorageKey);
+      const parsed = raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+      parsed[projectId] = isOpen;
+      sessionStorage.setItem(this.recPanelStorageKey, JSON.stringify(parsed));
+    } catch {
+      // Ignore storage access issues.
+    }
   }
 }

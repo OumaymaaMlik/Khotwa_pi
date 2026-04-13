@@ -72,10 +72,13 @@ export class LayoutComponent implements OnInit {
     return r === 'admin' ? '/khotwaadmin' : r === 'entrepreneur' ? '/entrepreneur' : '/coach';
   }
 
+  get hideAdminChrome(): boolean {
+    return this.currentUrl.startsWith('/khotwaadmin');
+  }
+
   getRoute(item: NavItem): string { return `${this.rolePrefix}/${item.route}`; }
   getIcon(name: string): string { return this.svgIcons[name] || ''; }
   isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
-  switchRole(role: UserRole) { this.auth.login(role); this.router.navigateByUrl(this.auth.getDefaultRoute()); }
   logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
   get nonLus(): number { return this.notifService.nonLus(); }
   get notifs() { return this.notifService.notifs(); }

@@ -1,9 +1,12 @@
+import { SecteurProjet } from './secteur.model';
+
 /* ============================================================================
    Status and Priority Types
    ============================================================================ */
 
 export type ProjetStatut = 'in_progress' | 'suspended' | 'completed';
 export type EtatValidation = 'BROUILLON' | 'SOUMIS_ADMIN' | 'AFFECTE_COACH' | 'EN_REVUE' | 'A_CORRIGER' | 'VALIDE' | 'REFUSE';
+export type ProjetCorrectionStatut = 'DEMANDEE' | 'RESOUMISE_PAR_ENTREPRENEUR' | 'APPROUVEE_PAR_COACH' | 'RECORRECTION_DEMANDEE';
 export type StadeProjet = 'IDEE' | 'POC' | 'MVP' | 'PROTOTYPE' | 'COMMERCIALISATION' | 'SCALING';
 export type TachePriorite = 'basse' | 'normal' | 'haute' | 'critique';
 export type TacheStatut = 'A_FAIRE' | 'EN_COURS' | 'A_CORRIGER' | 'EN_CORRECTION' | 'TERMINEE' | 'EN_RETARD' | 'BLOQUEE';
@@ -62,14 +65,20 @@ export interface Projet {
   status: ProjetStatut;
   submitted?: boolean;
   etatValidation?: EtatValidation;
+  commentaireCorrectionCoach?: string;
+  dateDemandeCorrection?: Date;
+  statutCorrectionProjet?: ProjetCorrectionStatut;
+  correctionResoumiseEnAttenteCoach?: boolean;
   stadeProjet?: StadeProjet;
-  secteur?: string;
+  secteur?: SecteurProjet;
   problemeAdresse?: string;
   solutionProposee?: string;
   businessModel?: string;
   innovationDescription?: string;
   scalabiliteDescription?: string;
   pocDisponible?: boolean;
+  dateDebutProjet?: Date;
+  dateFinProjet?: Date;
   disciplineScore: number;
   progression: number;
   entrepreneurId: string;
