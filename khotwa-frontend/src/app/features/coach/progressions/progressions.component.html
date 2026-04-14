@@ -5,10 +5,10 @@
       <h1 class="kh-page-title">Progressions</h1>
       <p class="page-sub">
         <ng-container *ngIf="viewMode === 'entrepreneurs'">
-          {{ entrepreneursProgress.length }} entrepreneur(s) suivi(s)
+          {{ entrepreneursProgress.length }} entrepreneur(s) followed
         </ng-container>
         <ng-container *ngIf="viewMode === 'mes'">
-          {{ progressions.length }} ressource(s) commencée(s)
+          {{ progressions.length }} resource(s) started
         </ng-container>
       </p>
     </div>
@@ -16,17 +16,17 @@
       <button class="kh-btn" [class.kh-btn--primary]="viewMode==='entrepreneurs'"
               [class.kh-btn--ghost]="viewMode!=='entrepreneurs'"
               (click)="switchView('entrepreneurs')">
-        👥 Mes entrepreneurs
+        👥 My entrepreneurs
       </button>
       <button class="kh-btn" [class.kh-btn--primary]="viewMode==='mes'"
               [class.kh-btn--ghost]="viewMode!=='mes'"
               (click)="switchView('mes')">
-        📚 Mes ressources
+        📚 My resources
       </button>
     </div>
   </div>
 
-  <div *ngIf="loading" style="text-align:center;padding:60px;color:var(--text-muted)">Chargement…</div>
+  <div *ngIf="loading" style="text-align:center;padding:60px;color:var(--text-muted)">Loading…</div>
 
   <!-- ══════════════════════════════════════════
        VUE : PROGRESSIONS DES ENTREPRENEURS
@@ -36,31 +36,31 @@
     <!-- Vide -->
     <div *ngIf="entrepreneursProgress.length === 0" class="empty-prog">
       <p>👥</p>
-      <p>Aucun entrepreneur affecté ou aucune progression enregistrée.</p>
+      <p>No entrepreneur assigned or no progress recorded.</p>
     </div>
 
     <!-- Carte par entrepreneur -->
     <div *ngFor="let e of entrepreneursProgress" class="entrepreneur-card kh-card animate-2">
 
       <!-- Header entrepreneur -->
-      <div class="entrepreneur-header" (click)="toggleEntrepreneur(e.entrepreneurId)" style="cursor:pointer">
+      <div class="entrepreneur-header" (click)="toggleEntrepreneur(e.id)" style="cursor:pointer">
         <div class="entrepreneur-avatar">
-          {{ (e.entrepreneurNom || 'E')[0].toUpperCase() }}
+          {{ (e.nomComplet || 'E')[0].toUpperCase() }}
         </div>
         <div class="entrepreneur-info">
-          <p class="entrepreneur-name">{{ e.entrepreneurNom || 'Entrepreneur #' + e.entrepreneurId }}</p>
-          <p class="entrepreneur-email" *ngIf="e.entrepreneurEmail">{{ e.entrepreneurEmail }}</p>
+          <p class="entrepreneur-name">{{ e.nomComplet || 'Entrepreneur #' + e.id }}</p>
+          <p class="entrepreneur-email" *ngIf="e.email">{{ e.email }}</p>
         </div>
 
         <!-- KPIs -->
         <div class="entrepreneur-kpis">
           <div class="ekpi">
             <span class="ekpi-val" style="color:var(--teal)">{{ e.enCours }}</span>
-            <span class="ekpi-label">En cours</span>
+            <span class="ekpi-label">In progress…</span>
           </div>
           <div class="ekpi">
             <span class="ekpi-val" style="color:var(--green)">{{ e.completes }}</span>
-            <span class="ekpi-label">Terminés</span>
+            <span class="ekpi-label">Finished</span>
           </div>
           <div class="ekpi">
             <span class="ekpi-val">{{ e.total }}</span>
@@ -74,26 +74,25 @@
               </div>
               <span class="ekpi-val" style="color:var(--green);font-size:12px">{{ e.tauxCompletion }}%</span>
             </div>
-            <span class="ekpi-label">Complétion</span>
+            <span class="ekpi-label">Completion</span>
           </div>
         </div>
 
         <!-- Toggle -->
-        <span class="toggle-icon" [class.open]="isExpanded(e.entrepreneurId)">▾</span>
+        <span class="toggle-icon" [class.open]="isExpanded(e.id)">▾</span>
       </div>
 
       <!-- Détail progressions (expandable) -->
-      <div class="entrepreneur-detail" *ngIf="isExpanded(e.entrepreneurId)">
+      <div class="entrepreneur-detail" *ngIf="isExpanded(e.id)">
         <div *ngIf="getProgressionsEntrepreneur(e).length === 0"
              style="padding:16px;color:var(--text-muted);font-size:13px">
           Aucune ressource consultée.
         </div>
         <div class="prog-detail-list">
           <div *ngFor="let p of getProgressionsEntrepreneur(e)" class="prog-detail-item">
-            <span class="prog-detail-icon">{{ typeIcons[p.ressource?.type] || '📚' }}</span>
+            <span class="prog-detail-icon">📚</span>
             <div class="prog-detail-info">
-              <p class="prog-detail-titre">{{ p.ressource?.titre || 'Ressource #' + p.ressourceId }}</p>
-              <p class="prog-detail-type" *ngIf="p.ressource?.type">{{ p.ressource.type }}</p>
+              <p class="prog-detail-titre">{{ p.ressource?.titre || 'Ressource #' + p.id }}</p>
             </div>
             <div class="prog-detail-right">
               <div class="kh-progress" style="width:100px;height:6px">
@@ -163,7 +162,7 @@
               </div>
               <span class="prog-pct-label">{{ p.pourcentage }}%</span>
             </div>
-            <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="marquerTermine(p)">Marquer terminé</button>
+            <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="marquerTermine(p)">Mark as done</button>
           </div>
         </div>
       </div>
@@ -185,7 +184,7 @@
             </div>
           </div>
           <div class="prog-card__right">
-            <span class="done-badge">✓ Terminé</span>
+            <span class="done-badge">✓ Done</span>
           </div>
         </div>
       </div>

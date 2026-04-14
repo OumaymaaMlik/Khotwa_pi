@@ -57,9 +57,7 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
     PDF: '📄', VIDEO: '🎥', EXCEL: '📊', WORD: '📝', IMAGE: '🖼️', LINK: '🔗'
   };
 
-  // userId/userRole/userPlan sont résolus depuis AuthService au runtime
-  // → le backend utilise X-User-Role: ENTREPRENEUR + X-User-Id pour filtrer par secteur automatiquement
-  get userId(): number   { return this.auth.currentUser?.idUser ?? 2; }
+  get userId(): number   { return this.auth.currentUser?.idUser ?? 0; }
   get userRole(): string { return this.auth.currentUser?.role   ?? 'ENTREPRENEUR'; }
   get userPlan(): PlanType {
     const p = this.auth.currentUser?.planType;
@@ -102,9 +100,9 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
 
   load() {
     this.loading = true; this.error = '';
-    const filters: any = { userId: this.userId, role: this.userRole, plan: this.userPlan };
+    // Le filtrage par secteur est automatique côté backend (JWT → rôle → secteur du projet)
+    const filters: any = {};
     if (this.filterType !== 'ALL') filters.type = this.filterType;
-    if (this.filterAccess !== 'ALL') filters.access = this.filterAccess;
     if (this.filterCategorieId) filters.categorieId = this.filterCategorieId;
     if (this.search) filters.search = this.search;
 
@@ -292,25 +290,25 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
   }
 
   downloadRessource(r: Ressource) {
-    const url = this.formatFullUrl(r.urlFichier || (r as any).urlExterne);
-    if (!url) { alert('No file available.'); return; }
-
-    fetch(url, { headers: { 'X-User-Id': String(this.userId), 'X-User-Role': this.userRole } })
-      .then(res => {
-        if (!res.ok) throw new Error('Server error lors du téléchargement');
-        return res.blob();
-      })
-      .then(blob => {
+    // On passe par HttpClient (et donc le JwtInterceptor) pour inclure le token JWT.
+    // Le fetch natif contourne l'interceptor Angular => 403 garanti.
+    if (r.urlExterne) {
+      window.open(r.urlExterne, '_blank');
+      return;
+    }
+    this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+      next: (blob: Blob) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = (r as any).nomFichierOriginal || r.titre || 'document';
         a.click();
         URL.revokeObjectURL(a.href);
-      })
-      .catch(err => {
-        console.error("Download fallback:", err);
-        window.open(url, '_blank');
-      });
+      },
+      error: (err: any) => {
+        console.error('Erreur telechargement:', err);
+        alert(err?.error?.message || 'Impossible de telecharger la ressource.');
+      }
+    });
   }
 
   isCompleted(r: Ressource): boolean { return r.maProgress?.status === 'COMPLETED'; }

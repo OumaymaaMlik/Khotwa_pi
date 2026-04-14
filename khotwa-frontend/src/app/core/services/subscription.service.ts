@@ -11,7 +11,7 @@ import {
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private base = '/khotwa';  // ✅ URL relative — passe par le proxy Angular
+  private base = 'http://localhost:8084/khotwa';
 
   constructor(private http: HttpClient) {}
 

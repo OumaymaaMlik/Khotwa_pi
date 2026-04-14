@@ -1,55 +1,56 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
 
-  private readonly API_URL = 'http://localhost:8084/khotwa/api/users';
+  private readonly API = 'http://localhost:8084/khotwa/api/users';
 
   constructor(private http: HttpClient) {}
 
-  private adminHeaders(): HttpHeaders {
-    return new HttpHeaders({
-      'X-User-Id':   localStorage.getItem('user_id')   ?? '1',
-      'X-User-Role': localStorage.getItem('user_role') ?? 'ADMIN',
-    });
-  }
-
-  /** GET /api/users — liste tous les utilisateurs (admin) */
-  getUsersHttp(filters: any = {}): Observable<any> {
-    let params = new HttpParams();
-    if (filters.role   && filters.role   !== 'all') params = params.set('role',   filters.role.toUpperCase());
-    if (filters.search && filters.search.trim())    params = params.set('search', filters.search.trim());
-
-    return this.http.get<any>(this.API_URL, {
-      headers: this.adminHeaders(),
-      params,
-    });
-  }
-
-  /** GET /api/users/{id} */
-  getUserById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}/${id}`, { headers: this.adminHeaders() });
-  }
-
-  /** GET /api/users/me */
+  // GET /api/users/me
   getMyProfile(): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}/me`, { headers: this.adminHeaders() });
+    return this.http.get<any>(`${this.API}/me`);
   }
 
-  /** PUT /api/users/me */
+  // PUT /api/users/me
   updateMyProfile(body: any): Observable<any> {
-    return this.http.put<any>(`${this.API_URL}/me`, body, { headers: this.adminHeaders() });
+    return this.http.put<any>(`${this.API}/me`, body);
   }
 
-  /** PUT /api/users/{id} — admin update */
+  // PUT /api/users/me/change-password
+  changePassword(body: { currentPassword: string; newPassword: string }): Observable<any> {
+    return this.http.put<any>(`${this.API}/me/change-password`, body);
+  }
+
+  // GET /api/users  (ADMIN only — JWT role check server-side)
+  getAllUsers(): Observable<any> {
+    return this.http.get<any>(this.API);
+  }
+
+  // Alias for components that use getUsersHttp()
+  getUsersHttp(filters: any = {}): Observable<any> {
+    return this.getAllUsers();
+  }
+
+  // GET /api/users/{id}
+  getUserById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.API}/${id}`);
+  }
+
+  // PUT /api/users/{id}  (ADMIN)
   adminUpdateUser(id: number, body: any): Observable<any> {
-    return this.http.put<any>(`${this.API_URL}/${id}`, body, { headers: this.adminHeaders() });
+    return this.http.put<any>(`${this.API}/${id}`, body);
   }
 
-  /** DELETE /api/users/{id} — admin */
+  // PUT /api/users/{id}/plan  (ADMIN)
+  updateUserPlan(id: number, body: { planType: string }): Observable<any> {
+    return this.http.put<any>(`${this.API}/${id}/plan`, body);
+  }
+
+  // DELETE /api/users/{id}  (ADMIN)
   deleteUser(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.API_URL}/${id}`, { headers: this.adminHeaders() });
+    return this.http.delete<any>(`${this.API}/${id}`);
   }
 }

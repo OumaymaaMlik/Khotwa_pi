@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RessourceService, Ressource, PlanType, ResourceType, Categorie } from '../../../core/services/ressource.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 export interface CourseFolder {
   name: string; files: Ressource[]; expanded: boolean;
@@ -46,7 +47,7 @@ export class AdminBibliothequeComponent implements OnInit {
   planTypes: PlanType[] = ['FREE','PREMIUM','INSTITUTIONAL'];
   statsData: any = {};
 
-  constructor(public ressourceService: RessourceService) {}
+  constructor(public ressourceService: RessourceService, private auth: AuthService) {}
 
   ngOnInit() { this.loadCategories(); this.loadStats(); this.load(); }
 
@@ -228,12 +229,27 @@ export class AdminBibliothequeComponent implements OnInit {
   togglePublie(r: Ressource) { this.ressourceService.togglePublieHttp(r.id).subscribe({ next: () => this.load() }); }
 
   downloadRessource(r: any) {
-    const url = r.urlFichier?.startsWith('http') ? r.urlFichier : r.urlFichier ? 'http://localhost:8084' + r.urlFichier : r.urlExterne ?? '';
-    if (!url) { alert('No file attached.'); return; }
-    fetch(url, { headers: { 'X-User-Id': '1', 'X-User-Role': 'ADMIN' } })
-      .then(res => res.blob())
-      .then(blob => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = r.nomFichierOriginal || r.titre; a.click(); URL.revokeObjectURL(a.href); })
-      .catch(() => window.open(url, '_blank'));
+    // Ressource externe : ouvrir dans un onglet
+    if (r.urlExterne && (!r.urlFichier || r.urlFichier === '')) {
+      window.open(r.urlExterne, '_blank');
+      return;
+    }
+    // Fichier local : passer par HttpClient (JwtInterceptor injecte le token JWT)
+    // Le fetch natif contourne l'interceptor → 403 garanti
+    const userId = this.auth.currentUser?.idUser ?? 0;
+    this.ressourceService.downloadAsBlob(r.id, userId, 'ADMIN').subscribe({
+      next: (blob: Blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = r.nomFichierOriginal || r.titre || 'document';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      },
+      error: (err: any) => {
+        console.error('Erreur telechargement:', err);
+        alert(err?.error?.message || 'Impossible de telecharger la ressource.');
+      }
+    });
   }
 
   loadStats() { this.ressourceService.getStatsHttp(1).subscribe({ next: r => this.statsData = r.data ?? {}, error: () => {} }); }

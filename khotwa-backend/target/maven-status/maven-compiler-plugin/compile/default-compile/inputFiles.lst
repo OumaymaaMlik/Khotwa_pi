@@ -1,97 +1,130 @@
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\projet\Document.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\ProjetService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\user\UserService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\subscription\PlanOffer.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\ResourceType.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\exception\GlobalExceptionHandler.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\user\SignInRequest.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\user\SignUpRequest.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\projet\ProjetCoachRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\SousTacheCreateRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\projet\Projet.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\KhotwaBiblioApplication.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\ProlongationRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\exception\BusinessException.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\projet\Tache.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\projet\AdminController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\config\CorsConfig.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\TacheCreateRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\projection\ressources\CategorieView.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\StatutProjet.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\projet\ProjetRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\AffectationCoachMultipleRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\ProgressStatus.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\FileStorageService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\projet\SousTacheRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\ProjetResponseDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\AffectationCoachRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\ReaffectationCoachRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\PrioriteTache.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\projection\ressources\RessourceSummaryView.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\TacheStatutUpdateRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\RoleCoachProjet.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\projection\ressources\RessourceView.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\AuthLoginResponseDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\DocumentUploadRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\projet\ProjetCoach.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\config\DataInitializer.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\subscription\Subscription.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\ressources\ProgressionUtilisateur.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\RessourceService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\TypeTache.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\CategorieService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\ressources\Ressource.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\TacheService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\PlanType.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\exception\FileStorageException.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\Role.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\ressources\CategorieRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\projet\TacheRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\evenement\Evenement.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\DtoMapper.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\AccessControlService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\IProgressionService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\SubscriptionStatus.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\ScoreService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\ressources\RessourceController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\RetardService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\TransitionProjetRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\projet\SousTache.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\exception\AccessDeniedException.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\ressources\ProgressionRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\ressources\ProgressionController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\ProjetCoachService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\ProjetCreateRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\user\AdminUpdateUserRequest.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\projet\EntrepreneurController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\ressources\TagController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\StatutTache.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\projection\ressources\TagView.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\CoachDisponibiliteDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\ressources\CategorieController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\ressources\RessourceRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\projection\user\UserView.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\user\UpdateProfileRequest.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\SousTacheStatutUpdateRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\EtatValidationProjet.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\ProgressionService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\ressources\Categorie.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\ressources\TagRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\projet\ProjetStateMachineService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\user\IUserService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\config\StatutTacheEnumMigrationConfig.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\ICategorieService.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\subscription\User.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\EvenementType.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\ProjetCoachResponseDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\ressources\UserController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\dto\projet\ProjetUpdateRequestDto.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\exception\ResourceNotFoundException.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\projet\DocumentRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\repository\user\UserRepository.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\projection\ressources\ProgressionView.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\projet\CoachController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\controller\projet\AuthController.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\entity\ressources\Tag.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\enums\StadeProjet.java
-C:\Users\achre\Downloads\khotwa-backend-fixed (7)\khotwa-backend - Copie\src\main\java\tn\khotwa\biblio\service\ressources\IRessourceService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\config\CorsConfig.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\config\DataInitializer.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\config\StatutTacheEnumMigrationConfig.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\auth\AuthController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\projet\AdminController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\projet\CoachController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\projet\EntrepreneurController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\ressources\CategorieController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\ressources\ProgressionController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\ressources\RessourceController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\ressources\TagController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\SubscriptionController\PaymentController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\SubscriptionController\PlanOfferController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\SubscriptionController\SubscriptionController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\controller\UserController\UserController.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\AffectationCoachMultipleRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\AffectationCoachRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\CoachDisponibiliteDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\DocumentUploadRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\ProjetCoachResponseDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\ProjetCreateRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\ProjetResponseDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\ProjetUpdateRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\ProlongationRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\ReaffectationCoachRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\SousTacheCreateRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\SousTacheStatutUpdateRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\TacheCreateRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\TacheStatutUpdateRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\projet\TransitionProjetRequestDto.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\AuthResponse.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\ChangePasswordRequest.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\LoginRequest.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\RegisterRequest.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\UpdateProfileRequest.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\UpdateUserByAdminRequest.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\UpdateUserPlanRequest.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\dto\user\UserResponse.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\evenement\Evenement.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\projet\Document.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\projet\Projet.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\projet\ProjetCoach.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\projet\SousTache.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\projet\Tache.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\ressources\Categorie.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\ressources\ProgressionUtilisateur.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\ressources\Ressource.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\ressources\Tag.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\SubscriptionEntities\PlanOffer.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\SubscriptionEntities\Subscription.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\entity\UserEntities\User.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\EtatValidationProjet.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\EvenementType.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\PrioriteTache.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\ProgressStatus.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\ResourceType.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\RoleCoachProjet.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\StadeProjet.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\StatutProjet.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\StatutTache.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\SubscriptionEnums\PlanType.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\SubscriptionEnums\SubscriptionStatus.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\TypeTache.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\enums\UserEnum\Role.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\BusinessException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\FileStorageException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\ResourceNotFoundException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\AccessDeniedException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\EmailAlreadyUsedException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\ForbiddenAdminCreationException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\GlobalExceptionHandler.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\InvalidCredentialsException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\InvalidRoleException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\LastAdminDeletionException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\exception\UserException\ResourceNotFoundException.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\KhotwaBackendApplication.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\projection\ressources\CategorieView.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\projection\ressources\ProgressionView.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\projection\ressources\RessourceSummaryView.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\projection\ressources\RessourceView.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\projection\ressources\TagView.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\projection\user\UserView.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\projet\DocumentRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\projet\ProjetCoachRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\projet\ProjetRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\projet\SousTacheRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\projet\TacheRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\ressources\CategorieRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\ressources\ProgressionRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\ressources\RessourceRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\ressources\TagRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\SubscriptionRepo\PlanOfferRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\SubscriptionRepo\SubscriptionRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\repository\UserRepo\UserRepository.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\AppUserDetailsService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\AppUserPrincipal.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\JwtAuthenticationFilter.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\JwtAuthFilter.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\JwtService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\RestAccessDeniedHandler.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\RestAuthenticationEntryPoint.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\security\SecurityConfig.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\AccessControlService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\DtoMapper.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\ProjetCoachService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\ProjetService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\ProjetStateMachineService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\RetardService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\ScoreService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\projet\TacheService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\CategorieService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\FileStorageService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\ICategorieService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\IProgressionService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\IRessourceService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\ProgressionService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\ressources\RessourceService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\SubscriptionServices\EmailService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\SubscriptionServices\ExpirationNotificationScheduler.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\SubscriptionServices\IPlanOfferService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\SubscriptionServices\ISubscriptionService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\SubscriptionServices\PlanOfferService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\SubscriptionServices\SubscriptionService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\AuthService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\CurrentUserService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\impl\AuthServiceImpl.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\impl\CurrentUserServiceImpl.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\impl\UserServiceImpl.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\IUserService.java
+C:\Users\achre\Downloads\khotwa-backend-clean (1)\src\main\java\tn\khotwa\service\UserServices\UserMapper.java

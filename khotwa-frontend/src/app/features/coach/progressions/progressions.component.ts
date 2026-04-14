@@ -3,6 +3,17 @@ import { RessourceService } from '../../../core/services/ressource.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
 
+export interface EntrepreneurProgressionDTO {
+  id: number;           // backend: id
+  nomComplet: string;   // backend: nomComplet
+  email: string;        // backend: email
+  total: number;
+  enCours: number;
+  completes: number;
+  tauxCompletion: number;
+  progressions: any[];
+}
+
 @Component({
   selector: 'app-coach-progressions',
   templateUrl: './progressions.component.html',
@@ -11,16 +22,14 @@ import { Router } from '@angular/router';
 export class CoachProgresssComponent implements OnInit {
 
   // ── Mode vue ─────────────────────────────────────────────────────
-  // 'mes'          = mes propres progressions (ressources lues par le coach)
-  // 'entrepreneurs' = progressions de chaque entrepreneur affecté
   viewMode: 'mes' | 'entrepreneurs' = 'entrepreneurs';
 
   // Mes progressions personnelles
   progressions: any[] = [];
 
-  // Progressions des entrepreneurs affectés (retour backend groupé par entrepreneur)
-  entrepreneursProgress: any[] = [];
-  expandedEntrepreneur: number | null = null;
+  // Progressions des entrepreneurs affectés
+  entrepreneursProgress: EntrepreneurProgressionDTO[] = [];
+  expandedEntrepreneurId: number | null = null;
 
   loading = false;
 
@@ -34,7 +43,7 @@ export class CoachProgresssComponent implements OnInit {
     private router: Router
   ) {}
 
-  get userId(): number { return this.auth.currentUser?.idUser ?? 3; }
+  get userId(): number { return this.auth.currentUser?.idUser ?? 0; }
 
   ngOnInit() { this.load(); }
 
@@ -51,38 +60,34 @@ export class CoachProgresssComponent implements OnInit {
   loadEntrepreneursProgressions() {
     this.svc.getProgressionsEntrepreneursHttp(this.userId).subscribe({
       next: (res: any) => {
-        this.entrepreneursProgress = (res.data ?? []).map((e: any) => ({
-          ...e,
-          expanded: false
-        }));
+        // backend retourne: { id, nomComplet, email, total, enCours, completes, tauxCompletion, progressions }
+        this.entrepreneursProgress = res.data ?? [];
         this.loading = false;
       },
       error: () => this.loading = false
     });
   }
 
-  toggleEntrepreneur(entrepreneurId: number) {
-    this.expandedEntrepreneur = this.expandedEntrepreneur === entrepreneurId
-      ? null
-      : entrepreneurId;
+  toggleEntrepreneur(id: number) {
+    this.expandedEntrepreneurId = this.expandedEntrepreneurId === id ? null : id;
   }
 
-  isExpanded(entrepreneurId: number): boolean {
-    return this.expandedEntrepreneur === entrepreneurId;
+  isExpanded(id: number): boolean {
+    return this.expandedEntrepreneurId === id;
   }
 
-  getProgressionsEntrepreneur(e: any): any[] {
+  getProgressionsEntrepreneur(e: EntrepreneurProgressionDTO): any[] {
     return e.progressions ?? [];
   }
 
   getProgressColor(s: string): string {
-    return s === 'COMPLETED' ? 'var(--green)'
+    return s === 'COMPLETED'  ? 'var(--green)'
          : s === 'IN_PROGRESS' ? 'var(--teal)'
          : 'var(--text-muted)';
   }
 
   getStatusLabel(s: string): string {
-    return s === 'COMPLETED' ? '✓ Terminé'
+    return s === 'COMPLETED'  ? '✓ Terminé'
          : s === 'IN_PROGRESS' ? '▶ En cours'
          : '○ Non démarré';
   }

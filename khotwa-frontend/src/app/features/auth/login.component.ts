@@ -11,8 +11,7 @@ import { UserRole } from '../../core/models/user.model';
 export class LoginComponent {
   mode: 'signin' | 'signup' = 'signin';
 
-  // ── Champs du formulaire ─────────────────────────────────────────
-  emailAddress = '';   // FIX: était "email" mais le HTML bindait "emailAddress"
+  emailAddress = '';
   password     = '';
   firstName    = '';
   lastName     = '';
@@ -24,17 +23,17 @@ export class LoginComponent {
   loading = false;
 
   roles = [
-    { role: 'ENTREPRENEUR' as UserRole, label: 'Entrepreneur',  color: '#2ABFBF', icon: '🚀' },
-    { role: 'COACH'        as UserRole, label: 'Coach / Mentor', color: '#0d4a38', icon: '🎯' },
+    { role: 'ENTREPRENEUR' as UserRole, label: 'Entrepreneur',   color: '#2ABFBF', icon: '🚀' },
+    { role: 'COACH'        as UserRole, label: 'Coach / Mentor',  color: '#0d4a38', icon: '🎯' },
   ];
 
   constructor(private auth: AuthService, private router: Router) {}
 
-  // ── Sign In ──────────────────────────────────────────────────────
+  // ── Sign In ── POST /api/auth/login
   signIn() {
     this.error = ''; this.success = '';
     if (!this.emailAddress.trim() || !this.password) {
-      this.error = 'Please fill in all fields.';
+      this.error = 'Veuillez remplir tous les champs.';
       return;
     }
     this.loading = true;
@@ -46,21 +45,21 @@ export class LoginComponent {
         },
         error: (err) => {
           this.loading = false;
-          this.error = err.error?.message || err.error?.data?.emailAddress
-                    || 'Invalid credentials. Please try again.';
+          this.error = err.error?.message ?? 'Identifiants invalides.';
         }
       });
   }
 
-  // ── Sign Up ──────────────────────────────────────────────────────
+  // ── Sign Up ── POST /api/auth/register  then auto-login
   signUp() {
     this.error = ''; this.success = '';
-    if (!this.emailAddress.trim() || !this.password || !this.firstName.trim() || !this.lastName.trim()) {
-      this.error = 'Please fill in all required fields.';
+    if (!this.emailAddress.trim() || !this.password ||
+        !this.firstName.trim()    || !this.lastName.trim()) {
+      this.error = 'Veuillez remplir tous les champs obligatoires.';
       return;
     }
     if (this.password.length < 8) {
-      this.error = 'Password must be at least 8 characters.';
+      this.error = 'Le mot de passe doit contenir au moins 8 caractères.';
       return;
     }
     this.loading = true;
@@ -72,21 +71,32 @@ export class LoginComponent {
       role:         this.selectedRole,
       phoneNumber:  this.phoneNumber.trim() || null
     };
+
     this.auth.signUp(body).subscribe({
       next: () => {
-        this.loading = false;
-        this.router.navigateByUrl(this.auth.getDefaultRoute());
+        // Register succeeded → auto login
+        this.auth.signIn({ emailAddress: body.emailAddress, password: body.password })
+          .subscribe({
+            next: () => {
+              this.loading = false;
+              this.router.navigateByUrl(this.auth.getDefaultRoute());
+            },
+            error: () => {
+              // Register OK but login failed → go to login page
+              this.loading = false;
+              this.mode = 'signin';
+              this.success = 'Compte créé ! Connectez-vous maintenant.';
+            }
+          });
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.message || 'Registration failed. Email may already be in use.';
+        this.error = err.error?.message ?? 'Inscription échouée. Email déjà utilisé ?';
       }
     });
   }
 
-  // ── Visitor (no account needed) ──────────────────────────────────
   continueAsVisitor() {
-    // Visitor = accès local sans appel backend
     this.auth.setVisitorSession();
     this.router.navigateByUrl('/visitor/events');
   }

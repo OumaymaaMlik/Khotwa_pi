@@ -23,7 +23,7 @@ export class EntrepreneurProgressionsComponent implements OnInit {
     private router: Router
   ) {}
 
-  get userId(): number { return this.auth.currentUser?.idUser ?? 2; }
+  get userId(): number { return this.auth.currentUser?.idUser ?? 0; }
 
   ngOnInit() { this.load(); }
 

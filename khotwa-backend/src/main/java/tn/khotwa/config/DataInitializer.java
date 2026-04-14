@@ -2,54 +2,91 @@ package tn.khotwa.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import tn.khotwa.entity.ressources.Categorie;
+import tn.khotwa.entity.ressources.Ressource;
+import tn.khotwa.entity.ressources.Tag;
 import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.enums.*;
 import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.repository.ressources.CategorieRepository;
+import tn.khotwa.repository.ressources.RessourceRepository;
+import tn.khotwa.repository.ressources.TagRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
 
-/**
- * Crée l'administrateur statique au démarrage s'il n'existe pas encore en base.
- *
- * Identifiants :
- *   Email    : admin@khotwa.tn
- *   Password : Admin@1234
- *
- * Pour changer le mot de passe, modifiez ADMIN_PASSWORD ci-dessous
- * et redémarrez l'application.
- */
-@Slf4j
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
-public class DataInitializer implements ApplicationRunner {
+@Slf4j
+public class DataInitializer implements CommandLineRunner {
 
-    private static final String ADMIN_EMAIL     = "admin@khotwa.tn";
-    private static final String ADMIN_PASSWORD  = "Admin@1234";
-    private static final String ADMIN_FIRSTNAME = "Admin";
-    private static final String ADMIN_LASTNAME  = "Khotwa";
+    private final CategorieRepository categorieRepo;
+    private final TagRepository        tagRepo;
+    private final RessourceRepository  ressourceRepo;
+    private final UserRepository       userRepo;
+    private final PasswordEncoder      passwordEncoder;
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    // ── Compte admin statique ──────────────────────────────────────
+    private static final String ADMIN_EMAIL    = "admin@khotwa.tn";
+    private static final String ADMIN_PASSWORD = "Admin@2025!";
 
     @Override
-    public void run(ApplicationArguments args) {
-        if (userRepository.existsByEmailAddress(ADMIN_EMAIL)) {
-            log.info("[DataInitializer] Admin already exists — skipping creation.");
+    public void run(String... args) {
+        initAdminAccount();
+        initSampleData();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ADMIN STATIQUE — créé une seule fois, jamais recréé
+    // ═══════════════════════════════════════════════════════════════
+    private void initAdminAccount() {
+        if (userRepo.existsByEmailAddress(ADMIN_EMAIL)) {
+            log.info("Admin account already exists — skipping.");
             return;
         }
 
         User admin = User.builder()
-                .emailAddress(ADMIN_EMAIL)
-                .password(passwordEncoder.encode(ADMIN_PASSWORD))
-                .firstName(ADMIN_FIRSTNAME)
-                .lastName(ADMIN_LASTNAME)
-                .role(Role.ADMIN)
-                .mustChangePassword(false)
-                .build();
+            .firstName("Admin")
+            .lastName("KHOTWA")
+            .emailAddress(ADMIN_EMAIL)
+            .password(passwordEncoder.encode(ADMIN_PASSWORD))
+            .role(Role.ADMIN)
+            .planType(PlanType.INSTITUTIONAL)
+            .build();
 
-        userRepository.save(admin);
-        log.info("[DataInitializer] ✅ Admin created: {}", ADMIN_EMAIL);
+        userRepo.save(admin);
+        log.info("✓ Admin account created — email={} password={}",
+                 ADMIN_EMAIL, ADMIN_PASSWORD);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DONNÉES DE DÉMONSTRATION (catégories, tags, ressources)
+    // ═══════════════════════════════════════════════════════════════
+    private void initSampleData() {
+        if (categorieRepo.count() > 0) {
+            log.info("Sample data already exists — DataInitializer skipped.");
+            return;
+        }
+
+        // Catégories
+        Categorie strategie = categorieRepo.save(
+            Categorie.builder().nom("Strategy").couleur("#E8622A").icone("📁").build());
+        Categorie juridique = categorieRepo.save(
+            Categorie.builder().nom("Legal").couleur("#7C5CBF").icone("⚖️").build());
+        Categorie formation = categorieRepo.save(
+            Categorie.builder().nom("Training").couleur("#2ABFBF").icone("🎓").build());
+        Categorie outils = categorieRepo.save(
+            Categorie.builder().nom("Tools").couleur("#27AE7A").icone("🛠️").build());
+
+        // Tags
+        Tag bmc   = tagRepo.save(Tag.builder().nom("BMC").build());
+        Tag pitch = tagRepo.save(Tag.builder().nom("Pitch").build());
+        Tag sarl  = tagRepo.save(Tag.builder().nom("SARL").build());
+        Tag excel = tagRepo.save(Tag.builder().nom("Excel").build());
+        log.info("✓ Sample data created: 4 categories, 4 tags, 4 resources.");
     }
 }

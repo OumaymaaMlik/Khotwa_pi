@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { AuthService } from './auth.service';
 
 // ── Types alignés sur le backend ──────────────────────────────────────────────
 export type StatutProjet    = 'EN_COURS' | 'SUSPENDU' | 'TERMINE' | 'ARCHIVE';
@@ -175,23 +176,12 @@ export class ProjetService {
 
   private readonly BASE = 'http://localhost:8084/khotwa';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private auth: AuthService) {}
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private userId(): number {
-    return Number(localStorage.getItem('user_id') ?? 1);
-  }
-
-  private role(): string {
-    return localStorage.getItem('user_role') ?? 'ADMIN';
-  }
-
-  private h(): HttpHeaders {
-    return new HttpHeaders({
-      'X-User-Id':   String(this.userId()),
-      'X-User-Role': this.role(),
-    });
+    return this.auth.currentUser?.idUser ?? 0;
   }
 
   private p(key: string, value: string | number): HttpParams {
@@ -206,7 +196,7 @@ export class ProjetService {
     const id = entrepreneurId ?? this.userId();
     return this.http.get<ProjetResponseDto[]>(
       `${this.BASE}/entrepreneur/projets`,
-      { headers: this.h(), params: this.p('entrepreneurId', id) }
+      { params: this.p('entrepreneurId', id) }
     );
   }
 
@@ -214,7 +204,7 @@ export class ProjetService {
     const id = entrepreneurId ?? this.userId();
     return this.http.post<ProjetResponseDto>(
       `${this.BASE}/entrepreneur/projets`, dto,
-      { headers: this.h(), params: this.p('entrepreneurId', id) }
+      { params: this.p('entrepreneurId', id) }
     );
   }
 
@@ -222,7 +212,7 @@ export class ProjetService {
     const id = entrepreneurId ?? this.userId();
     return this.http.put<ProjetResponseDto>(
       `${this.BASE}/entrepreneur/projets/${projetId}`, dto,
-      { headers: this.h(), params: this.p('entrepreneurId', id) }
+      { params: this.p('entrepreneurId', id) }
     );
   }
 
@@ -230,7 +220,7 @@ export class ProjetService {
     const id = entrepreneurId ?? this.userId();
     return this.http.post<ProjetResponseDto>(
       `${this.BASE}/entrepreneur/projets/${projetId}/soumettre`, {},
-      { headers: this.h(), params: this.p('entrepreneurId', id) }
+      { params: this.p('entrepreneurId', id) }
     );
   }
 
@@ -238,7 +228,7 @@ export class ProjetService {
     const id = entrepreneurId ?? this.userId();
     return this.http.post<ProjetResponseDto>(
       `${this.BASE}/entrepreneur/projets/${projetId}/resoumettre-correction`, {},
-      { headers: this.h(), params: this.p('entrepreneurId', id) }
+      { params: this.p('entrepreneurId', id) }
     );
   }
 
@@ -246,49 +236,43 @@ export class ProjetService {
     const id = entrepreneurId ?? this.userId();
     return this.http.delete<void>(
       `${this.BASE}/entrepreneur/projets/${projetId}`,
-      { headers: this.h(), params: this.p('entrepreneurId', id) }
+      { params: this.p('entrepreneurId', id) }
     );
   }
 
   getTachesProjet(projetId: number): Observable<TacheDto[]> {
     return this.http.get<TacheDto[]>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/taches`,
-      { headers: this.h() }
+      `${this.BASE}/entrepreneur/projets/${projetId}/taches`
     );
   }
 
   updateStatutTacheEntrepreneur(tacheId: number, dto: TacheStatutUpdateRequestDto): Observable<TacheDto> {
     return this.http.patch<TacheDto>(
-      `${this.BASE}/entrepreneur/taches/${tacheId}/statut`, dto,
-      { headers: this.h() }
+      `${this.BASE}/entrepreneur/taches/${tacheId}/statut`, dto
     );
   }
 
   updateStatutSousTacheEntrepreneur(sousTacheId: number, dto: SousTacheStatutUpdateRequestDto): Observable<SousTacheDto> {
     return this.http.patch<SousTacheDto>(
-      `${this.BASE}/entrepreneur/sous-taches/${sousTacheId}/statut`, dto,
-      { headers: this.h() }
+      `${this.BASE}/entrepreneur/sous-taches/${sousTacheId}/statut`, dto
     );
   }
 
   demanderProlongationTache(tacheId: number, dto: ProlongationRequestDto): Observable<TacheDto> {
     return this.http.post<TacheDto>(
-      `${this.BASE}/entrepreneur/taches/${tacheId}/demander-prolongation`, dto,
-      { headers: this.h() }
+      `${this.BASE}/entrepreneur/taches/${tacheId}/demander-prolongation`, dto
     );
   }
 
   getCoachsProjet(projetId: number): Observable<ProjetCoachResponseDto[]> {
     return this.http.get<ProjetCoachResponseDto[]>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/coachs`,
-      { headers: this.h() }
+      `${this.BASE}/entrepreneur/projets/${projetId}/coachs`
     );
   }
 
   getDocumentsProjet(projetId: number): Observable<DocumentDto[]> {
     return this.http.get<DocumentDto[]>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/documents`,
-      { headers: this.h() }
+      `${this.BASE}/entrepreneur/projets/${projetId}/documents`
     );
   }
 
@@ -296,8 +280,7 @@ export class ProjetService {
     const fd = new FormData();
     fd.append('file', file, file.name);
     return this.http.post<DocumentDto>(
-      `${this.BASE}/entrepreneur/sous-taches/${sousTacheId}/documents/upload`, fd,
-      { headers: new HttpHeaders({ 'X-User-Id': String(this.userId()), 'X-User-Role': this.role() }) }
+      `${this.BASE}/entrepreneur/sous-taches/${sousTacheId}/documents/upload`, fd
     );
   }
 
@@ -309,7 +292,7 @@ export class ProjetService {
     const id = coachId ?? this.userId();
     return this.http.get<ProjetResponseDto[]>(
       `${this.BASE}/coach/projets-affectes`,
-      { headers: this.h(), params: this.p('coachId', id) }
+      { params: this.p('coachId', id) }
     );
   }
 
@@ -317,79 +300,69 @@ export class ProjetService {
     const id = coachId ?? this.userId();
     return this.http.post<TacheDto>(
       `${this.BASE}/coach/projets/${projetId}/taches`, dto,
-      { headers: this.h(), params: this.p('coachId', id) }
+      { params: this.p('coachId', id) }
     );
   }
 
   createSousTache(tacheId: number, dto: SousTacheCreateRequestDto): Observable<SousTacheDto> {
     return this.http.post<SousTacheDto>(
-      `${this.BASE}/coach/taches/${tacheId}/sous-taches`, dto,
-      { headers: this.h() }
+      `${this.BASE}/coach/taches/${tacheId}/sous-taches`, dto
     );
   }
 
   updateStatutTacheCoach(tacheId: number, dto: TacheStatutUpdateRequestDto): Observable<TacheDto> {
     return this.http.patch<TacheDto>(
-      `${this.BASE}/coach/taches/${tacheId}/statut`, dto,
-      { headers: this.h() }
+      `${this.BASE}/coach/taches/${tacheId}/statut`, dto
     );
   }
 
   updateStatutSousTacheCoach(sousTacheId: number, dto: SousTacheStatutUpdateRequestDto): Observable<SousTacheDto> {
     return this.http.patch<SousTacheDto>(
-      `${this.BASE}/coach/sous-taches/${sousTacheId}/statut`, dto,
-      { headers: this.h() }
+      `${this.BASE}/coach/sous-taches/${sousTacheId}/statut`, dto
     );
   }
 
   passerEnRevue(projetId: number): Observable<ProjetResponseDto> {
     return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/coach/projets/${projetId}/passer-en-revue`, {},
-      { headers: this.h() }
+      `${this.BASE}/coach/projets/${projetId}/passer-en-revue`, {}
     );
   }
 
   validerProjet(projetId: number): Observable<ProjetResponseDto> {
     return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/coach/projets/${projetId}/valider`, {},
-      { headers: this.h() }
+      `${this.BASE}/coach/projets/${projetId}/valider`, {}
     );
   }
 
   demanderCorrectionProjet(projetId: number, commentaire: string): Observable<ProjetResponseDto> {
     return this.http.post<ProjetResponseDto>(
       `${this.BASE}/coach/projets/${projetId}/demander-correction`,
-      { commentaire },
-      { headers: this.h() }
+      { commentaire }
     );
   }
 
   demanderCorrectionTache(tacheId: number, commentaire: string): Observable<TacheDto> {
     return this.http.post<TacheDto>(
       `${this.BASE}/coach/taches/${tacheId}/demander-correction`,
-      { commentaire },
-      { headers: this.h() }
+      { commentaire }
     );
   }
 
   getTachesProjetCoach(projetId: number): Observable<TacheDto[]> {
     return this.http.get<TacheDto[]>(
-      `${this.BASE}/coach/projets/${projetId}/taches`,
-      { headers: this.h() }
+      `${this.BASE}/coach/projets/${projetId}/taches`
     );
   }
 
   getSousTaches(tacheId: number): Observable<SousTacheDto[]> {
     return this.http.get<SousTacheDto[]>(
-      `${this.BASE}/coach/taches/${tacheId}/sous-taches`,
-      { headers: this.h() }
+      `${this.BASE}/coach/taches/${tacheId}/sous-taches`
     );
   }
 
   getDocumentsTacheCoach(projetId: number): Observable<DocumentDto[]> {
     return this.http.get<DocumentDto[]>(
-      `${this.BASE}/coach/projets/${projetId}/documents`,
-      { headers: this.h() }
+      `${this.BASE}/coach/projets/${projetId}/documents`
     );
   }
 
@@ -399,72 +372,62 @@ export class ProjetService {
 
   getProjetsSoumis(): Observable<ProjetResponseDto[]> {
     return this.http.get<ProjetResponseDto[]>(
-      `${this.BASE}/admin/projets/soumis`,
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/soumis`
     );
   }
 
   getProjetsAffectes(): Observable<ProjetResponseDto[]> {
     return this.http.get<ProjetResponseDto[]>(
-      `${this.BASE}/admin/projets/affectes`,
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/affectes`
     );
   }
 
   affecterCoach(projetId: number, dto: AffectationCoachRequestDto): Observable<ProjetCoachResponseDto> {
     return this.http.post<ProjetCoachResponseDto>(
-      `${this.BASE}/admin/projets/${projetId}/affectations`, dto,
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/${projetId}/affectations`, dto
     );
   }
 
   getCoachsDisponibles(): Observable<CoachDisponibiliteDto[]> {
     return this.http.get<CoachDisponibiliteDto[]>(
-      `${this.BASE}/admin/coachs/disponibles`,
-      { headers: this.h() }
+      `${this.BASE}/admin/coachs/disponibles`
     );
   }
 
   refuserProjet(projetId: number, justification: string): Observable<any> {
     return this.http.post(
       `${this.BASE}/admin/projets/${projetId}/refuser`,
-      { justification },
-      { headers: this.h() }
+      { justification }
     );
   }
 
   suspendreProjet(projetId: number): Observable<any> {
     return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/suspendre`, {},
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/${projetId}/suspendre`, {}
     );
   }
 
   reprendreProjet(projetId: number): Observable<any> {
     return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/reprendre`, {},
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/${projetId}/reprendre`, {}
     );
   }
 
   archiverProjet(projetId: number): Observable<any> {
     return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/archiver`, {},
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/${projetId}/archiver`, {}
     );
   }
 
   getReporting(): Observable<any> {
     return this.http.get(
-      `${this.BASE}/admin/reporting`,
-      { headers: this.h() }
+      `${this.BASE}/admin/reporting`
     );
   }
 
   getHistoriqueAffectations(projetId: number): Observable<ProjetCoachResponseDto[]> {
     return this.http.get<ProjetCoachResponseDto[]>(
-      `${this.BASE}/admin/projets/${projetId}/affectations`,
-      { headers: this.h() }
+      `${this.BASE}/admin/projets/${projetId}/affectations`
     );
   }
 }
