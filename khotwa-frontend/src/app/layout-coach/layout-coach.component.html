@@ -64,15 +64,15 @@
         <div class="coach-user" (click)="userMenuOpen=!userMenuOpen">
           <div class="coach-user__avatar">{{ userInitials }}</div>
           <div class="coach-user__info">
-            <span class="coach-user__name">{{ auth.currentUser?.prenom }}</span>
+            <span class="coach-user__name">{{ auth.currentUser?.firstName }}</span>
             <span class="coach-user__role">Coach Expert</span>
           </div>
           <svg class="coach-user__caret" [class.flipped]="userMenuOpen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
 
           <div class="coach-user__menu" *ngIf="userMenuOpen">
             <div class="coach-user__menu-header">
-              <p class="cmenu-name">{{ auth.currentUser?.prenom }} {{ auth.currentUser?.nom }}</p>
-              <p class="cmenu-email">{{ auth.currentUser?.email }}</p>
+              <p class="cmenu-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
+              <p class="cmenu-email">{{ auth.currentUser?.emailAddress }}</p>
             </div>
             <button class="cmenu-item cmenu-item--logout" (click)="logout()">
               <span [innerHTML]="getIcon('logout')"></span>Sign out

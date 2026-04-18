@@ -1,3 +1,4 @@
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Component, OnInit, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
@@ -43,7 +44,7 @@ export class LayoutEntrepreneurComponent implements OnInit {
     logout:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
   };
 
-  constructor(public auth: AuthService, public notifService: NotificationService, private router: Router) {}
+  constructor(public auth: AuthService, public notifService: NotificationService, private router: Router, private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
@@ -55,7 +56,7 @@ export class LayoutEntrepreneurComponent implements OnInit {
   onScroll() { this.scrolled = window.scrollY > 10; }
 
   isActive(route: string): boolean { return this.currentUrl.includes(`/${route}`); }
-  getIcon(name: string): string { return this.svgIcons[name] || ''; }
+  getIcon(name: string): SafeHtml { return this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] || ''); }
   getRoute(route: string): string { return `/entrepreneur/${route}`; }
   logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
 
@@ -63,6 +64,6 @@ export class LayoutEntrepreneurComponent implements OnInit {
   get notifs() { return this.notifService.notifs(); }
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.prenom?.[0] ?? ''}${u?.nom?.[0] ?? ''}`;
+    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`;
   }
 }

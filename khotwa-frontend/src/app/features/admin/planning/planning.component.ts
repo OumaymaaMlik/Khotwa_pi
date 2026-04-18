@@ -1,10 +1,25 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProjetService } from '../../../core/services/projet.service';
 
 @Component({ selector:'app-admin-planning', templateUrl:'./planning.component.html', styleUrls:['./planning.component.css'] })
 export class AdminPlanningComponent {
   constructor(public projetService: ProjetService) {}
-  get projets() { return this.projetService.projets; }
+
+  ngOnInit() { this.load(); }
+
+  load() {
+    const role = localStorage.getItem('user_role') ?? 'ADMIN';
+    if (role === 'COACH') {
+      const coachId = Number(localStorage.getItem('user_id') ?? 3);
+      this.projetService.getProjetsCoach(coachId).subscribe({ next: p => this.projets = p, error: () => {} });
+    } else if (role === 'ENTREPRENEUR') {
+      const uid = Number(localStorage.getItem('user_id') ?? 2);
+      this.projetService.getProjetsEntrepreneur(uid).subscribe({ next: p => this.projets = p, error: () => {} });
+    } else {
+      this.projetService.getProjetsSoumis().subscribe({ next: p => this.projets = p, error: () => {} });
+    }
+  }
+  projets: any[] = [];
   filtre = 'all';
   search = '';
   view = 'talents';
@@ -91,5 +106,5 @@ export class AdminPlanningComponent {
     this.newMsg='';
   }
   onMsgKey(e:KeyboardEvent) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.sendMsg();} }
-  delete(id:string) { this.projetService.delete(id); }
+  delete(id: number) { this.projetService.archiverProjet(id).subscribe({ next: () => this.load() }); }
 }

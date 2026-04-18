@@ -1,11 +1,47 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ProjetService, ProjetResponseDto } from '../../../core/services/projet.service';
+import { AuthService } from '../../../core/services/auth.service';
+
 @Component({ selector:'app-coach-validations', templateUrl:'./validations.component.html', styleUrls:['./validations.component.css'] })
-export class CoachValidationsComponent {
-  validations = [
-    {id:'v1',task:'Prototype UI — E-Learning',startup:'EduTech Pro (Sara)',doc:'maquette_v2.pdf',status:'pending',date:'2024-12-01'},
-    {id:'v2',task:'Tests QA HealthMobile',startup:'HealthMobile (Sara)',doc:'rapport_tests.pdf',status:'pending',date:'2024-12-02'},
-    {id:'v3',task:'Business Plan AgriSmart',startup:'AgriSmart (Sara)',doc:'business_plan_v3.pdf',status:'approved',date:'2024-11-28'},
-  ];
-  validate(id: string) { const v = this.validations.find(x=>x.id===id); if(v) v.status='approved'; }
-  reject(id: string) { const v = this.validations.find(x=>x.id===id); if(v) v.status='rejected'; }
+export class CoachValidationsComponent implements OnInit {
+
+  validations: any[] = [];
+  loading = false;
+
+  constructor(private projetService: ProjetService, private auth: AuthService) {}
+
+  ngOnInit() { this.load(); }
+
+  load() {
+    this.loading = true;
+    const coachId = this.auth.currentUser?.idUser;
+    this.projetService.getProjetsCoach(coachId).subscribe({
+      next: projets => {
+        this.validations = projets
+          .filter(p => p.etatValidation === 'EN_REVUE' || p.etatValidation === 'A_CORRIGER' || p.etatValidation === 'AFFECTE_COACH')
+          .map(p => ({
+            id:      p.id,
+            task:    p.nomStartup,
+            startup: p.entrepreneurNomAffiche ?? `Entrepreneur #${p.entrepreneurId}`,
+            doc:     'Voir documents',
+            status:  p.etatValidation === 'EN_REVUE' ? 'pending'
+                   : p.etatValidation === 'A_CORRIGER' ? 'rejected'
+                   : 'pending',
+            date:    p.dateDerniereMiseAJour?.slice(0, 10) ?? '',
+          }));
+        this.loading = false;
+      },
+      error: () => this.loading = false
+    });
+  }
+
+  validate(id: number) {
+    this.projetService.validerProjet(id).subscribe({ next: () => this.load() });
+  }
+
+  reject(id: number) {
+    const commentaire = prompt('Commentaire de correction :') ?? '';
+    if (!commentaire.trim()) return;
+    this.projetService.demanderCorrectionProjet(id, commentaire).subscribe({ next: () => this.load() });
+  }
 }

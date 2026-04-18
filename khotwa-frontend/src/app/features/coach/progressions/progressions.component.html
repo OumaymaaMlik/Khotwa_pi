@@ -2,94 +2,201 @@
 
   <div class="page-header">
     <div>
-      <h1 class="kh-page-title">My Progress</h1>
-      <p class="page-sub">{{ progressions.length }} resource(s) started</p>
+      <h1 class="kh-page-title">Progressions</h1>
+      <p class="page-sub">
+        <ng-container *ngIf="viewMode === 'entrepreneurs'">
+          {{ entrepreneursProgress.length }} entrepreneur(s) followed
+        </ng-container>
+        <ng-container *ngIf="viewMode === 'mes'">
+          {{ progressions.length }} resource(s) started
+        </ng-container>
+      </p>
     </div>
-    <button class="kh-btn kh-btn--primary" (click)="openBibliotheque()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      Go to Library
-    </button>
-  </div>
-
-  <!-- KPI -->
-  <div class="prog-kpis animate-2">
-    <div class="prog-kpi">
-      <span class="prog-kpi__val" style="color:var(--teal)">{{ enCours.length }}</span>
-      <span class="prog-kpi__label">In progress</span>
-    </div>
-    <div class="prog-kpi">
-      <span class="prog-kpi__val" style="color:var(--green)">{{ complets.length }}</span>
-      <span class="prog-kpi__label">Completed</span>
-    </div>
-    <div class="prog-kpi">
-      <span class="prog-kpi__val">{{ progressions.length }}</span>
-      <span class="prog-kpi__label">Total started</span>
-    </div>
-    <div class="prog-kpi" *ngIf="progressions.length > 0">
-      <span class="prog-kpi__val" style="color:var(--orange)">
-        {{ (complets.length / progressions.length * 100) | number:'1.0-0' }}%
-      </span>
-      <span class="prog-kpi__label">Completion rate</span>
+    <div style="display:flex;gap:10px">
+      <button class="kh-btn" [class.kh-btn--primary]="viewMode==='entrepreneurs'"
+              [class.kh-btn--ghost]="viewMode!=='entrepreneurs'"
+              (click)="switchView('entrepreneurs')">
+        👥 My entrepreneurs
+      </button>
+      <button class="kh-btn" [class.kh-btn--primary]="viewMode==='mes'"
+              [class.kh-btn--ghost]="viewMode!=='mes'"
+              (click)="switchView('mes')">
+        📚 My resources
+      </button>
     </div>
   </div>
 
-  <div *ngIf="loading" style="text-align:center;padding:40px;color:var(--text-muted)">Loading…</div>
+  <div *ngIf="loading" style="text-align:center;padding:60px;color:var(--text-muted)">Loading…</div>
 
-  <!-- In progress -->
-  <div *ngIf="enCours.length > 0" class="animate-3">
-    <h3 class="section-title">
-      <span class="section-dot" style="background:var(--teal)"></span>
-      In progress ({{ enCours.length }})
-    </h3>
-    <div class="prog-list">
-      <div *ngFor="let p of enCours" class="prog-card kh-card">
-        <div class="prog-card__left">
-          <span class="prog-card__icon">{{ typeIcons[p.ressource?.type] || '📚' || '📁' }}</span>
-          <div class="prog-card__info">
-            <p class="prog-card__titre">{{ p.ressource?.titre }}</p>
-            <p class="prog-card__meta">Last accessed: {{ p.dernierAcces | date:'d MMM y' }}</p>
-          </div>
+  <!-- ══════════════════════════════════════════
+       VUE : PROGRESSIONS DES ENTREPRENEURS
+  ══════════════════════════════════════════ -->
+  <div *ngIf="!loading && viewMode === 'entrepreneurs'">
+
+    <!-- Vide -->
+    <div *ngIf="entrepreneursProgress.length === 0" class="empty-prog">
+      <p>👥</p>
+      <p>No entrepreneur assigned or no progress recorded.</p>
+    </div>
+
+    <!-- Carte par entrepreneur -->
+    <div *ngFor="let e of entrepreneursProgress" class="entrepreneur-card kh-card animate-2">
+
+      <!-- Header entrepreneur -->
+      <div class="entrepreneur-header" (click)="toggleEntrepreneur(e.id)" style="cursor:pointer">
+        <div class="entrepreneur-avatar">
+          {{ (e.nomComplet || 'E')[0].toUpperCase() }}
         </div>
-        <div class="prog-card__right">
-          <div class="prog-bar-wrap">
-            <div class="kh-progress" style="width:120px;height:8px">
-              <div class="kh-progress__fill" style="background:var(--teal)" [style.width.%]="p.pourcentage"></div>
+        <div class="entrepreneur-info">
+          <p class="entrepreneur-name">{{ e.nomComplet || 'Entrepreneur #' + e.id }}</p>
+          <p class="entrepreneur-email" *ngIf="e.email">{{ e.email }}</p>
+        </div>
+
+        <!-- KPIs -->
+        <div class="entrepreneur-kpis">
+          <div class="ekpi">
+            <span class="ekpi-val" style="color:var(--teal)">{{ e.enCours }}</span>
+            <span class="ekpi-label">In progress…</span>
+          </div>
+          <div class="ekpi">
+            <span class="ekpi-val" style="color:var(--green)">{{ e.completes }}</span>
+            <span class="ekpi-label">Finished</span>
+          </div>
+          <div class="ekpi">
+            <span class="ekpi-val">{{ e.total }}</span>
+            <span class="ekpi-label">Total</span>
+          </div>
+          <div class="ekpi">
+            <div class="taux-wrap">
+              <div class="kh-progress" style="width:80px;height:6px">
+                <div class="kh-progress__fill" style="background:var(--green)"
+                     [style.width.%]="e.tauxCompletion"></div>
+              </div>
+              <span class="ekpi-val" style="color:var(--green);font-size:12px">{{ e.tauxCompletion }}%</span>
             </div>
-            <span class="prog-pct-label">{{ p.pourcentage }}%</span>
+            <span class="ekpi-label">Completion</span>
           </div>
-          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="marquerTermine(p)">Mark done</button>
+        </div>
+
+        <!-- Toggle -->
+        <span class="toggle-icon" [class.open]="isExpanded(e.id)">▾</span>
+      </div>
+
+      <!-- Détail progressions (expandable) -->
+      <div class="entrepreneur-detail" *ngIf="isExpanded(e.id)">
+        <div *ngIf="getProgressionsEntrepreneur(e).length === 0"
+             style="padding:16px;color:var(--text-muted);font-size:13px">
+          Aucune ressource consultée.
+        </div>
+        <div class="prog-detail-list">
+          <div *ngFor="let p of getProgressionsEntrepreneur(e)" class="prog-detail-item">
+            <span class="prog-detail-icon">📚</span>
+            <div class="prog-detail-info">
+              <p class="prog-detail-titre">{{ p.ressource?.titre || 'Ressource #' + p.id }}</p>
+            </div>
+            <div class="prog-detail-right">
+              <div class="kh-progress" style="width:100px;height:6px">
+                <div class="kh-progress__fill"
+                     [style.background]="getProgressColor(p.statut)"
+                     [style.width.%]="p.pourcentage"></div>
+              </div>
+              <span style="font-size:11px;color:var(--text-muted)">{{ p.pourcentage }}%</span>
+              <span class="status-badge"
+                    [style.color]="getProgressColor(p.statut)">
+                {{ getStatusLabel(p.statut) }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
-  <!-- Complétés -->
-  <div *ngIf="complets.length > 0" class="animate-3" style="margin-top:24px">
-    <h3 class="section-title">
-      <span class="section-dot" style="background:var(--green)"></span>
-      Completed ({{ complets.length }})
-    </h3>
-    <div class="prog-list">
-      <div *ngFor="let p of complets" class="prog-card kh-card prog-card--done">
-        <div class="prog-card__left">
-          <span class="prog-card__icon">{{ typeIcons[p.ressource?.type] || '📚' || '📁' }}</span>
-          <div class="prog-card__info">
-            <p class="prog-card__titre">{{ p.ressource?.titre }}</p>
-            <p class="prog-card__meta">Completed: {{ p.dateCompletion | date:'d MMM y' }}</p>
+  <!-- ══════════════════════════════════════════
+       VUE : MES PROGRESSIONS PERSONNELLES
+  ══════════════════════════════════════════ -->
+  <div *ngIf="!loading && viewMode === 'mes'">
+
+    <!-- KPI -->
+    <div class="prog-kpis animate-2">
+      <div class="prog-kpi">
+        <span class="prog-kpi__val" style="color:var(--teal)">{{ enCours.length }}</span>
+        <span class="prog-kpi__label">En cours</span>
+      </div>
+      <div class="prog-kpi">
+        <span class="prog-kpi__val" style="color:var(--green)">{{ complets.length }}</span>
+        <span class="prog-kpi__label">Terminés</span>
+      </div>
+      <div class="prog-kpi">
+        <span class="prog-kpi__val">{{ progressions.length }}</span>
+        <span class="prog-kpi__label">Total</span>
+      </div>
+      <div class="prog-kpi" *ngIf="progressions.length > 0">
+        <span class="prog-kpi__val" style="color:var(--orange)">
+          {{ (complets.length / progressions.length * 100) | number:'1.0-0' }}%
+        </span>
+        <span class="prog-kpi__label">Complétion</span>
+      </div>
+    </div>
+
+    <!-- En cours -->
+    <div *ngIf="enCours.length > 0" class="animate-3">
+      <h3 class="section-title">
+        <span class="section-dot" style="background:var(--teal)"></span>
+        En cours ({{ enCours.length }})
+      </h3>
+      <div class="prog-list">
+        <div *ngFor="let p of enCours" class="prog-card kh-card">
+          <div class="prog-card__left">
+            <span class="prog-card__icon">{{ typeIcons[p.ressource?.type] || '📚' }}</span>
+            <div class="prog-card__info">
+              <p class="prog-card__titre">{{ p.ressource?.titre }}</p>
+              <p class="prog-card__meta">Dernier accès : {{ p.dernierAcces | date:'d MMM y' }}</p>
+            </div>
           </div>
-        </div>
-        <div class="prog-card__right">
-          <span class="done-badge">✓ Completed</span>
+          <div class="prog-card__right">
+            <div class="prog-bar-wrap">
+              <div class="kh-progress" style="width:120px;height:8px">
+                <div class="kh-progress__fill" style="background:var(--teal)" [style.width.%]="p.pourcentage"></div>
+              </div>
+              <span class="prog-pct-label">{{ p.pourcentage }}%</span>
+            </div>
+            <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="marquerTermine(p)">Mark as done</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Vide -->
-  <div *ngIf="!loading && progressions.length === 0" class="empty-prog">
-    <p>📚</p>
-    <p>No resources started yet.</p>
-    <button class="kh-btn kh-btn--primary" (click)="openBibliotheque()">Browse the Library →</button>
+    <!-- Terminés -->
+    <div *ngIf="complets.length > 0" class="animate-3" style="margin-top:24px">
+      <h3 class="section-title">
+        <span class="section-dot" style="background:var(--green)"></span>
+        Terminés ({{ complets.length }})
+      </h3>
+      <div class="prog-list">
+        <div *ngFor="let p of complets" class="prog-card kh-card prog-card--done">
+          <div class="prog-card__left">
+            <span class="prog-card__icon">{{ typeIcons[p.ressource?.type] || '📚' }}</span>
+            <div class="prog-card__info">
+              <p class="prog-card__titre">{{ p.ressource?.titre }}</p>
+              <p class="prog-card__meta">Terminé le {{ p.dateCompletion | date:'d MMM y' }}</p>
+            </div>
+          </div>
+          <div class="prog-card__right">
+            <span class="done-badge">✓ Done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vide -->
+    <div *ngIf="progressions.length === 0" class="empty-prog">
+      <p>📚</p>
+      <p>Aucune ressource commencée.</p>
+      <button class="kh-btn kh-btn--primary" (click)="openBibliotheque()">Parcourir la bibliothèque →</button>
+    </div>
+
   </div>
 
 </div>

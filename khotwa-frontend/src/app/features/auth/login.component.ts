@@ -1,48 +1,103 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { UserRole } from '../../core/models';
+import { UserRole } from '../../core/models/user.model';
 
-@Component({ selector:'app-login', templateUrl:'./login.component.html', styleUrls:['./login.component.css'] })
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css']
+})
 export class LoginComponent {
   mode: 'signin' | 'signup' = 'signin';
 
-  email = '';
-  password = '';
-  firstName = '';
-  lastName = '';
-  selectedRole: UserRole = 'entrepreneur';
-  error = '';
+  emailAddress = '';
+  password     = '';
+  firstName    = '';
+  lastName     = '';
+  phoneNumber  = '';
+  selectedRole: UserRole = 'ENTREPRENEUR';
+
+  error   = '';
+  success = '';
+  loading = false;
 
   roles = [
-    { role: 'entrepreneur' as UserRole, label: 'Entrepreneur', color: '#2ABFBF', icon: '🚀' },
-    { role: 'coach' as UserRole, label: 'Coach / Mentor', color: '#7C5CBF', icon: '🎯' },
+    { role: 'ENTREPRENEUR' as UserRole, label: 'Entrepreneur',   color: '#2ABFBF', icon: '🚀' },
+    { role: 'COACH'        as UserRole, label: 'Coach / Mentor',  color: '#0d4a38', icon: '🎯' },
   ];
 
   constructor(private auth: AuthService, private router: Router) {}
 
+  // ── Sign In ── POST /api/auth/login
   signIn() {
-    this.error = '';
-    if (!this.email || !this.password) { this.error = 'Please fill in all fields.'; return; }
-    // Mock: find user by email or fall back to role matching
-    const mockMap: Record<string, UserRole> = {
-      'admin@khotwa.tn': 'admin',
-      'sara@startup.tn': 'entrepreneur',
-      'ahmed@coach.tn': 'coach',
-    };
-    const role = mockMap[this.email.toLowerCase()];
-    if (!role) { this.error = 'Invalid credentials. Try sara@startup.tn or ahmed@coach.tn.'; return; }
-    this.auth.login(role);
-    this.router.navigateByUrl(this.auth.getDefaultRoute());
+    this.error = ''; this.success = '';
+    if (!this.emailAddress.trim() || !this.password) {
+      this.error = 'Veuillez remplir tous les champs.';
+      return;
+    }
+    this.loading = true;
+    this.auth.signIn({ emailAddress: this.emailAddress.trim(), password: this.password })
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.router.navigateByUrl(this.auth.getDefaultRoute());
+        },
+        error: (err) => {
+          this.loading = false;
+          this.error = err.error?.message ?? 'Identifiants invalides.';
+        }
+      });
   }
 
+  // ── Sign Up ── POST /api/auth/register  then auto-login
   signUp() {
-    this.error = '';
-    if (!this.email || !this.password || !this.firstName || !this.lastName) {
-      this.error = 'Please fill in all fields.'; return;
+    this.error = ''; this.success = '';
+    if (!this.emailAddress.trim() || !this.password ||
+        !this.firstName.trim()    || !this.lastName.trim()) {
+      this.error = 'Veuillez remplir tous les champs obligatoires.';
+      return;
     }
-    // Mock registration: log in with chosen role
-    this.auth.login(this.selectedRole);
-    this.router.navigateByUrl(this.auth.getDefaultRoute());
+    if (this.password.length < 8) {
+      this.error = 'Le mot de passe doit contenir au moins 8 caractères.';
+      return;
+    }
+    this.loading = true;
+    const body = {
+      firstName:    this.firstName.trim(),
+      lastName:     this.lastName.trim(),
+      emailAddress: this.emailAddress.trim(),
+      password:     this.password,
+      role:         this.selectedRole,
+      phoneNumber:  this.phoneNumber.trim() || null
+    };
+
+    this.auth.signUp(body).subscribe({
+      next: () => {
+        // Register succeeded → auto login
+        this.auth.signIn({ emailAddress: body.emailAddress, password: body.password })
+          .subscribe({
+            next: () => {
+              this.loading = false;
+              this.router.navigateByUrl(this.auth.getDefaultRoute());
+            },
+            error: () => {
+              // Register OK but login failed → go to login page
+              this.loading = false;
+              this.mode = 'signin';
+              this.success = 'Compte créé ! Connectez-vous maintenant.';
+            }
+          });
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = err.error?.message ?? 'Inscription échouée. Email déjà utilisé ?';
+      }
+    });
+  }
+
+  continueAsVisitor() {
+    this.auth.setVisitorSession();
+    this.router.navigateByUrl('/visitor/events');
   }
 }
