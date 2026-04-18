@@ -158,15 +158,24 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
     this.revokeBlobUrl();
     this.blobUrl = null; this.rawBlobUrl = ''; this.pdfDoc = null;
 
-    if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+    if (r.type === 'LINK' || (!r.urlFichier && r.urlExterne)) {
+      // LINK / URL externe → consultation instantanée = 100% COMPLETED
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+      window.open(r.urlExterne!, '_blank');
+      this.showViewer = false;
+    } else if (r.type === 'IMAGE') {
+      // IMAGE → affichage immédiat = 100% COMPLETED
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+      // continue vers le bloc IMAGE ci-dessous (pas de return)
+    } else if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+      // PDF / VIDEO / autres → démarrer à IN_PROGRESS 1%
       this.svc.updateProgressionHttp(this.userId, r.id, 'IN_PROGRESS', 1).subscribe();
     }
 
-    if (r.type === 'LINK' || (!r.urlFichier && r.urlExterne)) {
-      // Ressource externe → ouvrir dans un nouvel onglet directement
-      window.open(r.urlExterne!, '_blank');
-      this.showViewer = false;
-    } else if (r.type === 'VIDEO') {
+    // ── Rendu du contenu (indépendant de la progression) ──
+    if (r.type === 'VIDEO') {
       // Vidéo : si fichier local → blob, si URL externe → lien direct
       if (r.urlFichier && !r.urlFichier.startsWith('http')) {
         this.viewerLoading = true;
