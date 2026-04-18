@@ -1,4 +1,4 @@
-package tn.khotwa.service.SubscriptionServices;
+package tn.khotwa.service.SubscriptionServices.Scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +8,7 @@ import tn.khotwa.entity.SubscriptionEntities.Subscription;
 import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
+import tn.khotwa.service.SubscriptionServices.EmailService;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;

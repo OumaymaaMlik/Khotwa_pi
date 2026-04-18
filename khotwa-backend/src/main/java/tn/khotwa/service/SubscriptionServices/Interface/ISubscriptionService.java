@@ -1,4 +1,4 @@
-package tn.khotwa.service.SubscriptionServices;
+package tn.khotwa.service.SubscriptionServices.Interface;
 
 import tn.khotwa.entity.SubscriptionEntities.PlanOffer;
 import tn.khotwa.entity.UserEntities.User;

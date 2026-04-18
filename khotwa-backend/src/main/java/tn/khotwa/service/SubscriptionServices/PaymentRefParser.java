@@ -5,18 +5,11 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Parse la référence de paiement encodée dans paiement_ref.
- * Format stocké :
- *   PAYPAL-ORDER:<orderId>|PAYER:<payerId>[|MONTANT:<montant>][|REMISE:<pct>%]
- */
+
 @Component
 public class PaymentRefParser {
 
-    /**
-     * Parse une ref et retourne une Map avec les clés :
-     *   paypalOrderId, payerId, montant (nullable), discountPercent (nullable), hasDiscount
-     */
+
     public Map<String, Object> parse(String ref) {
         Map<String, Object> result = new HashMap<>();
 

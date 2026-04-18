@@ -57,7 +57,6 @@ public class PaymentController {
 
         Map<String, Object> parsed = paymentRefParser.parse(sub.getPaiementRef());
 
-        // Enrichir avec les métadonnées de l'abonnement
         parsed.put("subscriptionId", sub.getIdSubscription());
         parsed.put("plan",           sub.getPlan());
         parsed.put("statut",         sub.getStatut());
@@ -75,7 +74,6 @@ public class PaymentController {
     }
 
 
-    // ─── Tous les paiements avec remise (admin) ───────────────────────────────
 
     @GetMapping("/with-discount")
     public ResponseEntity<List<Map<String, Object>>> getAllWithDiscount() {

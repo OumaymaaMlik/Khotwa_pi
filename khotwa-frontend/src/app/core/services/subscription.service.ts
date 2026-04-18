@@ -82,7 +82,6 @@ export class SubscriptionService {
         planOfferId,
         paypalOrderId,
         payerId,
-        // Inclus dans paiementRef côté backend si une remise était active
         montantPaye:     montantPaye     ?? null,
         discountPercent: discountPercent ?? null
       }
@@ -137,12 +136,10 @@ export class SubscriptionService {
     );
   }
 
-  /** Détails parsés d'un paiement (orderId, payerId, montant, remise…) */
   getPaymentDetails(subscriptionId: number): Observable<any> {
     return this.http.get<any>(`${this.base}/payments/details/${subscriptionId}`);
   }
 
-  /** Tous les abonnements qui ont bénéficié d'une remise */
   getPaymentsWithDiscount(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/payments/with-discount`);
   }
@@ -150,7 +147,7 @@ export class SubscriptionService {
 
   getUpgradeSuggestion(
     userId: number,
-    premiumThreshold: number = 0,
+    premiumThreshold: number = 1,
     discountPercent: number = 20
   ): Observable<any> {
     return this.http.get<any>(
@@ -158,4 +155,17 @@ export class SubscriptionService {
       `?premiumThreshold=${premiumThreshold}&discountPercent=${discountPercent}`
     );
   }
+
+  getChurnScores(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.base}/engagement/scores`);
+}
+getChurnStats(): Observable<any> {
+  return this.http.get<any>(`${this.base}/engagement/stats`);
+}
+computeChurnForAll(): Observable<any[]> {
+  return this.http.post<any[]>(`${this.base}/engagement/compute/all`, {});
+}
+sendChurnEmails(): Observable<any> {
+  return this.http.post<any>(`${this.base}/engagement/send-pending-emails`, {});
+}
 }

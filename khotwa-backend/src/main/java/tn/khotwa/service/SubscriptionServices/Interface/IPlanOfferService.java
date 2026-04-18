@@ -1,11 +1,10 @@
-package tn.khotwa.service.SubscriptionServices;
+package tn.khotwa.service.SubscriptionServices.Interface;
 
 
 import tn.khotwa.entity.SubscriptionEntities.PlanOffer;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 
 import java.util.List;
-import java.util.Map;
 
 public interface IPlanOfferService {
     List<PlanOffer> getAllPlans();

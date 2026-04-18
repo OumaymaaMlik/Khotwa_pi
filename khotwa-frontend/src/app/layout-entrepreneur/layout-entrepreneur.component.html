@@ -1,4 +1,3 @@
-
 <div class="ent-shell">
 
   <!-- ── TOP NAVBAR ───────────────────────────────── -->
@@ -43,19 +42,18 @@
               <button (click)="notifService.markAllRead(); notifOpen=false">Mark all as read</button>
             </div>
             <div *ngFor="let n of notifs"
-     class="ent-notif-item"
-     [class.unread]="!n.lu"
-     [class.notif-item--warning]="n.type === 'warning'"
-     [class.notif-item--error]="n.type === 'error'"
-     (click)="onNotifClick(n)">
-  <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
-  <div style="flex:1">
-    <p class="ent-notif-item__title">{{ n.titre }}</p>
-    <p class="ent-notif-item__msg">{{ n.message }}</p>
-    <p *ngIf="n.link" class="ent-notif-item__link">→ Go to Profile</p>
-  </div>
-</div>
- 
+                 class="ent-notif-item"
+                 [class.unread]="!n.lu"
+                 [class.notif-item--warning]="n.type === 'warning'"
+                 [class.notif-item--error]="n.type === 'error'"
+                 (click)="onNotifClick(n)">
+              <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
+              <div style="flex:1">
+                <p class="ent-notif-item__title">{{ n.titre }}</p>
+                <p class="ent-notif-item__msg">{{ n.message }}</p>
+                <p *ngIf="n.link" class="ent-notif-item__link">→ Go to Profile</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -64,9 +62,22 @@
           <span [innerHTML]="getIcon('home')"></span>
         </a>
 
-        <!-- Avatar + dropdown -->
+        <!-- ═══════════════════════════════════════════════════
+             FIX AVATAR NAVBAR : affiche la vraie photo si
+             disponible, sinon les initiales
+        ═══════════════════════════════════════════════════ -->
         <div class="ent-user" (click)="userMenuOpen=!userMenuOpen" #userMenu>
-          <div class="ent-user__avatar">{{ userInitials }}</div>
+
+          <!-- Avatar : image réelle OU initiales -->
+          <div class="ent-user__avatar"
+               [class.ent-user__avatar--img]="!!userAvatarUrl">
+            <img *ngIf="userAvatarUrl"
+                 [src]="userAvatarUrl"
+                 alt="avatar"
+                 class="ent-user__avatar-img" />
+            <span *ngIf="!userAvatarUrl">{{ userInitials }}</span>
+          </div>
+
           <div class="ent-user__info">
             <span class="ent-user__name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</span>
             <span class="ent-user__role">Entrepreneur</span>

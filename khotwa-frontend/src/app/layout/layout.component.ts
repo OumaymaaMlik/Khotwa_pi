@@ -13,6 +13,8 @@ export class LayoutComponent implements OnInit {
   notifOpen = false;
   currentUrl = '';
 
+  private readonly BACKEND_ORIGIN = 'http://localhost:8084';
+
   navItems: NavItem[] = [
   { label: 'Dashboard',     icon: 'dashboard', route: 'dashboard',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
   { label: 'Projects',      icon: 'folder',    route: 'projets',       roles: ['ADMIN','ENTREPRENEUR','COACH'] },
@@ -56,6 +58,13 @@ export class LayoutComponent implements OnInit {
     if (!this.auth.currentUser?.firstName) {
       this.auth.refreshProfile().subscribe({ next: () => {}, error: () => {} });
     }
+  }
+
+  /** Résout l'URL de l'avatar du currentUser (null si pas d'avatar) */
+  get avatarUrl(): string | null {
+    const a = this.auth.currentUser?.avatar?.trim();
+    if (!a) return null;
+return a.startsWith('http') ? a : `${this.BACKEND_ORIGIN}${a.startsWith('/') ? '' : '/'}${a}`;
   }
 
   get visibleNav(): NavItem[] {

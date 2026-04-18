@@ -45,7 +45,7 @@
 }
 .brand-role { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
 
-/* Role switcher */
+/* Account badge */
 .account-badge {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px 10px;
@@ -55,6 +55,7 @@
   width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: white;
+  overflow: hidden;
 }
 .account-badge__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .account-badge__name {
@@ -110,6 +111,7 @@
   width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: white;
+  overflow: hidden;
 }
 .user-info { flex: 1; min-width: 0; }
 .user-name { font-size: 12px; font-weight: 600; color: rgba(232,228,220,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -120,6 +122,21 @@
   transition: all 0.15s;
 }
 .logout-btn:hover { color: var(--red); background: rgba(232,74,74,0.15); }
+
+/* ═══════ AVATAR IMAGE — utilisé dans les 3 emplacements ═══════ */
+.avatar-img {
+  display: block;
+  object-fit: cover;
+}
+.avatar-img--badge {
+  width: 32px; height: 32px; border-radius: 9px;
+}
+.avatar-img--tile {
+  width: 32px; height: 32px; border-radius: 9px;
+}
+.avatar-img--topbar {
+  width: 32px; height: 32px; border-radius: 9px;
+}
 
 /* ═══════ MAIN ═══════ */
 .main-area {
@@ -219,8 +236,15 @@ kbd {
   width: 32px; height: 32px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; color: white;
+  overflow: hidden;
 }
 
 /* ═══════ CONTENT ═══════ */
 .content { flex: 1; overflow-y: auto; padding: 28px 28px; }
 @media (max-width: 640px) { .content { padding: 16px; } }
+
+/* ═══════ ANIMATION ═══════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

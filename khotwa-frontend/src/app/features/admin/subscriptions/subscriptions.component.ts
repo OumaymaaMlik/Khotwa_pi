@@ -10,7 +10,7 @@ import {
 } from '../../../core/models/subscription.model';
 
 type FilterType = 'ALL' | PlanType;
-type AdminTab = 'subscribers' | 'plans' | 'analytics';
+type AdminTab = 'subscribers' | 'plans' | 'analytics' | 'engagement';
 type RevenueView = 'summary' | 'by-user' | 'by-month' | 'by-day';
 
 @Component({
@@ -22,6 +22,10 @@ export class SubscriptionsComponent implements OnInit {
   subscriptions: Subscription[] = [];
   filteredSubscriptions: Subscription[] = [];
   plans: PlanOffer[] = [];
+  
+churnScores: any[] = [];
+churnStats: any | null = null;
+churnLoading = false;
 
   activeTab: AdminTab = 'subscribers';
   filtre: FilterType = 'ALL';
@@ -76,6 +80,12 @@ export class SubscriptionsComponent implements OnInit {
     this.loadPlans();
     this.loadPaymentsWithDiscount();
   }
+  getAvatarUrl(s: Subscription): string {
+  const a = s.user?.avatar?.trim();
+  if (!a) return '';
+  if (a.startsWith('http')) return a;
+  return `http://localhost:8084${a.startsWith('/') ? '' : '/'}${a}`;
+}
 
   icon(name: string): SafeHtml {
     if (!this.iconCache[name]) {
@@ -93,7 +103,38 @@ export class SubscriptionsComponent implements OnInit {
     if (tab === 'subscribers' && !this.paymentsWithDiscount.length) {
       this.loadPaymentsWithDiscount();
     }
+    if (tab === 'engagement' && !this.churnScores.length) {
+  this.loadChurnData();
+}
   }
+  loadChurnData(): void {
+  this.churnLoading = true;
+  this.subscriptionService.getChurnScores().subscribe({
+    next: (data) => { this.churnScores = data; this.churnLoading = false; },
+    error: () => { this.churnLoading = false; }
+  });
+  this.subscriptionService.getChurnStats().subscribe({
+    next: (s) => { this.churnStats = s; }
+  });
+}
+
+computeAllChurn(): void {
+  this.churnLoading = true;
+  this.subscriptionService.computeChurnForAll().subscribe({
+    next: (data) => { this.churnScores = data; this.churnLoading = false; },
+    error: () => { this.churnLoading = false; }
+  });
+}
+
+sendChurnEmails(): void {
+  this.subscriptionService.sendChurnEmails().subscribe({
+    next: (res) => { alert(res.emailsSent + ' email(s) envoyé(s)'); this.loadChurnData(); }
+  });
+}
+
+getRiskClass(level: string): string {
+  return ({ HIGH: 'kh-badge--red', MEDIUM: 'kh-badge--orange', LOW: 'kh-badge--green' } as any)[level] ?? '';
+}
 
   loadAllAnalytics(): void {
     this.analyticsLoading = true;
@@ -230,10 +271,7 @@ export class SubscriptionsComponent implements OnInit {
   }
   getUserEmail(s: Subscription): string { return (s.user as any)?.email?.trim() || '-'; }
   hasAvatar(s: Subscription): boolean { return !!s.user?.avatar; }
-  getAvatarUrl(s: Subscription): string {
-    const a = s.user?.avatar?.trim();
-    return a ? (a.startsWith('http') ? a : `http://localhost:8084/uploads/${a}`) : '';
-  }
+  
   getAvatarColor(s: Subscription): string {
     const colors = ['linear-gradient(135deg,#E8622A,#FF9A5C)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];
     return colors[(s.user?.idUser ?? s.idUser ?? 0) % colors.length];
