@@ -21,7 +21,7 @@ public class ProfanityFilterService {
                 getClass().getResourceAsStream("/bad-words.txt")))) {
             reader.lines()
                     .map(String::trim)
-                    .filter(word -> word.length() > 1) // Avoid single-letter accidental blocks
+                    .filter(word -> word.length() > 1)
                     .forEach(word -> badWords.add(word.toLowerCase()));
         } catch (Exception e) {
             System.err.println("Could not load profanity dictionary");

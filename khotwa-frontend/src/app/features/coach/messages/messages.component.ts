@@ -166,6 +166,7 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
           }
           this.shouldScroll = true;
         }
+console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date: c.lastUpdate })));
         this.conversations.sort((a, b) => 
         new Date(b.lastUpdate || 0).getTime() - new Date(a.lastUpdate || 0).getTime()
       );
@@ -248,6 +249,7 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
       const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
       if (!groups[otherId]) {
         groups[otherId] = {
+          id: `conv-${otherId}`, 
           participantId: otherId,
           nom: `User ${otherId}`,
           initials: `U${otherId}`,
@@ -256,16 +258,23 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
           messages: []
         };
       }
-      if (msg.status === 'PENDING' && msg.receiverId === this.currentUserId) groups[otherId].unread++;
-      groups[otherId].messages.push(this.mapToUIMessage(msg));
-      groups[otherId].lastMsg = msg.body;
+      const uiMsg = this.mapToUIMessage(msg);
+      groups[otherId].messages.push(uiMsg);
+      const isActuallyEmpty = !uiMsg.text || uiMsg.text.trim() === '' || uiMsg.text === '\u00A0';
+      groups[otherId].lastMsg = isActuallyEmpty ? '📎 Attachment' : uiMsg.text;
+      groups[otherId].time = uiMsg.time;
+      groups[otherId].lastUpdate = new Date(msg.createdAt);
+      if (msg.status === 'PENDING' && msg.receiverId === this.currentUserId) {
+        groups[otherId].unread++;
+      }
     });
-    return Object.values(groups);
+    return Object.values(groups).sort((a, b) => 
+      new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime()
+    );
   }
 
   sendMsg() {
   if ((!this.newMsg.trim() && !this.pendingFileUrl) || !this.selectedConv) return;
-
   const message: any = {
     subject: 'Direct Message',
     body: this.newMsg.trim() || (this.pendingFileUrl ? '\u00A0' : '📎 File attachment'),
@@ -277,20 +286,38 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   };
   this.wsService.sendTyping(this.currentUserId, this.selectedConv.participantId, false);
   this.messageService.sendMessage(message).subscribe({
-    next: (saved) => {
-      const uiMsg = this.mapToUIMessage(saved);
-      this.selectedConv.messages.push(uiMsg);
-      this.updateConversationPreview(this.selectedConv.id, uiMsg.text, uiMsg.time);
-      this.newMsg = '';
-      this.replyingTo = null;   
-      this.pendingFile = null;
-      this.pendingFileUrl = null;
-      this.shouldScroll = true;
-      
-      this.cdr.markForCheck(); 
-    },
-    error: (err) => console.error('Failed to send message', err)
-  });
+  next: (saved) => {
+    const uiMsg = this.mapToUIMessage(saved);
+    // 1. Find the conversation index to update it directly in the array
+    const index = this.conversations.findIndex(c => c.participantId === this.selectedConv.participantId);
+    if (index !== -1) {
+      // 2. Update the messages and preview text
+      this.conversations[index].messages.push(uiMsg);
+      const isActuallyEmpty = !uiMsg.text || uiMsg.text.trim() === '' || uiMsg.text === '\u00A0';
+      this.conversations[index].lastMsg = isActuallyEmpty ? '📎 Attachment' : uiMsg.text;
+      this.conversations[index].time = uiMsg.time;
+      this.conversations[index].lastUpdate = new Date(); 
+      // 3. Perform the sort
+      this.conversations.sort((a, b) => {
+        const dateA = a.lastUpdate ? new Date(a.lastUpdate).getTime() : 0;
+        const dateB = b.lastUpdate ? new Date(b.lastUpdate).getTime() : 0;
+        return dateB - dateA;
+      });
+      // 4. CRITICAL: Re-create the array reference
+      this.conversations = [...this.conversations];
+    }
+    // Reset UI State
+    this.newMsg = '';
+    this.replyingTo = null;   
+    this.pendingFile = null;
+    this.pendingFileUrl = null;
+    this.shouldScroll = true;
+    // Force Change Detection
+    this.cdr.markForCheck();
+    this.cdr.detectChanges(); 
+  },
+  error: (err) => console.error('Failed to send message', err)
+});
 }
 
   // --- UI Event Helpers ---
