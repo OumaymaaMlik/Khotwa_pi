@@ -45,6 +45,10 @@ public class Subscription {
     @Column(name = "paiement_ref")
     private String paiementRef;
 
+    @Column(name = "was_expired", nullable = false)
+    @Builder.Default
+    private Integer wasExpired = 0;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

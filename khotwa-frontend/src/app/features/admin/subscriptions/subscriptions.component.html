@@ -103,8 +103,9 @@
             <td class="td-id">{{ s.idSubscription }}</td>
             <td>
               <div class="user-cell">
-                <img *ngIf="hasAvatar(s)" [src]="getAvatarUrl(s)" class="user-avatar-img" [alt]="getFullName(s)">
-                <div *ngIf="!hasAvatar(s)" class="user-avatar" [style.background]="getAvatarColor(s)">{{ getUserInitials(s) }}</div>
+                <img *ngIf="hasAvatar(s)" [src]="getAvatarUrl(s)" class="user-avatar-img" [alt]="getFullName(s)"
+                          (error)="onAvatarError($event, s)">                
+                  <div *ngIf="!hasAvatar(s)" class="user-avatar" [style.background]="getAvatarColor(s)">{{ getUserInitials(s) }}</div>
                 <div class="user-meta">
                   <div class="user-name">{{ getFullName(s) }}</div>
                   <div class="user-sub">{{ getUserEmail(s) }}</div>
@@ -120,7 +121,15 @@
             <td><span class="kh-badge" [ngClass]="getStatusBadgeClass(s.statut)">{{ s.statut }}</span></td>
             <td class="td-date">{{ s.dateDebut | date:'dd MMM yyyy' }}</td>
             <td class="td-date" [class.td-date--expired]="s.statut === 'EXPIRED'">{{ s.dateFin | date:'dd MMM yyyy' }}</td>
-            <td><span class="days-badge" [class.days-badge--low]="getRemainingDays(s.dateFin) <= 7">{{ getRemainingDays(s.dateFin) }}d</span></td>
+            <td>
+                  <span class="days-badge" *ngIf="s.plan === 'FREE'">Unlimited</span>
+                  <span class="days-badge"
+                   *ngIf="s.plan !== 'FREE'"
+                   [class.days-badge--low]="getRemainingDays(s.dateFin) <= 7 && getRemainingDays(s.dateFin) > 0"
+                   [class.days-badge--expired]="getRemainingDays(s.dateFin) === 0">
+                    {{ getRemainingDays(s.dateFin) === 0 ? 'Expired' : (getRemainingDays(s.dateFin) + 'd') }}
+                  </span>
+            </td>            
             <td><span class="renew-pill" [class.renew-pill--on]="s.autoRenouvellement">{{ s.autoRenouvellement ? 'ON' : 'OFF' }}</span></td>
             <td>
               <div *ngIf="s.paiementRef" class="ref-cell">
@@ -152,8 +161,12 @@
 
     <!-- Header bar -->
     <div class="health-topbar">
+      <div class="health-copy">
+        <h3 class="health-title">Subscriber Health Insights</h3>
+        <p class="health-subtitle">Track churn risk signals and trigger retention actions in real time.</p>
+      </div>
       <div class="health-actions">
-        <button class="kh-btn kh-btn--primary icon-btn" (click)="computeAllChurn()">
+        <button class="kh-btn kh-btn--primary icon-btn" (click)="computeAllChurn()" [disabled]="churnLoading">
           <span [innerHTML]="icon('renew')"></span> Refresh Scores
         </button>
         <button class="kh-btn kh-btn--ghost icon-btn" (click)="sendChurnEmails()">

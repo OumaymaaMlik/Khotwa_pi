@@ -18,7 +18,9 @@ type RevenueView = 'summary' | 'by-user' | 'by-month' | 'by-day';
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.css']
 })
+
 export class SubscriptionsComponent implements OnInit {
+  
   subscriptions: Subscription[] = [];
   filteredSubscriptions: Subscription[] = [];
   plans: PlanOffer[] = [];
@@ -121,8 +123,20 @@ churnLoading = false;
 computeAllChurn(): void {
   this.churnLoading = true;
   this.subscriptionService.computeChurnForAll().subscribe({
-    next: (data) => { this.churnScores = data; this.churnLoading = false; },
-    error: () => { this.churnLoading = false; }
+    next: (data) => {
+      this.churnScores = data ?? [];
+      // Refresh stats too, otherwise the top counters can stay stale.
+      this.subscriptionService.getChurnStats().subscribe({
+        next: (stats) => { this.churnStats = stats; },
+        error: (err) => { console.error(err); },
+        complete: () => { this.churnLoading = false; }
+      });
+    },
+    error: (err) => {
+      console.error(err);
+      this.churnLoading = false;
+      alert('Echec du recalcul des scores. Verifie le backend engagement.');
+    }
   });
 }
 
@@ -271,6 +285,10 @@ getRiskClass(level: string): string {
   }
   getUserEmail(s: Subscription): string { return (s.user as any)?.email?.trim() || '-'; }
   hasAvatar(s: Subscription): boolean { return !!s.user?.avatar; }
+  onAvatarError(event: Event, s: Subscription): void {
+  (event.target as HTMLImageElement).style.display = 'none';
+  s.user!.avatar = ''; // force le fallback initiales
+}
   
   getAvatarColor(s: Subscription): string {
     const colors = ['linear-gradient(135deg,#E8622A,#FF9A5C)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];

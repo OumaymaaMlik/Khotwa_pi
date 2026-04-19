@@ -28,6 +28,8 @@ const routes: Routes = [
       { path: 'bibliotheque', component: AdminBibliothequeComponent },
       { path: 'utilisateurs', component: AdminUtilisateursComponent },
       { path: 'evenements',   component: AdminEvenementsComponent },
+      { path: 'subcription',    redirectTo: 'subscriptions', pathMatch: 'full' },
+      { path: 'subcriptions',   redirectTo: 'subscriptions', pathMatch: 'full' },
       { path: 'subscriptions',  component: SubscriptionsComponent },
       { path: 'talent',       component: AdminTalentComponent },
     ],

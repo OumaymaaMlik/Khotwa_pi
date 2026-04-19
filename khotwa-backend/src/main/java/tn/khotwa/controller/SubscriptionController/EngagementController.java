@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.khotwa.dto.Subscription.EngagementScoreDTO;
-import tn.khotwa.service.SubscriptionServices.EngagementScoreService;
+import tn.khotwa.service.SubscriptionServices.Ia.EngagementScoreService;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class EngagementController {
 
     @PostMapping("/compute/all")
     public ResponseEntity<List<EngagementScoreDTO>> computeForAll() {
-        List<EngagementScoreDTO> results = churnScoringService.computeForAllUsers();
+        List<EngagementScoreDTO> results = churnScoringService.computeForAllUsersForced();
         return ResponseEntity.ok(results);
     }
 
