@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
@@ -9,7 +9,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
 
 @Component({ selector: 'app-layout', templateUrl: './layout.component.html', styleUrls: ['./layout.component.css'] })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, OnDestroy {
 
   sidebarOpen   = true;
   sidebarMobile = false;
@@ -76,9 +76,27 @@ export class LayoutComponent implements OnInit {
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
     this.onResize();
+
+    const afterProfile = () => {
+      const uid = this.auth.currentUser?.idUser
+        ?? (this.auth.currentUser?.id != null ? Number(this.auth.currentUser.id) : 0);
+      if (uid > 0) {
+        this.notifService.reload();
+      }
+    };
+
     if (!this.auth.currentUser?.firstName) {
-      this.auth.refreshProfile().subscribe({ next: () => {}, error: () => {} });
+      this.auth.refreshProfile().subscribe({
+        next: () => afterProfile(),
+        error: () => afterProfile()
+      });
+    } else {
+      afterProfile();
     }
+  }
+
+  ngOnDestroy(): void {
+    // WebSocket disabled
   }
 
   @HostListener('window:resize')
@@ -172,8 +190,19 @@ logout(): void {
   }
 
   // ── Notifications ─────────────────────────────────────────────────────────
-  get nonLus(): number { return this.notifService.nonLus(); }
-  get notifs()         { return this.notifService.notifs(); }
+  get nonLus(): number { return Math.min(this.notifService.nonLus(), 99); }
+  get notifs() { return this.notifService.latestFive(); }
 
-
+  onNotificationClick(n: any): void {
+    this.notifService.markRead(n.id);
+    this.notifOpen = false;
+    if (n.link) {
+      this.router.navigateByUrl(n.link);
+      return;
+    }
+    const target = n.senderId
+      ? `${this.rolePrefix}/messages?conversationId=${n.senderId}`
+      : `${this.rolePrefix}/messages`;
+    this.router.navigateByUrl(target);
+  }
 }

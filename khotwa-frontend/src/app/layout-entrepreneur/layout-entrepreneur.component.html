@@ -1,3 +1,7 @@
+<!-- ═══════════════════════════════════════════
+     KHOTWA — Layout ENTREPRENEUR
+     Navbar top glassmorphism + teal accent
+════════════════════════════════════════════ -->
 
 <div class="ent-shell">
 
@@ -31,29 +35,30 @@
         <div class="notif-wrapper">
           <button class="ent-icon-btn" (click)="notifOpen=!notifOpen" [class.ent-icon-btn--active]="notifOpen">
             <span [innerHTML]="getIcon('bell')"></span>
-            <span class="notif-dot" *ngIf="nonLus > 0">{{ nonLus }}</span>
+            <span class="notif-badge" *ngIf="nonLus > 0">{{ nonLus < 99 ? nonLus : '99+' }}</span>
           </button>
           <div class="ent-notif-panel" *ngIf="notifOpen">
             <div class="ent-notif-panel__head">
               <span>Notifications</span>
               <button (click)="notifService.markAllRead(); notifOpen=false">Mark all as read</button>
             </div>
-            <div *ngFor="let n of notifs" class="ent-notif-item" [class.unread]="!n.lu" (click)="notifService.markRead(n.id)">
+
+            <div *ngFor="let n of notifs" class="ent-notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
               <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
-              <div><p class="ent-notif-item__title">{{ n.titre }}</p><p class="ent-notif-item__msg">{{ n.message }}</p></div>
-            </div>
-            <div *ngFor="let n of notifs"
-                 class="ent-notif-item"
-                 [class.unread]="!n.lu"
-                 [class.notif-item--warning]="n.type === 'warning'"
-                 [class.notif-item--error]="n.type === 'error'"
-                 (click)="onNotifClick(n)">
-              <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
-              <div style="flex:1">
-                <p class="ent-notif-item__title">{{ n.titre }}</p>
+              <div>
+                <p class="ent-notif-item__title">
+                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Update' }}
+                </p>
                 <p class="ent-notif-item__msg">{{ n.message }}</p>
-                <p *ngIf="n.link" class="ent-notif-item__link">→ Go to Profile</p>
               </div>
+            </div>
+
+            <div style="padding:12px 16px;text-align:center;border-top:1px solid var(--border);">
+              <a [routerLink]="rolePrefix + '/notifications'"
+                 (click)="notifOpen=false"
+                 style="font-size:12px;font-weight:600;color:var(--orange);text-decoration:none;">
+                Show all notifications
+              </a>
             </div>
           </div>
         </div>
@@ -63,10 +68,7 @@
           <span [innerHTML]="getIcon('home')"></span>
         </a>
 
-        <!-- ═══════════════════════════════════════════════════
-             FIX AVATAR NAVBAR : affiche la vraie photo si
-             disponible, sinon les initiales
-        ═══════════════════════════════════════════════════ -->
+        <!-- Avatar + dropdown -->
         <div class="ent-user" (click)="userMenuOpen=!userMenuOpen" #userMenu>
 
           <!-- Avatar : image réelle OU initiales -->

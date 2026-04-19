@@ -1,9 +1,10 @@
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { filter } from 'rxjs/operators';
+
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
-import { filter } from 'rxjs/operators';
 
 interface NavItem { label: string; icon: string; route: string; }
 
@@ -12,22 +13,22 @@ interface NavItem { label: string; icon: string; route: string; }
   templateUrl: './layout-coach.component.html',
   styleUrls: ['./layout-coach.component.css']
 })
-export class LayoutCoachComponent implements OnInit {
+export class LayoutCoachComponent implements OnInit, OnDestroy {
   notifOpen    = false;
-  mobileOpen   = false;
+  mobileOpen    = false;
   userMenuOpen = false;
   currentUrl   = '';
   scrolled     = false;
 
   navItems: NavItem[] = [
     { label: 'Dashboard',   icon: 'dashboard', route: 'dashboard'    },
-    { label: 'Projects',     icon: 'folder',    route: 'projets'      },
-    { label: 'My Startups',icon: 'rocket',    route: 'startups'     },
+    { label: 'Projects',    icon: 'folder',    route: 'projets'      },
+    { label: 'My Startups', icon: 'rocket',    route: 'startups'     },
     { label: 'Validations', icon: 'check',     route: 'validations'  },
     { label: 'Planning',    icon: 'calendar',  route: 'planning'     },
     { label: 'Messages',    icon: 'message',   route: 'messages'     },
-    { label: 'Library',icon: 'book',      route: 'bibliotheque' },
-    { label: 'Progress', icon: 'progress',  route: 'progressions' },
+    { label: 'Library',     icon: 'book',      route: 'bibliotheque' },
+    { label: 'Progress',    icon: 'progress',  route: 'progressions' },
     { label: 'Talent',      icon: 'people',    route: 'talent'       },
     { label: 'Account',     icon: 'user',      route: 'account'      },
     { label: 'My Profile',  icon: 'user',      route: 'profile'      },
@@ -49,26 +50,72 @@ export class LayoutCoachComponent implements OnInit {
     logout:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
   };
 
-  constructor(public auth: AuthService, public notifService: NotificationService, private router: Router, private sanitizer: DomSanitizer) {}
+  constructor(
+    public auth: AuthService,
+    public notifService: NotificationService,
+    private router: Router,
+    private sanitizer: DomSanitizer
+  ) {}
 
   ngOnInit() {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
+
+    this.auth.refreshProfile().subscribe({
+      next: () => {
+        const userId = this.auth.currentUser?.idUser;
+        if (userId && this.auth.isCoach) {
+          this.notifService.reload();
+        }
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    // WebSocket disabled in layout; notifications use HTTP polling
+  }
+
+  get rolePrefix(): string {
+    const r = this.auth.role;
+    if (r === 'ADMIN') return '/khotwaadmin';
+    if (r === 'ENTREPRENEUR') return '/entrepreneur';
+    if (r === 'COACH') return '/coach';
+    return '';
   }
 
   @HostListener('window:scroll', [])
   onScroll() { this.scrolled = window.scrollY > 10; }
 
-  isActive(route: string): boolean { return this.currentUrl.includes(`/${route}`); }
-  getIcon(name: string): SafeHtml { return this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] || ''); }
-  getRoute(route: string): string { return `/coach/${route}`; }
-  logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
+  isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
 
-  get nonLus(): number { return this.notifService.nonLus(); }
-  get notifs() { return this.notifService.notifs(); }
+  getIcon(name: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] || '');
+  }
+
+  getRoute(item: NavItem): string { return `/coach/${item.route}`; }
+
+  logout() {
+    this.auth.logout();
+    this.router.navigateByUrl('/');
+  }
+
+  onNotificationClick(notification: any) {
+    this.notifService.markRead(notification.id);
+    this.notifOpen = false;
+
+    if (notification.senderId) {
+      this.router.navigateByUrl(`${this.rolePrefix}/messages?conversationId=${notification.senderId}`);
+    } else {
+      this.router.navigateByUrl(`${this.rolePrefix}/messages`);
+    }
+  }
+
+  get nonLus(): number { return Math.min(this.notifService.nonLus(), 99); }
+  get notifs() { return this.notifService.latestFive(); }
+
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`;
+    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`.toUpperCase();
   }
 }

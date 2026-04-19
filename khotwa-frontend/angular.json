@@ -38,8 +38,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "16kB",
-                  "maximumError": "32kB"
+                  "maximumWarning": "24kB",
+                  "maximumError": "40kB"
                 }
               ],
               "outputHashing": "all"
@@ -57,7 +57,7 @@
           "options": {
             "proxyConfig": "proxy.conf.json",
               "liveReload": true
-  
+
           },
           "configurations": {
             "production": { "buildTarget": "khotwa-ng:build:production" },

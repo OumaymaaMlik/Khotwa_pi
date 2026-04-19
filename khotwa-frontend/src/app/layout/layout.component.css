@@ -4,8 +4,6 @@
    Main    : light clean (votre design existant)
 ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap');
-
 :root {
   --sidebar-w:          240px;
   --topbar-h:           58px;

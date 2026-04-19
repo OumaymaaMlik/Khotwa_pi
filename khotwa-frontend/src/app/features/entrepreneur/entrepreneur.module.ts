@@ -14,25 +14,28 @@ import { EntrepreneurMessagesComponent }     from './messages/messages.component
 import { EntrepreneurBibliothequeComponent } from './bibliotheque/bibliotheque.component';
 import { EntrepreneurProgressionsComponent } from './progressions/progressions.component';
 import { EntrepreneurTalentComponent }       from './talent/talent.component';
+import { EntrepreneurNotificationsComponent } from './notifications/notifications.component';
 import { ProfileComponent }                  from './profile/profile.component';          // ← existing PayPal page, untouched
 import { EntrepreneurAccountPageComponent }  from './account-page/account-page.component'; // ← new account page
 
 const routes: Routes = [
   {
     path: '',
-    component: LayoutEntrepreneurComponent,
+    component: LayoutEntrepreneurComponent,   // ← nouveau layout entrepreneur
     children: [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard',    component: EntrepreneurDashboardComponent },
-      { path: 'projets',      component: EntrepreneurProjetsComponent },
-      { path: 'workflows',    component: EntrepreneurWorkflowsComponent },
-      { path: 'planning',     component: EntrepreneurPlanningComponent },
-      { path: 'messages',     component: EntrepreneurMessagesComponent },
-      { path: 'bibliotheque', component: EntrepreneurBibliothequeComponent },
-      { path: 'talent',       component: EntrepreneurTalentComponent },
-      { path: 'progressions', component: EntrepreneurProgressionsComponent },
+      { path: 'dashboard',    component: EntrepreneurDashboardComponent  },
+      { path: 'projets',      component: EntrepreneurProjetsComponent     },
+      { path: 'workflows',    component: EntrepreneurWorkflowsComponent   },
+      { path: 'planning',     component: EntrepreneurPlanningComponent    },
+      { path: 'messages',     component: EntrepreneurMessagesComponent    },
+      { path: 'bibliotheque', component: EntrepreneurBibliothequeComponent},
+      { path: 'talent',       component: EntrepreneurTalentComponent      },
+      { path: 'progressions', component: EntrepreneurProgressionsComponent},
+      { path: 'notifications', component: EntrepreneurNotificationsComponent },
       { path: 'profile',      component: ProfileComponent                      },
       { path: 'account',      component: EntrepreneurAccountPageComponent  },
+
     ],
   },
 ];
@@ -43,7 +46,7 @@ const routes: Routes = [
     EntrepreneurWorkflowsComponent, EntrepreneurPlanningComponent,
     EntrepreneurMessagesComponent,  EntrepreneurBibliothequeComponent,
     EntrepreneurTalentComponent,    EntrepreneurProgressionsComponent,
-    ProfileComponent,
+    ProfileComponent,EntrepreneurNotificationsComponent,
     EntrepreneurAccountPageComponent,
   ],
   imports: [

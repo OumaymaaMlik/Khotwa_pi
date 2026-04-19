@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, BehaviorSubject } from 'rxjs';
 import { User, UserResponse, UserRole } from '../models/user.model';
 import { HttpHeaders } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
@@ -17,6 +17,7 @@ export class AuthService {
   private readonly USERS_API = 'http://localhost:8084/khotwa/api/users';
 
   private _currentUser: User | null = null;
+  public currentUserSubject = new BehaviorSubject<User | null>(null);
 
   constructor(private http: HttpClient) {
     this._loadSession();
@@ -36,6 +37,8 @@ export class AuthService {
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }
+
+
 
   // ── Login  →  POST /api/auth/login ───────────────────────────────
   // Backend retourne : { token, idUser, emailAddress, role, mustChangePassword }

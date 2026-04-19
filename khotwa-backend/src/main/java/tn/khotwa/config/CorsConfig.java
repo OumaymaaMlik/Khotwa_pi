@@ -38,7 +38,7 @@ public class CorsConfig {
         // Optionnel : expose-les aussi pour que le front puisse les lire dans les réponses
         config.setExposedHeaders(List.of("X-User-Id", "X-User-Role", "X-User-Plan"));
 
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
