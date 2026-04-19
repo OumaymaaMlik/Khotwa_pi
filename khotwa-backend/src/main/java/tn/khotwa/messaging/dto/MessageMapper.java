@@ -5,8 +5,9 @@ import tn.khotwa.messaging.entity.Notification;
 
 public class MessageMapper {
 
-    public static MessageDTO toMessageDTO(Message message) {
+    public static MessageDTO toMessageDTO(Message message, String senderName) {
         MessageDTO dto = new MessageDTO();
+        dto.setSenderName(senderName);
         dto.setId(message.getId());
         dto.setSubject(message.getSubject());
         dto.setBody(message.getBody());

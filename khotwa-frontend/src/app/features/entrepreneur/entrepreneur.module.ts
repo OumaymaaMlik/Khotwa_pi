@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LayoutModule } from '../../layout/layout.module';
-import { LayoutComponent } from '../../layout/layout.component';
+import { LayoutEntrepreneurModule } from '../../layout-entrepreneur/layout-entrepreneur.module';
+import { LayoutEntrepreneurComponent } from '../../layout-entrepreneur/layout-entrepreneur.component';
 
 import { EntrepreneurDashboardComponent }  from './dashboard/dashboard.component';
 import { EntrepreneurProjetsComponent }     from './projets/projets.component';
@@ -17,7 +17,7 @@ import { EntrepreneurNotificationsComponent } from './notifications/notification
 const routes: Routes = [
   {
     path: '',
-    component: LayoutComponent,
+    component: LayoutEntrepreneurComponent,
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: EntrepreneurDashboardComponent },
@@ -38,6 +38,6 @@ const routes: Routes = [
     EntrepreneurPlanningComponent, EntrepreneurMessagesComponent, EntrepreneurBibliothequeComponent,
     EntrepreneurTalentComponent, EntrepreneurNotificationsComponent,
   ],
-  imports: [CommonModule, FormsModule, LayoutModule, RouterModule.forChild(routes)],
+  imports: [CommonModule, FormsModule, LayoutEntrepreneurModule, RouterModule.forChild(routes)],
 })
 export class EntrepreneurModule {}

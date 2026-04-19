@@ -2,13 +2,13 @@ package tn.khotwa.messaging.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.service.UserService;
+import tn.khotwa.service.UserServices.IUserService;
 
 @Service
 @RequiredArgsConstructor
 public class RealUserEmailResolver implements UserEmailResolver {
 
-    private final UserService userService;
+    private final IUserService userService;
 
     @Override
     public String getEmailByUserId(Long userId) {

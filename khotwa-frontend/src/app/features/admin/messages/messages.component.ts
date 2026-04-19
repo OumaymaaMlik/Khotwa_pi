@@ -139,11 +139,12 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
       );
       }
     } else {
+      const senderName = msg.senderName || `User ${otherId}`;
       this.conversations.unshift({
         id: `conv-${otherId}`,
         participantId: otherId,
-        nom: `User ${otherId}`,
-        initials: `U${otherId}`,
+        nom: senderName,
+        initials: senderName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
         color: this.getColor(otherId),
         lastMsg: msg.body,
         unread: msg.receiverId === this.currentUserId ? 1 : 0,
@@ -210,10 +211,11 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
     messages.forEach(msg => {
       const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
       if (!groups[otherId]) {
+        const senderName = msg.senderName || `User ${otherId}`;
         groups[otherId] = {
           participantId: otherId,
-          nom: `User ${otherId}`,
-          initials: `U${otherId}`,
+          nom: senderName,
+          initials: senderName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
           color: this.getColor(otherId),
           unread: 0,
           messages: []

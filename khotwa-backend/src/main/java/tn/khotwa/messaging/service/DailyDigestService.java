@@ -7,6 +7,7 @@ import tn.khotwa.messaging.entity.Message;
 import tn.khotwa.messaging.entity.Notification;
 import tn.khotwa.messaging.repository.MessageRepository;
 import tn.khotwa.messaging.repository.NotificationRepository;
+import tn.khotwa.service.SubscriptionServices.EmailService;
 
 import java.time.LocalDateTime;
 import java.util.*;

@@ -69,17 +69,23 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
 
-    // WebSocket subscriptions
+    // ── Real-time Notifications (can start immediately)
     this.wsSubscriptions.push(
-      this.wsService.newNotification$.subscribe(n => this.notifService.addNotification(n)),
-      this.wsService.status$.subscribe(event => {
-        event.online ? this.onlineStatusService.addOnlineUser(event.userId) : this.onlineStatusService.removeOnlineUser(event.userId);
-      })
+      this.wsService.newNotification$.subscribe(n => this.notifService.addNotification(n))
     );
 
-    // Initial online users list from backend
+    // ── Initialize online status (load initial list first, then subscribe to updates)
     this.messageService.getOnlineUsers().subscribe({
-      next: (users) => { if (users) this.onlineStatusService.updateOnlineUsers(new Set(users)); }
+      next: (users) => { 
+        if (users) this.onlineStatusService.updateOnlineUsers(new Set(users));
+        
+        // AFTER initial list loads, subscribe to real-time status updates
+        this.wsSubscriptions.push(
+          this.wsService.status$.subscribe(event => {
+            event.online ? this.onlineStatusService.addOnlineUser(event.userId) : this.onlineStatusService.removeOnlineUser(event.userId);
+          })
+        );
+      }
     });
   }
 

@@ -12,6 +12,7 @@ public class MessageDTO {
     private String body;
     private Long senderId;
     private Long receiverId;
+    private String senderName;
     private MessageType type;
     private MessageStatus status;
     private LocalDateTime createdAt;

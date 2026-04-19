@@ -7,6 +7,7 @@ export interface Message {
   body: string;
   senderId: number;
   receiverId: number;
+  senderName: string;
   type: MessageType;
   status: MessageStatus;
   createdAt: Date;
@@ -21,7 +22,7 @@ export interface Message {
 export interface Notification {
   id: number;
   recipientId: number;
-  senderId?: number;  // The user who sent the message that triggered this notification
+  senderId?: number; 
   message: string;
   type: 'NEW_MESSAGE' | 'STATUS_UPDATED' | 'TICKET_RESOLVED';
   createdAt: Date;

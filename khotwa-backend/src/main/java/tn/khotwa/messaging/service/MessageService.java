@@ -10,6 +10,7 @@ import tn.khotwa.messaging.entity.MessageStatus;
 import tn.khotwa.messaging.entity.MessageType;
 import tn.khotwa.messaging.entity.NotificationType;
 import tn.khotwa.messaging.repository.MessageRepository;
+import tn.khotwa.repository.UserRepo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +28,8 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final NotificationService notificationService;
     private final WebSocketEventPublisher eventPublisher;
+    private final UserRepository userRepository;
+
     @Autowired
     private ProfanityFilterService profanityFilterService;
 
@@ -46,13 +49,17 @@ public class MessageService {
         }
         Message saved = messageRepository.save(message);
 
-        MessageDTO dto = MessageMapper.toMessageDTO(saved);
+        String senderName = userRepository.findById(saved.getSenderId())
+                .map(u -> u.getFirstName() + " " + u.getLastName())
+                .orElse("Khotwa User");
+
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, senderName);
         eventPublisher.publishNewMessage(dto);
 
         NotificationDTO notif = notificationService.createNotification(
                 saved.getReceiverId(),
                 saved.getSenderId(),
-                "You have a new message: " + saved.getSubject(),
+                "You have a new message from: " + senderName,
                 NotificationType.NEW_MESSAGE
         );
         eventPublisher.publishNotification(notif);
@@ -72,25 +79,39 @@ public class MessageService {
 
     public Page<MessageDTO> getInbox(Long receiverId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return messageRepository.findByReceiverId(receiverId, pageable)
-                .map(MessageMapper::toMessageDTO);
+        return messageRepository.findByReceiverId(receiverId, pageable).map(msg -> {
+            String name = userRepository.findById(msg.getSenderId())
+                    .map(u -> u.getFirstName() + " " + u.getLastName())
+                    .orElse("Unknown User");
+
+            return MessageMapper.toMessageDTO(msg, name);
+        });
     }
 
     public Page<MessageDTO> getSent(Long senderId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return messageRepository.findBySenderId(senderId, pageable)
-                .map(MessageMapper::toMessageDTO);
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())));
     }
 
     public List<MessageDTO> getInboxByType(Long receiverId, MessageType type) {
         return messageRepository.findByReceiverIdAndType(receiverId, type)
-                .stream().map(MessageMapper::toMessageDTO).collect(Collectors.toList());
+                .stream()
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())))
+                .collect(Collectors.toList());
     }
 
     public Page<MessageDTO> getActiveInbox(Long receiverId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return messageRepository.findByReceiverIdAndStatusNot(receiverId, MessageStatus.ARCHIVED, pageable)
-                .map(MessageMapper::toMessageDTO);
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())));
+    }
+
+    public List<MessageDTO> searchMessages(Long userId, String query) {
+        return messageRepository.searchMessages(userId, query)
+                .stream()
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())))
+                .collect(Collectors.toList());
     }
 
     public MessageDTO updateStatus(Long messageId, MessageStatus newStatus) {
@@ -103,13 +124,6 @@ public class MessageService {
             message.setStatus(MessageStatus.ARCHIVED);
         } else if (currentStatus == MessageStatus.PENDING && newStatus == MessageStatus.READ) {
             message.setStatus(MessageStatus.READ);
-            NotificationDTO notif = notificationService.createNotification(
-                    message.getSenderId(),
-                    message.getSenderId(),
-                    "Your message was read: " + message.getSubject(),
-                    NotificationType.STATUS_UPDATED
-            );
-            eventPublisher.publishNotification(notif);
         } else if (currentStatus == MessageStatus.READ && newStatus == MessageStatus.RESOLVED) {
             message.setStatus(MessageStatus.RESOLVED);
             NotificationDTO notif = notificationService.createNotification(
@@ -123,7 +137,8 @@ public class MessageService {
             throw new IllegalArgumentException("Invalid status transition from " + currentStatus + " to " + newStatus);
         }
 
-        MessageDTO dto = MessageMapper.toMessageDTO(messageRepository.save(message));
+        Message saved = messageRepository.save(message);
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()));
         eventPublisher.publishMessageUpdate(dto);
         return dto;
     }
@@ -144,7 +159,8 @@ public class MessageService {
         message.setDeletedForAll(true);
         message.setBody("message deleted");
         message.setFileUrl(null);
-        MessageDTO dto = MessageMapper.toMessageDTO(messageRepository.save(message));
+        Message saved = messageRepository.save(message);
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()));
         eventPublisher.publishMessageUpdate(dto);
         return dto;
     }
@@ -158,15 +174,16 @@ public class MessageService {
         } else if (!existing.contains(String.valueOf(userId))) {
             message.setDeletedForUsers(existing + "," + userId);
         }
-        MessageDTO dto = MessageMapper.toMessageDTO(messageRepository.save(message));
+        Message saved = messageRepository.save(message);
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()));
         eventPublisher.publishMessageUpdate(dto);
         return dto;
     }
 
-    public List<MessageDTO> searchMessages(Long userId, String query) {
-        return messageRepository.searchMessages(userId, query)
-                .stream().map(MessageMapper::toMessageDTO).collect(Collectors.toList());
+        private String getFullName(Long userId) {
+        return userRepository.findById(userId)
+                .map(u -> u.getFirstName() + " " + u.getLastName())
+                .orElse("Unknown User");
     }
-
 
 }

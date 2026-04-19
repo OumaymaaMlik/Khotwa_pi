@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LayoutModule } from '../../layout/layout.module';
-import { LayoutComponent } from '../../layout/layout.component';
+import { LayoutCoachModule } from '../../layout-coach/layout-coach.module';
+import { LayoutCoachComponent } from '../../layout-coach/layout-coach.component';
 
 import { CoachDashboardComponent }    from './dashboard/dashboard.component';
 import { CoachProjetsComponent }       from './projets/projets.component';
@@ -18,7 +18,7 @@ import { CoachNotificationsComponent } from './notifications/notifications.compo
 const routes: Routes = [
   {
     path: '',
-    component: LayoutComponent,
+    component: LayoutCoachComponent,
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: CoachDashboardComponent },
@@ -40,6 +40,6 @@ const routes: Routes = [
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent, CoachBibliothequeComponent,
     CoachTalentComponent, CoachNotificationsComponent,
   ],
-  imports: [CommonModule, FormsModule, LayoutModule, RouterModule.forChild(routes)],
+  imports: [CommonModule, FormsModule, LayoutCoachModule, RouterModule.forChild(routes)],
 })
 export class CoachModule {}

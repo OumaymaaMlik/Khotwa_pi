@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { User, UserRole } from '../models/user.model';
 
 const TOKEN_KEY   = 'khotwa_token';
@@ -15,6 +15,7 @@ export class AuthService {
   private readonly USERS_API = 'http://localhost:8084/khotwa/api/users';
 
   private _currentUser: User | null = null;
+  public currentUserSubject = new BehaviorSubject<User | null>(null);
 
   constructor(private http: HttpClient) {
     this._loadSession();
@@ -33,6 +34,12 @@ export class AuthService {
 
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
+  }
+
+  // ── Private helper to update user and notify observers ──────────────
+  private setCurrentUser(user: User | null): void {
+    this._currentUser = user;
+    this.currentUserSubject.next(user);
   }
 
   // ── Login  →  POST /api/auth/login ───────────────────────────────
@@ -66,7 +73,7 @@ export class AuthService {
     return this.http.get<any>(`${this.USERS_API}/me`).pipe(
       tap((profile: any) => {
         if (this._currentUser && profile) {
-          this._currentUser = { ...this._currentUser, ...this._mapProfile(profile) };
+          this.setCurrentUser({ ...this._currentUser, ...this._mapProfile(profile) });
           localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
         }
       })
@@ -80,7 +87,7 @@ export class AuthService {
       firstName: 'Guest', lastName: 'Visitor',
       emailAddress: '', role: 'VISITOR',
     };
-    this._currentUser = visitor;
+    this.setCurrentUser(visitor);
     localStorage.setItem(TOKEN_KEY, 'VISITOR');
     localStorage.setItem(ROLE_KEY,  'VISITOR');
     localStorage.setItem(USER_KEY,  JSON.stringify(visitor));
@@ -88,7 +95,7 @@ export class AuthService {
 
   // ── Logout ────────────────────────────────────────────────────────
   logout(): void {
-    this._currentUser = null;
+    this.setCurrentUser(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ROLE_KEY);
@@ -118,7 +125,7 @@ export class AuthService {
     localStorage.setItem(TOKEN_KEY, res.token);
     localStorage.setItem(ROLE_KEY,  res.role ?? '');
 
-    this._currentUser = {
+    const user = {
       idUser:       res.idUser,
       id:           String(res.idUser ?? ''),
       emailAddress: res.emailAddress,
@@ -131,12 +138,13 @@ export class AuthService {
       startup:      res.startup,
       phoneNumber:  res.phoneNumber,
     };
-    localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
+    this.setCurrentUser(user);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
   // Cas register : UserResponse sans token
   private _saveProfileOnly(profile: any): void {
-    this._currentUser = {
+    const user = {
       idUser:       profile.idUser,
       id:           String(profile.idUser ?? ''),
       emailAddress: profile.emailAddress,
@@ -150,7 +158,8 @@ export class AuthService {
       phoneNumber:  profile.phoneNumber,
     };
     localStorage.setItem(ROLE_KEY, profile.role ?? '');
-    localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
+    this.setCurrentUser(user);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
   private _mapProfile(p: any): Partial<User> {
@@ -168,7 +177,7 @@ export class AuthService {
     try {
       const saved = localStorage.getItem(USER_KEY)
                  ?? localStorage.getItem('user_profile'); // legacy key
-      if (saved) this._currentUser = JSON.parse(saved);
+      if (saved) this.setCurrentUser(JSON.parse(saved));
     } catch {
       this.logout();
     }
