@@ -19,7 +19,7 @@ export interface EntrepreneurProgressionDTO {
   templateUrl: './progressions.component.html',
   styleUrls: ['./progressions.component.css']
 })
-export class CoachProgresssComponent implements OnInit {
+export class CoachProgressionsComponent implements OnInit {
 
   // ── Mode vue ─────────────────────────────────────────────────────
   viewMode: 'mes' | 'entrepreneurs' = 'entrepreneurs';

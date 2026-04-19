@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { User, UserRole } from '../models/user.model';
+import { User, UserResponse, UserRole } from '../models/user.model';
+import { HttpHeaders } from '@angular/common/http';
+import { catchError, throwError } from 'rxjs';
 
 const TOKEN_KEY   = 'khotwa_token';
 const USER_KEY    = 'khotwa_user';
@@ -38,8 +40,39 @@ export class AuthService {
   // ── Login  →  POST /api/auth/login ───────────────────────────────
   // Backend retourne : { token, idUser, emailAddress, role, mustChangePassword }
   signIn(credentials: { emailAddress: string; password: string }): Observable<any> {
-    return this.http.post<any>(`${this.AUTH_API}/login`, credentials).pipe(
+    return this.http.post<any>(`${this.AUTH_API}/login`, {
+      emailAdress: credentials.emailAddress,
+      emailAddress: credentials.emailAddress,
+      password: credentials.password,
+    }).pipe(
       tap(res => this._saveLoginResponse(res))
+    );
+  }
+
+    refreshProfile(): Observable<UserResponse> {
+      const token = localStorage.getItem(TOKEN_KEY);
+    const headers = token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
+      : new HttpHeaders();
+
+    return this.http.get<UserResponse>(`${this.USERS_API}/me`, { headers }).pipe(
+      tap(profile => {
+        this._currentUser = {
+          idUser:             profile.idUser,
+          firstName:          profile.firstName,
+          lastName:           profile.lastName,
+          emailAddress:       profile.emailAddress,
+          role:               profile.role,
+          planType:           profile.planType,
+          pendingPlan:        profile.pendingPlan,
+          avatar:             profile.avatar,
+          startup:            profile.startup,
+          phoneNumber:        profile.phoneNumber,
+          mustChangePassword: profile.mustChangePassword,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
+      }),
+      catchError(err => throwError(() => this.extractError(err)))
     );
   }
 
@@ -51,7 +84,10 @@ export class AuthService {
     emailAddress: string; password: string;
     role?: string; phoneNumber?: string | null; startup?: string | null;
   }): Observable<any> {
-    return this.http.post<any>(`${this.AUTH_API}/register`, userData).pipe(
+    return this.http.post<any>(`${this.AUTH_API}/register`, {
+      ...userData,
+      emailAdress: userData.emailAddress,
+    }).pipe(
       tap(res => {
         // Stocker le profil temporairement — le token arrive via signIn()
         if (res?.idUser) {
@@ -172,5 +208,9 @@ export class AuthService {
     } catch {
       this.logout();
     }
+  }
+
+  private extractError(error: any): any {
+    return error;
   }
 }

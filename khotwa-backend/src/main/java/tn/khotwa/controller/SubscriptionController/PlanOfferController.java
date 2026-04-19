@@ -3,7 +3,7 @@ package tn.khotwa.controller.SubscriptionController;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.entity.SubscriptionEntities.PlanOffer;
+import tn.khotwa.entity.Subscription.PlanOffer;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.service.SubscriptionServices.PlanOfferService;
 import tn.khotwa.service.SubscriptionServices.SubscriptionService;

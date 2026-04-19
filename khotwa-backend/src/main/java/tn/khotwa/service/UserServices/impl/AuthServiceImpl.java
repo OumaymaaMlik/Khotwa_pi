@@ -21,7 +21,7 @@ import tn.khotwa.exception.UserException.InvalidCredentialsException;
 import tn.khotwa.exception.UserException.InvalidRoleException;
 import tn.khotwa.repository.UserRepo.UserRepository;
 import tn.khotwa.security.JwtService;
-import tn.khotwa.service.SubscriptionServices.ISubscriptionService;
+import tn.khotwa.service.SubscriptionServices.Interface.ISubscriptionService;
 import tn.khotwa.service.UserServices.AuthService;
 import tn.khotwa.service.UserServices.UserMapper;
 

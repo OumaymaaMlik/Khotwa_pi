@@ -4,7 +4,7 @@ export type PlanType = 'FREE' | 'PREMIUM' | 'INSTITUTIONAL';
 
 export interface User {
   idUser?: number;
-  id: string;
+  id?: string;
   firstName?: string;
   lastName?: string;
   emailAddress?: string;
@@ -14,4 +14,18 @@ export interface User {
   avatar?: string;
   startup?: string;
   phoneNumber?: string;
+  mustChangePassword?: boolean;
+}
+export interface UserResponse {
+  idUser: number;
+  avatar?: string;
+  emailAddress: string;
+  firstName: string;
+  lastName: string;
+  pendingPlan?: PlanType;
+  phoneNumber?: string;
+  planType?: PlanType;
+  role: UserRole;
+  startup?: string;
+  mustChangePassword: boolean;
 }

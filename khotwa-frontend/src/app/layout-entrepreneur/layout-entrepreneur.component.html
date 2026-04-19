@@ -1,7 +1,3 @@
-<!-- ═══════════════════════════════════════════
-     KHOTWA — Layout ENTREPRENEUR
-     Navbar top glassmorphism + teal accent
-════════════════════════════════════════════ -->
 
 <div class="ent-shell">
 
@@ -12,7 +8,7 @@
       <!-- Logo -->
       <a routerLink="/entrepreneur/dashboard" class="ent-brand">
           <img src="assets/khotwa-logo.png" alt="KHOTWA" class="brand-logo-img" style="height:36px;width:auto;object-fit:contain;" />
-        
+
         <span class="ent-brand__tag">Entrepreneur</span>
       </a>
 
@@ -21,7 +17,7 @@
         <a *ngFor="let item of navItems"
            class="ent-link"
            [class.ent-link--active]="isActive(item.route)"
-           [routerLink]="getRoute(item.route)">
+           [routerLink]="['/entrepreneur', item.route]">
           <span class="ent-link__icon" [innerHTML]="getIcon(item.icon)"></span>
           <span>{{ item.label }}</span>
           <span class="ent-link__pip" *ngIf="isActive(item.route)"></span>
@@ -40,11 +36,24 @@
           <div class="ent-notif-panel" *ngIf="notifOpen">
             <div class="ent-notif-panel__head">
               <span>Notifications</span>
-              <button (click)="notifService.markAllRead(); notifOpen=false">Mark all read</button>
+              <button (click)="notifService.markAllRead(); notifOpen=false">Mark all as read</button>
             </div>
             <div *ngFor="let n of notifs" class="ent-notif-item" [class.unread]="!n.lu" (click)="notifService.markRead(n.id)">
               <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
               <div><p class="ent-notif-item__title">{{ n.titre }}</p><p class="ent-notif-item__msg">{{ n.message }}</p></div>
+            </div>
+            <div *ngFor="let n of notifs"
+                 class="ent-notif-item"
+                 [class.unread]="!n.lu"
+                 [class.notif-item--warning]="n.type === 'warning'"
+                 [class.notif-item--error]="n.type === 'error'"
+                 (click)="onNotifClick(n)">
+              <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
+              <div style="flex:1">
+                <p class="ent-notif-item__title">{{ n.titre }}</p>
+                <p class="ent-notif-item__msg">{{ n.message }}</p>
+                <p *ngIf="n.link" class="ent-notif-item__link">→ Go to Profile</p>
+              </div>
             </div>
           </div>
         </div>
@@ -54,9 +63,22 @@
           <span [innerHTML]="getIcon('home')"></span>
         </a>
 
-        <!-- Avatar + dropdown -->
+        <!-- ═══════════════════════════════════════════════════
+             FIX AVATAR NAVBAR : affiche la vraie photo si
+             disponible, sinon les initiales
+        ═══════════════════════════════════════════════════ -->
         <div class="ent-user" (click)="userMenuOpen=!userMenuOpen" #userMenu>
-          <div class="ent-user__avatar">{{ userInitials }}</div>
+
+          <!-- Avatar : image réelle OU initiales -->
+          <div class="ent-user__avatar"
+               [class.ent-user__avatar--img]="!!userAvatarUrl">
+            <img *ngIf="userAvatarUrl"
+                 [src]="userAvatarUrl"
+                 alt="avatar"
+                 class="ent-user__avatar-img" />
+            <span *ngIf="!userAvatarUrl">{{ userInitials }}</span>
+          </div>
+
           <div class="ent-user__info">
             <span class="ent-user__name">{{ auth.currentUser?.firstName }}</span>
             <span class="ent-user__role">Entrepreneur</span>

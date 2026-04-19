@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
   templateUrl: './progressions.component.html',
   styleUrls: ['./progressions.component.css']
 })
-export class EntrepreneurProgresssComponent implements OnInit {
+export class EntrepreneurProgressionsComponent implements OnInit {
 
   progressions: any[] = [];
   loading = false;

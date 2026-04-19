@@ -1,56 +1,80 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
+import { UserResponse } from '../models/user.model';
+import { AuthService } from './auth.service';
+
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+  emailAddress?: string;
+  phoneNumber?: string;
+  startup?: string;
+  avatar?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
 
   private readonly API = 'http://localhost:8084/khotwa/api/users';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private auth: AuthService
+  ) {}
 
-  // GET /api/users/me
-  getMyProfile(): Observable<any> {
-    return this.http.get<any>(`${this.API}/me`);
+  // GET /me
+  getMyProfile(): Observable<UserResponse> {
+    return this.http.get<UserResponse>(`${this.API}/me`);
   }
 
-  // PUT /api/users/me
-  updateMyProfile(body: any): Observable<any> {
-    return this.http.put<any>(`${this.API}/me`, body);
+  // UPDATE /me
+  updateMyProfile(payload: UpdateProfilePayload): Observable<UserResponse> {
+    return this.http.put<UserResponse>(`${this.API}/me`, payload).pipe(
+      tap(() => this.auth.refreshProfile().subscribe())
+    );
   }
 
-  // PUT /api/users/me/change-password
-  changePassword(body: { currentPassword: string; newPassword: string }): Observable<any> {
-    return this.http.put<any>(`${this.API}/me/change-password`, body);
+  //  CHANGE PASSWORD
+  changePassword(payload: ChangePasswordPayload): Observable<void> {
+    return this.http.put<void>(`${this.API}/me/change-password`, payload);
   }
 
-  // GET /api/users  (ADMIN only — JWT role check server-side)
-  getAllUsers(): Observable<any> {
-    return this.http.get<any>(this.API);
+  //  ALL USERS (ADMIN)
+  getAllUsers(params?: any): Observable<any> {
+    return this.http.get<any>(`${this.API}`, { params });
   }
 
-  // Alias for components that use getUsersHttp()
-  getUsersHttp(filters: any = {}): Observable<any> {
-    return this.getAllUsers();
+  getUsersHttp(params?: any): Observable<any> {
+    return this.getAllUsers(params);
   }
 
-  // GET /api/users/{id}
   getUserById(id: number): Observable<any> {
     return this.http.get<any>(`${this.API}/${id}`);
   }
 
-  // PUT /api/users/{id}  (ADMIN)
   adminUpdateUser(id: number, body: any): Observable<any> {
     return this.http.put<any>(`${this.API}/${id}`, body);
   }
 
-  // PUT /api/users/{id}/plan  (ADMIN)
+  //  PLAN
   updateUserPlan(id: number, body: { planType: string }): Observable<any> {
     return this.http.put<any>(`${this.API}/${id}/plan`, body);
   }
 
-  // DELETE /api/users/{id}  (ADMIN)
-  deleteUser(id: number): Observable<any> {
+  deleteUser(id : number): Observable<any> {
     return this.http.delete<any>(`${this.API}/${id}`);
+  }
+
+  uploadAvatar(file: File): Observable<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ avatarUrl: string }>(`${this.API}/me/avatar`, formData);
   }
 }

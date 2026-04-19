@@ -10,7 +10,7 @@ import {
 } from '../../../core/models/subscription.model';
 
 type FilterType = 'ALL' | PlanType;
-type AdminTab = 'subscribers' | 'plans' | 'analytics';
+type AdminTab = 'subscribers' | 'plans' | 'analytics' | 'engagement';
 type RevenueView = 'summary' | 'by-user' | 'by-month' | 'by-day';
 
 @Component({
@@ -18,10 +18,16 @@ type RevenueView = 'summary' | 'by-user' | 'by-month' | 'by-day';
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.css']
 })
+
 export class SubscriptionsComponent implements OnInit {
+  
   subscriptions: Subscription[] = [];
   filteredSubscriptions: Subscription[] = [];
   plans: PlanOffer[] = [];
+  
+churnScores: any[] = [];
+churnStats: any | null = null;
+churnLoading = false;
 
   activeTab: AdminTab = 'subscribers';
   filtre: FilterType = 'ALL';
@@ -36,6 +42,12 @@ export class SubscriptionsComponent implements OnInit {
   revenueByDay: any[] = [];
   analyticsLoading = false;
   private analyticsCallsDone = 0;
+
+  // ── Remise / payment details ──────────────────────────────────────────────
+  paymentsWithDiscount: any[] = [];
+  selectedPaymentDetails: any | null = null;
+  showPaymentDetailsModal = false;
+  paymentDetailsLoading = false;
 
   showPlanModal = false;
   showConfirmSuspend = false;
@@ -68,7 +80,14 @@ export class SubscriptionsComponent implements OnInit {
   ngOnInit(): void {
     this.loadSubscriptions();
     this.loadPlans();
+    this.loadPaymentsWithDiscount();
   }
+  getAvatarUrl(s: Subscription): string {
+  const a = s.user?.avatar?.trim();
+  if (!a) return '';
+  if (a.startsWith('http')) return a;
+  return `http://localhost:8084${a.startsWith('/') ? '' : '/'}${a}`;
+}
 
   icon(name: string): SafeHtml {
     if (!this.iconCache[name]) {
@@ -83,7 +102,53 @@ export class SubscriptionsComponent implements OnInit {
     if (tab === 'analytics' && !this.revenueSummary && !this.analyticsLoading) {
       this.loadAllAnalytics();
     }
+    if (tab === 'subscribers' && !this.paymentsWithDiscount.length) {
+      this.loadPaymentsWithDiscount();
+    }
+    if (tab === 'engagement' && !this.churnScores.length) {
+  this.loadChurnData();
+}
   }
+  loadChurnData(): void {
+  this.churnLoading = true;
+  this.subscriptionService.getChurnScores().subscribe({
+    next: (data) => { this.churnScores = data; this.churnLoading = false; },
+    error: () => { this.churnLoading = false; }
+  });
+  this.subscriptionService.getChurnStats().subscribe({
+    next: (s) => { this.churnStats = s; }
+  });
+}
+
+computeAllChurn(): void {
+  this.churnLoading = true;
+  this.subscriptionService.computeChurnForAll().subscribe({
+    next: (data) => {
+      this.churnScores = data ?? [];
+      // Refresh stats too, otherwise the top counters can stay stale.
+      this.subscriptionService.getChurnStats().subscribe({
+        next: (stats) => { this.churnStats = stats; },
+        error: (err) => { console.error(err); },
+        complete: () => { this.churnLoading = false; }
+      });
+    },
+    error: (err) => {
+      console.error(err);
+      this.churnLoading = false;
+      alert('Echec du recalcul des scores. Verifie le backend engagement.');
+    }
+  });
+}
+
+sendChurnEmails(): void {
+  this.subscriptionService.sendChurnEmails().subscribe({
+    next: (res) => { alert(res.emailsSent + ' email(s) envoyé(s)'); this.loadChurnData(); }
+  });
+}
+
+getRiskClass(level: string): string {
+  return ({ HIGH: 'kh-badge--red', MEDIUM: 'kh-badge--orange', LOW: 'kh-badge--green' } as any)[level] ?? '';
+}
 
   loadAllAnalytics(): void {
     this.analyticsLoading = true;
@@ -141,6 +206,48 @@ export class SubscriptionsComponent implements OnInit {
     });
   }
 
+  /** Charge la liste de tous les paiements avec remise (pour l'admin) */
+  loadPaymentsWithDiscount(): void {
+    this.subscriptionService.getPaymentsWithDiscount().subscribe({
+      next: (data: any[]) => { this.paymentsWithDiscount = data ?? []; },
+      error: () => { this.paymentsWithDiscount = []; }
+    });
+  }
+
+  /** Ouvre la modal de détails d'un paiement pour un abonnement donné */
+  viewPaymentDetails(s: Subscription): void {
+    if (!s.idSubscription) return;
+    this.paymentDetailsLoading = true;
+    this.showPaymentDetailsModal = true;
+    this.selectedPaymentDetails = null;
+    this.subscriptionService.getPaymentDetails(s.idSubscription).subscribe({
+      next: (data: any) => { this.selectedPaymentDetails = data; this.paymentDetailsLoading = false; },
+      error: () => { this.paymentDetailsLoading = false; }
+    });
+  }
+
+  closePaymentDetailsModal(): void {
+    this.showPaymentDetailsModal = false;
+    this.selectedPaymentDetails = null;
+  }
+
+  /** Vérifie si un abonnement a une remise dans sa référence de paiement */
+  hasDiscount(s: Subscription): boolean {
+    return !!(s.paiementRef && s.paiementRef.includes('|REMISE:'));
+  }
+
+  /** Extrait le % de remise depuis la ref sans appel HTTP */
+  getDiscountFromRef(ref: string): string {
+    const match = ref?.match(/\|REMISE:(\d+)%/);
+    return match ? match[1] + '%' : '';
+  }
+
+  /** Extrait le montant payé depuis la ref */
+  getMontantFromRef(ref: string): string {
+    const match = ref?.match(/\|MONTANT:([\d.]+)/);
+    return match ? match[1] + ' TND' : '';
+  }
+
   loadPlans(): void {
     this.subscriptionService.getAvailablePlans().subscribe({
       next: (data: PlanOffer[]) => { this.plans = data ?? []; },
@@ -178,10 +285,11 @@ export class SubscriptionsComponent implements OnInit {
   }
   getUserEmail(s: Subscription): string { return (s.user as any)?.email?.trim() || '-'; }
   hasAvatar(s: Subscription): boolean { return !!s.user?.avatar; }
-  getAvatarUrl(s: Subscription): string {
-    const a = s.user?.avatar?.trim();
-    return a ? (a.startsWith('http') ? a : `http://localhost:8084/uploads/${a}`) : '';
-  }
+  onAvatarError(event: Event, s: Subscription): void {
+  (event.target as HTMLImageElement).style.display = 'none';
+  s.user!.avatar = ''; // force le fallback initiales
+}
+  
   getAvatarColor(s: Subscription): string {
     const colors = ['linear-gradient(135deg,#E8622A,#FF9A5C)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];
     return colors[(s.user?.idUser ?? s.idUser ?? 0) % colors.length];
@@ -258,6 +366,7 @@ export class SubscriptionsComponent implements OnInit {
     if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
       if (this.showPlanModal) this.closePlanModal();
       if (this.showConfirmSuspend) this.cancelSuspend();
+      if (this.showPaymentDetailsModal) this.closePaymentDetailsModal();
     }
   }
 

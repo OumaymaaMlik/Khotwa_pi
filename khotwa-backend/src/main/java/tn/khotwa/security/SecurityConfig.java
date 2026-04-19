@@ -28,48 +28,71 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // Auth publique
-                .requestMatchers("/api/auth/**").permitAll()
-                // Catégories et tags publics (lecture)
-                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/tags/**").permitAll()
-                // Tout le reste nécessite un token JWT valide
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+            http
+                    .csrf(csrf -> csrf.disable())
+                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                    .authorizeHttpRequests(auth -> auth
+
+                            // ── PUBLIC ──────────────────────────────────────────────
+                            .requestMatchers("/api/auth/**").permitAll()        // AuthController
+                            .requestMatchers("/uploads/**").permitAll()         // fichiers statiques
+                            .requestMatchers("/plans/**").permitAll()           // plans publics (GET)
+                            .requestMatchers("/api/categories/**").permitAll()  // ← AJOUTÉ : catégories publiques
+
+                            // ── ADMIN ────────────────────────────────────────────────
+                            .requestMatchers("/admin/**").hasRole("ADMIN")
+                            .requestMatchers("/subscriptions/**").hasAnyRole("ADMIN", "ENTREPRENEUR")
+                            .requestMatchers("/engagement/**").hasRole("ADMIN")
+                            .requestMatchers("/payments/**").hasAnyRole("ADMIN", "ENTREPRENEUR")
+
+                            // ── COACH ────────────────────────────────────────────────
+                            .requestMatchers("/coach/**").hasRole("COACH")
+
+                            // ── ENTREPRENEUR ─────────────────────────────────────────
+                            .requestMatchers("/entrepreneur/**").hasRole("ENTREPRENEUR")
+
+                            // ── MULTI-ROLES ──────────────────────────────────────────
+                            .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
+                            .requestMatchers("/api/ressources/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
+                            .requestMatchers("/api/progressions/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
+                            .requestMatchers("/api/tags/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
+
+                            // ── TOUT LE RESTE ─────────────────────────────────────────
+                            .anyRequest().authenticated()
+                    )
+                    .sessionManagement(session -> session
+                            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    )
+                    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+            return http.build();
+        }
+
+
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+            CorsConfiguration config = new CorsConfiguration();
+            config.setAllowedOriginPatterns(List.of("*"));
+            config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+            config.setAllowedHeaders(List.of("*"));
+            config.setAllowCredentials(true);
+            config.setMaxAge(3600L);
+
+            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+            source.registerCorsConfiguration("/**", config);
+            return source;
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+            return config.getAuthenticationManager();
+        }
     }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
-}

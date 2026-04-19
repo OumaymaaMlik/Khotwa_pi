@@ -3,14 +3,15 @@ package tn.khotwa.service.SubscriptionServices;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.entity.SubscriptionEntities.PlanOffer;
-import tn.khotwa.entity.SubscriptionEntities.Subscription;
+import tn.khotwa.entity.Subscription.PlanOffer;
+import tn.khotwa.entity.Subscription.Subscription;
 import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.repository.SubscriptionRepo.PlanOfferRepository;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.service.SubscriptionServices.Interface.ISubscriptionService;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -24,12 +25,13 @@ public class SubscriptionService implements ISubscriptionService {
     private final UserRepository         userRepository;
     private final PlanOfferRepository    planOfferRepository;
 
-    // ✅ NOUVEAU : appelé depuis AuthServiceImpl lors du register
     @Override
     @Transactional
     public Subscription createFreeSubscription(User user) {
-        // Si l'utilisateur a déjà une souscription (ex: re-register tentative), ne pas en créer une autre
-        Optional<Subscription> existing = subscriptionRepository.findByUser_IdUser(user.getIdUser());
+        Optional<Subscription> existing = subscriptionRepository.findTopByUser_IdUserAndStatutInOrderByIdSubscriptionDesc(
+                user.getIdUser(),
+                List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.PENDING)
+        );
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -85,39 +87,26 @@ public class SubscriptionService implements ISubscriptionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        Optional<Subscription> existing = subscriptionRepository.findByUser_IdUserAndStatutIn(
+        Optional<Subscription> existing = subscriptionRepository.findTopByUser_IdUserAndStatutInOrderByIdSubscriptionDesc(
                 userId,
                 List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.PENDING)
         );
 
         if (existing.isPresent()) {
             Subscription sub = existing.get();
+            if (isExpired(sub)) {
+                handleExpiredSubscription(sub);
+            }
             sub.setUser(user);
             Subscription saved = subscriptionRepository.save(sub);
             syncUserFromSubscription(user, saved);
             return saved;
         }
 
-        Optional<Subscription> anyExisting = subscriptionRepository.findByUser_IdUser(userId);
+        Optional<Subscription> anyExisting = subscriptionRepository.findTopByUser_IdUserOrderByIdSubscriptionDesc(userId);
         if (anyExisting.isPresent()) {
-            Subscription sub = anyExisting.get();
-
-            PlanOffer freeOffer = planOfferRepository.findFirstByType(PlanType.FREE).orElse(null);
-
-            sub.setUser(user);
-            sub.setPlan(PlanType.FREE);
-            sub.setPlanOffer(freeOffer);
-            sub.setStatut(SubscriptionStatus.ACTIVE);
-            sub.setDateDebut(LocalDate.now());
-            sub.setDateFin(
-                    freeOffer != null && freeOffer.getDuree() != null && freeOffer.getDuree() > 0
-                            ? LocalDate.now().plusDays(freeOffer.getDuree())
-                            : LocalDate.of(2099, 12, 31)
-            );
-            sub.setPendingPlanOffer(null);
-            sub.setAutoRenouvellement(false);
-
-            Subscription saved = subscriptionRepository.save(sub);
+            Subscription freeSub = buildFreeSubscription(user);
+            Subscription saved = subscriptionRepository.save(freeSub);
             syncUserFromSubscription(user, saved);
             return saved;
         }
@@ -249,56 +238,13 @@ public class SubscriptionService implements ISubscriptionService {
     @Override
     @Transactional
     public void desactiverSubExpired() {
-        List<Subscription> subs = subscriptionRepository.findByStatutAndDateFinBefore(
+        List<Subscription> subs = subscriptionRepository.findByStatutAndDateFinLessThanEqual(
                 SubscriptionStatus.ACTIVE,
-                LocalDate.now().plusDays(1)
+                LocalDate.now()
         );
 
         for (Subscription sub : subs) {
-            User user = sub.getUser();
-            if (user == null) continue;
-
-            if (sub.getPendingPlanOffer() != null) {
-                changePlanSubscription(sub, sub.getPendingPlanOffer());
-                sub.setPendingPlanOffer(null);
-                sub.setUser(user);
-                subscriptionRepository.save(sub);
-                syncUserFromSubscription(user, sub);
-
-            } else if (sub.isAutoRenouvellement()) {
-                PlanOffer offer = sub.getPlanOffer() != null
-                        ? sub.getPlanOffer()
-                        : planOfferRepository.findFirstByType(sub.getPlan()).orElse(null);
-
-                if (offer != null) {
-                    sub.setDateDebut(LocalDate.now());
-                    sub.setDateFin(
-                            offer.getDuree() == null || offer.getDuree() <= 0 || offer.getType() == PlanType.FREE
-                                    ? LocalDate.of(2099, 12, 31)
-                                    : LocalDate.now().plusDays(offer.getDuree())
-                    );
-                    sub.setStatut(SubscriptionStatus.ACTIVE);
-                    sub.setUser(user);
-                    subscriptionRepository.save(sub);
-                    syncUserFromSubscription(user, sub);
-                }
-
-            } else {
-                PlanOffer freeOffer = planOfferRepository.findFirstByType(PlanType.FREE).orElse(null);
-
-                if (freeOffer != null) {
-                    changePlanSubscription(sub, freeOffer);
-                    sub.setPendingPlanOffer(null);
-                    sub.setPaiementRef(null);
-                    sub.setAutoRenouvellement(false);
-                    sub.setUser(user);
-                } else {
-                    sub.setStatut(SubscriptionStatus.EXPIRED);
-                }
-
-                subscriptionRepository.save(sub);
-                syncUserFromSubscription(user, sub);
-            }
+            handleExpiredSubscription(sub);
         }
     }
 
@@ -323,6 +269,7 @@ public class SubscriptionService implements ISubscriptionService {
                         ? LocalDate.of(2099, 12, 31)
                         : LocalDate.now().plusDays(offer.getDuree())
         );
+        subscription.setWasExpired(0);
 
         return subscriptionRepository.save(subscription);
     }
@@ -364,6 +311,10 @@ public class SubscriptionService implements ISubscriptionService {
         } else {
             subscription.setDateFin(LocalDate.now().plusDays(offer.getDuree()));
         }
+
+        if (offer.getType() != PlanType.FREE) {
+            subscription.setWasExpired(0);
+        }
     }
 
     @Override
@@ -389,6 +340,7 @@ public class SubscriptionService implements ISubscriptionService {
         );
         subscription.setPendingPlanOffer(null);
         subscription.setPaiementRef(paymentRef);
+        subscription.setWasExpired(0);
 
         Subscription saved = subscriptionRepository.save(subscription);
 
@@ -399,10 +351,11 @@ public class SubscriptionService implements ISubscriptionService {
         return saved;
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     private Subscription getOrCreateSubscriptionForUser(User user) {
-        return subscriptionRepository.findByUser_IdUser(user.getIdUser())
+        return subscriptionRepository.findTopByUser_IdUserAndStatutInOrderByIdSubscriptionDesc(
+                        user.getIdUser(),
+                        List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.PENDING)
+                )
                 .orElseGet(() -> buildFreeSubscription(user));
     }
 
@@ -423,8 +376,70 @@ public class SubscriptionService implements ISubscriptionService {
         freeSub.setAutoRenouvellement(false);
         freeSub.setPendingPlanOffer(null);
         freeSub.setPaiementRef(null);
+        freeSub.setWasExpired(0);
 
         return freeSub;
+    }
+
+    private boolean isExpired(Subscription sub) {
+        return sub.getDateFin() != null
+                && !sub.getDateFin().isAfter(LocalDate.now())
+                && sub.getDateFin().getYear() < 2099;
+    }
+
+    private void handleExpiredSubscription(Subscription sub) {
+        User user = sub.getUser();
+        if (user == null) return;
+
+        // Mark as expired first, then apply transition rules.
+        sub.setStatut(SubscriptionStatus.EXPIRED);
+        sub.setWasExpired((sub.getWasExpired() == null ? 0 : sub.getWasExpired()) + 1);
+
+        if (sub.getPendingPlanOffer() != null) {
+            changePlanSubscription(sub, sub.getPendingPlanOffer());
+            sub.setPendingPlanOffer(null);
+            sub.setUser(user);
+            subscriptionRepository.save(sub);
+            syncUserFromSubscription(user, sub);
+            return;
+        }
+
+        if (sub.isAutoRenouvellement()) {
+            PlanOffer offer = sub.getPlanOffer() != null
+                    ? sub.getPlanOffer()
+                    : planOfferRepository.findFirstByType(sub.getPlan()).orElse(null);
+
+            if (offer != null) {
+                sub.setDateDebut(LocalDate.now());
+                sub.setDateFin(
+                        offer.getDuree() == null || offer.getDuree() <= 0 || offer.getType() == PlanType.FREE
+                                ? LocalDate.of(2099, 12, 31)
+                                : LocalDate.now().plusDays(offer.getDuree())
+                );
+                sub.setStatut(SubscriptionStatus.ACTIVE);
+                sub.setWasExpired(0);
+                sub.setUser(user);
+                subscriptionRepository.save(sub);
+                syncUserFromSubscription(user, sub);
+            }
+            return;
+        }
+
+        PlanOffer freeOffer = planOfferRepository.findFirstByType(PlanType.FREE).orElse(null);
+
+        if (freeOffer != null) {
+            // Return the same record to FREE/ACTIVE and keep expiration counter.
+            changePlanSubscription(sub, freeOffer);
+            sub.setPendingPlanOffer(null);
+            sub.setPaiementRef(null);
+            sub.setAutoRenouvellement(false);
+            sub.setUser(user);
+        } else {
+            sub.setStatut(SubscriptionStatus.EXPIRED);
+        }
+
+        subscriptionRepository.save(sub);
+        syncUserFromSubscription(user, sub);
     }
 
     public List<Map<String, Object>> getAdminSubscriptions() {
@@ -596,5 +611,63 @@ public class SubscriptionService implements ISubscriptionService {
         result.put("totalPaidSubscriptions", totalPaidSubscriptions);
 
         return result;
+    }
+
+
+    @Override
+    public Map<String, Object> getUpgradeSuggestion(Long userId, int premiumThreshold, int discountPercent) {
+
+        Map<String, Object> noSuggestion = new HashMap<>();
+        noSuggestion.put("shouldSuggest", false);
+
+        LocalDate today = LocalDate.now();
+
+        Optional<Subscription> userPremiumSub = subscriptionRepository
+                .findActiveSubscriptionByUserAndPlan(userId, PlanType.PREMIUM, SubscriptionStatus.ACTIVE, today);
+
+        if (userPremiumSub.isEmpty()) {
+            return noSuggestion;
+        }
+
+        long premiumCount = subscriptionRepository
+                .countActiveByPlan(SubscriptionStatus.ACTIVE, PlanType.PREMIUM, today);
+
+        long institutionalCount = subscriptionRepository
+                .countActiveByPlan(SubscriptionStatus.ACTIVE, PlanType.INSTITUTIONAL, today);
+
+        if (premiumCount < premiumThreshold || institutionalCount >= premiumCount) {
+            return noSuggestion;
+        }
+
+        PlanOffer institutionalOffer = planOfferRepository
+                .findFirstByType(PlanType.INSTITUTIONAL)
+                .orElse(null);
+
+        if (institutionalOffer == null || institutionalOffer.getPrix() == null) {
+            return noSuggestion;
+        }
+
+        double originalPrice   = institutionalOffer.getPrix();
+        double discountedPrice = Math.round(originalPrice * (1.0 - discountPercent / 100.0) * 100.0) / 100.0;
+
+        String message = String.format(
+                "Our Premium offer is in high demand (%d active subscribers)! " +
+                        "Enjoy a %d%% discount to upgrade to the %s plan and take advantage of exclusive benefits.",
+                premiumCount, discountPercent, institutionalOffer.getLabel()
+        );
+
+        Map<String, Object> suggestion = new HashMap<>();
+        suggestion.put("shouldSuggest",              true);
+        suggestion.put("institutionalPlanOfferId",   institutionalOffer.getId());
+        suggestion.put("institutionalPlanLabel",     institutionalOffer.getLabel());
+        suggestion.put("institutionalDescription",   institutionalOffer.getDescription());
+        suggestion.put("originalPrice",              originalPrice);
+        suggestion.put("discountedPrice",            discountedPrice);
+        suggestion.put("discountPercent",            discountPercent);
+        suggestion.put("premiumCount",               premiumCount);
+        suggestion.put("institutionalCount",         institutionalCount);
+        suggestion.put("message",                    message);
+
+        return suggestion;
     }
 }

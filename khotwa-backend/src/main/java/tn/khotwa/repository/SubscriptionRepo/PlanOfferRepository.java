@@ -3,7 +3,7 @@ package tn.khotwa.repository.SubscriptionRepo;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import tn.khotwa.entity.SubscriptionEntities.PlanOffer;
+import tn.khotwa.entity.Subscription.PlanOffer;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 
 import java.util.List;

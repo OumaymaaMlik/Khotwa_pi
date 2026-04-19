@@ -63,9 +63,6 @@ public class DataInitializer implements CommandLineRunner {
                  ADMIN_EMAIL, ADMIN_PASSWORD);
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // DONNÉES DE DÉMONSTRATION (catégories, tags, ressources)
-    // ═══════════════════════════════════════════════════════════════
     private void initSampleData() {
         if (categorieRepo.count() > 0) {
             log.info("Sample data already exists — DataInitializer skipped.");

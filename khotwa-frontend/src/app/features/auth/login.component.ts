@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UserRole } from '../../core/models/user.model';
+import {of, switchMap } from 'rxjs';
+import { SubscriptionService } from '../../core/services/subscription.service';
 
 @Component({
   selector: 'app-login',
@@ -27,29 +29,59 @@ export class LoginComponent {
     { role: 'COACH'        as UserRole, label: 'Coach / Mentor',  color: '#0d4a38', icon: '🎯' },
   ];
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router  ,  private subscriptionService: SubscriptionService
+) {}
 
   // ── Sign In ── POST /api/auth/login
-  signIn() {
-    this.error = ''; this.success = '';
-    if (!this.emailAddress.trim() || !this.password) {
-      this.error = 'Veuillez remplir tous les champs.';
-      return;
-    }
-    this.loading = true;
-    this.auth.signIn({ emailAddress: this.emailAddress.trim(), password: this.password })
-      .subscribe({
-        next: () => {
-          this.loading = false;
-          this.router.navigateByUrl(this.auth.getDefaultRoute());
-        },
-        error: (err) => {
-          this.loading = false;
-          this.error = err.error?.message ?? 'Identifiants invalides.';
-        }
-      });
-  }
 
+ signIn(): void {
+   this.error = '';
+   this.success = '';
+
+   if (!this.emailAddress.trim() || !this.password) {
+     this.error = 'Veuillez remplir tous les champs.';
+     return;
+   }
+
+   this.loading = true;
+
+   this.auth.signIn({
+     emailAddress: this.emailAddress.trim(),
+     password: this.password
+   }).pipe(
+     switchMap(() => this.auth.refreshProfile()),
+     switchMap(() => {
+       const user = this.auth.currentUser;
+
+       if (!user || user.role !== 'ENTREPRENEUR' || !user.idUser) {
+         return of(null);
+       }
+
+       return this.subscriptionService.getUpgradeSuggestion(user.idUser);
+     })
+   ).subscribe({
+     next: (suggestion: any) => {
+       this.loading = false;
+
+       if (suggestion?.shouldSuggest) {
+         sessionStorage.setItem('upgradeSuggestion', JSON.stringify(suggestion));
+       } else {
+         sessionStorage.removeItem('upgradeSuggestion');
+       }
+
+       this.router.navigateByUrl(this.auth.getDefaultRoute());
+     },
+     error: (err: any) => {
+       this.loading = false;
+
+       if (this.auth.token) {
+         this.router.navigateByUrl(this.auth.getDefaultRoute());
+       } else {
+         this.error = err?.error?.message || 'Identifiants invalides.';
+       }
+     }
+   });
+ }
   // ── Sign Up ── POST /api/auth/register  then auto-login
   signUp() {
     this.error = ''; this.success = '';
@@ -62,6 +94,7 @@ export class LoginComponent {
       this.error = 'Le mot de passe doit contenir au moins 8 caractères.';
       return;
     }
+
     this.loading = true;
     const body = {
       firstName:    this.firstName.trim(),

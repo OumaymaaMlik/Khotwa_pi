@@ -1,9 +1,10 @@
 <div class="page animate-1">
 
   <!-- ── Header ── -->
-  <div class="page-header">
-    <div>
-      <h1 class="kh-page-title">Subscriptions Management</h1>
+  <div class="page-header animate-1">
+    <div class="page-header__left">
+      <div class="page-header__eyebrow">Subscription Management</div>
+      <h1 class="kh-page-title">Plans & Subscribers</h1>
       <p class="page-sub">{{ subscriptions.length }} subscriber(s) · {{ plans.length }} plan(s) configured</p>
     </div>
     <button class="kh-btn kh-btn--primary" (click)="openAddPlan()">
@@ -13,12 +14,48 @@
 
   <!-- ── KPIs ── -->
   <div class="kpi-row animate-2">
-    <div class="mini-kpi"><span class="mini-kpi__val">{{ kpiTotal }}</span><span class="mini-kpi__label">Total subscribers</span></div>
-    <div class="mini-kpi"><span class="mini-kpi__val">{{ kpiFree }}</span><span class="mini-kpi__label">Free</span></div>
-    <div class="mini-kpi mini-kpi--orange"><span class="mini-kpi__val">{{ kpiPremium }}</span><span class="mini-kpi__label">Premium</span></div>
-    <div class="mini-kpi mini-kpi--violet"><span class="mini-kpi__val">{{ kpiInstitution }}</span><span class="mini-kpi__label">Institutional</span></div>
-    <div class="mini-kpi mini-kpi--green"><span class="mini-kpi__val">{{ kpiPaid }}</span><span class="mini-kpi__label">Paid</span></div>
-    <div class="mini-kpi mini-kpi--red"><span class="mini-kpi__val">{{ kpiExpired }}</span><span class="mini-kpi__label">Expired</span></div>
+    <div class="mini-kpi">
+      <span class="mini-kpi__icon mini-kpi__icon--blue" [innerHTML]="icon('users')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiTotal }}</span>
+        <span class="mini-kpi__label">Total</span>
+      </div>
+    </div>
+    <div class="mini-kpi">
+      <span class="mini-kpi__icon mini-kpi__icon--gray" [innerHTML]="icon('box')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiFree }}</span>
+        <span class="mini-kpi__label">Free</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--orange">
+      <span class="mini-kpi__icon mini-kpi__icon--orange" [innerHTML]="icon('trending')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiPremium }}</span>
+        <span class="mini-kpi__label">Premium</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--violet">
+      <span class="mini-kpi__icon mini-kpi__icon--violet" [innerHTML]="icon('box')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiInstitution }}</span>
+        <span class="mini-kpi__label">Institutional</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--green">
+      <span class="mini-kpi__icon mini-kpi__icon--green" [innerHTML]="icon('card')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiPaid }}</span>
+        <span class="mini-kpi__label">Paid</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--red">
+      <span class="mini-kpi__icon mini-kpi__icon--red" [innerHTML]="icon('chart')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiExpired }}</span>
+        <span class="mini-kpi__label">Expired</span>
+      </div>
+    </div>
   </div>
 
   <!-- ── Tabs ── -->
@@ -31,6 +68,9 @@
     </button>
     <button class="view-tab" [class.active]="activeTab === 'analytics'" (click)="switchTab('analytics')">
       <span class="tab-icon" [innerHTML]="icon('chart')"></span> Analytics
+    </button>
+    <button class="view-tab view-tab--health" [class.active]="activeTab === 'engagement'" (click)="switchTab('engagement')">
+      <span class="tab-icon tab-health-dot"></span> Subscriber Health
     </button>
   </div>
 
@@ -63,8 +103,9 @@
             <td class="td-id">{{ s.idSubscription }}</td>
             <td>
               <div class="user-cell">
-                <img *ngIf="hasAvatar(s)" [src]="getAvatarUrl(s)" class="user-avatar-img" [alt]="getFullName(s)">
-                <div *ngIf="!hasAvatar(s)" class="user-avatar" [style.background]="getAvatarColor(s)">{{ getUserInitials(s) }}</div>
+                <img *ngIf="hasAvatar(s)" [src]="getAvatarUrl(s)" class="user-avatar-img" [alt]="getFullName(s)"
+                          (error)="onAvatarError($event, s)">                
+                  <div *ngIf="!hasAvatar(s)" class="user-avatar" [style.background]="getAvatarColor(s)">{{ getUserInitials(s) }}</div>
                 <div class="user-meta">
                   <div class="user-name">{{ getFullName(s) }}</div>
                   <div class="user-sub">{{ getUserEmail(s) }}</div>
@@ -80,12 +121,24 @@
             <td><span class="kh-badge" [ngClass]="getStatusBadgeClass(s.statut)">{{ s.statut }}</span></td>
             <td class="td-date">{{ s.dateDebut | date:'dd MMM yyyy' }}</td>
             <td class="td-date" [class.td-date--expired]="s.statut === 'EXPIRED'">{{ s.dateFin | date:'dd MMM yyyy' }}</td>
-            <td><span class="days-badge" [class.days-badge--low]="getRemainingDays(s.dateFin) <= 7">{{ getRemainingDays(s.dateFin) }}d</span></td>
+            <td>
+                  <span class="days-badge" *ngIf="s.plan === 'FREE'">Unlimited</span>
+                  <span class="days-badge"
+                   *ngIf="s.plan !== 'FREE'"
+                   [class.days-badge--low]="getRemainingDays(s.dateFin) <= 7 && getRemainingDays(s.dateFin) > 0"
+                   [class.days-badge--expired]="getRemainingDays(s.dateFin) === 0">
+                    {{ getRemainingDays(s.dateFin) === 0 ? 'Expired' : (getRemainingDays(s.dateFin) + 'd') }}
+                  </span>
+            </td>            
             <td><span class="renew-pill" [class.renew-pill--on]="s.autoRenouvellement">{{ s.autoRenouvellement ? 'ON' : 'OFF' }}</span></td>
             <td>
-              <span *ngIf="s.paiementRef" class="ref-chip" [title]="s.paiementRef">
-                <span [innerHTML]="icon('card')"></span>{{ getPaymentRef(s) }}{{ (s.paiementRef?.length ?? 0) > 20 ? '…' : '' }}
-              </span>
+              <div *ngIf="s.paiementRef" class="ref-cell">
+                <span *ngIf="hasDiscount(s)" class="discount-badge">−{{ getDiscountFromRef(s.paiementRef) }}</span>
+                <button class="ref-chip" [title]="s.paiementRef" (click)="viewPaymentDetails(s)">
+                  <span [innerHTML]="icon('card')"></span>
+                  <span class="ref-order-id">{{ s.paiementRef | slice:14:30 }}…</span>
+                </button>
+              </div>
               <span *ngIf="!s.paiementRef" class="td-muted">—</span>
             </td>
             <td>
@@ -97,6 +150,111 @@
           </tr>
           <tr *ngIf="filteredSubscriptions.length === 0">
             <td colspan="12" class="empty-row">No subscriptions found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ SUBSCRIBER HEALTH ══════════════ -->
+  <div *ngIf="activeTab === 'engagement'" class="animate-4">
+
+    <!-- Header bar -->
+    <div class="health-topbar">
+      <div class="health-copy">
+        <h3 class="health-title">Subscriber Health Insights</h3>
+        <p class="health-subtitle">Track churn risk signals and trigger retention actions in real time.</p>
+      </div>
+      <div class="health-actions">
+        <button class="kh-btn kh-btn--primary icon-btn" (click)="computeAllChurn()" [disabled]="churnLoading">
+          <span [innerHTML]="icon('renew')"></span> Refresh Scores
+        </button>
+        <button class="kh-btn kh-btn--ghost icon-btn" (click)="sendChurnEmails()">
+          <span [innerHTML]="icon('card')"></span> Send Retention Emails
+        </button>
+      </div>
+
+      <!-- Stats pills -->
+      <div class="health-stats" *ngIf="churnStats">
+        <span class="health-stat health-stat--high">
+          <span class="health-stat__dot"></span>
+          {{ churnStats.highRiskCount }} Critical
+        </span>
+        <span class="health-stat health-stat--medium">
+          <span class="health-stat__dot"></span>
+          {{ churnStats.mediumRiskCount }} At Risk
+        </span>
+        <span class="health-stat health-stat--low">
+          <span class="health-stat__dot"></span>
+          {{ churnStats.lowRiskCount }} Healthy
+        </span>
+        <span class="health-stat health-stat--email" *ngIf="churnStats.retentionEmailsSent > 0">
+          <span [innerHTML]="icon('card')"></span>
+          {{ churnStats.retentionEmailsSent }} email(s) sent
+        </span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="churnLoading" class="analytics-loading">
+      <span class="kh-spinner kh-spinner--dark"></span>
+      <span>Computing scores...</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap" *ngIf="!churnLoading">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Startup</th>
+            <th>Plan</th>
+            <th>Risk Score</th>
+            <th>Risk Level</th>
+            <th>Detected Signals</th>
+            <th>Retention Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of churnScores" [class.health-row--high]="c.riskLevel === 'HIGH'" [class.health-row--medium]="c.riskLevel === 'MEDIUM'">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar" [style.background]="getAvatarColorFromId(c.userId ?? 0)">
+                  {{ (c.firstName ?? '?').charAt(0).toUpperCase() }}{{ (c.lastName ?? '').charAt(0).toUpperCase() }}
+                </div>
+                <div class="user-meta">
+                  <div class="user-name">{{ c.firstName }} {{ c.lastName }}</div>
+                  <div class="user-sub">{{ c.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="td-muted">{{ c.startup || '—' }}</td>
+            <td><span class="kh-badge" [ngClass]="getPlanBadgeClass(c.planType)">{{ c.planType }}</span></td>
+            <td>
+              <div class="score-cell">
+                <div class="score-bar-wrap">
+                  <div class="score-bar"
+                    [class.score-bar--high]="c.riskLevel === 'HIGH'"
+                    [class.score-bar--medium]="c.riskLevel === 'MEDIUM'"
+                    [class.score-bar--low]="c.riskLevel === 'LOW'"
+                    [style.width.%]="c.riskScore">
+                  </div>
+                </div>
+                <strong class="score-val">{{ c.riskScore }}<span>/100</span></strong>
+              </div>
+            </td>
+            <td>
+              <span class="kh-badge" [ngClass]="getRiskClass(c.riskLevel)">{{ c.riskLevelLabel }}</span>
+            </td>
+            <td class="signals-cell">{{ c.signalsDetail }}</td>
+            <td>
+              <span class="email-status email-status--sent" *ngIf="c.emailSent">✓ Sent</span>
+              <span class="email-status email-status--pending" *ngIf="!c.emailSent && c.riskLevel === 'HIGH'">Pending</span>
+              <span class="td-muted" *ngIf="c.riskLevel !== 'HIGH' && !c.emailSent">—</span>
+            </td>
+          </tr>
+          <tr *ngIf="churnScores.length === 0">
+            <td colspan="7" class="empty-row">No data yet. Click "Refresh Scores" to compute.</td>
           </tr>
         </tbody>
       </table>
@@ -137,16 +295,12 @@
 
   <!-- ══════════════ ANALYTICS ══════════════ -->
   <div *ngIf="activeTab === 'analytics'" class="animate-4">
-
-    <!-- Loading -->
     <div *ngIf="analyticsLoading" class="analytics-loading">
       <span class="kh-spinner kh-spinner--dark"></span>
       <span>Loading analytics...</span>
     </div>
 
     <ng-container *ngIf="!analyticsLoading">
-
-      <!-- ── Sub-nav ── -->
       <div class="analytics-subnav">
         <button class="analytics-tab" [class.active]="revenueView === 'summary'" (click)="revenueView = 'summary'">
           <span [innerHTML]="icon('dollar')"></span> Summary
@@ -162,14 +316,15 @@
         </button>
       </div>
 
-      <!-- ══ SUMMARY ══ -->
-      <div *ngIf="revenueView === 'summary'">
+      <!-- SUMMARY -->
+      <div *ngIf="revenueView === 'summary'" class="summary-layout">
         <div class="analytics-grid">
-          <div class="analytics-card">
+          <div class="analytics-card analytics-card--hero">
             <div class="analytics-card__icon analytics-card__icon--teal"><span [innerHTML]="icon('dollar')"></span></div>
             <div class="analytics-card__body">
               <span class="analytics-card__val">{{ (revenueSummary?.totalRevenue ?? 0) | number:'1.2-2' }} DT</span>
               <span class="analytics-card__label">Total Revenue</span>
+              <span class="analytics-card__sub" *ngIf="paymentsWithDiscount.length > 0">incl. {{ paymentsWithDiscount.length }} discounted</span>
             </div>
           </div>
           <div class="analytics-card">
@@ -184,6 +339,9 @@
             <div class="analytics-card__body">
               <span class="analytics-card__val">{{ activeRate }}%</span>
               <span class="analytics-card__label">Active Rate</span>
+              <div class="analytics-mini-bar">
+                <div class="analytics-mini-bar__fill analytics-mini-bar__fill--orange" [style.width.%]="activeRate"></div>
+              </div>
             </div>
           </div>
           <div class="analytics-card">
@@ -195,31 +353,63 @@
           </div>
         </div>
 
-        <!-- Plan distribution -->
-        <div class="analytics-breakdown">
-          <h3 class="breakdown-title">Plan Distribution</h3>
-          <div class="breakdown-bars" *ngIf="kpiTotal > 0; else noData">
-            <div class="breakdown-row">
-              <span class="breakdown-label">Free</span>
-              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--neutral" [style.width.%]="(kpiFree / kpiTotal) * 100"></div></div>
-              <span class="breakdown-count">{{ kpiFree }}</span>
+        <div class="summary-bottom">
+          <div class="analytics-breakdown summary-breakdown">
+            <h3 class="breakdown-title">Plan Distribution</h3>
+            <div class="breakdown-bars" *ngIf="kpiTotal > 0; else noData">
+              <div class="breakdown-row">
+                <div class="breakdown-label-group"><span class="breakdown-dot breakdown-dot--neutral"></span><span class="breakdown-label">Free</span></div>
+                <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--neutral" [style.width.%]="(kpiFree / kpiTotal) * 100"></div></div>
+                <span class="breakdown-count">{{ kpiFree }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiFree / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label-group"><span class="breakdown-dot breakdown-dot--orange"></span><span class="breakdown-label">Premium</span></div>
+                <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--orange" [style.width.%]="(kpiPremium / kpiTotal) * 100"></div></div>
+                <span class="breakdown-count">{{ kpiPremium }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiPremium / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label-group"><span class="breakdown-dot breakdown-dot--violet"></span><span class="breakdown-label">Institutional</span></div>
+                <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--violet" [style.width.%]="(kpiInstitution / kpiTotal) * 100"></div></div>
+                <span class="breakdown-count">{{ kpiInstitution }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiInstitution / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
             </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Premium</span>
-              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--orange" [style.width.%]="(kpiPremium / kpiTotal) * 100"></div></div>
-              <span class="breakdown-count">{{ kpiPremium }}</span>
-            </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Institutional</span>
-              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--violet" [style.width.%]="(kpiInstitution / kpiTotal) * 100"></div></div>
-              <span class="breakdown-count">{{ kpiInstitution }}</span>
+            <ng-template #noData><p class="empty-row">No data yet.</p></ng-template>
+          </div>
+
+          <div class="analytics-breakdown summary-discounts">
+            <h3 class="breakdown-title">
+              Discount Campaigns
+              <span class="discount-badge discount-badge--lg" *ngIf="paymentsWithDiscount.length > 0">{{ paymentsWithDiscount.length }}</span>
+            </h3>
+            <div *ngIf="paymentsWithDiscount.length === 0" class="empty-row">No discounted payments yet.</div>
+            <div class="discount-list" *ngIf="paymentsWithDiscount.length > 0">
+              <div class="discount-row" *ngFor="let d of paymentsWithDiscount">
+                <div class="user-cell">
+                  <div class="user-avatar" [style.background]="getAvatarColorFromId(d.userId ?? 0)">
+                    {{ (d.prenom ?? '?').charAt(0).toUpperCase() }}{{ (d.nom ?? '').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="user-meta">
+                    <div class="user-name">{{ d.prenom }} {{ d.nom }}</div>
+                    <div class="user-sub">{{ d.plan }} · {{ d.dateDebut | date:'dd MMM yyyy' }}</div>
+                  </div>
+                </div>
+                <div class="discount-row-right">
+                  <span class="discount-badge">−{{ d.discountPercent }}%</span>
+                  <div class="discount-prices">
+                    <span class="discount-original">{{ d.prixOriginal | number:'1.2-2' }} DT</span>
+                    <span class="discount-paid">{{ d.montant | number:'1.2-2' }} DT</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <ng-template #noData><p class="empty-row">No data yet.</p></ng-template>
         </div>
       </div>
 
-      <!-- ══ BY USER (total per user) ══ -->
+      <!-- BY USER -->
       <div *ngIf="revenueView === 'by-user'">
         <div class="analytics-breakdown">
           <h3 class="breakdown-title">Revenue per User</h3>
@@ -227,24 +417,20 @@
           <div class="revenue-user-list">
             <div class="revenue-user-row" *ngFor="let row of revenueByUserTotal">
               <div class="user-cell">
-                <div class="user-avatar" [style.background]="getAvatarColorFromId(row.idUser ?? 0)">
-                  {{ getRowInitials(row) }}
-                </div>
+                <div class="user-avatar" [style.background]="getAvatarColorFromId(row.idUser ?? 0)">{{ getRowInitials(row) }}</div>
                 <div class="user-meta">
                   <div class="user-name">{{ row.prenom }} {{ row.nom }}</div>
                   <div class="user-sub">{{ row.paymentsCount }} payment(s)</div>
                 </div>
               </div>
-              <div class="revenue-bar-wrap">
-                <div class="revenue-bar" [style.width.%]="(row.total / getMaxUserRevenue()) * 100"></div>
-              </div>
+              <div class="revenue-bar-wrap"><div class="revenue-bar" [style.width.%]="(row.total / getMaxUserRevenue()) * 100"></div></div>
               <span class="revenue-amount">{{ row.total | number:'1.2-2' }} DT</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ══ BY MONTH ══ -->
+      <!-- BY MONTH -->
       <div *ngIf="revenueView === 'by-month'">
         <div class="analytics-breakdown">
           <h3 class="breakdown-title">Monthly Revenue</h3>
@@ -252,18 +438,14 @@
           <div class="chart-bars" *ngIf="revenueByMonth.length > 0">
             <div class="chart-bar-col" *ngFor="let row of revenueByMonth">
               <div class="chart-bar-label-top">{{ row.total | number:'1.0-0' }} DT</div>
-              <div class="chart-bar-wrap">
-                <div class="chart-bar chart-bar--teal"
-                  [style.height.%]="(row.total / getMaxMonthRevenue()) * 100">
-                </div>
-              </div>
+              <div class="chart-bar-wrap"><div class="chart-bar chart-bar--teal" [style.height.%]="(row.total / getMaxMonthRevenue()) * 100"></div></div>
               <div class="chart-bar-label">{{ row.month }}</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ══ BY DAY ══ -->
+      <!-- BY DAY -->
       <div *ngIf="revenueView === 'by-day'">
         <div class="analytics-breakdown">
           <h3 class="breakdown-title">Daily Revenue</h3>
@@ -271,9 +453,7 @@
           <div class="revenue-day-list">
             <div class="breakdown-row" *ngFor="let row of revenueByDay">
               <span class="breakdown-label day-label">{{ row.date }}</span>
-              <div class="breakdown-bar-wrap">
-                <div class="breakdown-bar breakdown-bar--teal" [style.width.%]="(row.total / getMaxDayRevenue()) * 100"></div>
-              </div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--teal" [style.width.%]="(row.total / getMaxDayRevenue()) * 100"></div></div>
               <span class="revenue-amount">{{ row.total | number:'1.2-2' }} DT</span>
             </div>
           </div>
@@ -282,6 +462,7 @@
 
     </ng-container>
   </div>
+
 </div>
 
 <!-- ══ Modal — Add/Edit Plan ══ -->
@@ -347,6 +528,69 @@
     <div class="confirm-actions">
       <button class="kh-btn kh-btn--ghost" (click)="cancelSuspend()">Cancel</button>
       <button class="kh-btn kh-btn--danger" (click)="executeSuspend()">Confirm suspend</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal — Payment Details ══ -->
+<div class="modal-overlay" *ngIf="showPaymentDetailsModal" (click)="onOverlayClick($event)">
+  <div class="modal-panel modal-panel--sm">
+    <button class="modal-close" (click)="closePaymentDetailsModal()">✕</button>
+    <div class="modal-header-block">
+      <h2>Payment Details</h2>
+      <p class="modal-subtitle">Information stored in the payment reference</p>
+    </div>
+    <div *ngIf="paymentDetailsLoading" style="text-align:center;padding:2rem">
+      <span class="kh-spinner kh-spinner--dark"></span>
+    </div>
+    <ng-container *ngIf="!paymentDetailsLoading && selectedPaymentDetails">
+      <div class="payment-details-grid">
+        <div class="payment-detail-row">
+          <span class="pd-label">Plan</span>
+          <span class="kh-badge" [ngClass]="getPlanBadgeClass(selectedPaymentDetails.plan)">{{ selectedPaymentDetails.plan }}</span>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Status</span>
+          <span class="kh-badge" [ngClass]="getStatusBadgeClass(selectedPaymentDetails.statut)">{{ selectedPaymentDetails.statut }}</span>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">PayPal Order ID</span>
+          <code class="pd-code">{{ selectedPaymentDetails.paypalOrderId ?? '—' }}</code>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Payer ID</span>
+          <code class="pd-code">{{ selectedPaymentDetails.payerId ?? '—' }}</code>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Original price</span>
+          <span class="pd-value">{{ selectedPaymentDetails.prixOriginal | number:'1.2-2' }} DT</span>
+        </div>
+        <ng-container *ngIf="selectedPaymentDetails.hasDiscount">
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Discount applied</span>
+            <span class="discount-badge discount-badge--lg">−{{ selectedPaymentDetails.discountPercent }}%</span>
+          </div>
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Amount paid</span>
+            <strong class="pd-value pd-value--green">{{ selectedPaymentDetails.montant | number:'1.2-2' }} DT</strong>
+          </div>
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Savings</span>
+            <span class="pd-value pd-value--green">{{ (selectedPaymentDetails.prixOriginal - selectedPaymentDetails.montant) | number:'1.2-2' }} DT</span>
+          </div>
+        </ng-container>
+        <div class="payment-detail-row" *ngIf="!selectedPaymentDetails.hasDiscount">
+          <span class="pd-label">Amount paid</span>
+          <strong class="pd-value">{{ selectedPaymentDetails.montant ?? selectedPaymentDetails.prixOriginal | number:'1.2-2' }} DT</strong>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Period</span>
+          <span class="pd-value">{{ selectedPaymentDetails.dateDebut | date:'dd MMM yyyy' }} → {{ selectedPaymentDetails.dateFin | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+    </ng-container>
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="closePaymentDetailsModal()">Close</button>
     </div>
   </div>
 </div>

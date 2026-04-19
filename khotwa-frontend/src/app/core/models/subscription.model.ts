@@ -30,3 +30,15 @@ export interface PlanOffer {
 }
 
 export { PlanType };
+export interface UpgradeSuggestion {
+  shouldSuggest: boolean;
+  institutionalPlanOfferId?: number;
+  institutionalPlanLabel?: string;
+  institutionalDescription?: string;
+  originalPrice?: number;
+  discountedPrice?: number;
+  discountPercent?: number;
+  premiumCount?: number;
+  institutionalCount?: number;
+  message?: string;
+}

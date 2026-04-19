@@ -30,6 +30,12 @@ export class ProfileComponent implements OnInit {
   paymentError      = '';
   paypalRendered    = false;
 
+  // ── Upgrade suggestion popup ──────────────────────────────────────────────
+  showUpgradePopup        = false;
+  upgradeSuggestion: any  = null;
+
+  discountedPaymentPrice: number | null = null;
+
   get currentUserId(): number {
     return this.authService.currentUser?.idUser ?? 0;
   }
@@ -40,36 +46,66 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-  console.log('Current user in profile:', this.authService.currentUser);
-  console.log('Current user id:', this.currentUserId);
+    console.log('Current user in profile:', this.authService.currentUser);
+    console.log('Current user id:', this.currentUserId);
 
-  this.loadCurrentSubscription();
-  this.loadPlans();
-}
+    this.loadCurrentSubscription();
+    this.loadPlans(); 
+  }
+
+  // ── Chargements ───────────────────────────────────────────────────────────
 
   loadCurrentSubscription(): void {
-  if (!this.currentUserId) return;
-
-  console.log('currentUserId =', this.currentUserId);
-
-  this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
-    next: (data: Subscription) => {
-      console.log('subscription returned by backend =', data);
-      this.currentSubscription = data;
-    },
-    error: (err) => {
-      console.error('subscription error =', err);
-      this.currentSubscription = null;
-    }
-  });
-}
+    if (!this.currentUserId) return;
+    this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
+      next: (data: Subscription) => { this.currentSubscription = data; },
+      error: () => { this.currentSubscription = null; }
+    });
+  }
 
   loadPlans(): void {
     this.subscriptionService.getAvailablePlans().subscribe({
-      next: (data: PlanOffer[]) => { this.plans = data; },
+      next: (data: PlanOffer[]) => {
+        this.plans = data;
+        this.checkUpgradeSuggestion();
+      },
       error: (err: any) => { console.error('Error loading plans', err); }
     });
   }
+
+
+  checkUpgradeSuggestion(): void {
+    if (!this.currentUserId) return;
+    this.subscriptionService.getUpgradeSuggestion(this.currentUserId).subscribe({
+      next: (data: any) => {
+        if (data?.shouldSuggest) {
+          this.upgradeSuggestion = data;
+          setTimeout(() => { this.showUpgradePopup = true; }, 10000);
+        }
+      },
+      error: () => {  }
+    });
+  }
+
+  dismissUpgradePopup(): void {
+    this.showUpgradePopup = false;
+  }
+
+ 
+  acceptUpgradeSuggestion(): void {
+    if (!this.upgradeSuggestion) return;
+    const basePlan = this.plans.find(
+      p => p.id === this.upgradeSuggestion.institutionalPlanOfferId
+    );
+
+    if (!basePlan) return;
+    this.discountedPaymentPrice = this.upgradeSuggestion.discountedPrice;
+
+    this.showUpgradePopup = false;
+    this.openPlanModal(basePlan);
+  }
+
+  // ── Helpers d'affichage ───────────────────────────────────────────────────
 
   getStatusLabel(status: SubscriptionStatus): string {
     const labels: Record<string, string> = {
@@ -78,7 +114,6 @@ export class ProfileComponent implements OnInit {
     return labels[status] ?? status;
   }
 
-  // ── Takes PlanOffer (matches template) ──────────────────────────────────
   isCurrentPlan(plan: PlanOffer): boolean {
     if (!this.currentSubscription) return false;
     if (this.currentSubscription.planOffer?.id != null && plan.id != null) {
@@ -92,10 +127,6 @@ export class ProfileComponent implements OnInit {
     if (!this.currentSubscription) return 'Choose Plan';
     return this.isUpgrade(plan.type) ? 'Upgrade now' : 'Switch at renewal';
   }
-  getDuration(plan: PlanOffer): string {
-  if (!plan.duree || plan.duree <= 0) return 'Unlimited';
-  return `${plan.duree} days`;
-}
 
   canChangePlan(type: PlanType): boolean {
     if (!this.currentSubscription) return true;
@@ -121,23 +152,25 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  getRemainingDays(): number | string {
-  if (!this.currentSubscription) return 0;
-
-  if (this.currentSubscription.plan === 'FREE') {
-    return '∞';
+  getRemainingDays(): number {
+    if (!this.currentSubscription?.dateFin) return 0;
+    const diff = new Date(this.currentSubscription.dateFin).getTime() - Date.now();
+    return Math.max(Math.ceil(diff / 86_400_000), 0);
   }
-
-  if (!this.currentSubscription.dateFin) return 0;
-
-  const diff = new Date(this.currentSubscription.dateFin).getTime() - Date.now();
-  return Math.max(Math.ceil(diff / 86_400_000), 0);
-}
 
   getAvantagesList(avantages: string): string[] {
     if (!avantages) return [];
     return avantages.split('\n').map((a: string) => a.trim()).filter((a: string) => a.length > 0);
   }
+
+  getDuration(plan: PlanOffer): string {
+    if (!plan.duree || plan.duree <= 0 || plan.type === 'FREE') return 'Unlimited';
+    if (plan.duree >= 365) return Math.round(plan.duree / 365) + ' year(s)';
+    if (plan.duree >= 30)  return Math.round(plan.duree / 30)  + ' month(s)';
+    return plan.duree + ' days';
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   toggleAutoRenew(): void {
     if (!this.currentSubscription || this.isProcessing) return;
@@ -176,53 +209,53 @@ export class ProfileComponent implements OnInit {
   }
 
   closeModal(): void {
-    this.showModal = false; this.selectedPlan = null;
-    this.showPayment = false; this.paymentSuccess = false;
-    this.paymentError = ''; this.paypalRendered = false;
+    this.showModal             = false;
+    this.selectedPlan          = null;
+    this.showPayment           = false;
+    this.paymentSuccess        = false;
+    this.paymentError          = '';
+    this.paypalRendered        = false;
+    this.discountedPaymentPrice = null; 
   }
 
   onOverlayClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('modal-overlay')) this.closeModal();
   }
 
- proceedToPayment(): void {
-  if (!this.selectedPlan || !this.currentUserId) {
-    this.paymentError = 'Missing selected plan or user.';
-    return;
-  }
-
-  this.paymentError = '';
-
-  // Plan gratuit
-  if (this.selectedPlan.prix === 0) {
-    this._doFreeSubscribe();
-    return;
-  }
-
-  // Plan payant
-  this.isProcessing = true;
-
-  this.subscriptionService.selectPlan(this.currentUserId, this.selectedPlan.id!).subscribe({
-    next: (res: Subscription) => {
-      this.currentSubscription = res;
-      this.isProcessing = false;
-
-      this.showPayment = true;
-      this.paypalRendered = false;
-
-      setTimeout(() => this._mountPaypalButton(), 150);
-    },
-    error: (err: any) => {
-      console.error('Erreur démarrage paiement', err);
-      this.isProcessing = false;
-      this.paymentError = 'Unable to start payment. Please try again.';
-      console.log('selectedPlan =', this.selectedPlan);
-console.log('currentUser =', this.authService.currentUser);
-console.log('currentUserId =', this.currentUserId);
+  proceedToPayment(): void {
+    if (!this.selectedPlan || !this.currentUserId) {
+      this.paymentError = 'Missing selected plan or user.';
+      return;
     }
-    
-  });
-}
+
+    this.paymentError = '';
+
+    if (this.selectedPlan.prix === 0) {
+      this._doFreeSubscribe();
+      return;
+    }
+
+    this.isProcessing = true;
+
+    this.subscriptionService.selectPlan(this.currentUserId, this.selectedPlan.id!).subscribe({
+      next: (res: Subscription) => {
+        this.currentSubscription = res;
+        this.isProcessing = false;
+        this.showPayment = true;
+        this.paypalRendered = false;
+        setTimeout(() => this._mountPaypalButton(), 150);
+      },
+      error: (err: any) => {
+        console.error('Erreur démarrage paiement', err);
+        this.isProcessing = false;
+        this.paymentError = 'Unable to start payment. Please try again.';
+      }
+    });
+  }
+  get effectivePrice(): number {
+    return this.discountedPaymentPrice ?? (this.selectedPlan?.prix ?? 0);
+  }
+
   backToDetails(): void {
     if (this.currentSubscription?.idSubscription && this.currentSubscription.statut === 'PENDING') {
       this.subscriptionService.cancelPending(this.currentSubscription.idSubscription).subscribe({
@@ -236,7 +269,9 @@ console.log('currentUserId =', this.currentUserId);
     const paypalSDK = (window as any)['paypal'];
     if (!paypalSDK) { this.paymentError = '⚠️ PayPal SDK not loaded. Check your index.html.'; return; }
     if (this.paypalRendered) return;
-    const prixUSD = ((this.selectedPlan?.prix ?? 0) / 3.1).toFixed(2);
+    // Si une remise est active (offre upgrade suggestion), on l'utilise pour PayPal
+    const effectivePrice = this.discountedPaymentPrice ?? (this.selectedPlan?.prix ?? 0);
+    const prixUSD = (effectivePrice / 3.1).toFixed(2);
     const nomPlan = this.selectedPlan?.label ?? 'Plan';
     paypalSDK.Buttons({
       style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay' },
@@ -250,7 +285,7 @@ console.log('currentUserId =', this.currentUserId);
       }),
       onApprove: (data: any, actions: any) => {
         this.paymentProcessing = true;
-        return actions.order.capture().then((_d: any) => this._confirmPayment(data.orderID, data.payerID));
+        return actions.order.capture().then((_d: any) => this._confirmPayment(data.orderID, data.payerID, this.discountedPaymentPrice, this.upgradeSuggestion?.discountPercent));
       },
       onCancel: () => {
         this.paymentError = 'Payment cancelled.'; this.paymentProcessing = false;
@@ -273,13 +308,20 @@ console.log('currentUserId =', this.currentUserId);
     this.paypalRendered = true;
   }
 
-  private _confirmPayment(orderId: string, payerId: string): void {
+  private _confirmPayment(orderId: string, payerId: string, montantPaye?: number | null, discountPercent?: number | null): void {
     if (!this.selectedPlan || !this.currentUserId) {
       this.paymentError = 'Missing data. Please try again.';
       this.paymentProcessing = false; return;
     }
     this.paymentProcessing = true; this.paymentError = '';
-    this.subscriptionService.confirmPaypalPayment(this.currentUserId, this.selectedPlan.id!, orderId, payerId).subscribe({
+    this.subscriptionService.confirmPaypalPayment(
+      this.currentUserId,
+      this.selectedPlan.id!,
+      orderId,
+      payerId,
+      montantPaye     ?? null,  
+      discountPercent ?? null   
+    ).subscribe({
       next: (res: Subscription) => {
         this.paymentProcessing = false; this.paymentSuccess = true;
         this.currentSubscription = res; this.loadCurrentSubscription();
