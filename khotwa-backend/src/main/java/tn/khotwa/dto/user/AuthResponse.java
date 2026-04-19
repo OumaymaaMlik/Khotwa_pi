@@ -1,11 +1,11 @@
 package tn.khotwa.dto.user;
 
-import tn.khotwa.enums.Role;
+import tn.khotwa.enums.UserEnum.Role;
 
 public record AuthResponse(
 	String token,
 	Long idUser,
-	String email,
+	String emailAddress,
 	Role role,
 	boolean mustChangePassword
 ) {

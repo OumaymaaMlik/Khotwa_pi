@@ -1,3 +1,4 @@
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
@@ -11,10 +12,10 @@ import { Subscription } from 'rxjs';
 
 interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
 
-@Component({ 
-  selector: 'app-layout', 
-  templateUrl: './layout.component.html', 
-  styleUrls: ['./layout.component.css'] 
+@Component({
+  selector: 'app-layout',
+  templateUrl: './layout.component.html',
+  styleUrls: ['./layout.component.css']
 })
 export class LayoutComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
@@ -23,19 +24,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private wsSubscriptions: Subscription[] = [];
 
   navItems: NavItem[] = [
-    { label: 'Dashboard',     icon: 'dashboard', route: 'dashboard',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Projects',      icon: 'folder',    route: 'projets',       roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Workflows',     icon: 'workflow',  route: 'workflows',     roles: ['ENTREPRENEUR'] },
-    { label: 'Planning',      icon: 'calendar',  route: 'planning',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Messages',      icon: 'message',   route: 'messages',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Library',       icon: 'book',      route: 'bibliotheque',  roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'My Progress',   icon: 'progress',  route: 'progressions',  roles: ['ENTREPRENEUR','COACH'] },
-    { label: 'My Startups',   icon: 'rocket',    route: 'startups',      roles: ['COACH'] },
-    { label: 'Validations',   icon: 'check',     route: 'validations',   roles: ['COACH'] },
-    { label: 'Events',        icon: 'event',     route: 'evenements',    roles: ['ADMIN'] },
-    { label: 'Talent Market', icon: 'people',    route: 'talent',        roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Subscriptions', icon: 'card2',     route: 'subscriptions', roles: ['ADMIN'] },
-    { label: 'Users',         icon: 'users',     route: 'utilisateurs',  roles: ['ADMIN'] },
+    { label: 'Dashboard',    icon: 'dashboard', route: 'dashboard',    roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Projects',     icon: 'folder',    route: 'projets',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Workflows',    icon: 'workflow',  route: 'workflows',    roles: ['ENTREPRENEUR'] },
+    { label: 'Planning',     icon: 'calendar',  route: 'planning',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Messages',     icon: 'message',   route: 'messages',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Library',      icon: 'book',      route: 'bibliotheque', roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'My Progress',   icon: 'progress',  route: 'progressions', roles: ['ENTREPRENEUR','COACH'] },
+    { label: 'My Startups',  icon: 'rocket',    route: 'startups',     roles: ['COACH'] },
+    { label: 'Validations',  icon: 'check',     route: 'validations',  roles: ['COACH'] },
+    { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['ADMIN','ENTREPRENEUR','COACH', 'VISITOR'] },
+    { label: 'Talent Market',icon: 'people',    route: 'talent',       roles: ['ADMIN','ENTREPRENEUR','COACH', 'VISITOR'] },
+    { label: 'Subscriptions',icon: 'card',      route: 'abonnements',  roles: ['ADMIN'] },
+    { label: 'Users',        icon: 'users',     route: 'utilisateurs', roles: ['ADMIN'] },
   ];
 
   svgIcons: Record<string, string> = {
@@ -55,12 +56,13 @@ export class LayoutComponent implements OnInit, OnDestroy {
   };
 
   constructor(
-    public auth: AuthService, 
-    public notifService: NotificationService,  
-    private messageService: MessageService, 
-    private wsService: WebSocketService, 
-    private onlineStatusService: OnlineStatusService, 
-    private router: Router
+    public auth: AuthService,
+    public notifService: NotificationService,
+    private messageService: MessageService,
+    private wsService: WebSocketService,
+    private onlineStatusService: OnlineStatusService,
+    private router: Router,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit() {
@@ -90,26 +92,36 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return this.navItems.filter(item => role && item.roles.includes(role));
   }
 
-  get roleLabel(): string {
+ get roleLabel(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'ADMIN' ? 'Administrator' : r === 'ENTREPRENEUR' ? 'Entrepreneur' : r === 'COACH' ? 'Coach' : '';
+    if (r === 'ADMIN') return 'ADMINistrator';
+    if (r === 'ENTREPRENEUR') return 'ENTREPRENEUR';
+    if (r === 'COACH') return 'COACH';
+    if (r === 'VISITOR') return 'VISITOR'; // Ajout du label
+    return '';
   }
 
   get roleColor(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'ADMIN' ? '#E8622A' : r === 'ENTREPRENEUR' ? '#2ABFBF' : '#7C5CBF';
+    if (r === 'ADMIN') return '#E8622A';
+    if (r === 'ENTREPRENEUR') return '#2ABFBF';
+    if (r === 'COACH') return '#7C5CBF';
+    return '#F5A623';
   }
 
   get rolePrefix(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'ADMIN' ? '/khotwaadmin' : r === 'ENTREPRENEUR' ? '/entrepreneur' : '/coach';
+    if (r === 'ADMIN') return '/khotwaadmin';
+    if (r === 'ENTREPRENEUR') return '/entrepreneur';
+    if (r === 'COACH') return '/coach';
+    return '/visitor';
   }
 
   getRoute(item: NavItem): string { return `${this.rolePrefix}/${item.route}`; }
-  getIcon(name: string): string { return this.svgIcons[name] || ''; }
+  getIcon(name: string): SafeHtml { return this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] || ''); }
   isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
 
-  logout() { 
+  logout() {
     const currentUser = this.auth.currentUser;
     if (currentUser?.idUser) {
       this.messageService.announceOffline(currentUser.idUser).subscribe({

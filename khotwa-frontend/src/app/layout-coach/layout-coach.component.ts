@@ -1,13 +1,14 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { MessageService } from '../core/services/message.service';
 import { WebSocketService } from '../core/services/websocket.service';
 import { OnlineStatusService } from '../core/services/online-status.service';
-import { UserRole } from '../core/models';
-import { filter } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
 
 interface NavItem { label: string; icon: string; route: string; }
 
@@ -18,7 +19,7 @@ interface NavItem { label: string; icon: string; route: string; }
 })
 export class LayoutCoachComponent implements OnInit, OnDestroy {
   notifOpen    = false;
-  mobileOpen   = false;
+  mobileOpen    = false;
   userMenuOpen = false;
   currentUrl   = '';
   scrolled     = false;
@@ -52,12 +53,13 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
   };
 
   constructor(
-    public auth: AuthService, 
-    public notifService: NotificationService, 
-    private messageService: MessageService, 
-    private wsService: WebSocketService, 
-    private onlineStatusService: OnlineStatusService, 
-    private router: Router
+    public auth: AuthService,
+    public notifService: NotificationService,
+    private messageService: MessageService,
+    private wsService: WebSocketService,
+    private onlineStatusService: OnlineStatusService,
+    private router: Router,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit() {
@@ -65,7 +67,7 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
 
-    // Subscriptions for real-time notifications and status
+    // Real-time notification and online status sync
     this.wsSubscriptions.push(
       this.wsService.newNotification$.subscribe(n => this.notifService.addNotification(n)),
       this.wsService.status$.subscribe(event => {
@@ -73,7 +75,6 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Initial sync of online users
     this.messageService.getOnlineUsers().subscribe({
       next: (users) => { if (users) this.onlineStatusService.updateOnlineUsers(new Set(users)); }
     });
@@ -89,24 +90,28 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
     if (r === 'ENTREPRENEUR') return '/entrepreneur';
     if (r === 'COACH') return '/coach';
     return '';
-    }
+  }
 
   @HostListener('window:scroll', [])
   onScroll() { this.scrolled = window.scrollY > 10; }
 
-  isActive(route: string): boolean { return this.currentUrl.includes(`/${route}`); }
-  getIcon(name: string): string { return this.svgIcons[name] || ''; }
-  getRoute(route: string): string { return `/coach/${route}`; }
+  isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
 
-  logout() { 
+  getIcon(name: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] || '');
+  }
+
+  getRoute(item: NavItem): string { return `/coach/${item.route}`; }
+
+  logout() {
     const user = this.auth.currentUser;
     if (user?.idUser) {
       this.messageService.announceOffline(user.idUser).subscribe({
-        next: () => { this.auth.logout(); },
-        error: () => { this.auth.logout(); } // Logout anyway if API fails
+        next: () => this.performLogout(),
+        error: () => this.performLogout()
       });
     } else {
-      this.auth.logout();
+      this.performLogout();
     }
   }
 
@@ -118,8 +123,7 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
   onNotificationClick(notification: any) {
     this.notifService.markRead(notification.id);
     this.notifOpen = false;
-    
-    // senderId is now the numeric ID from the database
+
     if (notification.senderId) {
       this.router.navigateByUrl(`${this.rolePrefix}/messages?conversationId=${notification.senderId}`);
     } else {
@@ -129,7 +133,7 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
 
   get nonLus(): number { return Math.min(this.notifService.nonLus(), 99); }
   get notifs() { return this.notifService.latestFive(); }
-  
+
   get userInitials(): string {
     const u = this.auth.currentUser;
     return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`.toUpperCase();

@@ -4,8 +4,8 @@ import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import tn.khotwa.entity.User;
-import tn.khotwa.enums.Role;
+import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.enums.UserEnum.Role;
 
 import java.util.Collection;
 import java.util.List;

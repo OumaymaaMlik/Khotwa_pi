@@ -17,7 +17,7 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
 
   @ViewChild('fileInput') fileInput!: ElementRef;
   @ViewChild('messagesBody') messagesBody!: ElementRef;
-  
+
   conversations: any[] = [];
   selectedConv: any = null;
   newMsg = '';
@@ -84,14 +84,14 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
     this.selectedConv = { ...c, unread: 0 };
     c.unread = 0;
     this.replyingTo = null;
-    
+
     // Mark messages as read on the server
     c.messages
       .filter((m: any) => !m.mine && m.status === 'PENDING')
       .forEach((m: any) => {
         this.messageService.updateStatus(m.id, 'READ').subscribe();
       });
-      
+
     this.shouldScroll = true;
     this.cdr.markForCheck();
   }
@@ -137,8 +137,8 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
     if (conv) {
       conv.lastMsg = lastMsg.trim() === '\u00A0' ? '📎 Attachment' : lastMsg;
       conv.time = time;
-      conv.lastUpdate = new Date(); 
-          this.conversations.sort((a, b) => 
+      conv.lastUpdate = new Date();
+          this.conversations.sort((a, b) =>
         new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime()
       );
     }
@@ -153,8 +153,8 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
       if (!conv.messages.some((m: any) => m.id === msg.id)) {
         conv.messages.push(newMsgObj);
         conv.lastMsg = newMsgObj.text.trim() === '' || newMsgObj.text === '\u00A0' ? '📎 Attachment' : newMsgObj.text;
-        conv.time = newMsgObj.time;    
-        conv.lastUpdate = new Date();  
+        conv.time = newMsgObj.time;
+        conv.lastUpdate = new Date();
         if (msg.receiverId === this.currentUserId) {
           if (this.selectedConv?.participantId !== otherId) {
             conv.unread++;
@@ -167,7 +167,7 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
           this.shouldScroll = true;
         }
 console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date: c.lastUpdate })));
-        this.conversations.sort((a, b) => 
+        this.conversations.sort((a, b) =>
         new Date(b.lastUpdate || 0).getTime() - new Date(a.lastUpdate || 0).getTime()
       );
       }
@@ -183,7 +183,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
         messages: [newMsgObj]
       });
     }
-    
+
     // Important: Trigger UI update
     this.cdr.markForCheck();
   }
@@ -212,7 +212,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
 
     this.conversations.forEach(c => c.messages.forEach(update));
     if (this.selectedConv) this.selectedConv.messages.forEach(update);
-    
+
     this.cdr.markForCheck();
   }
 
@@ -228,7 +228,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
         unique.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         this.conversations = this.groupByConversation(unique);
         this.loading = false;
-        
+
         if (this.autoSelectConversationId) {
           const conv = this.conversations.find(c => c.participantId === this.autoSelectConversationId);
           if (conv) this.selectConv(conv);
@@ -249,7 +249,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
       const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
       if (!groups[otherId]) {
         groups[otherId] = {
-          id: `conv-${otherId}`, 
+          id: `conv-${otherId}`,
           participantId: otherId,
           nom: `User ${otherId}`,
           initials: `U${otherId}`,
@@ -268,7 +268,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
         groups[otherId].unread++;
       }
     });
-    return Object.values(groups).sort((a, b) => 
+    return Object.values(groups).sort((a, b) =>
       new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime()
     );
   }
@@ -296,7 +296,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
       const isActuallyEmpty = !uiMsg.text || uiMsg.text.trim() === '' || uiMsg.text === '\u00A0';
       this.conversations[index].lastMsg = isActuallyEmpty ? '📎 Attachment' : uiMsg.text;
       this.conversations[index].time = uiMsg.time;
-      this.conversations[index].lastUpdate = new Date(); 
+      this.conversations[index].lastUpdate = new Date();
       // 3. Perform the sort
       this.conversations.sort((a, b) => {
         const dateA = a.lastUpdate ? new Date(a.lastUpdate).getTime() : 0;
@@ -308,13 +308,13 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
     }
     // Reset UI State
     this.newMsg = '';
-    this.replyingTo = null;   
+    this.replyingTo = null;
     this.pendingFile = null;
     this.pendingFileUrl = null;
     this.shouldScroll = true;
     // Force Change Detection
     this.cdr.markForCheck();
-    this.cdr.detectChanges(); 
+    this.cdr.detectChanges();
   },
   error: (err) => console.error('Failed to send message', err)
 });
@@ -323,12 +323,12 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
   // --- UI Event Helpers ---
 
   isOnline(userId: number): boolean { return this.onlineStatusService.isOnline(userId); }
-  
-  onMsgKey(e: KeyboardEvent) { 
-    if (e.key === 'Enter' && !e.shiftKey) { 
-      e.preventDefault(); 
-      this.sendMsg(); 
-    } 
+
+  onMsgKey(e: KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      this.sendMsg();
+    }
   }
 
   onMsgInput() {
@@ -339,36 +339,36 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
       this.wsService.sendTyping(this.currentUserId, this.selectedConv.participantId, false);
     }, 2000);
   }
-  
+
   triggerFileInput() { this.fileInput.nativeElement.click(); }
-  
+
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) this.messageService.uploadFile(file).subscribe(url => this.pendingFileUrl = url);
   }
-  
+
   confirmDelete(msg: any) { this.pendingDeleteMsg = msg; this.showDeletePopup = true; }
-  
+
   deleteForAll() {
     if (!this.pendingDeleteMsg) return;
     this.messageService.deleteMessageForAll(this.pendingDeleteMsg.id).subscribe(() => {
-      this.pendingDeleteMsg.deleted = true; 
-      this.pendingDeleteMsg.text = 'message deleted'; 
+      this.pendingDeleteMsg.deleted = true;
+      this.pendingDeleteMsg.text = 'message deleted';
       this.showDeletePopup = false;
       this.cdr.markForCheck();
     });
   }
-  
+
   deleteForMe() {
     if (!this.pendingDeleteMsg) return;
     this.messageService.deleteMessageForMe(this.pendingDeleteMsg.id, this.currentUserId).subscribe(() => {
-      this.pendingDeleteMsg.deleted = true; 
-      this.pendingDeleteMsg.text = 'message deleted'; 
+      this.pendingDeleteMsg.deleted = true;
+      this.pendingDeleteMsg.text = 'message deleted';
       this.showDeletePopup = false;
       this.cdr.markForCheck();
     });
   }
-  
+
   replyTo(msg: any) { this.replyingTo = msg; }
   cancelReply() { this.replyingTo = null; }
   cancelDelete() { this.showDeletePopup = false; this.pendingDeleteMsg = null; }

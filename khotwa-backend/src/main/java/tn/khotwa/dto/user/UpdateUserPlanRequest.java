@@ -1,7 +1,7 @@
 package tn.khotwa.dto.user;
 
 import jakarta.validation.constraints.NotNull;
-import tn.khotwa.enums.PlanType;
+import tn.khotwa.enums.SubscriptionEnums.PlanType;
 
 public record UpdateUserPlanRequest(
         PlanType pendingPlan,

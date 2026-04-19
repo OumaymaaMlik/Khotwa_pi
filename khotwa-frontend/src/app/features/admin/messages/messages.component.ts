@@ -17,7 +17,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
 
   @ViewChild('fileInput') fileInput!: ElementRef;
   @ViewChild('messagesBody') messagesBody!: ElementRef;
-  
+
   conversations: any[] = [];
   selectedConv: any = null;
   newMsg = '';
@@ -104,8 +104,8 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
     if (conv) {
       conv.lastMsg = lastMsg.trim() === '\u00A0' ? '📎 Attachment' : lastMsg;
       conv.time = time;
-      conv.lastUpdate = new Date(); 
-          this.conversations.sort((a, b) => 
+      conv.lastUpdate = new Date();
+          this.conversations.sort((a, b) =>
         new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime()
       );
     }
@@ -120,8 +120,8 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
       if (!conv.messages.some((m: any) => m.id === msg.id)) {
         conv.messages.push(newMsgObj);
         conv.lastMsg = newMsgObj.text.trim() === '' || newMsgObj.text === '\u00A0' ? '📎 Attachment' : newMsgObj.text;
-        conv.time = newMsgObj.time;    
-        conv.lastUpdate = new Date();  
+        conv.time = newMsgObj.time;
+        conv.lastUpdate = new Date();
         if (msg.receiverId === this.currentUserId) {
           if (this.selectedConv?.participantId !== otherId) {
             conv.unread++;
@@ -134,7 +134,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
           this.shouldScroll = true;
         }
 console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date: c.lastUpdate })));
-        this.conversations.sort((a, b) => 
+        this.conversations.sort((a, b) =>
         new Date(b.lastUpdate || 0).getTime() - new Date(a.lastUpdate || 0).getTime()
       );
       }
@@ -150,7 +150,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
         messages: [newMsgObj]
       });
     }
-    
+
     // Important: Trigger UI update
     this.cdr.markForCheck();
   }
@@ -179,7 +179,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
 
     this.conversations.forEach(c => c.messages.forEach(update));
     if (this.selectedConv) this.selectedConv.messages.forEach(update);
-    
+
     this.cdr.markForCheck();
   }
 
@@ -258,7 +258,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
       const isActuallyEmpty = !uiMsg.text || uiMsg.text.trim() === '' || uiMsg.text === '\u00A0';
       this.conversations[index].lastMsg = isActuallyEmpty ? '📎 Attachment' : uiMsg.text;
       this.conversations[index].time = uiMsg.time;
-      this.conversations[index].lastUpdate = new Date(); 
+      this.conversations[index].lastUpdate = new Date();
       // 3. Perform the sort
       this.conversations.sort((a, b) => {
         const dateA = a.lastUpdate ? new Date(a.lastUpdate).getTime() : 0;
@@ -270,17 +270,17 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
     }
     // Reset UI State
     this.newMsg = '';
-    this.replyingTo = null;   
+    this.replyingTo = null;
     this.pendingFile = null;
     this.pendingFileUrl = null;
     this.shouldScroll = true;
     // Force Change Detection
     this.cdr.markForCheck();
-    this.cdr.detectChanges(); 
+    this.cdr.detectChanges();
   },
   error: (err) => console.error('Failed to send message', err)
 });
-} 
+}
 
 
   // Helper methods for UI (Delete/Key Events/Color)

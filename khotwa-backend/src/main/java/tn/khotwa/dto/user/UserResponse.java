@@ -1,7 +1,7 @@
 package tn.khotwa.dto.user;
 
-import tn.khotwa.enums.PlanType;
-import tn.khotwa.enums.Role;
+import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.UserEnum.Role;
 
 public record UserResponse(
         Long idUser,

@@ -1,4 +1,6 @@
-khotwa-frontend/node_modules/
-khotwa-frontend/.angular/
-khotwa-frontend/dist/
-khotwa-backend/uploads/
+/khotwa-backend/target/
+/khotwa-backend/*.jar
+/khotwa-frontend/node_modules/
+/khotwa-frontend/dist/
+/khotwa-frontend/.angular/
+/khotwa-backend/uploads/

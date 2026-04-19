@@ -1,12 +1,5 @@
 package tn.khotwa.exception;
-
 public class ResourceNotFoundException extends RuntimeException {
-
-    public ResourceNotFoundException(String message) {
-        super(message);
-    }
-
-    public ResourceNotFoundException(String resourceName, Long resourceId) {
-        super(resourceName + " not found with id " + resourceId + ".");
-    }
+    public ResourceNotFoundException(String msg) { super(msg); }
+    public ResourceNotFoundException(String entity, Long id) { super(entity + " introuvable — id : " + id); }
 }
