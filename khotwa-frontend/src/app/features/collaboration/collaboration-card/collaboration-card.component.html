@@ -1,0 +1,17 @@
+<article class="kh-card collaboration-card">
+  <div class="collaboration-card__header">
+    <div>
+      <h2 class="collaboration-card__title">{{ collaboration?.projectName ?? 'Untitled project' }}</h2>
+      <p class="collaboration-card__meta" *ngIf="!compact">
+        {{ collaboration?.ownerName ?? 'Unknown owner' }} · {{ typeLabel(collaboration.type) }}
+      </p>
+    </div>
+    <span class="kh-badge" [ngClass]="getStatusBadgeClass()">{{ toUiLabel(collaboration?.status ?? '') }}</span>
+  </div>
+
+  <div class="collaboration-card__signals">
+    <span class="collaboration-chip">Members: {{ memberCount }}</span>
+    <span class="collaboration-chip">Project #{{ collaboration?.projectId ?? 'N/A' }}</span>
+    <span class="collaboration-chip">{{ typeLabel(collaboration.type) }}</span>
+  </div>
+</article>

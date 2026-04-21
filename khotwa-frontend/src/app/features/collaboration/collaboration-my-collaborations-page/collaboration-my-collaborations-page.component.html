@@ -1,0 +1,26 @@
+<div class="page">
+  <section class="action-header kh-card">
+    <div class="action-header__info">
+      <span class="action-header__eyebrow">Action required</span>
+      <h1 class="action-header__title">My collaborations</h1>
+      <p class="action-header__subtitle">
+        Focus on collaborations that need your attention and take the next step immediately.
+      </p>
+    </div>
+
+    <div class="action-header__controls">
+      <a routerLink="/entrepreneur/collaborations/create" class="kh-btn kh-btn--primary">Create collaboration</a>
+      <a routerLink="/entrepreneur/collaborations/requests" class="kh-btn kh-btn--ghost kh-btn--sm">Sent requests</a>
+    </div>
+  </section>
+
+  <app-collaboration-list
+    [showHeader]="false"
+    [compact]="true"
+    [prioritizeCritical]="true"
+    emptyStateTitle="No collaborations yet"
+    emptyStateDescription="Collaborations help you organize members, resources, and marketing work around a project."
+    emptyStateActionLabel="Create collaboration"
+    emptyStateActionLink="/entrepreneur/collaborations/create">
+  </app-collaboration-list>
+</div>

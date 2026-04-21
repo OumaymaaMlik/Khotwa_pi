@@ -1,0 +1,28 @@
+<section class="kh-card request-panel">
+  <div class="request-panel__header">
+    <div>
+      <h2 class="kh-section-title">Collaboration requests</h2>
+      <p>Requests linked to this project</p>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="request-feedback request-feedback--error">{{ error }}</div>
+  <div *ngIf="loading" class="request-empty">Loading requests...</div>
+  <div *ngIf="!loading && !requests.length" class="request-empty">No collaboration requests found.</div>
+
+  <div *ngIf="!loading && requests.length" class="request-list">
+    <div *ngFor="let request of requests; trackBy: trackByRequest" class="request-row">
+      <div>
+        <strong>{{ request.requesterUserName ?? 'Unknown sender' }}</strong>
+        <p>{{ typeLabel(request) }} · {{ request.scenario }}</p>
+      </div>
+      <div class="request-row__actions">
+        <span class="kh-badge" [class]="request.status === 'ACCEPTED' ? 'kh-badge--green' : request.status === 'REJECTED' ? 'kh-badge--red' : 'kh-badge--amber'">
+          {{ request.status }}
+        </span>
+        <button *ngIf="canRespond && request.status === 'PENDING' && request.targetUserId === currentUserId" type="button" class="kh-btn kh-btn--primary kh-btn--sm" (click)="accept(request.id)">Accept</button>
+        <button *ngIf="canRespond && request.status === 'PENDING' && request.targetUserId === currentUserId" type="button" class="kh-btn kh-btn--danger kh-btn--sm" (click)="reject(request.id)">Reject</button>
+      </div>
+    </div>
+  </div>
+</section>

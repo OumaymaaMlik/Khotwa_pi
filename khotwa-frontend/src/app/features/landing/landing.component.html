@@ -1,9 +1,8 @@
 <div class="landing">
-
-  <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
-  <nav class="navbar" [class.navbar--scrolled]="scrolled">
-    <a class="nav-logo" routerLink="/">
-      <img src="assets/khotwa-logo.png" alt="KHOTWA" class="nav-logo-img" />
+  <nav class="navbar">
+    <a class="nav-logo">
+      <div class="nav-logo-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <span class="nav-logo-name">KHOTWA</span>
     </a>
     <ul class="nav-menu">
       <li *ngFor="let item of navItems; trackBy: trackByLabel"><a [href]="item.anchor">{{ item.label }}</a></li>
@@ -12,84 +11,38 @@
       <button class="btn-ghost-sm" (click)="goLogin()">Sign in</button>
       <button class="btn-orange-sm" (click)="goLogin()">Get started →</button>
     </div>
-    <button class="nav-burger" (click)="mobileMenuOpen=!mobileMenuOpen">
-      <span></span><span></span><span></span>
-    </button>
   </nav>
 
-  <!-- Mobile menu -->
-  <div class="mobile-menu" [class.open]="mobileMenuOpen">
-    <a *ngFor="let item of navItems" [href]="item.anchor" (click)="mobileMenuOpen=false">{{ item.label }}</a>
-    <button class="btn-orange-sm" style="margin-top:8px" (click)="goLogin()">Get started →</button>
-  </div>
-
-  <!-- ══ HERO SLIDER ══════════════════════════════════════════════ -->
-  <section class="hero-slider">
-    <!-- Slides -->
-    <div class="slider-track">
-      <div *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
-           class="slide"
-           [class.slide--active]="i === sliderIndex"
-           [class]="slide.bg + (i === sliderIndex ? ' slide--active' : '')">
-        <div class="slide-inner">
-          <div class="hero-badge">
-            <span class="badge-pulse"></span>{{ slide.badge }}
-          </div>
-          <h1 class="hero-title">
-            {{ slide.title }}<br>
-            <em>{{ slide.titleAccent }}</em>
-          </h1>
-          <p class="hero-sub">{{ slide.sub }}</p>
-          <div class="hero-actions">
-            <button class="btn-primary-lg" (click)="goLogin()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              Start for free
-            </button>
-            <button class="btn-outline-lg" (click)="goLogin()">Explore the demo →</button>
-          </div>
-        </div>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge"><span class="badge-pulse"></span>Next-generation incubation platform</div>
+      <h1 class="hero-title">Launch your startup<br><em>without friction</em></h1>
+      <p class="hero-sub">The all-in-one platform for incubators, entrepreneurs and coaches — smart workflows, real-time tracking, automated certification.</p>
+      <div class="hero-actions">
+        <button class="btn-primary-lg" type="button" (click)="goLogin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Start for free
+        </button>
+        <button class="btn-outline-lg" type="button" (click)="goLogin()">Explore the demo →</button>
       </div>
-    </div>
-
-    <!-- Contrôles slider -->
-    <button class="slider-arrow slider-arrow--prev" (click)="prevSlide()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <button class="slider-arrow slider-arrow--next" (click)="nextSlide()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-
-    <!-- Dots -->
-    <div class="slider-dots">
-      <button *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
-              class="slider-dot"
-              [class.slider-dot--active]="i === sliderIndex"
-              (click)="goSlide(i)"></button>
-    </div>
-
-    <!-- Stats wave -->
-    <div class="hero-stats-bar">
-      <div class="stat-item"><span class="stat-val">120+</span><span class="stat-lbl">Active projects</span></div>
-      <div class="stat-sep"></div>
-      <div class="stat-item"><span class="stat-val">98%</span><span class="stat-lbl">Satisfaction</span></div>
-      <div class="stat-sep"></div>
-      <div class="stat-item"><span class="stat-val">50+</span><span class="stat-lbl">Incubated startups</span></div>
-      <div class="stat-sep"></div>
-      <div class="stat-item"><span class="stat-val">3</span><span class="stat-lbl">Dedicated roles</span></div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-value">120+</span><span class="stat-label">Active projects</span></div>
+        <div class="stat"><span class="stat-value">98%</span><span class="stat-label">Satisfaction</span></div>
+        <div class="stat"><span class="stat-value">50+</span><span class="stat-label">Incubated startups</span></div>
+        <div class="stat"><span class="stat-value">2</span><span class="stat-label">Roles</span></div>
+      </div>
     </div>
   </section>
 
-  <!-- ══ ESPACES / RÔLES ══════════════════════════════════════════ -->
   <section class="roles-section" id="roles">
-    <div class="section-inner">
+    <div class="roles-inner">
       <div class="section-header">
         <span class="section-eyebrow">2 dedicated spaces</span>
-        <h2 class="section-title">A space for every role</h2>
-        <p class="section-sub">KHOTWA tailors each interface to the user's exact role for an optimal experience.</p>
+        <h2 class="section-title">A space for every actor</h2>
+        <p class="section-sub">KHOTWA adapts each interface to the user's exact role for an optimal experience.</p>
       </div>
       <div class="roles-grid">
-        <div *ngFor="let r of roles; trackBy: trackByName"
-             class="role-card" [style.--rc]="r.color" (click)="loginAs(r.role)">
+        <div *ngFor="let r of roles; trackBy: trackByName" class="role-card" [style.--rc]="r.color" (click)="loginAs(r.role)">
           <div class="role-top">
             <div class="role-emoji-bg">{{ r.emoji }}</div>
             <p class="role-name">{{ r.name }}</p>
@@ -111,13 +64,12 @@
     </div>
   </section>
 
-  <!-- ══ FONCTIONNALITÉS ══════════════════════════════════════════ -->
   <section class="features-section" id="fonctionnalites">
-    <div class="section-inner">
-      <div class="section-header">
+    <div class="features-inner">
+      <div style="text-align:center;margin-bottom:48px">
         <span class="section-eyebrow">Everything you need</span>
         <h2 class="section-title">Key features</h2>
-        <p class="section-sub">Built for teams who want to move fast and structure their growth from day one.</p>
+        <p class="section-sub" style="margin-bottom:0">Built for teams who want to move fast and structure their growth from day one.</p>
       </div>
       <div class="features-grid">
         <div *ngFor="let f of features; trackBy: trackByTitle" class="feat-card">
@@ -129,13 +81,12 @@
     </div>
   </section>
 
-  <!-- ══ COMMENT ÇA MARCHE ════════════════════════════════════════ -->
   <section class="steps-section" id="processus">
-    <div class="section-inner">
+    <div class="steps-inner">
       <div class="section-header">
-        <span class="section-eyebrow">Simple &amp; effective</span>
+        <span class="section-eyebrow">Simple & effective</span>
         <h2 class="section-title">How it works</h2>
-        <p class="section-sub">From sign-up to certification in 4 structured steps.</p>
+        <p class="section-sub">From registration to certification in 4 structured steps.</p>
       </div>
       <div class="steps-grid">
         <div *ngFor="let s of steps; trackBy: trackByStep" class="step-item">
@@ -147,19 +98,16 @@
     </div>
   </section>
 
-  <!-- ══ TARIFS ═══════════════════════════════════════════════════ -->
+
   <section class="pricing-section" id="pricing">
-    <div class="section-inner">
+    <div class="pricing-inner">
       <div class="section-header">
         <span class="section-eyebrow">Simple pricing</span>
         <h2 class="section-title">Choose your plan</h2>
         <p class="section-sub">Start for free, scale as you grow. No hidden fees.</p>
       </div>
       <div class="pricing-grid">
-        <div *ngFor="let plan of plans; trackBy: trackByName"
-             class="pricing-card"
-             [class.pricing-card--featured]="plan.featured"
-             [style.--pc]="plan.color">
+        <div *ngFor="let plan of plans; trackBy: trackByName" class="pricing-card" [class.pricing-card--featured]="plan.featured" [style.--pc]="plan.color">
           <div class="pricing-header">
             <span class="plan-badge" *ngIf="plan.badge">{{ plan.badge }}</span>
             <div class="plan-icon">{{ plan.icon }}</div>
@@ -172,13 +120,11 @@
           </div>
           <ul class="plan-features">
             <li *ngFor="let feat of plan.features; trackBy: trackByText">
-              <div class="plan-check">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
+              <div class="plan-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
               {{ feat }}
             </li>
           </ul>
-          <button class="plan-cta" [class.plan-cta--featured]="plan.featured" (click)="goLogin()">
+          <button class="plan-cta" type="button" [class.plan-cta--featured]="plan.featured" (click)="goLogin()">
             {{ plan.cta }}
           </button>
         </div>
@@ -186,23 +132,44 @@
     </div>
   </section>
 
-  <!-- ══ CTA ══════════════════════════════════════════════════════ -->
   <section class="cta-section" id="contact">
     <div class="cta-inner">
-      <div class="cta-badge">🚀 Join KHOTWA today</div>
       <h2 class="cta-title">Ready to accelerate<br>your startup?</h2>
-      <p class="cta-sub">Join teams who trust KHOTWA to turn their ideas into measurable success. Get started in under 5 minutes.</p>
+      <p class="cta-sub">Join teams who trust KHOTWA to turn their ideas into measurable success. Start in less than 5 minutes.</p>
       <div class="cta-btns">
-        <button class="btn-primary-lg" (click)="goLogin()">
+        <button class="btn-primary-lg" type="button" (click)="goLogin()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           Access the platform
         </button>
-        <button class="btn-outline-lg">Contact us →</button>
+        <button class="btn-outline-lg" type="button">Contact us →</button>
       </div>
     </div>
   </section>
 
-  <!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
-  <app-footer></app-footer>
-
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-brand-col">
+        <div class="footer-logo">
+          <div class="footer-logo-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <span class="footer-logo-name">KHOTWA</span>
+        </div>
+        <p class="footer-tagline">Multi-role incubation platform for ambitious entrepreneurs and dedicated coaches.</p>
+      </div>
+      <div><p class="footer-col-title">Product</p>
+        <ul class="footer-links-list">
+          <li><a href="#fonctionnalites">Features</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div><p class="footer-col-title">Support</p>
+        <ul class="footer-links-list">
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">Help center</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 KHOTWA. All rights reserved.</p>
+    </div>
+  </footer>
 </div>

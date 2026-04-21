@@ -1,0 +1,177 @@
+<div class="marketing-block kh-card">
+  <div class="marketing-block__header">
+    <div>
+      <h2 class="kh-section-title">Marketing</h2>
+      <p>Campaigns and content tasks linked to this collaboration.</p>
+    </div>
+    <span class="kh-badge kh-badge--violet">{{ campaigns?.length ?? 0 }} campaign{{ (campaigns?.length ?? 0) === 1 ? '' : 's' }}</span>
+  </div>
+
+  <section class="marketing-block__section">
+    <div class="marketing-block__section-header">
+      <div>
+        <h3>Campaigns</h3>
+        <p>Keep campaign details visible and easy to scan.</p>
+      </div>
+      <span class="kh-badge kh-badge--orange">Campaigns</span>
+    </div>
+    <div *ngIf="canCreateCampaign" class="marketing-block__form">
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Title</span>
+        <input #campaignTitle type="text" placeholder="Launch sprint">
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Type</span>
+        <select #campaignType>
+          <option *ngFor="let type of campaignTypes" [value]="type">{{ type }}</option>
+        </select>
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Objective</span>
+        <input #campaignObjective type="text" placeholder="Generate signups">
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Description</span>
+        <input #campaignDescription type="text" placeholder="Optional description">
+      </label>
+      <button
+        type="button"
+        class="kh-btn kh-btn--secondary"
+        (click)="createCampaign.emit({
+          payload: {
+            title: campaignTitle.value,
+            description: campaignDescription.value || null,
+            objective: campaignObjective.value,
+            campaignType: campaignType.value,
+            startDate: null,
+            endDate: null
+          }
+        })">
+        Add campaign
+      </button>
+    </div>
+    <div *ngIf="campaigns?.length; else noCampaigns">
+      <ul class="marketing-block__cards">
+        <li *ngFor="let campaign of campaigns; trackBy: trackByCampaign" class="marketing-block__item">
+          <div class="marketing-block__item-content">
+            <div class="marketing-block__item-head">
+              <strong>{{ campaign?.title ?? 'Untitled campaign' }}</strong>
+              <span
+                class="kh-badge"
+                [ngClass]="(campaign?.status ?? 'DRAFT') === 'ACTIVE'
+                  ? 'kh-badge--green'
+                  : (campaign?.status ?? 'DRAFT') === 'COMPLETED'
+                    ? 'kh-badge--gray'
+                    : 'kh-badge--amber'">
+                {{ campaign?.status ?? 'DRAFT' }}
+              </span>
+            </div>
+            <div class="marketing-block__meta">
+              <span class="kh-badge kh-badge--violet">{{ campaign?.campaignType ?? 'OTHER' }}</span>
+            </div>
+            <p>{{ campaign?.objective ?? 'No objective provided.' }}</p>
+            <p>{{ campaign?.description ?? 'No campaign description provided.' }}</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <ng-template #noCampaigns>
+      <div class="marketing-block__empty">No marketing campaigns available.</div>
+    </ng-template>
+  </section>
+
+  <section class="marketing-block__section">
+    <div class="marketing-block__section-header">
+      <div>
+        <h3>Tasks</h3>
+        <p>Follow assignments, platform, and delivery status across campaigns.</p>
+      </div>
+      <span class="kh-badge kh-badge--teal">{{ tasks?.length ?? 0 }} task{{ (tasks?.length ?? 0) === 1 ? '' : 's' }}</span>
+    </div>
+    <div *ngIf="canManageTasks && campaigns?.length" class="marketing-block__form">
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Campaign</span>
+        <select #taskCampaignId>
+          <option *ngFor="let campaign of campaigns" [value]="campaign.id">
+            {{ campaign.title || ('Campaign #' + campaign.id) }}
+          </option>
+        </select>
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Assigned user id</span>
+        <input #taskAssignedUserId type="number" min="1" placeholder="1">
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Title</span>
+        <input #taskTitle type="text" placeholder="Write launch post">
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Content type</span>
+        <select #taskContentType>
+          <option *ngFor="let type of contentTypes" [value]="type">{{ type }}</option>
+        </select>
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Platform</span>
+        <select #taskPlatform>
+          <option *ngFor="let platform of platforms" [value]="platform">{{ platform }}</option>
+        </select>
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Description</span>
+        <input #taskDescription type="text" placeholder="Optional description">
+      </label>
+      <label class="marketing-block__field">
+        <span class="marketing-block__label">Due date</span>
+        <input #taskDueDate type="datetime-local">
+      </label>
+      <button
+        type="button"
+        class="kh-btn kh-btn--secondary"
+        (click)="createTask.emit({
+          payload: {
+            marketingCollaborationId: +taskCampaignId.value,
+            assignedUserId: +taskAssignedUserId.value,
+            title: taskTitle.value,
+            description: taskDescription.value || null,
+            contentType: taskContentType.value,
+            platform: taskPlatform.value,
+            dueDate: taskDueDate.value || null
+          }
+        })">
+        Add task
+      </button>
+    </div>
+    <div *ngIf="tasks?.length; else noTasks">
+      <ul class="marketing-block__cards">
+        <li *ngFor="let task of tasks; trackBy: trackByTask" class="marketing-block__item">
+          <div class="marketing-block__item-content">
+            <div class="marketing-block__item-head">
+              <strong>{{ task?.title ?? 'Untitled task' }}</strong>
+              <span class="kh-badge" [ngClass]="taskBadgeClass(task?.status ?? 'TODO')">{{ task?.status ?? 'TODO' }}</span>
+            </div>
+            <div class="marketing-block__meta">
+              <span class="kh-badge kh-badge--gray">{{ task?.assignedUserName ?? 'Unassigned' }}</span>
+              <span class="kh-badge kh-badge--violet">{{ task?.contentType ?? 'OTHER' }}</span>
+              <span class="kh-badge kh-badge--teal">{{ task?.platform ?? 'OTHER' }}</span>
+              <span *ngIf="task?.dueDate" class="kh-badge kh-badge--amber">{{ task?.dueDate | date:'mediumDate' }}</span>
+            </div>
+            <p>{{ task?.description ?? 'No task description provided.' }}</p>
+          </div>
+          <div *ngIf="canUpdateTask(task)" class="marketing-block__actions">
+            <button
+              *ngFor="let status of taskStatuses"
+              type="button"
+              class="kh-btn kh-btn--ghost"
+              (click)="updateTaskStatus.emit({ taskId: task.id, status: status })">
+              Mark {{ status }}
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <ng-template #noTasks>
+      <div class="marketing-block__empty">No marketing tasks have been created.</div>
+    </ng-template>
+  </section>
+</div>

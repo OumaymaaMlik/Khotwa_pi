@@ -25,8 +25,7 @@ export interface Ressource {
   categorie: { id: number; nom: string; couleur: string; icone: string } | null;
   tags: { id: number; nom: string }[];
   createdAt: string;
-  maProgress?: { status?: ProgressStatus; statut?: ProgressStatus; pourcentage: number } | null;
-  maProgression?: { statut?: ProgressStatus; pourcentage: number } | null;
+  maProgression: { statut: ProgressStatus; pourcentage: number } | null;
   urlExterne?: string;
 }
 
@@ -37,7 +36,7 @@ export interface Categorie {
 @Injectable({ providedIn: 'root' })
 export class RessourceService {
 
-  private api = 'http://localhost:8084/khotwa/api';
+  private api = '/api';
 
   constructor(private http: HttpClient) {}
 
@@ -97,10 +96,10 @@ export class RessourceService {
     return this.http.get<any>(`${this.api}/ressources/stats`, { headers: this.h(userId) });
   }
 
-  // ── Progress ──────────────────────────────────────────────────
-  updateProgressionHttp(userId: number, ressourceId: number, status: ProgressStatus, pourcentage: number): Observable<any> {
+  // ── Progression ──────────────────────────────────────────────────
+  updateProgressionHttp(userId: number, ressourceId: number, statut: ProgressStatus, pourcentage: number): Observable<any> {
     return this.http.post<any>(`${this.api}/progressions`, 
-      { ressourceId, statut: status, pourcentage }, 
+      { ressourceId, statut, pourcentage }, 
       { headers: this.h(userId) }
     );
   }
@@ -109,9 +108,9 @@ export class RessourceService {
     return this.http.post<any>(`${this.api}/progressions/${ressourceId}/terminer`, {}, { headers: this.h(userId) });
   }
 
-  saveVideoProgressionHttp(userId: number, ressourceId: number, status: ProgressStatus, pourcentage: number, positionVideoSec: number): Observable<any> {
+  saveVideoProgressionHttp(userId: number, ressourceId: number, statut: ProgressStatus, pourcentage: number, positionVideoSec: number): Observable<any> {
     return this.http.post<any>(`${this.api}/progressions`,
-      { ressourceId, statut: status, pourcentage, positionVideoSec },
+      { ressourceId, statut, pourcentage, positionVideoSec },
       { headers: this.h(userId) }
     );
   }

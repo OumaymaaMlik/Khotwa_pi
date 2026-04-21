@@ -67,19 +67,19 @@
         <span>{{ r.tailleFormatee || (r.dureeSec ? (r.dureeSec/60|number:'1.0-0') + ' min' : '') }}</span>
         <span style="color:var(--text-muted)">{{ r.vues }} views</span>
       </div>
-      <ng-container *ngIf="r.maProgress && r.maProgress.pourcentage > 0">
+      <ng-container *ngIf="r.maProgression && r.maProgression.pourcentage > 0">
         <div class="prog-row">
-          <span class="prog-label" [style.color]="getProgressColor(r.maProgress.status)">
-            <ng-container [ngSwitch]="r.maProgress.status">
+          <span class="prog-label" [style.color]="getProgressColor(r.maProgression.statut)">
+            <ng-container [ngSwitch]="r.maProgression.statut">
               <ng-container *ngSwitchCase="'COMPLETED'">✓ Completed</ng-container>
               <ng-container *ngSwitchCase="'IN_PROGRESS'">In progress</ng-container>
               <ng-container *ngSwitchDefault>Not started</ng-container>
             </ng-container>
           </span>
-          <span class="prog-pct">{{ r.maProgress.pourcentage }}%</span>
+          <span class="prog-pct">{{ r.maProgression.pourcentage }}%</span>
         </div>
         <div class="kh-progress">
-          <div class="kh-progress__fill" [style.width.%]="r.maProgress.pourcentage" [style.background]="getProgressColor(r.maProgress.status)"></div>
+          <div class="kh-progress__fill" [style.width.%]="r.maProgression.pourcentage" [style.background]="getProgressColor(r.maProgression.statut)"></div>
         </div>
       </ng-container>
       <div *ngIf="r.tags?.length" class="res-tags">
@@ -116,7 +116,7 @@
         </div>
         <div class="folder-meta">
           <span class="folder-name">{{ folder.name }}</span>
-          <span class="folder-count">{{ folder.files.length }} file{{ folder.files.length > 1 ? 's' : '' }}</span>
+          <span class="folder-count">{{ folder.fichiers.length }} file{{ folder.fichiers.length > 1 ? 's' : '' }}</span>
         </div>
         <svg class="folder-chevron" [class.open]="folder.expanded" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"/>
@@ -124,7 +124,7 @@
       </div>
 
       <div class="folder-files" *ngIf="folder.expanded">
-        <div *ngFor="let r of folder.files" class="folder-file-row" (click)="openViewer(r)">
+        <div *ngFor="let r of folder.fichiers" class="folder-file-row" (click)="openViewer(r)">
           <span class="ff-icon">{{ typeIcons[r.type] }}</span>
           
           <div class="ff-info">
@@ -135,9 +135,9 @@
           <div class="ff-side-actions">
             <span class="kh-badge" [class]="getAccessBadge(r.planType)">{{ r.planType }}</span>
             
-            <div class="prog-cell" *ngIf="r.maProgress && r.maProgress.pourcentage > 0">
-              <span class="prog-pct-sm" [style.color]="getProgressColor(r.maProgress.status)">
-                {{ r.maProgress.pourcentage }}%
+            <div class="prog-cell" *ngIf="r.maProgression && r.maProgression.pourcentage > 0">
+              <span class="prog-pct-sm" [style.color]="getProgressColor(r.maProgression.statut)">
+                {{ r.maProgression.pourcentage }}%
               </span>
             </div>
 
@@ -155,7 +155,7 @@
 
     <ng-container *ngIf="folder.name === '__solo__'">
       <div class="solo-label" *ngIf="folders.length > 1">Individual resources</div>
-      <div *ngFor="let r of folder.files" class="folder-file-row solo-row" (click)="openViewer(r)">
+      <div *ngFor="let r of folder.fichiers" class="folder-file-row solo-row" (click)="openViewer(r)">
         <span class="ff-icon">{{ typeIcons[r.type] }}</span>
         <div class="ff-info">
           <span class="ff-name">{{ r.titre }}</span>
@@ -184,11 +184,11 @@
       <div class="viewer-title">
         <span>{{ typeIcons[viewerRessource?.type || 'PDF'] }}</span>
         <span>{{ viewerRessource?.titre }}</span>
-        <span *ngIf="viewerRessource?.maProgress && viewerRessource!.maProgress!.pourcentage > 0"
+        <span *ngIf="viewerRessource?.maProgression && viewerRessource!.maProgression!.pourcentage > 0"
               class="viewer-prog-badge"
-              [style.background]="getProgressColor(viewerRessource!.maProgress!.status) + '22'"
-              [style.color]="getProgressColor(viewerRessource!.maProgress!.status)">
-          {{ viewerRessource!.maProgress!.pourcentage }}%
+              [style.background]="getProgressColor(viewerRessource!.maProgression!.statut) + '22'"
+              [style.color]="getProgressColor(viewerRessource!.maProgression!.statut)">
+          {{ viewerRessource!.maProgression!.pourcentage }}%
         </span>
       </div>
       <div class="viewer-header-right">
@@ -210,10 +210,10 @@
     </div>
 
     <!-- Progress bar -->
-    <div class="viewer-prog-bar" *ngIf="viewerRessource?.maProgress && viewerRessource!.maProgress!.pourcentage > 0">
+    <div class="viewer-prog-bar" *ngIf="viewerRessource?.maProgression && viewerRessource!.maProgression!.pourcentage > 0">
       <div class="viewer-prog-fill"
-           [style.width.%]="viewerRessource!.maProgress!.pourcentage"
-           [style.background]="getProgressColor(viewerRessource!.maProgress!.status)"></div>
+           [style.width.%]="viewerRessource!.maProgression!.pourcentage"
+           [style.background]="getProgressColor(viewerRessource!.maProgression!.statut)"></div>
     </div>
 
     <!-- Loading -->

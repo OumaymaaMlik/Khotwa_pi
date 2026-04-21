@@ -1,6 +1,6 @@
 export type ProjetStatut = 'in_progress' | 'suspended' | 'completed';
-export type TacheStatut = 'a_faire' | 'in_progress' | 'pending_validation' | 'completede';
-export type TachePriorite = 'basse' | 'normal' | 'high' | 'critical';
+export type TacheStatut = 'a_faire' | 'in_progress' | 'en_attente_validation' | 'completede';
+export type TachePriorite = 'basse' | 'normale' | 'haute' | 'critical';
 
 export interface Document {
   id: string;
@@ -21,7 +21,7 @@ export interface Tache {
   id: string;
   titre: string;
   description: string;
-  status: TacheStatut;
+  statut: TacheStatut;
   priorite: TachePriorite;
   deadline: Date;
   sousTaches: SousTache[];
@@ -46,7 +46,7 @@ export interface Projet {
   id: string;
   titre: string;
   description: string;
-  status: ProjetStatut;
+  statut: ProjetStatut;
   progression: number;
   entrepreneurId: string;
   coachId?: string;

@@ -11,8 +11,12 @@
 
       <!-- Logo -->
       <a routerLink="/coach/dashboard" class="coach-brand">
-        <img src="assets/khotwa-logo.png" alt="KHOTWA" class="brand-logo-img" style="height:32px;width:auto;object-fit:contain;" />
-        
+        <div class="coach-brand__icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <span class="coach-brand__name">KHOTWA</span>
         <span class="coach-brand__tag">Coach</span>
       </a>
 
@@ -32,7 +36,7 @@
       <div class="coach-nav__actions">
 
         <!-- Validations badge rapide -->
-        <a routerLink="/coach/validations" class="coach-quick-badge" title="Pending validations">
+        <a routerLink="/coach/validations" class="coach-quick-badge" title="Validations en attente">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
           <span>5</span>
         </a>
@@ -46,7 +50,7 @@
           <div class="coach-notif-panel" *ngIf="notifOpen">
             <div class="coach-notif-panel__head">
               <span>Notifications</span>
-              <button (click)="notifService.markAllRead(); notifOpen=false">Mark all read</button>
+              <button (click)="notifService.markAllRead(); notifOpen=false">Tout lire</button>
             </div>
             <div *ngFor="let n of notifs" class="coach-notif-item" [class.unread]="!n.lu" (click)="notifService.markRead(n.id)">
               <div class="coach-notif-dot-item" [class]="'dot-'+n.type"></div>
@@ -56,7 +60,7 @@
         </div>
 
         <!-- Home -->
-        <a routerLink="/" class="coach-icon-btn" title="Home">
+        <a routerLink="/" class="coach-icon-btn" title="Accueil">
           <span [innerHTML]="getIcon('home')"></span>
         </a>
 
@@ -64,18 +68,18 @@
         <div class="coach-user" (click)="userMenuOpen=!userMenuOpen">
           <div class="coach-user__avatar">{{ userInitials }}</div>
           <div class="coach-user__info">
-            <span class="coach-user__name">{{ auth.currentUser?.prenom }}</span>
+            <span class="coach-user__name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</span>
             <span class="coach-user__role">Coach Expert</span>
           </div>
           <svg class="coach-user__caret" [class.flipped]="userMenuOpen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
 
           <div class="coach-user__menu" *ngIf="userMenuOpen">
             <div class="coach-user__menu-header">
-              <p class="cmenu-name">{{ auth.currentUser?.prenom }} {{ auth.currentUser?.nom }}</p>
+              <p class="cmenu-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
               <p class="cmenu-email">{{ auth.currentUser?.email }}</p>
             </div>
             <button class="cmenu-item cmenu-item--logout" (click)="logout()">
-              <span [innerHTML]="getIcon('logout')"></span>Sign out
+              <span [innerHTML]="getIcon('logout')"></span>Déconnexion
             </button>
           </div>
         </div>
@@ -114,8 +118,5 @@
       <router-outlet></router-outlet>
     </div>
   </main>
-
-  <!-- ── Footer ───────────────────────────────────── -->
-  <app-footer></app-footer>
 
 </div>

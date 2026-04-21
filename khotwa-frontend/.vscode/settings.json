@@ -1,0 +1,5 @@
+{
+  "http.proxy": "",
+  "http.proxyStrictSSL": false,
+  "http.systemCertificates": true
+}

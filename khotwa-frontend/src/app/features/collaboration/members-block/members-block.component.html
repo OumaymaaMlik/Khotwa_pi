@@ -1,0 +1,45 @@
+<div class="members-block kh-card">
+  <div class="members-block__header">
+    <div>
+      <h2 class="kh-section-title">Members</h2>
+      <p>{{ members?.length || 0 }} participant{{ (members?.length || 0) === 1 ? '' : 's' }}</p>
+    </div>
+    <span class="kh-badge kh-badge--teal">Core team</span>
+  </div>
+
+  <div *ngIf="members?.length; else noMembers">
+    <ul class="members-block__list">
+      <li *ngFor="let member of members; trackBy: trackByMember" class="members-block__item">
+        <div class="members-block__content">
+          <div class="members-block__identity">
+            <strong>{{ member?.fullName ?? 'Unknown member' }}</strong>
+            <span
+              class="kh-badge"
+              [ngClass]="(member?.userId === ownerUserId) ? 'kh-badge--orange' : 'kh-badge--gray'">
+              {{ (member?.userId === ownerUserId) ? 'Owner' : 'Member' }}
+            </span>
+          </div>
+          <p>{{ member?.email ?? 'No email provided' }}</p>
+          <div class="members-block__meta">
+            <span
+              class="kh-badge"
+              [ngClass]="(member?.roleLabel ?? 'ENTREPRENEUR') === 'ADMIN'
+                ? 'kh-badge--orange'
+                : (member?.roleLabel ?? 'ENTREPRENEUR') === 'COACH'
+                  ? 'kh-badge--violet'
+                  : 'kh-badge--teal'">
+              {{ member?.roleLabel ?? 'ENTREPRENEUR' }}
+            </span>
+          </div>
+        </div>
+        <button *ngIf="canRemoveMember(member)" class="kh-btn kh-btn--ghost" (click)="onRemoveMember(member.id)">Remove</button>
+      </li>
+    </ul>
+  </div>
+
+  <ng-template #noMembers>
+    <div class="members-empty">No members have joined this collaboration yet.</div>
+  </ng-template>
+
+  <button *ngIf="canLeave" class="kh-btn kh-btn--ghost members-block__leave" (click)="onLeaveCollaboration()">Leave collaboration</button>
+</div>

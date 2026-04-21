@@ -1,0 +1,56 @@
+.create-card {
+  max-width: 640px;
+  padding: 24px;
+}
+
+.create-form {
+  display: grid;
+  gap: 18px;
+}
+
+.create-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.create-form span {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.create-form input,
+.create-form select {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  background: white;
+  font-size: 13px;
+  transition: border-color 0.2s ease;
+}
+.create-form input:focus,
+.create-form select:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(232, 98, 42, 0.1);
+}
+
+.create-form select:disabled {
+  background: var(--bg-app);
+  color: var(--text-muted);
+}
+
+.collab-note,
+.collab-readonly {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.collab-readonly--error {
+  color: var(--red);
+}
+
+.collab-readonly--success {
+  color: var(--green);
+}

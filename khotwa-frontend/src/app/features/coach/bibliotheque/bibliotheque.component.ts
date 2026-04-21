@@ -7,7 +7,7 @@ declare const pdfjsLib: any;
 
 export interface CourseFolder {
   name: string;
-  files: any[];
+  fichiers: any[];
   expanded: boolean;
 }
 
@@ -116,19 +116,19 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
         });
         this.ressources = list.map(r => ({
           ...r,
-          maProgress: pm.has(r.id)
+          maProgression: pm.has(r.id)
             ? { 
-                status: pm.get(r.id).statut as any, 
+                statut: pm.get(r.id).statut, 
                 pourcentage: pm.get(r.id).pourcentage,
                 positionVideoSec: pm.get(r.id).positionVideoSec,
                 currentPage: pm.get(r.id).positionVideoSec 
               }
-            : r.maProgress
+            : r.maProgression
         }));
         this.buildFolders();
         this.loading = false;
       },
-      error: () => { this.error = '⚠️ Unable to reach the server.'; this.loading = false; }
+      error: () => { this.error = '⚠️ Impossible de joindre le serveur.'; this.loading = false; }
     });
   }
 
@@ -141,7 +141,7 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       next: res => {
         const detail = res.data?.ressource ?? res.data ?? r;
         const tags = res.data?.tags ?? detail.tags ?? r.tags ?? [];
-        this.startViewer({ ...r, ...detail, tags, maProgress: r.maProgress ?? detail.maProgression });
+        this.startViewer({ ...r, ...detail, tags, maProgression: r.maProgression ?? detail.maProgression });
       },
       error: () => this.startViewer(r)
     });
@@ -150,11 +150,11 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
   private startViewer(r: Ressource) {
     this.viewerRessource = r;
     this.viewerType = r.type === 'VIDEO' ? 'video' : r.type === 'PDF' ? 'pdf' : r.type === 'IMAGE' ? 'image' : 'other';
-    this.resumeAt = (r.maProgress as any)?.positionVideoSec ?? 0;
+    this.resumeAt = (r.maProgression as any)?.positionVideoSec ?? 0;
     this.revokeBlobUrl();
     this.blobUrl = null; this.rawBlobUrl = ''; this.pdfDoc = null;
 
-    if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+    if (!r.maProgression || r.maProgression.statut === 'NOT_STARTED') {
       this.svc.updateProgressionHttp(this.userId, r.id, 'IN_PROGRESS', 1).subscribe();
     }
 
@@ -186,7 +186,7 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       this.zone.run(() => {
         this.pdfDoc = doc;
         this.pdfTotalPages = doc.numPages;
-        const savedPage = (r.maProgress as any)?.positionVideoSec ?? 1;
+        const savedPage = (r.maProgression as any)?.positionVideoSec ?? 1;
         this.pdfCurrentPage = Math.max(1, Math.min(savedPage, this.pdfTotalPages));
         setTimeout(() => this.renderPdfPage(this.pdfCurrentPage, r), 100);
       });
@@ -208,11 +208,11 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
         this.zone.run(() => {
           this.pdfRendering = false;
           const pct = Math.round((pageNum / this.pdfTotalPages) * 100);
-          const status: ProgressStatus = pct >= 100 ? 'COMPLETED' : 'IN_PROGRESS';
+          const statut: ProgressStatus = pct >= 100 ? 'COMPLETED' : 'IN_PROGRESS';
           const target = r ?? this.viewerRessource;
           if (target) {
-            if (this.viewerRessource) this.viewerRessource.maProgress = { status, pourcentage: pct };
-            this.svc.saveVideoProgressionHttp(this.userId, target.id, status, pct, pageNum).subscribe();
+            if (this.viewerRessource) this.viewerRessource.maProgression = { statut, pourcentage: pct };
+            this.svc.saveVideoProgressionHttp(this.userId, target.id, statut, pct, pageNum).subscribe();
           }
         });
       });
@@ -230,8 +230,8 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       const sec = Math.floor(video.currentTime);
       const dur = video.duration || r.dureeSec || 1;
       const pct = Math.min(100, Math.round(sec / dur * 100));
-      const status: ProgressStatus = pct >= 95 ? 'COMPLETED' : 'IN_PROGRESS';
-      this.svc.saveVideoProgressionHttp(this.userId, r.id, status, pct, sec).subscribe();
+      const statut: ProgressStatus = pct >= 95 ? 'COMPLETED' : 'IN_PROGRESS';
+      this.svc.saveVideoProgressionHttp(this.userId, r.id, statut, pct, sec).subscribe();
     }, 10000);
   }
 
@@ -256,7 +256,7 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
 
   downloadRessource(r: Ressource) {
     const url = this.formatFullUrl(r.urlFichier || (r as any).urlExterne);
-    if (!url) { alert('No file attached.'); return; }
+    if (!url) { alert('Aucun fichier attaché.'); return; }
 
     fetch(url, { headers: { 'X-User-Id': String(this.userId), 'X-User-Role': this.userRole } })
       .then(res => {
@@ -273,7 +273,7 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       .catch(() => window.open(url, '_blank'));
   }
 
-  isCompleted(r: Ressource): boolean { return r.maProgress?.status === 'COMPLETED'; }
+  isCompleted(r: Ressource): boolean { return r.maProgression?.statut === 'COMPLETED'; }
   getProgressColor(s: string): string { return s === 'COMPLETED' ? 'var(--green)' : s === 'IN_PROGRESS' ? 'var(--teal)' : 'var(--text-muted)'; }
   getAccessBadge(a: string): string { return a === 'FREE' ? 'kh-badge--green' : a === 'PREMIUM' ? 'kh-badge--amber' : 'kh-badge--violet'; }
 
@@ -289,11 +289,11 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       } else solo.push(r);
     });
     this.folders = [];
-    grouped.forEach((files, name) => {
-      if (files.length > 1) this.folders.push({ name, files, expanded: false });
-      else solo.push(...files);
+    grouped.forEach((fichiers, name) => {
+      if (fichiers.length > 1) this.folders.push({ name, fichiers, expanded: false });
+      else solo.push(...fichiers);
     });
-    if (solo.length > 0) this.folders.push({ name: '__solo__', files: solo, expanded: true });
+    if (solo.length > 0) this.folders.push({ name: '__solo__', fichiers: solo, expanded: true });
   }
 
   toggleFolder(folder: CourseFolder) { folder.expanded = !folder.expanded; }

@@ -1,0 +1,34 @@
+<div class="requests-block kh-card">
+  <div class="requests-block__header">
+    <div>
+      <h2 class="kh-section-title">
+        {{ viewMode === 'sent' ? 'Sent requests' : viewMode === 'received' ? 'Received requests' : 'Collaboration requests' }}
+      </h2>
+      <p class="requests-block__subtitle" *ngIf="viewMode === 'sent'">Track invitations and join requests you have sent.</p>
+      <p class="requests-block__subtitle" *ngIf="viewMode === 'received'">Manage incoming invitations and collaboration requests.</p>
+      <p class="requests-block__subtitle" *ngIf="viewMode === 'collaboration'">Review requests linked to this collaboration or its project.</p>
+    </div>
+  </div>
+
+  <div *ngIf="!requests?.length" class="requests-block__empty">
+    No requests found.
+  </div>
+
+  <ul *ngIf="requests?.length" class="requests-block__list">
+    <li *ngFor="let request of requests; trackBy: trackByRequest" class="requests-block__item">
+      <div class="requests-block__meta">
+        <div>
+          <strong>{{ requestTitle(request) }}</strong>
+          <p>{{ requestSubtitle(request) }} · {{ request.createdAt | date:'MMM d, yyyy' }}</p>
+          <p>{{ requestActorLabel(request) }}</p>
+        </div>
+        <span class="kh-badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+      </div>
+      <div class="requests-block__actions">
+        <button *ngIf="canRespondToRequest(request)" class="kh-btn kh-btn--secondary" (click)="requestAccepted.emit({ requestId: request.id })">Accept</button>
+        <button *ngIf="canRespondToRequest(request)" class="kh-btn kh-btn--ghost" (click)="requestRejected.emit({ requestId: request.id })">Reject</button>
+        <button *ngIf="viewMode === 'sent' && canCancel" class="kh-btn kh-btn--ghost" (click)="requestCancelled.emit({ requestId: request.id })">Cancel</button>
+      </div>
+    </li>
+  </ul>
+</div>

@@ -1,0 +1,235 @@
+import { Component } from '@angular/core';
+import * as i0 from "@angular/core";
+import * as i1 from "../../../core/services/projet.service";
+import * as i2 from "@angular/common";
+import * as i3 from "@angular/router";
+function AdminDashboardComponent_div_80_Template(rf, ctx) { if (rf & 1) {
+    i0.ɵɵelementStart(0, "div", 52)(1, "div", 53)(2, "p", 54);
+    i0.ɵɵtext(3);
+    i0.ɵɵelementEnd();
+    i0.ɵɵelementStart(4, "span", 55);
+    i0.ɵɵtext(5);
+    i0.ɵɵelementEnd()();
+    i0.ɵɵelementStart(6, "div", 56)(7, "div", 57);
+    i0.ɵɵelement(8, "div", 58);
+    i0.ɵɵelementEnd();
+    i0.ɵɵelementStart(9, "span", 59);
+    i0.ɵɵtext(10);
+    i0.ɵɵelementEnd()()();
+} if (rf & 2) {
+    const p_r1 = ctx.$implicit;
+    i0.ɵɵadvance(3);
+    i0.ɵɵtextInterpolate(p_r1.titre);
+    i0.ɵɵadvance();
+    i0.ɵɵclassMap(p_r1.statut === "en_cours" ? "kh-badge--teal" : p_r1.statut === "termine" ? "kh-badge--green" : "kh-badge--amber");
+    i0.ɵɵadvance();
+    i0.ɵɵtextInterpolate(p_r1.statut);
+    i0.ɵɵadvance(3);
+    i0.ɵɵstyleProp("width", p_r1.progression, "%");
+    i0.ɵɵadvance(2);
+    i0.ɵɵtextInterpolate1("", p_r1.progression, "%");
+} }
+export class AdminDashboardComponent {
+    constructor(projetService) {
+        this.projetService = projetService;
+    }
+    get projets() { return this.projetService.projets; }
+    get stats() {
+        return {
+            totalProjets: this.projets.length,
+            enCours: this.projets.filter(p => p.statut === 'in_progress').length,
+            utilisateurs: 24, events: 3, abonnements: 18, talents: 12,
+        };
+    }
+    static { this.ɵfac = function AdminDashboardComponent_Factory(t) { return new (t || AdminDashboardComponent)(i0.ɵɵdirectiveInject(i1.ProjetService)); }; }
+    static { this.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: AdminDashboardComponent, selectors: [["app-admin-dashboard"]], decls: 142, vars: 7, consts: [[1, "page", "animate-1"], [1, "page-header"], [1, "kh-page-title"], [1, "page-sub"], ["routerLink", "/admin/utilisateurs", 1, "kh-btn", "kh-btn--primary"], [1, "kpi-grid", "animate-2"], [1, "kpi-card"], [1, "kpi-icon", 2, "background", "linear-gradient(135deg,#E8622A,#FF9A5C)"], ["width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "white", "stroke-width", "2"], ["d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"], [1, "kpi-value"], [1, "kpi-label"], [1, "kpi-trend", "up"], [1, "kpi-icon", 2, "background", "linear-gradient(135deg,#2ABFBF,#1a9999)"], ["d", "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"], ["cx", "9", "cy", "7", "r", "4"], [1, "kpi-icon", 2, "background", "linear-gradient(135deg,#7C5CBF,#5a3a9f)"], ["width", "20", "height", "14", "x", "2", "y", "5", "rx", "2"], ["x1", "2", "y1", "10", "x2", "22", "y2", "10"], [1, "kpi-icon", 2, "background", "linear-gradient(135deg,#27AE7A,#1a8a5e)"], ["width", "18", "height", "18", "x", "3", "y", "4", "rx", "2"], ["x1", "3", "y1", "10", "x2", "21", "y2", "10"], [1, "kpi-icon", 2, "background", "linear-gradient(135deg,#F5A623,#d4881e)"], ["d", "M13 2L3 14h9l-1 8 10-12h-9l1-8z"], [1, "kpi-icon", 2, "background", "linear-gradient(135deg,#E84A4A,#c73232)"], ["d", "M22 12h-4l-3 9L9 3l-3 9H2"], [1, "bottom-grid", "animate-3"], [1, "kh-card", "panel"], [1, "panel-header"], [1, "kh-section-title"], ["routerLink", "/admin/projets", 1, "kh-btn", "kh-btn--ghost", "kh-btn--sm"], ["class", "project-row", 4, "ngFor", "ngForOf"], [1, "quick-actions"], ["routerLink", "/admin/utilisateurs", 1, "qa-btn"], ["routerLink", "/admin/evenements", 1, "qa-btn"], ["routerLink", "/admin/abonnements", 1, "qa-btn"], ["routerLink", "/admin/talent", 1, "qa-btn"], ["routerLink", "/admin/bibliotheque", 1, "qa-btn"], ["routerLink", "/khotwaadmin/collaborations", 1, "qa-btn"], [1, "kh-card", "panel", "panel--wide"], [1, "alert-list"], [1, "alert-item", "alert-item--red"], [1, "dot-live", "dot-live--orange"], [1, "alert-title"], [1, "alert-meta"], [1, "kh-badge", "kh-badge--red"], [1, "alert-item", "alert-item--amber"], [1, "dot-live", "dot-live--amber"], [1, "kh-badge", "kh-badge--amber"], [1, "alert-item"], [1, "dot-live", "dot-live--green"], [1, "kh-badge", "kh-badge--green"], [1, "project-row"], [1, "project-row__info"], [1, "project-row__name"], [1, "kh-badge"], [1, "project-row__progress"], [1, "kh-progress"], [1, "kh-progress__fill"], [1, "prog-pct"]], template: function AdminDashboardComponent_Template(rf, ctx) { if (rf & 1) {
+            i0.ɵɵelementStart(0, "div", 0)(1, "div", 1)(2, "div")(3, "h1", 2);
+            i0.ɵɵtext(4, "Tableau de bord Admin");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(5, "p", 3);
+            i0.ɵɵtext(6, "Vue globale de la plateforme KHOTWA");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(7, "a", 4);
+            i0.ɵɵtext(8, "+ Add user");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(9, "div", 5)(10, "div", 6)(11, "div", 7);
+            i0.ɵɵnamespaceSVG();
+            i0.ɵɵelementStart(12, "svg", 8);
+            i0.ɵɵelement(13, "path", 9);
+            i0.ɵɵelementEnd()();
+            i0.ɵɵnamespaceHTML();
+            i0.ɵɵelementStart(14, "div")(15, "p", 10);
+            i0.ɵɵtext(16);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(17, "p", 11);
+            i0.ɵɵtext(18, "Projets total");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(19, "span", 12);
+            i0.ɵɵtext(20, "+2 ce mois");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(21, "div", 6)(22, "div", 13);
+            i0.ɵɵnamespaceSVG();
+            i0.ɵɵelementStart(23, "svg", 8);
+            i0.ɵɵelement(24, "path", 14)(25, "circle", 15);
+            i0.ɵɵelementEnd()();
+            i0.ɵɵnamespaceHTML();
+            i0.ɵɵelementStart(26, "div")(27, "p", 10);
+            i0.ɵɵtext(28);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(29, "p", 11);
+            i0.ɵɵtext(30, "Users actifs");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(31, "span", 12);
+            i0.ɵɵtext(32, "+5 ce mois");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(33, "div", 6)(34, "div", 16);
+            i0.ɵɵnamespaceSVG();
+            i0.ɵɵelementStart(35, "svg", 8);
+            i0.ɵɵelement(36, "rect", 17)(37, "line", 18);
+            i0.ɵɵelementEnd()();
+            i0.ɵɵnamespaceHTML();
+            i0.ɵɵelementStart(38, "div")(39, "p", 10);
+            i0.ɵɵtext(40);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(41, "p", 11);
+            i0.ɵɵtext(42, "Abonnements actifs");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(43, "span", 12);
+            i0.ɵɵtext(44, "+3 ce mois");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(45, "div", 6)(46, "div", 19);
+            i0.ɵɵnamespaceSVG();
+            i0.ɵɵelementStart(47, "svg", 8);
+            i0.ɵɵelement(48, "rect", 20)(49, "line", 21);
+            i0.ɵɵelementEnd()();
+            i0.ɵɵnamespaceHTML();
+            i0.ɵɵelementStart(50, "div")(51, "p", 10);
+            i0.ɵɵtext(52);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(53, "p", 11);
+            i0.ɵɵtext(54, "Upcoming events");
+            i0.ɵɵelementEnd()()();
+            i0.ɵɵelementStart(55, "div", 6)(56, "div", 22);
+            i0.ɵɵnamespaceSVG();
+            i0.ɵɵelementStart(57, "svg", 8);
+            i0.ɵɵelement(58, "path", 23);
+            i0.ɵɵelementEnd()();
+            i0.ɵɵnamespaceHTML();
+            i0.ɵɵelementStart(59, "div")(60, "p", 10);
+            i0.ɵɵtext(61);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(62, "p", 11);
+            i0.ɵɵtext(63, "Talents inscrits");
+            i0.ɵɵelementEnd()()();
+            i0.ɵɵelementStart(64, "div", 6)(65, "div", 24);
+            i0.ɵɵnamespaceSVG();
+            i0.ɵɵelementStart(66, "svg", 8);
+            i0.ɵɵelement(67, "path", 25);
+            i0.ɵɵelementEnd()();
+            i0.ɵɵnamespaceHTML();
+            i0.ɵɵelementStart(68, "div")(69, "p", 10);
+            i0.ɵɵtext(70);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(71, "p", 11);
+            i0.ɵɵtext(72, "Projets en cours");
+            i0.ɵɵelementEnd()()()();
+            i0.ɵɵelementStart(73, "div", 26)(74, "div", 27)(75, "div", 28)(76, "span", 29);
+            i0.ɵɵtext(77, "Recent projects");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(78, "a", 30);
+            i0.ɵɵtext(79, "View all");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵtemplate(80, AdminDashboardComponent_div_80_Template, 11, 7, "div", 31);
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(81, "div", 27)(82, "div", 28)(83, "span", 29);
+            i0.ɵɵtext(84, "Actions rapides");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(85, "div", 32)(86, "a", 33)(87, "span");
+            i0.ɵɵtext(88, "\uD83D\uDC65");
+            i0.ɵɵelementEnd();
+            i0.ɵɵtext(89, "Manage users");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(90, "a", 34)(91, "span");
+            i0.ɵɵtext(92, "\uD83D\uDCC5");
+            i0.ɵɵelementEnd();
+            i0.ɵɵtext(93, "Create event");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(94, "a", 35)(95, "span");
+            i0.ɵɵtext(96, "\uD83D\uDCB3");
+            i0.ɵɵelementEnd();
+            i0.ɵɵtext(97, "Abonnements");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(98, "a", 36)(99, "span");
+            i0.ɵɵtext(100, "\uD83C\uDFAF");
+            i0.ɵɵelementEnd();
+            i0.ɵɵtext(101, "Talent Market");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(102, "a", 37)(103, "span");
+            i0.ɵɵtext(104, "\uD83D\uDCDA");
+            i0.ɵɵelementEnd();
+            i0.ɵɵtext(105, "Library");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(106, "a", 38)(107, "span");
+            i0.ɵɵtext(108, "\uD83E\uDD1D");
+            i0.ɵɵelementEnd();
+            i0.ɵɵtext(109, "Collaborations");
+            i0.ɵɵelementEnd()()();
+            i0.ɵɵelementStart(110, "div", 39)(111, "div", 28)(112, "span", 29);
+            i0.ɵɵtext(113, "Alertes SLA actives");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(114, "div", 40)(115, "div", 41);
+            i0.ɵɵelement(116, "span", 42);
+            i0.ɵɵelementStart(117, "div")(118, "p", 43);
+            i0.ɵɵtext(119, "Prototype UI \u2014 E-Learning");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(120, "p", 44);
+            i0.ɵɵtext(121, "Blocked for 16 days \u00B7 Sara Trabelsi");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(122, "span", 45);
+            i0.ɵɵtext(123, "Urgent");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(124, "div", 46);
+            i0.ɵɵelement(125, "span", 47);
+            i0.ɵɵelementStart(126, "div")(127, "p", 43);
+            i0.ɵɵtext(128, "Business Plan \u2014 AgriSmart");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(129, "p", 44);
+            i0.ɵɵtext(130, "Blocked for 12 days");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(131, "span", 48);
+            i0.ɵɵtext(132, "Watch");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(133, "div", 49);
+            i0.ɵɵelement(134, "span", 50);
+            i0.ɵɵelementStart(135, "div")(136, "p", 43);
+            i0.ɵɵtext(137, "Tests QA \u2014 HealthMobile");
+            i0.ɵɵelementEnd();
+            i0.ɵɵelementStart(138, "p", 44);
+            i0.ɵɵtext(139, "Updated 2 days ago");
+            i0.ɵɵelementEnd()();
+            i0.ɵɵelementStart(140, "span", 51);
+            i0.ɵɵtext(141, "OK");
+            i0.ɵɵelementEnd()()()()()();
+        } if (rf & 2) {
+            i0.ɵɵadvance(16);
+            i0.ɵɵtextInterpolate(ctx.stats.totalProjets);
+            i0.ɵɵadvance(12);
+            i0.ɵɵtextInterpolate(ctx.stats.utilisateurs);
+            i0.ɵɵadvance(12);
+            i0.ɵɵtextInterpolate(ctx.stats.abonnements);
+            i0.ɵɵadvance(12);
+            i0.ɵɵtextInterpolate(ctx.stats.events);
+            i0.ɵɵadvance(9);
+            i0.ɵɵtextInterpolate(ctx.stats.talents);
+            i0.ɵɵadvance(9);
+            i0.ɵɵtextInterpolate(ctx.stats.enCours);
+            i0.ɵɵadvance(10);
+            i0.ɵɵproperty("ngForOf", ctx.projets.slice(0, 4));
+        } }, dependencies: [i2.NgForOf, i3.RouterLink], styles: [".page[_ngcontent-%COMP%] { display: flex; flex-direction: column; gap: 24px; }\n.page-header[_ngcontent-%COMP%] { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }\n.page-sub[_ngcontent-%COMP%] { color: var(--text-secondary); margin-top: 4px; }\n.kpi-grid[_ngcontent-%COMP%] { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; }\n.kpi-card[_ngcontent-%COMP%] { background: white; border-radius: var(--radius-md); padding: 18px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; transition: all 0.2s; }\n.kpi-card[_ngcontent-%COMP%]:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }\n.kpi-icon[_ngcontent-%COMP%] { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }\n.kpi-value[_ngcontent-%COMP%] { font-family: 'Plus Jakarta Sans',sans-serif; font-size: 24px; font-weight: 800; color: var(--text-primary); }\n.kpi-label[_ngcontent-%COMP%] { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }\n.kpi-trend[_ngcontent-%COMP%] { font-size: 11px; font-weight: 600; }\n.kpi-trend.up[_ngcontent-%COMP%] { color: var(--green); }\n.bottom-grid[_ngcontent-%COMP%] { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 18px; }\n.panel[_ngcontent-%COMP%] { padding: 22px; }\n.panel--wide[_ngcontent-%COMP%] { grid-column: span 2; }\n@media(max-width:700px) { .panel--wide[_ngcontent-%COMP%] { grid-column: span 1; } }\n.panel-header[_ngcontent-%COMP%] { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }\n.project-row[_ngcontent-%COMP%] { padding: 10px 0; border-bottom: 1px solid var(--border); }\n.project-row[_ngcontent-%COMP%]:last-child { border-bottom: none; }\n.project-row__info[_ngcontent-%COMP%] { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }\n.project-row__name[_ngcontent-%COMP%] { font-size: 13px; font-weight: 600; }\n.project-row__progress[_ngcontent-%COMP%] { display: flex; align-items: center; gap: 10px; }\n.project-row__progress[_ngcontent-%COMP%]   .kh-progress[_ngcontent-%COMP%] { flex: 1; }\n.prog-pct[_ngcontent-%COMP%] { font-size: 11px; font-weight: 700; color: var(--text-secondary); width: 30px; text-align: right; }\n.quick-actions[_ngcontent-%COMP%] { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }\n.qa-btn[_ngcontent-%COMP%] { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-app); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: var(--text-primary); text-decoration: none; transition: all 0.15s; }\n.qa-btn[_ngcontent-%COMP%]:hover { background: var(--orange-light); color: var(--orange); }\n.alert-list[_ngcontent-%COMP%] { display: flex; flex-direction: column; gap: 10px; }\n.alert-item[_ngcontent-%COMP%] { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--bg-app); }\n.alert-item--red[_ngcontent-%COMP%] { background: rgba(232,74,74,0.06); }\n.alert-item--amber[_ngcontent-%COMP%] { background: rgba(245,166,35,0.06); }\n.alert-title[_ngcontent-%COMP%] { font-size: 13px; font-weight: 600; }\n.alert-meta[_ngcontent-%COMP%] { font-size: 11px; color: var(--text-muted); margin-top: 2px; }"] }); }
+}
+(() => { (typeof ngDevMode === "undefined" || ngDevMode) && i0.ɵsetClassMetadata(AdminDashboardComponent, [{
+        type: Component,
+        args: [{ selector: 'app-admin-dashboard', template: "<div class=\"page animate-1\">\n  <div class=\"page-header\">\n    <div><h1 class=\"kh-page-title\">Tableau de bord Admin</h1><p class=\"page-sub\">Vue globale de la plateforme KHOTWA</p></div>\n    <a routerLink=\"/admin/utilisateurs\" class=\"kh-btn kh-btn--primary\">+ Add user</a>\n  </div>\n  <div class=\"kpi-grid animate-2\">\n    <div class=\"kpi-card\">\n      <div class=\"kpi-icon\" style=\"background:linear-gradient(135deg,#E8622A,#FF9A5C)\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><path d=\"M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z\"/></svg></div>\n      <div><p class=\"kpi-value\">{{ stats.totalProjets }}</p><p class=\"kpi-label\">Projets total</p></div><span class=\"kpi-trend up\">+2 ce mois</span>\n    </div>\n    <div class=\"kpi-card\">\n      <div class=\"kpi-icon\" style=\"background:linear-gradient(135deg,#2ABFBF,#1a9999)\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg></div>\n      <div><p class=\"kpi-value\">{{ stats.utilisateurs }}</p><p class=\"kpi-label\">Users actifs</p></div><span class=\"kpi-trend up\">+5 ce mois</span>\n    </div>\n    <div class=\"kpi-card\">\n      <div class=\"kpi-icon\" style=\"background:linear-gradient(135deg,#7C5CBF,#5a3a9f)\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"/><line x1=\"2\" y1=\"10\" x2=\"22\" y2=\"10\"/></svg></div>\n      <div><p class=\"kpi-value\">{{ stats.abonnements }}</p><p class=\"kpi-label\">Abonnements actifs</p></div><span class=\"kpi-trend up\">+3 ce mois</span>\n    </div>\n    <div class=\"kpi-card\">\n      <div class=\"kpi-icon\" style=\"background:linear-gradient(135deg,#27AE7A,#1a8a5e)\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"/></svg></div>\n      <div><p class=\"kpi-value\">{{ stats.events }}</p><p class=\"kpi-label\">Upcoming events</p></div>\n    </div>\n    <div class=\"kpi-card\">\n      <div class=\"kpi-icon\" style=\"background:linear-gradient(135deg,#F5A623,#d4881e)\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><path d=\"M13 2L3 14h9l-1 8 10-12h-9l1-8z\"/></svg></div>\n      <div><p class=\"kpi-value\">{{ stats.talents }}</p><p class=\"kpi-label\">Talents inscrits</p></div>\n    </div>\n    <div class=\"kpi-card\">\n      <div class=\"kpi-icon\" style=\"background:linear-gradient(135deg,#E84A4A,#c73232)\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><path d=\"M22 12h-4l-3 9L9 3l-3 9H2\"/></svg></div>\n      <div><p class=\"kpi-value\">{{ stats.enCours }}</p><p class=\"kpi-label\">Projets en cours</p></div>\n    </div>\n  </div>\n  <div class=\"bottom-grid animate-3\">\n    <div class=\"kh-card panel\">\n      <div class=\"panel-header\"><span class=\"kh-section-title\">Recent projects</span><a routerLink=\"/admin/projets\" class=\"kh-btn kh-btn--ghost kh-btn--sm\">View all</a></div>\n      <div *ngFor=\"let p of projets.slice(0,4)\" class=\"project-row\">\n        <div class=\"project-row__info\">\n          <p class=\"project-row__name\">{{ p.titre }}</p>\n          <span class=\"kh-badge\" [class]=\"p.statut==='en_cours'?'kh-badge--teal':p.statut==='termine'?'kh-badge--green':'kh-badge--amber'\">{{ p.statut }}</span>\n        </div>\n        <div class=\"project-row__progress\">\n          <div class=\"kh-progress\"><div class=\"kh-progress__fill\" [style.width.%]=\"p.progression\"></div></div>\n          <span class=\"prog-pct\">{{ p.progression }}%</span>\n        </div>\n      </div>\n    </div>\n    <div class=\"kh-card panel\">\n      <div class=\"panel-header\"><span class=\"kh-section-title\">Actions rapides</span></div>\n      <div class=\"quick-actions\">\n        <a routerLink=\"/admin/utilisateurs\" class=\"qa-btn\"><span>\uD83D\uDC65</span>Manage users</a>\n        <a routerLink=\"/admin/evenements\" class=\"qa-btn\"><span>\uD83D\uDCC5</span>Create event</a>\n        <a routerLink=\"/admin/abonnements\" class=\"qa-btn\"><span>\uD83D\uDCB3</span>Abonnements</a>\n        <a routerLink=\"/admin/talent\" class=\"qa-btn\"><span>\uD83C\uDFAF</span>Talent Market</a>\n        <a routerLink=\"/admin/bibliotheque\" class=\"qa-btn\"><span>\uD83D\uDCDA</span>Library</a>\n        <a routerLink=\"/khotwaadmin/collaborations\" class=\"qa-btn\"><span>\uD83E\uDD1D</span>Collaborations</a>\n      </div>\n    </div>\n    <div class=\"kh-card panel panel--wide\">\n      <div class=\"panel-header\"><span class=\"kh-section-title\">Alertes SLA actives</span></div>\n      <div class=\"alert-list\">\n        <div class=\"alert-item alert-item--red\"><span class=\"dot-live dot-live--orange\"></span><div><p class=\"alert-title\">Prototype UI \u2014 E-Learning</p><p class=\"alert-meta\">Blocked for 16 days \u00B7 Sara Trabelsi</p></div><span class=\"kh-badge kh-badge--red\">Urgent</span></div>\n        <div class=\"alert-item alert-item--amber\"><span class=\"dot-live dot-live--amber\"></span><div><p class=\"alert-title\">Business Plan \u2014 AgriSmart</p><p class=\"alert-meta\">Blocked for 12 days</p></div><span class=\"kh-badge kh-badge--amber\">Watch</span></div>\n        <div class=\"alert-item\"><span class=\"dot-live dot-live--green\"></span><div><p class=\"alert-title\">Tests QA \u2014 HealthMobile</p><p class=\"alert-meta\">Updated 2 days ago</p></div><span class=\"kh-badge kh-badge--green\">OK</span></div>\n      </div>\n    </div>\n  </div>\n</div>\n", styles: [".page { display: flex; flex-direction: column; gap: 24px; }\n.page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }\n.page-sub { color: var(--text-secondary); margin-top: 4px; }\n.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 14px; }\n.kpi-card { background: white; border-radius: var(--radius-md); padding: 18px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; transition: all 0.2s; }\n.kpi-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }\n.kpi-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }\n.kpi-value { font-family: 'Plus Jakarta Sans',sans-serif; font-size: 24px; font-weight: 800; color: var(--text-primary); }\n.kpi-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }\n.kpi-trend { font-size: 11px; font-weight: 600; }\n.kpi-trend.up { color: var(--green); }\n.bottom-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 18px; }\n.panel { padding: 22px; }\n.panel--wide { grid-column: span 2; }\n@media(max-width:700px) { .panel--wide { grid-column: span 1; } }\n.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }\n.project-row { padding: 10px 0; border-bottom: 1px solid var(--border); }\n.project-row:last-child { border-bottom: none; }\n.project-row__info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }\n.project-row__name { font-size: 13px; font-weight: 600; }\n.project-row__progress { display: flex; align-items: center; gap: 10px; }\n.project-row__progress .kh-progress { flex: 1; }\n.prog-pct { font-size: 11px; font-weight: 700; color: var(--text-secondary); width: 30px; text-align: right; }\n.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }\n.qa-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-app); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: var(--text-primary); text-decoration: none; transition: all 0.15s; }\n.qa-btn:hover { background: var(--orange-light); color: var(--orange); }\n.alert-list { display: flex; flex-direction: column; gap: 10px; }\n.alert-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--bg-app); }\n.alert-item--red { background: rgba(232,74,74,0.06); }\n.alert-item--amber { background: rgba(245,166,35,0.06); }\n.alert-title { font-size: 13px; font-weight: 600; }\n.alert-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }\n"] }]
+    }], () => [{ type: i1.ProjetService }], null); })();
+(() => { (typeof ngDevMode === "undefined" || ngDevMode) && i0.ɵsetClassDebugInfo(AdminDashboardComponent, { className: "AdminDashboardComponent", filePath: "app\\features\\admin\\dashboard\\dashboard.component.ts", lineNumber: 5 }); })();
+//# sourceMappingURL=dashboard.component.js.map

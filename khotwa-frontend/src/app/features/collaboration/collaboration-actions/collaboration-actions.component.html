@@ -1,0 +1,24 @@
+<div class="collaboration-actions kh-card">
+  <div class="collaboration-actions__header">
+    <div>
+      <h2 class="kh-section-title">Collaboration actions</h2>
+      <p>Update lifecycle status or leave the collaboration when the workflow allows it.</p>
+    </div>
+    <span
+      class="kh-badge"
+      [ngClass]="(collaboration?.status ?? 'UNKNOWN') === 'ACTIVE'
+        ? 'kh-badge--green'
+        : (collaboration?.status ?? 'UNKNOWN') === 'SUSPENDED'
+          ? 'kh-badge--amber'
+          : 'kh-badge--gray'">
+      {{ collaboration?.status ?? 'UNKNOWN' }}
+    </span>
+  </div>
+
+  <div class="collaboration-actions__buttons">
+    <button *ngIf="canUpdateStatus" class="kh-btn kh-btn--secondary" (click)="onUpdateStatus('ACTIVE')">Activate</button>
+    <button *ngIf="canUpdateStatus" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('SUSPENDED')">Suspend</button>
+    <button *ngIf="canUpdateStatus" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('CLOSED')">Close</button>
+    <button *ngIf="canLeave" class="kh-btn kh-btn--ghost" (click)="onLeaveCollaboration()">Leave</button>
+  </div>
+</div>

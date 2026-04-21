@@ -1,0 +1,107 @@
+.marketing-block {
+  padding: 24px;
+  display: grid;
+  gap: 24px;
+}
+
+.marketing-block__header,
+.marketing-block__section-header,
+.marketing-block__item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.marketing-block__header p,
+.marketing-block__section-header p,
+.marketing-block__item-content p {
+  color: var(--text-secondary);
+}
+
+.marketing-block__header p,
+.marketing-block__section-header p {
+  margin-top: 4px;
+}
+
+.marketing-block__section {
+  display: grid;
+  gap: 14px;
+}
+
+.marketing-block__form {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(124, 92, 191, 0.06) 0%, rgba(124, 92, 191, 0.02) 100%);
+  border: 1px solid rgba(124, 92, 191, 0.1);
+}
+
+.marketing-block__field {
+  display: grid;
+  gap: 6px;
+}
+
+.marketing-block__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.marketing-block__field input,
+.marketing-block__field select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #fff;
+}
+
+.marketing-block__cards {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.marketing-block__item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #f8f6fc 100%);
+}
+
+.marketing-block__item-content {
+  display: grid;
+  gap: 10px;
+}
+
+.marketing-block__meta,
+.marketing-block__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.marketing-block__actions {
+  padding-top: 4px;
+}
+
+.marketing-block__empty {
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--bg-app);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .marketing-block__header,
+  .marketing-block__section-header,
+  .marketing-block__item-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

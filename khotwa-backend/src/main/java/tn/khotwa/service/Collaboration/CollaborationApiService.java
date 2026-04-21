@@ -1,0 +1,81 @@
+package tn.khotwa.service.Collaboration;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import tn.khotwa.dto.Collaboration.ProjectSummaryDTO;
+import tn.khotwa.entity.Collaboration.Collaboration;
+import tn.khotwa.entity.Collaboration.CollaborationRequest;
+import tn.khotwa.enums.Collaboration.CollaborationStatus;
+import tn.khotwa.enums.Collaboration.CollaborationType;
+import tn.khotwa.repository.Collaboration.ProjectRepository;
+import tn.khotwa.service.User.CurrentUserService;
+
+@Service
+@RequiredArgsConstructor
+public class CollaborationApiService {
+
+    private final CollaborationService collaborationService;
+    private final ProjectRepository projectRepository;
+    private final CurrentUserService currentUserService;
+
+    public Collaboration createCollaboration(Long projectId, CollaborationType type) {
+        return collaborationService.createCollaboration(projectId, type);
+    }
+
+    public List<Collaboration> getCollaborations() {
+        return collaborationService.getCollaborations();
+    }
+
+    public Collaboration getCollaboration(Long collaborationId) {
+        return collaborationService.getCollaboration(collaborationId);
+    }
+
+    public List<Collaboration> getCollaborationsByProjectId(Long projectId) {
+        return collaborationService.getCollaborationsByProjectId(projectId);
+    }
+
+    public List<ProjectSummaryDTO> getMyProjects() {
+        Long userId = currentUserService.getCurrentUserId();
+        return projectRepository.findAllByOwner_IdUserOrderByIdDesc(userId).stream()
+            .map(ProjectSummaryDTO::fromEntity)
+            .collect(Collectors.toList());
+    }
+
+    public Collaboration updateCollaboration(Long collaborationId, CollaborationStatus status) {
+        return collaborationService.updateCollaboration(collaborationId, status);
+    }
+
+    public void removeMember(Long collaborationId, Long memberId) {
+        collaborationService.removeMember(collaborationId, memberId);
+    }
+
+    public void leaveCollaboration(Long collaborationId) {
+        collaborationService.leaveCollaboration(collaborationId);
+    }
+
+    public CollaborationRequest createCollaborationRequest(Long projectId, Long targetUserId, CollaborationType type, Long targetCollaborationId) {
+        return collaborationService.createCollaborationRequest(projectId, targetUserId, type, targetCollaborationId);
+    }
+
+    public List<CollaborationRequest> getSentCollaborationRequests() {
+        return collaborationService.getSentCollaborationRequests();
+    }
+
+    public List<CollaborationRequest> getReceivedCollaborationRequests() {
+        return collaborationService.getReceivedCollaborationRequests();
+    }
+
+    public List<CollaborationRequest> getProjectCollaborationRequests(Long projectId) {
+        return collaborationService.getProjectCollaborationRequests(projectId);
+    }
+
+    public CollaborationRequest acceptCollaborationRequest(Long requestId) {
+        return collaborationService.acceptCollaborationRequest(requestId);
+    }
+
+    public CollaborationRequest rejectCollaborationRequest(Long requestId) {
+        return collaborationService.rejectCollaborationRequest(requestId);
+    }
+}

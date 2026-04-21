@@ -1,0 +1,30 @@
+<div class="page">
+  <div class="page-header" *ngIf="showHeader">
+    <div>
+      <h1 class="kh-page-title">Collaborations</h1>
+      <p class="page-sub">Manage and view collaboration workspaces.</p>
+    </div>
+  </div>
+
+  <div *ngIf="showBody && error" class="kh-card collab-alert collab-alert--error">{{ error }}</div>
+
+  <div *ngIf="showBody && loading" class="kh-card collab-empty">Loading collaborations...</div>
+
+  <div *ngIf="showBody && !loading && sortedCollaborations.length" class="collaboration-grid">
+    <app-collaboration-card
+      *ngFor="let collaboration of sortedCollaborations; trackBy: trackByCollaboration"
+      [collaboration]="collaboration"
+      [role]="auth.isAdmin ? 'admin' : auth.isCoach ? 'coach' : 'entrepreneur'"
+      [compact]="compact"
+      [routerLink]="collaborationLink(collaboration.id)">
+    </app-collaboration-card>
+  </div>
+
+  <div *ngIf="showBody && !loading && !collaborations.length" class="kh-card collab-empty">
+    <h2 class="kh-section-title">{{ emptyStateTitle || 'No collaborations yet' }}</h2>
+    <p>{{ emptyStateDescription || 'You do not have any collaborations yet. Create one to start managing members, resources, and marketing work.' }}</p>
+    <a *ngIf="emptyStateActionLabel && emptyStateActionLink" [routerLink]="emptyStateActionLink" class="kh-btn kh-btn--primary">
+      {{ emptyStateActionLabel }}
+    </a>
+  </div>
+</div>

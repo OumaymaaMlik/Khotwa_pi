@@ -1,0 +1,112 @@
+.resources-block {
+  padding: 24px;
+  display: grid;
+  gap: 24px;
+}
+
+.resources-block__header,
+.resources-block__section-header,
+.resources-block__item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.resources-block__header p,
+.resources-block__section-header p,
+.resources-block__item-content p {
+  color: var(--text-secondary);
+}
+
+.resources-block__header p,
+.resources-block__section-header p {
+  margin-top: 4px;
+}
+
+.resources-block__section {
+  display: grid;
+  gap: 14px;
+}
+
+.resources-block__section--form {
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(232, 98, 42, 0.05) 0%, rgba(232, 98, 42, 0.02) 100%);
+  border: 1px solid rgba(232, 98, 42, 0.1);
+}
+
+.resources-block__form {
+  display: grid;
+  gap: 12px;
+}
+
+.resources-block__field {
+  display: grid;
+  gap: 6px;
+}
+
+.resources-block__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.resources-block__field input,
+.resources-block__field select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #fff;
+}
+
+.resources-block__cards,
+.resource-requests-list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.resources-block__item,
+.resource-requests-list__item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #faf8f4 100%);
+}
+
+.resources-block__item-content {
+  display: grid;
+  gap: 10px;
+}
+
+.resources-block__meta,
+.resources-block__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resources-block__actions {
+  padding-top: 4px;
+}
+
+.resources-block__empty {
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--bg-app);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .resources-block__header,
+  .resources-block__section-header,
+  .resources-block__item-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

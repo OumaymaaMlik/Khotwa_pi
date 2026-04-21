@@ -1,0 +1,30 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="kh-page-title">Collaboration requests</h1>
+      <p class="page-sub">Review invitations you sent and requests waiting for your response.</p>
+    </div>
+    <a routerLink="/entrepreneur/collaborations" class="kh-btn kh-btn--ghost">Back to collaborations</a>
+  </div>
+
+  <div *ngIf="loading" class="kh-card collab-empty">Loading requests...</div>
+  <div *ngIf="error" class="kh-card collab-alert collab-alert--error">{{ error }}</div>
+
+  <app-requests-block
+    *ngIf="!loading && !error"
+    [requests]="sentRequests"
+    viewMode="sent"
+    [role]="currentUserRole"
+    [currentUserId]="currentUserId">
+  </app-requests-block>
+
+  <app-requests-block
+    *ngIf="!loading && !error"
+    [requests]="receivedRequests"
+    viewMode="received"
+    [role]="currentUserRole"
+    [currentUserId]="currentUserId"
+    (requestAccepted)="onRequestAccepted($event)"
+    (requestRejected)="onRequestRejected($event)">
+  </app-requests-block>
+</div>

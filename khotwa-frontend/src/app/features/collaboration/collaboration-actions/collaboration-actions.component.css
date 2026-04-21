@@ -1,0 +1,30 @@
+.collaboration-actions {
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.collaboration-actions__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.collaboration-actions__header p {
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+.collaboration-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .collaboration-actions__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
