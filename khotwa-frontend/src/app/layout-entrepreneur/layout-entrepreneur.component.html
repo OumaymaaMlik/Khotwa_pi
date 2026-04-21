@@ -43,7 +43,7 @@
               <button (click)="notifService.markAllRead(); notifOpen=false">Mark all as read</button>
             </div>
 
-            <div *ngFor="let n of notifs" class="ent-notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+            <div *ngFor="let n of notifs" class="ent-notif-item" [class.unread]="!n.read" (click)="onNotifClick(n)">
               <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
               <div>
                 <p class="ent-notif-item__title">

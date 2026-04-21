@@ -93,4 +93,8 @@ export class MessageService {
   getOnlineUsers(): Observable<number[]> {
     return this.http.get<number[]>(`${this.apiUrl}/messages/presence/all-online`);
   }
+
+  initiateContact(senderId: number, receiverId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/messages/initiate?senderId=${senderId}&receiverId=${receiverId}`, {});
+  }
 }

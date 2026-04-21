@@ -1,14 +1,10 @@
-<<<<<<< HEAD
 /khotwa-backend/target/
 /khotwa-backend/*.jar
-
 /khotwa-frontend/node_modules/
 /khotwa-frontend/dist/
 /khotwa-frontend/.angular/
-=======
-
-
+/khotwa-frontend/.idea/
+/khotwa-frontend/.vscode/
 # Archives
 *.zip
-node_modules/
->>>>>>> amira
+

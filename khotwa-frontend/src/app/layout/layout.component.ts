@@ -200,9 +200,10 @@ logout(): void {
       this.router.navigateByUrl(n.link);
       return;
     }
-    const target = n.senderId
-      ? `${this.rolePrefix}/messages?conversationId=${n.senderId}`
-      : `${this.rolePrefix}/messages`;
-    this.router.navigateByUrl(target);
+    if (n.senderId) {
+      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: n.senderId } });
+    } else {
+      this.router.navigate([`${this.rolePrefix}/messages`]);
+    }
   }
 }

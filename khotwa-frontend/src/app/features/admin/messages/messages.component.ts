@@ -51,7 +51,15 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['conversationId']) {
-        this.autoSelectConversationId = Number(params['conversationId']);
+        const conversationId = Number(params['conversationId']);
+        // If conversations are already loaded, select immediately
+        if (this.conversations.length > 0) {
+          const conv = this.conversations.find(c => c.participantId === conversationId);
+          if (conv) this.selectConv(conv);
+        } else {
+          // Otherwise mark it for auto-selection after loading
+          this.autoSelectConversationId = conversationId;
+        }
       }
     });
     this.loadInbox();
