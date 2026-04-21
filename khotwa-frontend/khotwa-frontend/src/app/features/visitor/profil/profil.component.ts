@@ -1,7 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { TalentService } from '../../../core/services/talent.service';
-import { TalentProfileEntity } from '../../../core/models/talent.model';
+import {
+  AiRecommendation,
+  Annonce,
+  SkillGapAnalysis,
+  TalentAiAdviceResponse,
+  TalentProfileEntity
+} from '../../../core/models/talent.model';
 
 @Component({
   selector: 'app-visitor-profil',
@@ -26,6 +32,11 @@ export class VisitorProfilComponent implements OnInit {
   loadError = '';
   saveError = '';
   success = '';
+  selectedJobId: number | null = null;
+  jobs: Annonce[] = [];
+  aiAdvice: TalentAiAdviceResponse | null = null;
+  skillGap: SkillGapAnalysis | null = null;
+  aiRecommendations: AiRecommendation[] = [];
 
   niveaux = [
     { v: 'JUNIOR', l: 'Junior' },
@@ -59,6 +70,8 @@ export class VisitorProfilComponent implements OnInit {
         },
       });
     }
+    this.talentService.getAnnonces().subscribe({ next: (jobs) => this.jobs = jobs ?? [] });
+    this.loadAiRecommendations();
   }
 
   get isUpdate(): boolean {
@@ -87,12 +100,43 @@ export class VisitorProfilComponent implements OnInit {
         }
         this.loading = false;
         this.success = tid != null ? 'Profil mis à jour.' : 'Profil créé. Vous pouvez postuler aux offres.';
+        this.runCareerAdvice();
         setTimeout(() => this.success = '', 5000);
       },
       error: () => {
         this.loading = false;
         this.saveError = 'Erreur API (`POST/PUT /api/talents`). Vérifiez CORS et le backend.';
       },
+    });
+  }
+
+  runCareerAdvice(): void {
+    const skills = (this.form.competences || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    this.talentService.getTalentAiAdvice({
+      goal: 'Evolution de carrière',
+      competences: skills,
+      niveauExperience: this.form.niveauExperience,
+      bio: this.form.bio,
+    }).subscribe({
+      next: (res) => this.aiAdvice = res,
+    });
+  }
+
+  analyzeSkillGap(): void {
+    const tid = this.auth.currentUser?.talentProfileId;
+    if (tid == null || this.selectedJobId == null) return;
+    this.talentService.getSkillGap(tid, this.selectedJobId).subscribe({
+      next: (res) => this.skillGap = res,
+      error: () => this.saveError = 'Impossible de calculer le skill gap.',
+    });
+  }
+
+  loadAiRecommendations(): void {
+    this.talentService.getAiRecommendations().subscribe({
+      next: (rows) => this.aiRecommendations = rows ?? [],
     });
   }
 }

@@ -184,7 +184,7 @@
             <span class="kh-badge"
               [class.kh-badge--orange]="a.typePoste?.toUpperCase() === 'COFONDATEUR'"
               [class.kh-badge--teal]="a.typePoste?.toUpperCase() === 'STAGIAIRE'"
-              [class.kh-badge--green]="a.typePoste?.toUpperCase() === 'EMPLOI'">
+              [class.kh-badge--green]="a.typePoste?.toUpperCase() === 'EMPLOI' || a.typePoste?.toUpperCase() === 'EMPLOYE'">
               {{ a.typePoste }}
             </span>
             <div class="action-icons">
@@ -250,6 +250,14 @@
             <li *ngFor="let r of hiringAiResult.risquesOuGaps">{{ r }}</li>
           </ul>
         </div>
+        <div class="tm-ai-output" *ngIf="aiInsights.length">
+          <h4>AI Insights</h4>
+          <ul>
+            <li *ngFor="let i of aiInsights | slice:0:6">
+              [{{ i.type }} - {{ i.confidenceScore }}%] {{ i.content }}
+            </li>
+          </ul>
+        </div>
       </div>
     </aside>
   </div>
@@ -271,7 +279,7 @@
         <span class="kh-badge"
           [class.kh-badge--orange]="(selectedAnnonce.typePoste||'').toUpperCase() === 'COFONDATEUR'"
           [class.kh-badge--teal]="(selectedAnnonce.typePoste||'').toUpperCase() === 'STAGIAIRE'"
-          [class.kh-badge--green]="(selectedAnnonce.typePoste||'').toUpperCase() === 'EMPLOI'">
+          [class.kh-badge--green]="(selectedAnnonce.typePoste||'').toUpperCase() === 'EMPLOI' || (selectedAnnonce.typePoste||'').toUpperCase() === 'EMPLOYE'">
           {{ selectedAnnonce.typePoste }}
         </span>
         <span *ngIf="selectedAnnonce.localisation" class="tm-meta-chip">📍 {{ selectedAnnonce.localisation }}</span>

@@ -35,6 +35,6 @@ public class Annonce {
     private Startup startup;
 
     public enum TypePoste {
-        COFONDATEUR, STAGIAIRE, EMPLOYE
+        COFONDATEUR, STAGIAIRE, EMPLOI, EMPLOYE
     }
 }

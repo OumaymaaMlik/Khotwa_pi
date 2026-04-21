@@ -13,7 +13,10 @@ import {
   TalentAiAdviceRequest,
   TalentAiAdviceResponse,
   HiringAiRequest,
-  HiringAiResponse
+  HiringAiResponse,
+  MatchingInsight,
+  SkillGapAnalysis,
+  AiRecommendation
 } from '../models/talent.model';
 
 @Injectable({ providedIn: 'root' })
@@ -195,6 +198,21 @@ updateAnnonce(id: number, data: any): Observable<any> {
     return this.http.post<HiringAiResponse>(`${this.API}/ai/hiring-advice`, payload).pipe(
       catchError(() => of(this.buildLocalHiringAdvice(payload))),
     );
+  }
+
+  getMatchingInsight(talentId: number, jobId: number): Observable<MatchingInsight> {
+    return this.http.get<MatchingInsight>(`${this.API}/matching/${talentId}/${jobId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getSkillGap(talentId: number, jobId: number): Observable<SkillGapAnalysis> {
+    return this.http.get<SkillGapAnalysis>(`${this.API}/talents/${talentId}/skill-gap/${jobId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getAiRecommendations(): Observable<AiRecommendation[]> {
+    return this.http.get<AiRecommendation[]>(`${this.API}/ai/recommendations`)
+      .pipe(catchError(this.handleError));
   }
 
   private buildLocalHiringAdvice(payload: HiringAiRequest): HiringAiResponse {

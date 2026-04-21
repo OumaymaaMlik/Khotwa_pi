@@ -31,10 +31,7 @@ public class CandidatureService {
         Annonce annonce = annonceRepository.findById(annonceId)
                 .orElseThrow(() -> new RuntimeException("Annonce introuvable"));
 
-        double score = matchingService.calculerScore(
-                annonce.getCompetencesRequises(),
-                talent.getCompetences()
-        );
+        double score = matchingService.calculateDetailedMatching(talentId, annonceId).getScore();
 
         Candidature candidature = Candidature.builder()
                 .talent(talent)
@@ -65,10 +62,7 @@ public class CandidatureService {
     }
 
     private MatchingResponseDTO buildMatchingResult(TalentProfile talent, Annonce annonce) {
-        double score = matchingService.calculerScore(
-                annonce.getCompetencesRequises(),
-                talent.getCompetences()
-        );
+        double score = matchingService.calculateDetailedMatching(talent.getId(), annonce.getId()).getScore();
 
         Set<String> requis = parseSet(annonce.getCompetencesRequises());
         Set<String> candidatSet = parseSet(talent.getCompetences());

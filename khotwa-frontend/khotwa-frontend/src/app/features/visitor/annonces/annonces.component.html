@@ -46,6 +46,22 @@
       <button type="button" class="vis-icon-x" (click)="closeModal()" aria-label="Fermer">×</button>
     </header>
     <div class="vis-modal__body">
+      <ng-container *ngIf="selected">
+        <div *ngIf="matchLoadingByJob[selected.id]" class="vis-muted">Calcul du matching...</div>
+        <div *ngIf="matchingByJob[selected.id] as m" class="vis-match">
+          <p class="vis-match__score">
+            Score: <strong>{{ m.score | number:'1.0-1' }}%</strong>
+            · Confiance: {{ m.confidenceScore | number:'1.0-1' }}%
+          </p>
+          <ul class="vis-match__exp">
+            <li *ngFor="let e of m.explanation">{{ e }}</li>
+          </ul>
+          <div class="vis-match__skills">
+            <span *ngFor="let s of m.matchedSkills" class="vis-skill vis-skill--ok">{{ s }}</span>
+            <span *ngFor="let s of m.missingSkills" class="vis-skill vis-skill--miss">{{ s }}</span>
+          </div>
+        </div>
+      </ng-container>
       <p *ngIf="talentId == null" class="vis-alert vis-alert--err">
         Vous devez d’abord enregistrer votre <a routerLink="/visitor/profil">profil talent</a>.
       </p>

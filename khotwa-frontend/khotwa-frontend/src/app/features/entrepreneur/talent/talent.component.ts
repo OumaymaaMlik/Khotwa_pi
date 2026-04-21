@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { TalentService } from '../../../core/services/talent.service';
 import {
   Annonce,
+  AiRecommendation,
   HiringAiResponse,
   MatchingResultDTO,
   TalentCompetence,
@@ -72,10 +73,12 @@ export class EntrepreneurTalentComponent implements OnInit {
   hiringAiLoading = false;
   hiringAiResult: HiringAiResponse | null = null;
   hiringContext = '';
+  aiInsights: AiRecommendation[] = [];
 
   ngOnInit(): void {
     this.loadTalents();
     this.loadAnnonces();
+    this.loadAiInsights();
   }
 
   loadTalents(): void {
@@ -304,12 +307,19 @@ export class EntrepreneurTalentComponent implements OnInit {
         next: (res) => {
           this.hiringAiResult = res;
           this.hiringAiLoading = false;
+          this.loadAiInsights();
         },
         error: () => {
           this.hiringAiLoading = false;
           this.error = 'La génération IA a échoué. Vérifiez /api/ai/hiring-advice.';
         },
       });
+  }
+
+  loadAiInsights(): void {
+    this.talentService.getAiRecommendations().subscribe({
+      next: (rows) => this.aiInsights = rows ?? [],
+    });
   }
 
   getScoreColor(score: number): string {

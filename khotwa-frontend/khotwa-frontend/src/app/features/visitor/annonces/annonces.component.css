@@ -242,6 +242,52 @@
   resize: vertical;
 }
 
+.vis-match {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+}
+
+.vis-match__score {
+  margin: 0 0 8px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.vis-match__exp {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.vis-match__skills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vis-skill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.vis-skill--ok {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.vis-skill--miss {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
 .vis-modal__foot {
   display: flex;
   justify-content: flex-end;

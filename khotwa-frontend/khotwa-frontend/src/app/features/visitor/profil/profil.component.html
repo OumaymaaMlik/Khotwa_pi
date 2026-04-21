@@ -58,4 +58,45 @@
       {{ loading ? 'Enregistrement…' : (isUpdate ? 'Mettre à jour' : 'Créer mon profil') }}
     </button>
   </form>
+
+  <section class="vis-form vis-extra">
+    <h3>Career Advice (IA)</h3>
+    <button type="button" class="vis-submit" (click)="runCareerAdvice()">Générer conseil carrière</button>
+    <div *ngIf="aiAdvice" class="vis-box">
+      <p><strong>{{ aiAdvice.resume }}</strong></p>
+      <p>Points forts: {{ aiAdvice.pointsForts.join(', ') }}</p>
+      <p>Compétences prioritaires: {{ aiAdvice.competencesPrioritaires.join(', ') }}</p>
+      <ul>
+        <li *ngFor="let n of aiAdvice.nextActions">{{ n }}</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="vis-form vis-extra">
+    <h3>Skill Gap Analyzer</h3>
+    <select [(ngModel)]="selectedJobId" name="selectedJobId">
+      <option [ngValue]="null">Choisir une offre</option>
+      <option *ngFor="let j of jobs" [ngValue]="j.id">{{ j.titre }}</option>
+    </select>
+    <button type="button" class="vis-submit" (click)="analyzeSkillGap()" [disabled]="selectedJobId == null">Analyser</button>
+    <div *ngIf="skillGap" class="vis-box">
+      <p>Compétences manquantes:</p>
+      <ul>
+        <li *ngFor="let m of skillGap.missingSkills" class="miss">{{ m }}</li>
+      </ul>
+      <p>Learning path recommandé:</p>
+      <ul>
+        <li *ngFor="let l of skillGap.recommendedLearningPath">{{ l }}</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="vis-form vis-extra">
+    <h3>AI Insights</h3>
+    <div *ngIf="aiRecommendations.length === 0" class="vis-sub">Aucune recommandation enregistrée.</div>
+    <div *ngFor="let r of aiRecommendations" class="vis-box">
+      <p><strong>{{ r.type }}</strong> · confiance {{ r.confidenceScore }}%</p>
+      <p>{{ r.content }}</p>
+    </div>
+  </section>
 </div>

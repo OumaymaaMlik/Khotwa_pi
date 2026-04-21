@@ -1,16 +1,20 @@
 package tn.khotwa.service.sertalent;
 
+import lombok.RequiredArgsConstructor;
 import tn.khotwa.DTO.talent.HiringAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.HiringAiAdviceResponseDTO;
 import tn.khotwa.DTO.talent.TalentAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.TalentAiAdviceResponseDTO;
 import org.springframework.stereotype.Service;
+import tn.khotwa.entity.talent.AiRecommendation;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AiAdviceService {
+    private final AiRecommendationService aiRecommendationService;
 
     private static final List<String> HIRING_SKILLS_BASE = List.of(
             "Problem solving", "Communication", "Autonomie",
@@ -33,7 +37,8 @@ public class AiAdviceService {
         suggested.addAll(HIRING_SKILLS_BASE);
         if (metiers.stream().anyMatch(m -> m.toLowerCase().contains("genai") || m.toLowerCase().contains("ml"))) {
             suggested.add("Prompt engineering");
-            suggested.add("RAG");
+            suggested.add("LLM Fine-tuning");
+            suggested.add("Vector databases");
             suggested.add("LLMOps observability");
         }
         if (metiers.stream().anyMatch(m -> m.toLowerCase().contains("blockchain") || m.toLowerCase().contains("web3"))) {
@@ -54,6 +59,13 @@ public class AiAdviceService {
                 "Quelles strategies utilisez-vous pour reduire le risque de regression en production ?",
                 "Cas pratique: donnees incompletes et deadline courte, que faites-vous ?"
         );
+        if (req.getExperienceYears() != null && req.getExperienceYears() < 2) {
+            interview = List.of(
+                    "Question junior: comment decomposez-vous une tache complexe ?",
+                    "Question junior: que faites-vous si vous etes bloque plus de 30 minutes ?",
+                    "Question junior: expliquez un mini-projet et ce que vous avez appris."
+            );
+        }
 
         List<String> onboarding = List.of(
                 "Acces environnement (repo, CI/CD, monitoring, data).",
@@ -68,14 +80,28 @@ public class AiAdviceService {
         if (skills.size() > 8) {
             risks.add("Trop de competences exigees: risque de time-to-hire eleve.");
         }
+        String stage = safe(req.getStartupStage(), "");
+        if (stage.equalsIgnoreCase("early")) {
+            suggested.add("Polyvalence produit + execution rapide");
+            risks.add("En phase early-stage, privilegier des profils polyvalents.");
+        }
 
-        return HiringAiAdviceResponseDTO.builder()
+        HiringAiAdviceResponseDTO response = HiringAiAdviceResponseDTO.builder()
                 .fichePoste(fiche)
                 .competencesSuggerees(suggested.stream().limit(10).collect(Collectors.toList()))
                 .questionsEntretien(interview)
                 .checklistOnboarding(onboarding)
                 .risquesOuGaps(risks)
                 .build();
+
+        aiRecommendationService.save(
+                AiRecommendation.RecommendationType.HIRING,
+                response.getFichePoste() + " | Risques: " + String.join("; ", response.getRisquesOuGaps()),
+                estimateConfidence(response.getCompetencesSuggerees().size(), response.getRisquesOuGaps().size()),
+                null,
+                null
+        );
+        return response;
     }
 
     public TalentAiAdviceResponseDTO buildTalentAdvice(TalentAiAdviceRequestDTO req) {
@@ -106,12 +132,20 @@ public class AiAdviceService {
                 + "Profil avec " + skills.size() + " competence(s) declaree(s). "
                 + "Priorite: augmenter l'impact prouve et la visibilite des realisations.";
 
-        return TalentAiAdviceResponseDTO.builder()
+        TalentAiAdviceResponseDTO response = TalentAiAdviceResponseDTO.builder()
                 .resume(resume)
                 .pointsForts(strengths)
                 .competencesPrioritaires(priorities.stream().limit(5).collect(Collectors.toList()))
                 .nextActions(nextActions)
                 .build();
+        aiRecommendationService.save(
+                AiRecommendation.RecommendationType.TALENT,
+                response.getResume() + " | Next: " + String.join("; ", response.getNextActions()),
+                estimateConfidence(response.getPointsForts().size(), 0),
+                null,
+                null
+        );
+        return response;
     }
 
     private String safe(String value, String fallback) {
@@ -129,5 +163,10 @@ public class AiAdviceService {
 
     private List<String> safeList(List<String> input) {
         return input == null ? new ArrayList<>() : input;
+    }
+
+    private double estimateConfidence(int signals, int penalties) {
+        double confidence = 70 + (signals * 4) - (penalties * 3);
+        return Math.max(20, Math.min(98, confidence));
     }
 }

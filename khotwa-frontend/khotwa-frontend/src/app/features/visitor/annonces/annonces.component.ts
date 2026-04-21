@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { TalentService } from '../../../core/services/talent.service';
-import { Annonce } from '../../../core/models/talent.model';
+import { Annonce, MatchingInsight } from '../../../core/models/talent.model';
 
 @Component({
   selector: 'app-visitor-annonces',
@@ -19,6 +19,8 @@ export class VisitorAnnoncesComponent implements OnInit {
   success = '';
   searchTerm = '';
   selectedType = 'all';
+  matchingByJob: Record<number, MatchingInsight> = {};
+  matchLoadingByJob: Record<number, boolean> = {};
 
   constructor(
     private talentService: TalentService,
@@ -45,6 +47,24 @@ export class VisitorAnnoncesComponent implements OnInit {
     this.success = '';
     this.message = '';
     this.selected = a;
+    if (!this.matchingByJob[a.id]) {
+      this.loadMatching(a);
+    }
+  }
+
+  loadMatching(a: Annonce): void {
+    const tid = this.talentId;
+    if (tid == null) return;
+    this.matchLoadingByJob[a.id] = true;
+    this.talentService.getMatchingInsight(tid, a.id).subscribe({
+      next: (m) => {
+        this.matchingByJob[a.id] = m;
+        this.matchLoadingByJob[a.id] = false;
+      },
+      error: () => {
+        this.matchLoadingByJob[a.id] = false;
+      }
+    });
   }
 
   closeModal(): void {

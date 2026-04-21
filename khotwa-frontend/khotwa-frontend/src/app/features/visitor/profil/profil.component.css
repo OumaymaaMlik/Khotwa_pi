@@ -122,3 +122,20 @@ h1 {
   color: #9a3412;
   border: 1px solid #fed7aa;
 }
+
+.vis-extra {
+  margin-top: 14px;
+}
+
+.vis-box {
+  margin-top: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.miss {
+  color: #b91c1c;
+  font-weight: 600;
+}

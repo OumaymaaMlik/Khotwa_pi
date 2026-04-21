@@ -104,6 +104,8 @@ export interface HiringAiRequest {
   metiers?: string[];
   localisation?: string;
   contexte?: string;
+  startupStage?: string;
+  experienceYears?: number;
 }
 
 export interface HiringAiResponse {
@@ -112,4 +114,31 @@ export interface HiringAiResponse {
   questionsEntretien: string[];
   checklistOnboarding: string[];
   risquesOuGaps: string[];
+}
+
+export interface MatchingInsight {
+  talentId: number;
+  jobId: number;
+  score: number;
+  confidenceScore: number;
+  explanation: string[];
+  missingSkills: string[];
+  matchedSkills: string[];
+}
+
+export interface SkillGapAnalysis {
+  talentId: number;
+  jobId: number;
+  missingSkills: string[];
+  recommendedLearningPath: string[];
+}
+
+export interface AiRecommendation {
+  id: number;
+  type: 'HIRING' | 'TALENT';
+  content: string;
+  confidenceScore: number;
+  createdAt: string;
+  relatedJobId?: number;
+  relatedTalentId?: number;
 }
