@@ -1,11 +1,10 @@
 package tn.khotwa.service.UserServices;
 
-import tn.khotwa.dto.user.AuthResponse;
-import tn.khotwa.dto.user.LoginRequest;
-import tn.khotwa.dto.user.RegisterRequest;
-import tn.khotwa.dto.user.UserResponse;
+import tn.khotwa.dto.projet.AuthLoginResponseDto;
+import tn.khotwa.dto.projet.LoginRequest;
+import tn.khotwa.dto.projet.RegisterRequest;
 
 public interface AuthService {
-    UserResponse register(RegisterRequest request);
-    AuthResponse login(LoginRequest request);
+    AuthLoginResponseDto register(RegisterRequest request);
+    AuthLoginResponseDto login(LoginRequest request);
 }

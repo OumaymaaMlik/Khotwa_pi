@@ -33,15 +33,19 @@ export class AuthService {
 
 
   loginWithEmailAndPassword(email: string, password: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/api/auth/login`, { email, password }).pipe(
-      tap(() => {
-        // Optionally fetch user profile after login if needed
-        this.setCurrentUser({ id: email, nom: '', prenom: '', email, role: 'entrepreneur' });
+    // Backend expects emailAddress
+    return this.http.post<any>(`${this.apiUrl}/api/auth/login`, { emailAddress: email, password }).pipe(
+      tap((res) => {
+        if (res && res.token) {
+          this.setCurrentUser(this.toFrontendUser(res));
+          localStorage.setItem('khotwa-jwt', res.token);
+        }
       })
     );
   }
 
-  register(data: { firstName: string; middleName: string; email: string; password: string; role: string; birthday?: string }): Observable<any> {
+  register(data: any): Observable<any> {
+    // data should already have correct backend field names
     return this.http.post<any>(`${this.apiUrl}/api/auth/register`, data);
   }
 
@@ -85,17 +89,25 @@ export class AuthService {
     }
   }
 
-  private toFrontendUser(user: BackendAuthUser): User {
-    const role = user.role.toLowerCase() as UserRole;
+  private toFrontendUser(user: any): User {
+    const role = (user.role || '').toLowerCase() as UserRole;
+    // Mapping compatible équipe : id (string) et idUser (number)
+    const id = user.idUser ?? user.id;
     return {
-      id: String(user.id),
-      idUser: user.id,
-      nom: user.nom,
-      prenom: user.prenom,
-      email: user.email,
+      id: id ? String(id) : '',
+      idUser: typeof id === 'number' ? id : Number(id),
+      nom: user.nom || user.firstName || '',
+      prenom: user.prenom || user.lastName || '',
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email || user.emailAddress || '',
+      emailAddress: user.emailAddress,
       role,
-      phoneNumber: user.telephone ?? undefined,
-      startup: user.nomAffiche ?? undefined,
+      phoneNumber: user.phoneNumber || user.telephone || undefined,
+      startup: user.nomAffiche ?? user.startup ?? undefined,
+      avatar: user.avatar,
+      planType: user.planType,
+      pendingPlan: user.pendingPlan,
     };
   }
 }

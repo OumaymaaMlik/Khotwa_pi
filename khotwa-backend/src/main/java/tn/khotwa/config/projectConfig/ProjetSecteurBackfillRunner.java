@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.entity.projectEntity.Projet;
-import tn.khotwa.repository.projectRepository.ProjetRepository;
+import tn.khotwa.entity.projet.Projet;
+import tn.khotwa.repository.projet.ProjetRepository;
 
 import java.util.List;
 

@@ -34,6 +34,22 @@ export interface SousTache {
   tacheId?: number;
 }
 
+
+export interface CountdownInfo {
+  id: number;
+  titre: string;
+  type: 'TACHE' | 'SOUS_TACHE';
+  statut: string;
+  dateDebut?: string;
+  dateFin?: string;
+  joursRestants?: number;
+  retardJours: number;
+  enRetard: boolean;
+  urgence: boolean;         // deadline dans <= 3 jours et pas encore commencé
+  pasEncoreCommence: boolean;
+  parentId: number;
+}
+
 export interface Tache {
   id: number;
   titre: string;
@@ -46,6 +62,7 @@ export interface Tache {
   projetId?: string;
   slaJours?: number;
   derniereMaj?: Date;
+ 
 }
 
 export interface Etape {
@@ -86,6 +103,9 @@ export interface Projet {
   etapes: Etape[];
   createdAt: Date;
   updatedAt: Date;
+
+  // New: true only if a project-level correction is required
+  projectCorrectionRequired?: boolean;
 }
 
 /* ============================================================================

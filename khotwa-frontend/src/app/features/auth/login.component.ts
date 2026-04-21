@@ -23,7 +23,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.auth.currentUser) {
-      this.router.navigateByUrl(this.auth.getDefaultRoute());
+      this.router.navigateByUrl(this.getRoleRedirect(this.auth.currentUser.role));
     }
   }
 
@@ -31,9 +31,12 @@ export class LoginComponent implements OnInit {
     this.error = '';
     if (!this.email || !this.password) { this.error = 'Please fill in all fields.'; return; }
     this.auth.loginWithEmailAndPassword(this.email, this.password).subscribe({
-      next: () => this.router.navigateByUrl(this.auth.getDefaultRoute()),
-      error: () => {
-        this.error = 'Invalid credentials. Please try again.';
+      next: () => {
+        const role = this.auth.currentUser?.role;
+        this.router.navigateByUrl(this.getRoleRedirect(role));
+      },
+      error: (err) => {
+        this.error = err?.error?.message || 'Invalid credentials. Please try again.';
       },
     });
   }
@@ -43,20 +46,39 @@ export class LoginComponent implements OnInit {
     if (!this.email || !this.password || !this.firstName || !this.lastName) {
       this.error = 'Please fill in all fields.'; return;
     }
-    this.auth.register({
+    // Prepare correct backend fields
+    const registerData = {
       firstName: this.firstName,
-      middleName: this.lastName,
-      email: this.email,
+      lastName: this.lastName,
+      emailAddress: this.email,
       password: this.password,
-      role: this.selectedRole,
-    }).subscribe({
+      role: this.selectedRole.toUpperCase(),
+      phoneNumber: '',
+      startup: ''
+    };
+    this.auth.register(registerData).subscribe({
       next: () => {
-        this.mode = 'signin';
-        this.error = 'Registration successful. Please check your email.';
+        // Auto-login after successful registration
+        this.auth.loginWithEmailAndPassword(this.email, this.password).subscribe({
+          next: () => {
+            const role = this.auth.currentUser?.role;
+            this.router.navigateByUrl(this.getRoleRedirect(role));
+          },
+          error: (err) => {
+            this.error = err?.error?.message || 'Auto-login failed after registration.';
+          }
+        });
       },
       error: (err) => {
-        this.error = err?.error || 'Registration failed.';
+        this.error = err?.error?.message || 'Registration failed.';
       }
     });
+  }
+
+  private getRoleRedirect(role: string | undefined | null): string {
+    if (role === 'admin') return '/khotwaadmin';
+    if (role === 'coach') return '/coach';
+    if (role === 'entrepreneur') return '/entrepreneur';
+    return '/';
   }
 }

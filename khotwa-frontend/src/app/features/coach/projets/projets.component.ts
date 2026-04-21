@@ -100,6 +100,11 @@ interface ProjectCorrectionSummarySection {
   requestedCorrection: string;
 }
 
+// Validation state for task creation
+interface TacheFormErrors {
+  [key: string]: string;
+}
+
 @Component({ selector:'app-coach-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
 export class CoachProjetsComponent implements OnInit {
   private readonly apiUrl = 'http://localhost:8084/khotwa';
@@ -144,6 +149,8 @@ export class CoachProjetsComponent implements OnInit {
   createdParentTaskId: number | null = null;
   quickSousTacheTitre = '';
   quickSousTacheImpact: PrioriteTache = 'MOYENNE';
+  quickSousTacheDateDebut: string | null = null;
+  quickSousTacheDateFin: string | null = null;
   quickSousTacheTitreByTaskId: Record<number, string> = {};
   quickSousTacheImpactByTaskId: Record<number, PrioriteTache> = {};
   correctionInputOpenBySubTaskId: Record<number, boolean> = {};
@@ -157,6 +164,7 @@ export class CoachProjetsComponent implements OnInit {
   message = '';
 
   tacheForm: TacheForm = this.createTacheForm();
+  tacheFormErrors: { [key: string]: string } = {};
   sousTacheForm: SousTacheForm = this.createSousTacheForm();
 
   readonly typeTacheOptions: TypeTache[] = ['DOCUMENT', 'ANALYSE', 'PITCH', 'POC', 'BUSINESS_MODEL', 'ETUDE_MARCHE', 'LEGAL', 'FINANCIER', 'TECHNIQUE', 'AUTRE'];
@@ -250,6 +258,10 @@ export class CoachProjetsComponent implements OnInit {
 
   closeCreateTaskModal(): void {
     this.showCreateTaskModal = false;
+    // Si on vient de créer un parent et des sous-tâches, on recharge la liste des sous-tâches pour l'affichage détails
+    if (this.createdParentTaskId) {
+      this.loadSousTaches(this.createdParentTaskId);
+    }
     this.createdParentTaskId = null;
     this.quickSousTacheTitre = '';
   }
@@ -376,8 +388,12 @@ export class CoachProjetsComponent implements OnInit {
   }
 
   createTache(): void {
-    if (!this.selectedProjetId || !this.tacheForm.titre.trim()) {
-      this.message = 'Please select a project and fill task title.';
+    if (!this.selectedProjetId) {
+      this.message = 'Veuillez sélectionner un projet.';
+      return;
+    }
+    if (!this.validateTacheForm()) {
+      this.message = 'Veuillez corriger les erreurs du formulaire.';
       return;
     }
 
@@ -423,23 +439,49 @@ export class CoachProjetsComponent implements OnInit {
       return;
     }
 
+    // Validation des dates de la sous-tâche par rapport au parent
+    const parent = this.taches.find(t => t.id === this.createdParentTaskId);
+    const parentStart = parent?.dateDebut ? new Date(parent.dateDebut) : null;
+    const parentEnd = parent?.dateFin ? new Date(parent.dateFin) : null;
+    const subStart = this.quickSousTacheDateDebut ? new Date(this.quickSousTacheDateDebut) : null;
+    const subEnd = this.quickSousTacheDateFin ? new Date(this.quickSousTacheDateFin) : null;
+
+    if (subStart && parentStart && subStart < parentStart) {
+      this.message = "La date de début de la sous-tâche ne peut pas être avant la date de début du parent.";
+      return;
+    }
+    if (subEnd && parentEnd && subEnd > parentEnd) {
+      this.message = "La date de fin de la sous-tâche ne peut pas être après la date de fin du parent.";
+      return;
+    }
+    if (subStart && subEnd && subEnd < subStart) {
+      this.message = "La date de fin de la sous-tâche doit être après la date de début de la sous-tâche.";
+      return;
+    }
+
     const payload = {
       titre: this.quickSousTacheTitre.trim(),
       description: '',
       priorite: this.quickSousTacheImpact,
-      dateDebut: null,
-      dateFin: null,
+      dateDebut: this.quickSousTacheDateDebut || null,
+      dateFin: this.quickSousTacheDateFin || null,
       commentaireCoach: '',
     };
 
     this.http.post<BackendSousTache>(`${this.apiUrl}/coach/taches/${this.createdParentTaskId}/sous-taches`, payload).subscribe({
       next: () => {
         this.quickSousTacheTitre = '';
-        this.message = 'Sub-task added. Press Enter to add another.';
+        this.quickSousTacheDateDebut = null;
+        this.quickSousTacheDateFin = null;
+        this.message = 'Sous-tâche ajoutée. Appuyez sur Entrée pour en ajouter une autre.';
         this.loadSousTaches(this.createdParentTaskId!);
       },
-      error: () => {
-        this.message = 'Sub-task creation failed.';
+      error: (err) => {
+        if (err && err.error && err.error.message) {
+          this.message = 'Échec de la création de la sous-tâche : ' + err.error.message;
+        } else {
+          this.message = 'Échec de la création de la sous-tâche.';
+        }
       }
     });
   }
@@ -488,7 +530,10 @@ export class CoachProjetsComponent implements OnInit {
 
   openCreateSubTaskModalForTask(task: BackendTache): void {
     this.selectedTaskForSubTaskCreation = task;
+    // Pré-remplir les dates de la sous-tâche avec celles du parent
     this.sousTacheForm = this.createSousTacheForm();
+    if (task.dateDebut) this.sousTacheForm.dateDebut = task.dateDebut;
+    if (task.dateFin) this.sousTacheForm.dateFin = task.dateFin;
     this.showTaskDetailsModal = false;
     this.showCreateSubTaskModal = true;
     this.message = '';
@@ -505,12 +550,32 @@ export class CoachProjetsComponent implements OnInit {
 
   createSousTacheFromModal(): void {
     if (!this.selectedTaskForSubTaskCreation) {
-      this.message = 'No parent task selected.';
+      this.message = 'Aucune tâche parent sélectionnée.';
       return;
     }
 
     if (!this.sousTacheForm.titre.trim()) {
-      this.message = 'Sub-task title is required.';
+      this.message = 'Le titre de la sous-tâche est obligatoire.';
+      return;
+    }
+
+    // Validation des dates de la sous-tâche par rapport au parent
+    const parent = this.selectedTaskForSubTaskCreation;
+    const parentStart = parent.dateDebut ? new Date(parent.dateDebut) : null;
+    const parentEnd = parent.dateFin ? new Date(parent.dateFin) : null;
+    const subStart = this.sousTacheForm.dateDebut ? new Date(this.sousTacheForm.dateDebut) : null;
+    const subEnd = this.sousTacheForm.dateFin ? new Date(this.sousTacheForm.dateFin) : null;
+
+    if (subStart && parentStart && subStart < parentStart) {
+      this.message = "La date de début de la sous-tâche ne peut pas être avant la date de début du parent.";
+      return;
+    }
+    if (subEnd && parentEnd && subEnd > parentEnd) {
+      this.message = "La date de fin de la sous-tâche ne peut pas être après la date de fin du parent.";
+      return;
+    }
+    if (subStart && subEnd && subEnd < subStart) {
+      this.message = "La date de fin de la sous-tâche doit être après la date de début de la sous-tâche.";
       return;
     }
 
@@ -525,12 +590,16 @@ export class CoachProjetsComponent implements OnInit {
 
     this.http.post<BackendSousTache>(`${this.apiUrl}/coach/taches/${this.selectedTaskForSubTaskCreation.id}/sous-taches`, payload).subscribe({
       next: () => {
-        this.message = 'Sub-task created successfully.';
+        this.message = 'Sous-tâche créée avec succès.';
         this.loadSousTaches(this.selectedTaskForSubTaskCreation!.id);
         this.closeCreateSubTaskModal();
       },
-      error: () => {
-        this.message = 'Sub-task creation failed.';
+      error: (err) => {
+        if (err && err.error && err.error.message) {
+          this.message = 'Échec de la création de la sous-tâche : ' + err.error.message;
+        } else {
+          this.message = 'Échec de la création de la sous-tâche.';
+        }
       }
     });
   }
@@ -1254,6 +1323,9 @@ export class CoachProjetsComponent implements OnInit {
     if (!this.selectedProjet || !this.selectedProjet.etatValidation) {
       return false;
     }
+    // Ne pas afficher si le projet a déjà des tâches
+    const hasTasks = this.taches && this.taches.length > 0;
+    if (hasTasks) return false;
     // The coach can ask corrections from first assignment through review cycles.
     const allowedStates: string[] = ['AFFECTE_COACH', 'EN_REVUE', 'A_CORRIGER'];
     return allowedStates.includes(this.selectedProjet.etatValidation);
@@ -1323,20 +1395,9 @@ export class CoachProjetsComponent implements OnInit {
   }
 
   private getCurrentCoachId(): number {
-    const idUser = this.authService.currentUser?.idUser;
-    if (typeof idUser === 'number' && Number.isFinite(idUser) && idUser > 0) {
-      return idUser;
-    }
-
     const rawId = this.authService.currentUser?.id ?? '';
     const parsed = Number(rawId);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-
-    const digits = rawId.replace(/\D/g, '');
-    const fallback = Number(digits);
-    return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
   private createTacheForm(): TacheForm {
@@ -1426,5 +1487,76 @@ export class CoachProjetsComponent implements OnInit {
     }
     score += Math.min(30, Math.max(0, task.retardJours * 4));
     return score;
+  }
+
+  // --- Validation logic for task creation ---
+  validateTacheForm(): boolean {
+    const { titre, description, typeTache, priorite, dateDebut, dateFin } = this.tacheForm;
+    let valid = true;
+    // Titre
+    if (!titre || !titre.trim()) valid = false;
+    // Description
+    if (!description || !description.trim()) valid = false;
+    // Type
+    if (!typeTache) valid = false;
+    // Priorité
+    if (!priorite) valid = false;
+    // Dates
+    if (!dateDebut) valid = false;
+    else {
+      const today = new Date('2026-04-20');
+      const start = new Date(dateDebut);
+      today.setHours(0,0,0,0);
+      start.setHours(0,0,0,0);
+      if (start < today) valid = false;
+    }
+    if (!dateFin) valid = false;
+    else if (dateDebut && dateFin) {
+      const start = new Date(dateDebut);
+      const end = new Date(dateFin);
+      start.setHours(0,0,0,0);
+      end.setHours(0,0,0,0);
+      if (end < start) valid = false;
+    }
+    return valid;
+  }
+
+  getTacheFormError(field: string): string {
+    const { titre, description, typeTache, priorite, dateDebut, dateFin } = this.tacheForm;
+    switch (field) {
+      case 'titre':
+        if (!titre || !titre.trim()) return 'Le titre est obligatoire.';
+        break;
+      case 'description':
+        if (!description || !description.trim()) return 'La description est obligatoire.';
+        break;
+      case 'typeTache':
+        if (!typeTache) return 'Le type de tâche est obligatoire.';
+        break;
+      case 'priorite':
+        if (!priorite) return 'La priorité est obligatoire.';
+        break;
+      case 'dateDebut':
+        if (!dateDebut) return 'La date de début est obligatoire.';
+        else {
+          const today = new Date('2026-04-20');
+          const start = new Date(dateDebut);
+          today.setHours(0,0,0,0);
+          start.setHours(0,0,0,0);
+          if (start < today) return 'La date de début ne peut pas être dans le passé.';
+        }
+        break;
+      case 'dateFin':
+        if (!dateFin) return 'La date de fin est obligatoire.';
+        else if (dateDebut && dateFin) {
+          const start = new Date(dateDebut);
+          const end = new Date(dateFin);
+          start.setHours(0,0,0,0);
+          end.setHours(0,0,0,0);
+          if (end < start) return 'La date de fin doit être après la date de début.';
+        }
+        break;
+    }
+    return '';
   }
 }

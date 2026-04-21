@@ -735,20 +735,9 @@ export class AdminProjetsComponent implements OnInit {
   }
 
   private getCurrentAdminId(): number {
-    const idUser = this.authService.currentUser?.idUser;
-    if (typeof idUser === 'number' && Number.isFinite(idUser) && idUser > 0) {
-      return idUser;
-    }
-
     const rawId = this.authService.currentUser?.id ?? '';
     const parsed = Number(rawId);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-
-    const digits = rawId.replace(/\D/g, '');
-    const fallback = Number(digits);
-    return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
   private toUiStatus(statut: BackendProjetResponse['statutProjet']): UiStatus {

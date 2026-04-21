@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      @if (selectedWorkflowProject && (needsCorrection(selectedWorkflowProject) || isWaitingCoachApproval(selectedWorkflowProject))) {
+      @if (selectedWorkflowProject && selectedWorkflowProject.projectCorrectionRequired && hasUnreadCorrectionGuide(selectedWorkflowProject)) {
         <section class="correction-sticky-bar" [class.correction-sticky-bar--waiting]="isWaitingCoachApproval(selectedWorkflowProject)">
           <div class="correction-sticky-bar__head">
             <span class="correction-sticky-bar__eyebrow">Correction center</span>
@@ -138,26 +138,35 @@
 
               <div class="board-column__cards">
                 @for (task of getWorkflowTasksByStatus(column.key); track task.id) {
+
                   <article class="kanban-card" [class.kanban-card--risk]="task.statutTache === 'EN_RETARD' || task.statutTache === 'BLOQUEE' || task.statutTache === 'A_CORRIGER'" draggable="true" (dragstart)="onTaskDragStart(task)">
                     <button class="kanban-card__toggle" (click)="openTaskModal(task)" type="button">
                       <div class="kanban-card__top kanban-card__top--compact">
-                        <div>
-                          <p class="kanban-card__title">{{ task.titre }}</p>
-                          <p class="kanban-card__subtitle">{{ getTaskSubtaskCount(task.id) }} sous-tâche{{ getTaskSubtaskCount(task.id) !== 1 ? 's' : '' }}</p>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                          <p class="kanban-card__title" style="font-size: 1.1rem; margin-bottom: 2px;">{{ task.titre }}</p>
+                          <p class="kanban-card__subtitle" style="font-size: 0.95rem; color: #2abfbf; font-weight: 600;">{{ getTaskSubtaskCount(task.id) }} sous-tâche{{ getTaskSubtaskCount(task.id) !== 1 ? 's' : '' }}</p>
                         </div>
                         <span class="kanban-card__view" title="View task details" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px;">
                             <path d="M12 5C6.5 5 2.1 8.3 1 12c1.1 3.7 5.5 7 11 7s9.9-3.3 11-7c-1.1-3.7-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"></path>
                           </svg>
                         </span>
                       </div>
 
-                      <div class="kanban-card__meta kanban-card__meta--compact">
-                        <span>{{ task.priorite }}</span>
-                        <span class="kh-badge" [class]="(task.statutTache === 'EN_RETARD' || task.statutTache === 'BLOQUEE' || task.statutTache === 'A_CORRIGER') ? 'kh-badge--red' : (task.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--teal')">
+                      <div class="kanban-card__meta kanban-card__meta--compact" style="margin-top: 12px; gap: 10px;">
+                        <span style="font-size: 0.95rem; padding: 5px 10px; background: #f0f7fa; color: #1c2f43; border-radius: 8px; font-weight: 500;">{{ task.priorite }}</span>
+                        <span class="kh-badge" [class]="(task.statutTache === 'EN_RETARD' || task.statutTache === 'BLOQUEE' || task.statutTache === 'A_CORRIGER') ? 'kh-badge--red' : (task.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--teal')" style="font-size: 0.95rem; padding: 5px 12px; border-radius: 8px;">
                           {{ getTaskStatusLabel(task) }}
                         </span>
                       </div>
+                      <!-- Countdown à rebours -->
+                      @if (getCountdownForTask(task.id); as cd) {
+                      @if (cd.dateFin) {
+                      <div class="countdown-badge" [ngClass]="getCountdownClass(cd)">
+                       {{ formatCountdownLabel(cd) }}
+                      </div>
+  }
+}
                     </button>
                   </article>
                 }
@@ -237,8 +246,7 @@
       @if (selectedWorkflowProject) {
         <div class="inspector-hero">
           <span class="inspector-hero__eyebrow">Détails du projet</span>
-          <h3>{{ selectedWorkflowProject.titre }}</h3>
-          <p>{{ selectedWorkflowProject.description }}</p>
+          <h3 class="project-title-truncate" [title]="selectedWorkflowProject.titre">{{ selectedWorkflowProject.titre }}</h3>
         </div>
 
         <div class="kpi-ring-card">
@@ -248,7 +256,8 @@
           </div>
         </div>
 
-        <div class="progress-card">
+
+        <div class="progress-card" style="margin-bottom: 10px;">
           <div class="progress-card__head">
             <span>Avancement global</span>
             <strong>{{ selectedWorkflowProject.progression }}%</strong>
@@ -258,36 +267,43 @@
           </div>
         </div>
 
-        <div class="inspector-section">
-          <h4>Project snapshot</h4>
-          <div class="project-brief-list project-brief-list--compact">
-            @for (field of getProjectSnapshotFields(selectedWorkflowProject); track field.key) {
-              <article class="project-brief-item" [class.project-brief-item--missing]="field.missing">
-                <div class="project-brief-item__head">
-                  <strong>{{ field.label }}</strong>
-                </div>
-                <p>{{ getCompactText(field.value, 90) }}</p>
-              </article>
-            }
-          </div>
+        <!-- Actions rapides sous forme d'icônes, sauf ajouter projet -->
+        <div class="inspector-actions-icons" style="margin-bottom: 12px; margin-top: 0;">
+          <!-- Icône correction : uniquement si projet en correction -->
+          <ng-container *ngIf="isAssignedToCoach(selectedWorkflowProject) && needsCorrection(selectedWorkflowProject)">
+            <button
+              class="icon-btn"
+              [title]="
+                !hasActionableCorrection(selectedWorkflowProject)
+                  ? 'Aucune correction actionnable envoyée par le coach.'
+                  : isSubmitting
+                    ? 'Envoi en cours...'
+                    : 'Soumettre correction'"
+              (click)="resendCorrection(selectedWorkflowProject)"
+              [disabled]="isSubmitting || !hasActionableCorrection(selectedWorkflowProject)">
+              <span class="material-icons">assignment_turned_in</span>
+            </button>
+          </ng-container>
+          <!-- Icône soumission : uniquement si projet éditable, pas en correction, pas encore soumis -->
+          <button
+            *ngIf="canEdit(selectedWorkflowProject) && !needsCorrection(selectedWorkflowProject) && selectedWorkflowProject?.etatValidation === 'BROUILLON'"
+            class="icon-btn"
+            title="Soumettre le projet"
+            (click)="submitProject(selectedWorkflowProject)"
+            [disabled]="isSubmitting">
+            <span class="material-icons">send</span>
+          </button>
+          <!-- Icône édition : uniquement si projet éditable (état draft) -->
+          <button
+            *ngIf="canEdit(selectedWorkflowProject) && selectedWorkflowProject?.etatValidation === 'BROUILLON'"
+            class="icon-btn"
+            title="Editer le projet"
+            (click)="openEditProject(selectedWorkflowProject)"
+            [disabled]="isSubmitting">
+            <span class="material-icons">edit</span>
+          </button>
         </div>
 
-        <div class="inspector-section">
-          <h4>Correction status</h4>
-          @if (selectedWorkflowProject && needsCorrection(selectedWorkflowProject)) {
-            <div class="compact-correction-summary">
-              <span class="kh-badge kh-badge--red">Action required</span>
-              <p>{{ getCompactText(getProjectCorrectionSummary(selectedWorkflowProject), 110) }}</p>
-              <small>{{ getTotalCorrectionSignals(selectedWorkflowProject) }} item(s) in correction guide</small>
-              <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openCorrectionGuide()" type="button">Open correction guide</button>
-              @if (!hasActionableCorrection(selectedWorkflowProject)) {
-                <small class="correction-warning">{{ getMissingActionableCorrectionHint(selectedWorkflowProject) }}</small>
-              }
-            </div>
-          } @else {
-            <p class="empty-note">No active correction cycle.</p>
-          }
-        </div>
 
         <div class="inspector-section">
           <h4>Mon Coach Principal</h4>
@@ -305,26 +321,20 @@
           }
         </div>
 
-        <div class="inspector-section">
-          <h4>Quick actions</h4>
-          <div class="inspector-actions">
-            @if (canEdit(selectedWorkflowProject)) {
-              <button class="kh-btn kh-btn--ghost" (click)="openEditProject(selectedWorkflowProject)" [disabled]="isSubmitting">Edit</button>
-            }
-            @if (isDraft(selectedWorkflowProject)) {
-              <button class="kh-btn kh-btn--primary" (click)="submitProject(selectedWorkflowProject)" [disabled]="isSubmitting">{{ isSubmitting ? 'Submitting...' : 'Submit' }}</button>
-              <button class="kh-btn kh-btn--ghost" (click)="deleteProject(selectedWorkflowProject)" [disabled]="isSubmitting">Delete</button>
-            }
-            @if (isAssignedToCoach(selectedWorkflowProject)) {
-              <button class="kh-btn kh-btn--ghost" (click)="resendCorrection(selectedWorkflowProject)" [disabled]="isSubmitting || !needsCorrection(selectedWorkflowProject) || !hasActionableCorrection(selectedWorkflowProject)">Submit correction</button>
-            }
-          </div>
-          @if (isAssignedToCoach(selectedWorkflowProject) && needsCorrection(selectedWorkflowProject) && !hasActionableCorrection(selectedWorkflowProject)) {
-            <p class="quick-actions-hint">Submit is disabled until coach sends actionable correction details.</p>
-          }
+        <!-- Ajouter projet : icône sous la section coach -->
+        <div style="display: flex; justify-content: center; margin: 12px 0 0 0;">
+          <button
+            class="icon-btn"
+            title="Créer un nouveau projet"
+            (click)="openCreateProjectConversation()"
+            [disabled]="isSubmitting">
+            <span class="material-icons">add_circle</span>
+          </button>
         </div>
 
-        <button class="kh-btn kh-btn--primary create-project-cta" (click)="openCreateProjectConversation()" [disabled]="isSubmitting">+ Créer un Nouveau Projet</button>
+        <button class="toggle-details-btn" (click)="openProjectDetailsModal()">
+          <span>Afficher plus de détails ▼</span>
+        </button>
       } @else {
         <div class="empty-state workspace-empty">
           <p>Select a project to show KPI and actions.</p>
@@ -332,6 +342,78 @@
         <button class="kh-btn kh-btn--primary create-project-cta" (click)="openCreateProjectConversation()" [disabled]="isSubmitting">+ Créer un Nouveau Projet</button>
       }
     </aside>
+
+    <!-- Modale de détails projet -->
+    @if (showProjectDetailsModal && selectedWorkflowProject) {
+      <div class="project-modal-backdrop" (click)="closeProjectDetailsModal()">
+        <div class="project-modal jira-project-modal kh-projet-modal" (click)="$event.stopPropagation()">
+          <div class="kh-projet-modal__header kh-projet-modal__header--v2">
+            <span class="kh-projet-modal__pill kh-projet-modal__pill--pulse">
+              <span class="kh-projet-modal__dot"></span>
+              Détails du projet
+            </span>
+            <h2 class="kh-projet-modal__title--v3" [title]="selectedWorkflowProject.titre">{{ selectedWorkflowProject.titre }}</h2>
+            <button class="kh-projet-modal__close kh-projet-modal__close--svg-v3" (click)="closeProjectDetailsModal()" aria-label="Fermer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#8a9aaa" stroke-width="1.7" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg>
+            </button>
+          </div>
+          <div class="kh-projet-modal__section kh-projet-modal__section--general">
+            <div class="kh-projet-modal__section-title kh-projet-modal__section-title--v3">Informations générales</div>
+            <div class="kh-projet-modal__general-grid kh-projet-modal__general-grid--v3">
+              <div class="kh-projet-modal__general-item kh-projet-modal__general-item--v3">
+                <div class="kh-projet-modal__general-label kh-projet-modal__general-label--v3">Secteur</div>
+                <div class="kh-projet-modal__general-value kh-projet-modal__general-value--v3">{{ selectedWorkflowProject.secteur }}</div>
+              </div>
+              <div class="kh-projet-modal__general-item kh-projet-modal__general-item--v3">
+                <div class="kh-projet-modal__general-label kh-projet-modal__general-label--v3">Stade</div>
+                <div class="kh-projet-modal__badge--v3">{{ selectedWorkflowProject.stadeProjet }}</div>
+              </div>
+              <div class="kh-projet-modal__general-item kh-projet-modal__general-item--v3">
+                <div class="kh-projet-modal__general-label kh-projet-modal__general-label--v3">Date début</div>
+                <div class="kh-projet-modal__general-value kh-projet-modal__general-value--v3">{{ selectedWorkflowProject.dateDebutProjet | date:'dd MMM yyyy' }}</div>
+              </div>
+              <div class="kh-projet-modal__general-item kh-projet-modal__general-item--v3">
+                <div class="kh-projet-modal__general-label kh-projet-modal__general-label--v3">Date fin</div>
+                <div class="kh-projet-modal__general-value kh-projet-modal__general-value--v3">{{ selectedWorkflowProject.dateFinProjet | date:'dd MMM yyyy' }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="kh-projet-modal__section kh-projet-modal__section--desc">
+            <div class="kh-projet-modal__section-title kh-projet-modal__section-title--v3">Description du projet</div>
+            <div class="kh-projet-modal__desc-block kh-projet-modal__desc-block--v3">{{ selectedWorkflowProject.description }}</div>
+          </div>
+          <div class="kh-projet-modal__section kh-projet-modal__section--strat">
+            <div class="kh-projet-modal__section-title kh-projet-modal__section-title--v3">Détails stratégiques</div>
+            <div class="kh-projet-modal__strat-block kh-projet-modal__strat-block--v3">
+              <div class="kh-projet-modal__strat-item kh-projet-modal__strat-item--v3">
+                <div class="kh-projet-modal__strat-label kh-projet-modal__strat-label--v3">Problème adressé</div>
+                <div class="kh-projet-modal__strat-value kh-projet-modal__strat-value--v3">{{ selectedWorkflowProject.problemeAdresse }}</div>
+              </div>
+              <div class="kh-projet-modal__strat-item kh-projet-modal__strat-item--v3">
+                <div class="kh-projet-modal__strat-label kh-projet-modal__strat-label--v3">Solution proposée</div>
+                <div class="kh-projet-modal__strat-value kh-projet-modal__strat-value--v3">{{ selectedWorkflowProject.solutionProposee }}</div>
+              </div>
+              <div class="kh-projet-modal__strat-item kh-projet-modal__strat-item--v3">
+                <div class="kh-projet-modal__strat-label kh-projet-modal__strat-label--v3">Business model</div>
+                <div class="kh-projet-modal__strat-value kh-projet-modal__strat-value--v3">{{ selectedWorkflowProject.businessModel }}</div>
+              </div>
+              <div class="kh-projet-modal__strat-item kh-projet-modal__strat-item--v3">
+                <div class="kh-projet-modal__strat-label kh-projet-modal__strat-label--v3">Innovation</div>
+                <div class="kh-projet-modal__strat-value kh-projet-modal__strat-value--v3">{{ selectedWorkflowProject.innovationDescription }}</div>
+              </div>
+              <div class="kh-projet-modal__strat-item kh-projet-modal__strat-item--v3">
+                <div class="kh-projet-modal__strat-label kh-projet-modal__strat-label--v3">Scalabilité</div>
+                <div class="kh-projet-modal__strat-value kh-projet-modal__strat-value--v3">{{ selectedWorkflowProject.scalabiliteDescription }}</div>
+              </div>
+              <div class="kh-projet-modal__strat-item kh-projet-modal__strat-item--v3">
+                <div class="kh-projet-modal__strat-label kh-projet-modal__strat-label--v3">POC disponible</div>
+                <div class="kh-projet-modal__strat-value kh-projet-modal__strat-value--success">{{ selectedWorkflowProject.pocDisponible ? 'Oui' : 'Non' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 
   @if (showTaskModal && selectedTaskForModal) {
@@ -340,11 +422,13 @@
         <div class="project-modal__header">
           <div>
             <span class="project-modal__eyebrow">Task workspace</span>
-            <h2>{{ selectedTaskForModal.titre }}</h2>
-            <p class="project-modal__sub">{{ selectedTaskForModal.description || 'No description for this task.' }}</p>
+            <h2 class="modal-title-truncate" [title]="selectedTaskForModal.titre">{{ selectedTaskForModal.titre }}</h2>
+            <p class="project-modal__sub modal-desc-truncate" [title]="selectedTaskForModal.description">{{ selectedTaskForModal.description || 'No description for this task.' }}</p>
           </div>
           <button class="project-modal__close" (click)="closeTaskModal()">×</button>
         </div>
+
+        <hr class="modal-divider" />
 
         @if (loadingSousTachesByTache[selectedTaskForModal.id]) {
           <div class="kanban-subtask task-modal__loading">
@@ -360,17 +444,17 @@
 
         <div class="task-modal__grid">
           @for (subTask of getSousTachesForTask(selectedTaskForModal.id); track subTask.id) {
-            <div class="kanban-subtask" [class.kanban-subtask--correction]="subTask.statutSousTache === 'A_CORRIGER'">
-              <div class="kanban-subtask__top">
-                <strong>{{ subTask.titre }}</strong>
-                <span class="kanban-subtask__badge">{{ subTask.statutSousTache }}</span>
+            <div class="kanban-subtask modal-subtask-card jira-style-subtask" [class.kanban-subtask--correction]="subTask.statutSousTache === 'A_CORRIGER'">
+              <div class="kanban-subtask__top modal-subtask-header">
+                <strong class="modal-subtask-title" [title]="subTask.titre">{{ subTask.titre }}</strong>
+                <span class="kanban-subtask__badge jira-badge">{{ subTask.statutSousTache }}</span>
               </div>
-              <div class="kanban-checklist-row">
-                <span>{{ subTask.dateFin || 'N/A' }}</span>
-                <span>{{ subTask.priorite }}</span>
-                <span>{{ impactHintSubTask(subTask) }}</span>
+              <div class="modal-subtask-meta-row">
+                <span class="jira-meta-label">Due:</span> <span>{{ subTask.dateFin || 'N/A' }}</span>
+                <span class="jira-meta-label">Priority:</span> <span>{{ subTask.priorite }}</span>
+                <span class="jira-meta-label">Impact:</span> <span>{{ impactHintSubTask(subTask) }}</span>
               </div>
-              <div class="kanban-subtask__controls">
+              <div class="kanban-subtask__controls modal-subtask-controls">
                 <p class="submission-note">Target status on submit: {{ getSubmissionTargetStatusForEntrepreneur(subTask) }}</p>
                 @if (!canOpenSousTacheSubmitModal(subTask)) {
                   <p class="submission-lock">{{ getSousTacheSubmissionBlockReason(subTask) }}</p>
@@ -382,7 +466,25 @@
                     }
                   </div>
                 }
-                <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="openSousTacheSubmitModal(subTask)" [disabled]="isSubmitting || !canOpenSousTacheSubmitModal(subTask)">
+
+                <!-- Countdown tâche dans modal -->
+                @if (openedTask) {
+                @if (getCountdownForTask(openedTask.id); as cd) {
+                <div class="modal-countdown" [ngClass]="getCountdownClass(cd)">
+                <strong>Délai :</strong> {{ formatCountdownLabel(cd) }}
+                    </div>
+  }
+}
+
+<!-- Countdown sous-tâches dans modal -->
+@for (st of openedTaskSubtasks; track st.id) {
+  @if (getCountdownForSubTask(st.id); as cd) {
+    <span class="subtask-countdown" [ngClass]="getCountdownClass(cd)">
+      {{ formatCountdownLabel(cd) }}
+    </span>
+  }
+}
+                <button class="kh-btn kh-btn--primary kh-btn--sm modal-submit-btn jira-submit-btn" (click)="openSousTacheSubmitModal(subTask)" [disabled]="isSubmitting || !canOpenSousTacheSubmitModal(subTask)" [attr.title]="!canOpenSousTacheSubmitModal(subTask) ? getSousTacheSubmissionBlockReason(subTask) : null">
                   Soumettre
                 </button>
               </div>
@@ -477,7 +579,7 @@
     </div>
   }
 
-  @if (showCorrectionGuideModal && selectedWorkflowProject) {
+  @if (showCorrectionGuideModal && selectedWorkflowProject?.projectCorrectionRequired) {
     <div class="project-modal-backdrop correction-guide-backdrop" (click)="closeCorrectionGuide()">
       <div class="project-modal correction-guide-drawer" (click)="$event.stopPropagation()">
         <div class="project-modal__header">
@@ -495,36 +597,20 @@
         </div>
 
         <div class="correction-guide-modal__list">
-          <div *ngIf="getProjectLevelCorrections().length">
+          <div *ngIf="selectedWorkflowProject?.projectCorrectionRequired">
             <h4 class="correction-guide-section-title">Project corrections</h4>
-            @for (item of getProjectLevelCorrections(); track item.title + '-' + $index) {
-              <article class="correction-guide-item">
-                <div class="correction-guide-item__head">
-                  <strong>{{ item.title }}</strong>
-                  <span class="kh-badge kh-badge--red">PROJECT</span>
-                </div>
-                <p>{{ getCompactText(item.comment, 220) }}</p>
-              </article>
-            }
+            <article class="correction-guide-item">
+              <div class="correction-guide-item__head">
+                <strong>Project correction required</strong>
+                <span class="kh-badge kh-badge--red">PROJECT</span>
+              </div>
+              <p>{{ getProjectCorrectionSummary(selectedWorkflowProject) }}</p>
+            </article>
             <div class="project-modal__footer">
               <button class="kh-btn kh-btn--primary" (click)="openEditProject(selectedWorkflowProject); closeCorrectionGuide()">Correct project</button>
             </div>
           </div>
-          <div *ngIf="getTaskLevelCorrections().length">
-            <h4 class="correction-guide-section-title">Task corrections</h4>
-            @for (item of getTaskLevelCorrections(); track item.title + '-' + $index) {
-              <article class="correction-guide-item">
-                <div class="correction-guide-item__head">
-                  <strong>{{ item.title }}</strong>
-                  <span class="kh-badge kh-badge--teal">TASK</span>
-                </div>
-                <p>{{ getCompactText(item.comment, 220) }}</p>
-                <div class="correction-guide-item__actions">
-                  <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="openTaskModalByTitle(item.title); closeCorrectionGuide()">Correct task</button>
-                </div>
-              </article>
-            }
-          </div>
+          <!-- Task-level corrections removed: implement if needed -->
           <div *ngIf="!getCorrectionGuideItems(selectedWorkflowProject).length">
             <article class="correction-guide-item correction-guide-item--empty">
               <div class="correction-guide-item__head">

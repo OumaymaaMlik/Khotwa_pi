@@ -1,4 +1,3 @@
-// ...existing imports...
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -6,8 +5,29 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ProjetService, ProjetDraftInput } from '../../../core/services/projet.service';
 import { Projet, SecteurProjet, SECTEUR_PROJET_OPTIONS, getDisciplineLevelClass, formatProjetStatusLabel } from '../../../core/models';
 
+// ─── Types locaux ────────────────────────────────────────────────────────────
+
 type StatutTache = 'A_FAIRE' | 'EN_COURS' | 'A_CORRIGER' | 'EN_CORRECTION' | 'TERMINEE' | 'EN_RETARD' | 'BLOQUEE';
 type WorkspaceView = 'KANBAN' | 'CALENDAR' | 'DELIVERABLES';
+
+// ─── Interface CountdownInfo (réponse du backend) ────────────────────────────
+
+export interface CountdownInfo {
+  id: number;
+  titre: string;
+  type: 'TACHE' | 'SOUS_TACHE';
+  statut: string;
+  dateDebut?: string;
+  dateFin?: string;
+  joursRestants?: number;
+  retardJours: number;
+  enRetard: boolean;
+  urgence: boolean;         // deadline dans <= 3 jours et statut A_FAIRE
+  pasEncoreCommence: boolean;
+  parentId: number;
+}
+
+// ─── Interfaces internes ─────────────────────────────────────────────────────
 
 interface AssignedCoach {
   coachId: number;
@@ -121,21 +141,18 @@ interface CalendarDayCell {
 
 type SecteurProjetInput = SecteurProjet | '';
 
-@Component({ selector:'app-entrepreneur-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
+// ─── Composant ───────────────────────────────────────────────────────────────
+
+@Component({
+  selector: 'app-entrepreneur-projets',
+  templateUrl: './projets.component.html',
+  styleUrls: ['./projets.component.css']
+})
 export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
-  private readonly apiUrl = 'http://localhost:8084/khotwa';
-  private readonly selectedProjectStorageKey = 'entrepreneur-selected-project-id';
-  private readonly pendingCoachApprovalStorageKey = 'entrepreneur-pending-coach-approval-project-ids';
-  private waitingApprovalPollHandle: ReturnType<typeof setInterval> | null = null;
 
-  readonly boardColumns: WorkflowBoardColumn[] = [
-    { key: 'A_FAIRE', title: 'A_FAIRE', subtitle: 'Waiting to start', tone: 'teal' },
-    { key: 'EN_COURS', title: 'EN_COURS', subtitle: 'In progress', tone: 'teal' },
-    { key: 'A_CORRIGER', title: 'A_CORRIGER', subtitle: 'Needs correction', tone: 'red' },
-    { key: 'EN_CORRECTION', title: 'EN_CORRECTION', subtitle: 'Under correction', tone: 'amber' },
-    { key: 'TERMINEE', title: 'TERMINEE', subtitle: 'Completed', tone: 'green' },
-  ];
-
+  // ── Modals & UI state ──────────────────────────────────────────────────────
+  showProjectDetails = false;
+  showProjectDetailsModal = false;
   showProjectModal = false;
   showCreateProjectModal = false;
   showSubmitProjectModal = false;
@@ -149,6 +166,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   submitMessage = '';
   isSubmitting = false;
 
+  // ── Workspace ──────────────────────────────────────────────────────────────
   activeWorkspaceView: WorkspaceView = 'KANBAN';
   projectSelectorOpen = false;
   expandedTaskId: number | null = null;
@@ -166,12 +184,13 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   selectedDeliverablePreviewUrl = '';
   selectedDeliverablePreviewMimeType = '';
   showCorrectionGuideModal = false;
-  correctionGuideSeenByProjectId: Record<string, boolean> = {};
+  correctionGuideSeenByProjectId: Record<string, string> = {};
   currentCalendarCursor = this.createMonthAnchor(new Date());
   createProjectStep = 1;
   readonly createProjectStepCount = 4;
   readonly minProjectDurationDays = 30;
 
+  // ── Données projet & tâches ────────────────────────────────────────────────
   selectedWorkflowProject: Projet | null = null;
   assignedCoachs: AssignedCoach[] = [];
   workflowTaches: WorkflowTache[] = [];
@@ -189,14 +208,27 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   uploadDocTypeBySousTacheId: Record<number, string> = {};
   uploadFileBySousTacheId: Record<number, File | null> = {};
 
+  // ── COUNTDOWN ──────────────────────────────────────────────────────────────
+  countdowns: CountdownInfo[] = [];
+  private countdownRefreshInterval: ReturnType<typeof setInterval> | null = null;
+
+  // ── Colonnes Kanban ────────────────────────────────────────────────────────
+  readonly boardColumns: WorkflowBoardColumn[] = [
+    { key: 'A_FAIRE',      title: 'A_FAIRE',       subtitle: 'Waiting to start',   tone: 'teal'  },
+    { key: 'EN_COURS',     title: 'EN_COURS',      subtitle: 'In progress',        tone: 'teal'  },
+    { key: 'A_CORRIGER',   title: 'A_CORRIGER',    subtitle: 'Needs correction',   tone: 'red'   },
+    { key: 'EN_CORRECTION',title: 'EN_CORRECTION', subtitle: 'Under correction',   tone: 'amber' },
+    { key: 'TERMINEE',     title: 'TERMINEE',      subtitle: 'Completed',          tone: 'green' },
+  ];
+
   readonly taskStatusOptions: StatutTache[] = ['A_FAIRE', 'EN_COURS', 'A_CORRIGER', 'EN_CORRECTION', 'TERMINEE', 'EN_RETARD', 'BLOQUEE'];
   readonly stageOptions: Array<{ value: ProjetDraftInput['stadeProjet']; label: string }> = [
-    { value: 'IDEE', label: 'Idée' },
-    { value: 'POC', label: 'Preuve de concept' },
-    { value: 'MVP', label: 'MVP' },
-    { value: 'PROTOTYPE', label: 'Prototype' },
-    { value: 'COMMERCIALISATION', label: 'Commercialisation' },
-    { value: 'SCALING', label: "Passage à l'échelle" },
+    { value: 'IDEE',              label: 'Idée'                  },
+    { value: 'POC',               label: 'Preuve de concept'     },
+    { value: 'MVP',               label: 'MVP'                   },
+    { value: 'PROTOTYPE',         label: 'Prototype'             },
+    { value: 'COMMERCIALISATION', label: 'Commercialisation'     },
+    { value: 'SCALING',           label: "Passage à l'échelle"   },
   ];
   readonly secteurOptions = SECTEUR_PROJET_OPTIONS;
 
@@ -215,6 +247,12 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     pocDisponible: false,
   };
 
+  // ── Constantes privées ─────────────────────────────────────────────────────
+  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly selectedProjectStorageKey = 'entrepreneur-selected-project-id';
+  private readonly pendingCoachApprovalStorageKey = 'entrepreneur-pending-coach-approval-project-ids';
+  private waitingApprovalPollHandle: ReturnType<typeof setInterval> | null = null;
+
   constructor(
     public projetService: ProjetService,
     private http: HttpClient,
@@ -222,8 +260,11 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     private router: Router,
   ) {}
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Lifecycle
+  // ═══════════════════════════════════════════════════════════════════════════
+
   ngOnInit(): void {
-    // Security check: ensure user is authenticated
     if (!this.authService.currentUser) {
       this.submitMessage = 'You must be logged in to view projects.';
       setTimeout(() => this.router.navigate(['/login']), 2000);
@@ -238,6 +279,16 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     this.projetService.loadEntrepreneurProjects().subscribe({
       next: (projects) => {
+        console.log('[DEBUG] All loaded projects:', projects);
+        projects.forEach(p => {
+          console.log(`[DEBUG] Project ${p.id} projectCorrectionRequired:`, p.projectCorrectionRequired);
+          if (p.projectCorrectionRequired) {
+            const corrKey = this.getCorrectionGuideStorageKey(p);
+            if (localStorage.getItem(corrKey)) {
+              this.correctionGuideSeenByProjectId[p.id] = corrKey;
+            }
+          }
+        });
         const persistedProjectId = this.getPersistedSelectedProjectId();
         const persistedProject = persistedProjectId
           ? projects.find((project) => project.id === persistedProjectId)
@@ -257,8 +308,14 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopWaitingApprovalPolling();
+    this.stopCountdownRefresh();
     this.revokeDeliverablePreviewUrl();
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Getters & helpers UI
+  // ═══════════════════════════════════════════════════════════════════════════
+
   get filteredProjets(): Projet[] {
     return this.projetService.projetsEntrepreneur;
   }
@@ -267,9 +324,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     return this.selectedWorkflowProject?.titre ?? 'Choisir un projet';
   }
 
-  toggleProjectSelector(): void {
-    this.projectSelectorOpen = !this.projectSelectorOpen;
-  }
+  openProjectDetailsModal(): void { this.showProjectDetailsModal = true; }
+  closeProjectDetailsModal(): void { this.showProjectDetailsModal = false; }
+  toggleProjectDetails(): void { this.showProjectDetails = !this.showProjectDetails; }
+  toggleProjectSelector(): void { this.projectSelectorOpen = !this.projectSelectorOpen; }
 
   switchWorkspaceView(view: WorkspaceView): void {
     this.activeWorkspaceView = view;
@@ -277,6 +335,98 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       this.loadProjectDocuments(this.selectedWorkflowProject.id);
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COUNTDOWN — méthodes publiques
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Charge les countdowns depuis le backend pour un projet donné.
+   * Appelé à chaque sélection de projet et toutes les 60 secondes.
+   */
+  loadCountdowns(projetId: string | number): void {
+    this.http.get<CountdownInfo[]>(
+      `${this.apiUrl}/entrepreneur/projets/${projetId}/countdowns`
+    ).subscribe({
+      next: (data) => { this.countdowns = data; },
+      error: () => { /* Silencieux : le countdown est un indicateur non bloquant */ }
+    });
+  }
+
+  /** Démarre le rafraîchissement automatique (toutes les 60 s). */
+  private startCountdownRefresh(): void {
+    this.stopCountdownRefresh();
+    this.countdownRefreshInterval = setInterval(() => {
+      if (this.selectedWorkflowProject) {
+        this.loadCountdowns(this.selectedWorkflowProject.id);
+      }
+    }, 60_000);
+  }
+
+  /** Arrête le rafraîchissement automatique. */
+  private stopCountdownRefresh(): void {
+    if (this.countdownRefreshInterval) {
+      clearInterval(this.countdownRefreshInterval);
+      this.countdownRefreshInterval = null;
+    }
+  }
+
+  /** Retourne le countdown d'une tâche parente, ou undefined. */
+  getCountdownForTask(taskId: number): CountdownInfo | undefined {
+    return this.countdowns.find(c => c.type === 'TACHE' && c.id === taskId);
+  }
+
+  /** Retourne le countdown d'une sous-tâche, ou undefined. */
+  getCountdownForSubTask(subTaskId: number): CountdownInfo | undefined {
+    return this.countdowns.find(c => c.type === 'SOUS_TACHE' && c.id === subTaskId);
+  }
+
+  /**
+   * Formate le label lisible du compteur à rebours.
+   * Exemples :
+   *   "⚠️ En retard de 3 jour(s)"
+   *   "🔴 Deadline aujourd'hui !"
+   *   "🟠 2j restant(s) — pas encore démarré !"
+   *   "⏳ 10 jour(s) restant(s)"
+   */
+  formatCountdownLabel(countdown: CountdownInfo | undefined): string {
+    if (!countdown || countdown.dateFin == null) { return ''; }
+
+    if (countdown.enRetard) {
+      return `⚠️ En retard de ${countdown.retardJours} jour(s)`;
+    }
+    if (countdown.joursRestants === 0) {
+      return '🔴 Deadline aujourd\'hui !';
+    }
+    if (countdown.joursRestants != null && countdown.joursRestants > 0) {
+      if (countdown.urgence) {
+        return `🟠 ${countdown.joursRestants}j restant(s) — pas encore démarré !`;
+      }
+      return `⏳ ${countdown.joursRestants} jour(s) restant(s)`;
+    }
+    return '';
+  }
+
+  /**
+   * Retourne la classe CSS à appliquer sur le badge countdown.
+   *   countdown--retard  → rouge
+   *   countdown--urgence → orange clignotant (A_FAIRE + <= 3j)
+   *   countdown--proche  → jaune (<= 7j)
+   *   countdown--ok      → vert
+   */
+  getCountdownClass(countdown: CountdownInfo | undefined): string {
+    if (!countdown || !countdown.dateFin) { return ''; }
+    if (countdown.enRetard)  { return 'countdown--retard';  }
+    if (countdown.urgence)   { return 'countdown--urgence'; }
+    if (countdown.joursRestants != null && countdown.joursRestants <= 7) {
+      return 'countdown--proche';
+    }
+    return 'countdown--ok';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Création de projet
+  // ═══════════════════════════════════════════════════════════════════════════
 
   openCreateProjectConversation(): void {
     this.submitMessage = '';
@@ -297,9 +447,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.showCreateProjectModal = true;
   }
 
-  closeCreateProjectConversation(): void {
-    this.showCreateProjectModal = false;
-  }
+  closeCreateProjectConversation(): void { this.showCreateProjectModal = false; }
 
   nextCreateStep(): void {
     if (!this.canContinueCurrentCreateStep()) {
@@ -316,19 +464,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   canContinueCurrentCreateStep(): boolean {
-    if (this.createProjectStep === 1) {
-      return this.conversationForm.nomStartup.trim().length >= 3;
-    }
-    if (this.createProjectStep === 2) {
-      return !!this.conversationForm.secteur;
-    }
-    if (this.createProjectStep === 3) {
-      return !!this.conversationForm.stadeProjet;
-    }
-    if (this.conversationForm.pitch.trim().length < 10) {
-      return false;
-    }
-
+    if (this.createProjectStep === 1) { return this.conversationForm.nomStartup.trim().length >= 3; }
+    if (this.createProjectStep === 2) { return !!this.conversationForm.secteur; }
+    if (this.createProjectStep === 3) { return !!this.conversationForm.stadeProjet; }
+    if (this.conversationForm.pitch.trim().length < 10) { return false; }
     return this.getProjectTimelineValidationError(
       this.conversationForm.dateDebutProjet,
       this.conversationForm.dateFinProjet,
@@ -345,9 +484,9 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   createProjectFromConversation(): void {
-    const name = this.conversationForm.nomStartup.trim();
+    const name    = this.conversationForm.nomStartup.trim();
     const secteur = this.conversationForm.secteur;
-    const pitch = this.conversationForm.pitch.trim();
+    const pitch   = this.conversationForm.pitch.trim();
     const timelineError = this.getProjectTimelineValidationError(
       this.conversationForm.dateDebutProjet,
       this.conversationForm.dateFinProjet,
@@ -356,6 +495,15 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     if (name.length < 3 || !secteur || pitch.length < 10 || timelineError) {
       this.submitMessage = timelineError ?? 'Complétez les étapes requises avant de valider.';
+      return;
+    }
+
+    const entrepreneurId = this.getCurrentEntrepreneurId();
+    if (!entrepreneurId || isNaN(entrepreneurId) || entrepreneurId <= 0) {
+      this.isSubmitting = false;
+      this.submitMessage = 'Erreur : Session entrepreneur invalide. Veuillez vous reconnecter.';
+      this.authService.logout();
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -391,6 +539,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Édition & suppression de projet
+  // ═══════════════════════════════════════════════════════════════════════════
+
   openEditProject(project: Projet): void {
     this.submitMessage = '';
     this.editingProject = project;
@@ -413,18 +565,12 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   closeProjectModal(): void { this.showProjectModal = false; }
 
-  isFormValid(): boolean {
-    return this.validateProjectForm() === null;
-  }
+  isFormValid(): boolean { return this.validateProjectForm() === null; }
 
   saveProject(): void {
     const validationError = this.validateProjectForm();
-    if (validationError) {
-      this.submitMessage = validationError;
-      return;
-    }
+    if (validationError) { this.submitMessage = validationError; return; }
 
-    // Security check: verify entrepreneur ID is valid before submit
     const entrepreneurId = this.getCurrentEntrepreneurId();
     if (entrepreneurId <= 0) {
       this.submitMessage = 'Error: Invalid user authentication. Please log in again.';
@@ -441,19 +587,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.showSaveEditModal = true;
   }
 
-  closeSaveEditModal(): void {
-    if (this.isSubmitting) {
-      return;
-    }
-    this.showSaveEditModal = false;
-  }
+  closeSaveEditModal(): void { if (!this.isSubmitting) { this.showSaveEditModal = false; } }
 
   confirmSaveProject(): void {
-    if (!this.editingProject) {
-      this.showSaveEditModal = false;
-      this.submitMessage = 'Use the create button in the right panel to add a new project.';
-      return;
-    }
+    if (!this.editingProject) { this.showSaveEditModal = false; this.submitMessage = 'Use the create button in the right panel to add a new project.'; return; }
 
     this.isSubmitting = true;
     this.submitMessage = '';
@@ -480,20 +617,12 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   closeSubmitProjectModal(): void {
-    if (this.isSubmitting) {
-      return;
-    }
-    this.showSubmitProjectModal = false;
-    this.pendingProjectSubmission = null;
+    if (!this.isSubmitting) { this.showSubmitProjectModal = false; this.pendingProjectSubmission = null; }
   }
 
   confirmProjectSubmission(): void {
-    if (!this.pendingProjectSubmission) {
-      return;
-    }
-
+    if (!this.pendingProjectSubmission) { return; }
     const project = this.pendingProjectSubmission;
-
     this.isSubmitting = true;
     this.submitMessage = '';
 
@@ -520,20 +649,12 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   closeDeleteProjectModal(): void {
-    if (this.isSubmitting) {
-      return;
-    }
-    this.showDeleteProjectModal = false;
-    this.pendingProjectDeletion = null;
+    if (!this.isSubmitting) { this.showDeleteProjectModal = false; this.pendingProjectDeletion = null; }
   }
 
   confirmDeleteProject(): void {
-    if (!this.pendingProjectDeletion) {
-      return;
-    }
-
+    if (!this.pendingProjectDeletion) { return; }
     const project = this.pendingProjectDeletion;
-
     this.isSubmitting = true;
     this.submitMessage = '';
 
@@ -546,15 +667,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         this.projetService.loadEntrepreneurProjects().subscribe({
           next: (projects) => {
             const nextProject = projects.find((row) => row.id !== project.id) ?? projects[0];
-            if (nextProject) {
-              this.refreshWithSelectedProject(nextProject.id);
-            } else {
-              setTimeout(() => window.location.reload(), 800);
-            }
+            if (nextProject) { this.refreshWithSelectedProject(nextProject.id); }
+            else { setTimeout(() => window.location.reload(), 800); }
           },
-          error: () => {
-            setTimeout(() => window.location.reload(), 800);
-          },
+          error: () => { setTimeout(() => window.location.reload(), 800); },
         });
       },
       error: (err) => {
@@ -564,6 +680,15 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         this.submitMessage = this.parseHttpError(err, 'Unable to delete draft project. Please try again.');
       }
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Sélection & workflow projet
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  selectProject(project: Projet): void {
+    this.selectedWorkflowProject = project;
+    this.openAssignedWorkflow(project);
   }
 
   openAssignedWorkflow(project: Projet): void {
@@ -586,167 +711,53 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.loadingSousTachesByTache = {};
     this.subTasksLoadedByTache = {};
     this.submitMessage = '';
+    // Réinitialiser les countdowns à chaque changement de projet
+    this.countdowns = [];
 
     this.loadAssignedCoachs(project.id);
     this.loadWorkflowTaches(project.id);
     this.updateWaitingApprovalPolling(project);
+
+    // ── Charger les countdowns et démarrer le rafraîchissement auto ──────────
+    this.loadCountdowns(project.id);
+    this.startCountdownRefresh();
 
     if (this.needsCorrection(project) && !this.correctionGuideSeenByProjectId[project.id]) {
       this.openCorrectionGuide();
     }
   }
 
-  private persistSelectedProjectId(projectId: string): void {
-    try {
-      sessionStorage.setItem(this.selectedProjectStorageKey, projectId);
-    } catch {
-      // Ignore storage access issues in private browsing or locked environments.
-    }
+  closeAssignedWorkflow(): void {
+    this.stopWaitingApprovalPolling();
+    this.stopCountdownRefresh();
+    this.selectedWorkflowProject = null;
   }
 
-  private getPersistedSelectedProjectId(): string | null {
-    try {
-      return sessionStorage.getItem(this.selectedProjectStorageKey);
-    } catch {
-      return null;
-    }
-  }
+  refreshCurrentProjectStatus(): void { this.refreshSelectedProjectInPlace(); }
 
-  private refreshWithSelectedProject(projectId?: string): void {
-    const idToPersist = projectId ?? this.selectedWorkflowProject?.id;
-    if (idToPersist) {
-      this.persistSelectedProjectId(idToPersist);
-    }
-    setTimeout(() => window.location.reload(), 800);
-  }
-
-  private persistPendingCoachApproval(projectId: string): void {
-    try {
-      const existing = this.readPendingCoachApprovalIds();
-      if (!existing.includes(projectId)) {
-        existing.push(projectId);
-      }
-      sessionStorage.setItem(this.pendingCoachApprovalStorageKey, JSON.stringify(existing));
-    } catch {
-      // ignore storage failures
-    }
-  }
-
-  private clearPendingCoachApproval(projectId: string): void {
-    try {
-      const updated = this.readPendingCoachApprovalIds().filter((id) => id !== projectId);
-      sessionStorage.setItem(this.pendingCoachApprovalStorageKey, JSON.stringify(updated));
-    } catch {
-      // ignore storage failures
-    }
-  }
-
-  private readPendingCoachApprovalIds(): string[] {
-    try {
-      const raw = sessionStorage.getItem(this.pendingCoachApprovalStorageKey);
-      if (!raw) {
-        return [];
-      }
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
-    } catch {
-      return [];
-    }
-  }
-
-  isWaitingCoachApproval(project: Projet | null): boolean {
-    if (!project || project.etatValidation !== 'EN_REVUE') {
-      return false;
-    }
-    if (project.correctionResoumiseEnAttenteCoach) {
-      return true;
-    }
-    return this.readPendingCoachApprovalIds().includes(project.id);
-  }
-
-  refreshCurrentProjectStatus(): void {
-    this.refreshSelectedProjectInPlace();
-  }
-
-  private updateWaitingApprovalPolling(project: Projet | null): void {
-    if (!project || !this.isWaitingCoachApproval(project)) {
-      this.stopWaitingApprovalPolling();
-      return;
-    }
-    this.startWaitingApprovalPolling();
-  }
-
-  private startWaitingApprovalPolling(): void {
-    if (this.waitingApprovalPollHandle) {
-      return;
-    }
-    this.waitingApprovalPollHandle = setInterval(() => {
-      this.refreshSelectedProjectInPlace();
-    }, 10000);
-  }
-
-  private stopWaitingApprovalPolling(): void {
-    if (!this.waitingApprovalPollHandle) {
-      return;
-    }
-    clearInterval(this.waitingApprovalPollHandle);
-    this.waitingApprovalPollHandle = null;
-  }
-
-  private refreshSelectedProjectInPlace(): void {
-    const selectedId = this.selectedWorkflowProject?.id;
-    if (!selectedId) {
-      return;
-    }
-
-    this.projetService.loadEntrepreneurProjects().subscribe({
-      next: (projects) => {
-        const updated = projects.find((project) => project.id === selectedId);
-        if (!updated) {
-          this.stopWaitingApprovalPolling();
-          return;
-        }
-
-        this.selectedWorkflowProject = updated;
-
-        if (updated.etatValidation !== 'EN_REVUE') {
-          this.clearPendingCoachApproval(updated.id);
-          this.stopWaitingApprovalPolling();
-          this.submitMessage = updated.etatValidation === 'VALIDE'
-            ? 'Coach approved your correction.'
-            : this.submitMessage;
-        }
-      },
-      error: () => {
-        // Keep silent retry behavior during background polling.
-      }
-    });
-  }
-
-  selectProject(project: Projet): void {
-    this.openAssignedWorkflow(project);
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Correction guide
+  // ═══════════════════════════════════════════════════════════════════════════
 
   openCorrectionGuide(): void {
-    if (!this.selectedWorkflowProject) {
-      return;
-    }
+    if (!this.selectedWorkflowProject) { return; }
     this.showCorrectionGuideModal = true;
-    this.correctionGuideSeenByProjectId[this.selectedWorkflowProject.id] = true;
+    const project = this.selectedWorkflowProject;
+    const corrKey = this.getCorrectionGuideStorageKey(project);
+    this.correctionGuideSeenByProjectId[project.id] = corrKey;
+    localStorage.setItem(corrKey, '1');
   }
 
-  closeCorrectionGuide(): void {
-    this.showCorrectionGuideModal = false;
-  }
+  closeCorrectionGuide(): void { this.showCorrectionGuideModal = false; }
 
   hasUnreadCorrectionGuide(project: Projet): boolean {
-    return this.needsCorrection(project) && !this.correctionGuideSeenByProjectId[project.id];
+    if (!this.needsCorrection(project)) { return false; }
+    const corrKey = this.getCorrectionGuideStorageKey(project);
+    return !this.correctionGuideSeenByProjectId[project.id] && !localStorage.getItem(corrKey);
   }
 
   hasProjectLevelCorrection(project: Projet | null): boolean {
-    if (!project) {
-      return false;
-    }
+    if (!project) { return false; }
     return typeof project.commentaireCorrectionCoach === 'string' && project.commentaireCorrectionCoach.trim().length > 0;
   }
 
@@ -754,15 +765,12 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     if (!project || !this.hasProjectLevelCorrection(project)) {
       return 'Correction state is active. The coach feedback will appear here once available.';
     }
-
-    return 'Coach feedback received: update the requested fields, then re-submit for review.';
+    return 'Coach feedback received: update the requested fields, then submit correction to coach review.';
   }
 
   getCompactText(value: string, maxLength = 140): string {
     const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
-    if (normalized.length <= maxLength) {
-      return normalized;
-    }
+    if (normalized.length <= maxLength) { return normalized; }
     return `${normalized.slice(0, Math.max(0, maxLength - 3))}...`;
   }
 
@@ -773,19 +781,13 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   hasActionableCorrection(project: Projet | null): boolean {
-    if (!project || !this.needsCorrection(project)) {
-      return false;
-    }
+    if (!project || !this.needsCorrection(project)) { return false; }
     return this.getCorrectionGuideItems(project).length > 0;
   }
 
   getMissingActionableCorrectionHint(project: Projet | null): string {
-    if (!project || !this.needsCorrection(project)) {
-      return '';
-    }
-    if (this.hasActionableCorrection(project)) {
-      return '';
-    }
+    if (!project || !this.needsCorrection(project)) { return ''; }
+    if (this.hasActionableCorrection(project)) { return ''; }
     return 'No actionable correction details from coach yet. Ask for explicit items before re-submitting.';
   }
 
@@ -799,15 +801,9 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     const workflowItems = this.getCoachCorrectionsFeed()
       .filter((item) => item.status === 'A_CORRIGER' || item.status === 'EN_CORRECTION')
-      .map((item) => ({
-        level: item.level,
-        title: item.title,
-        comment: item.comment,
-        status: item.status,
-      }));
+      .map((item) => ({ level: item.level, title: item.title, comment: item.comment, status: item.status }));
 
-    const items = [...projectItems, ...workflowItems].filter((item) => item.comment.trim().length > 0);
-    return items;
+    return [...projectItems, ...workflowItems].filter((item) => item.comment.trim().length > 0);
   }
 
   getProjectSnapshotFields(project: Projet): ProjectInfoField[] {
@@ -815,35 +811,22 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   getProjectCorrectionHints(project: Projet | null): ProjectCorrectionHint[] {
-    if (!project || !this.hasProjectLevelCorrection(project)) {
-      return [];
-    }
+    if (!project || !this.hasProjectLevelCorrection(project)) { return []; }
 
     const raw = project.commentaireCorrectionCoach!;
-    const blocks = raw
-      .split(/\n\s*--------------------\s*\n/g)
-      .map((chunk) => chunk.trim())
-      .filter((chunk) => chunk.length > 0);
-
+    const blocks = raw.split(/\n\s*--------------------\s*\n/g).map((c) => c.trim()).filter((c) => c.length > 0);
     const hints: ProjectCorrectionHint[] = [];
 
     for (const block of blocks) {
-      const lines = block.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 0);
-      if (!lines.length) {
-        continue;
-      }
-
+      const lines = block.split(/\n+/).map((l) => l.trim()).filter((l) => l.length > 0);
+      if (!lines.length) { continue; }
       const label = lines[0];
       const field = this.getProjectInfoFields(project).find((item) => item.label.toLowerCase() === label.toLowerCase());
-      const requestedLine = lines.find((line) => /^Requested correction:/i.test(line));
+      const requestedLine = lines.find((l) => /^Requested correction:/i.test(l));
       const extracted = requestedLine
         ? requestedLine.replace(/^Requested correction:\s*/i, '').trim()
         : lines.slice(1).join(' ');
-
-      if (!extracted) {
-        continue;
-      }
-
+      if (!extracted) { continue; }
       hints.push({
         fieldKey: field?.key ?? this.toProjectFormFieldKeyFromLabel(label),
         fieldLabel: field?.label ?? label,
@@ -851,119 +834,41 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       });
     }
 
-    if (hints.length) {
-      return hints;
-    }
-
-    return [{
-      fieldKey: 'global',
-      fieldLabel: 'General project correction',
-      comment: raw.trim(),
-    }];
+    if (hints.length) { return hints; }
+    return [{ fieldKey: 'global', fieldLabel: 'General project correction', comment: raw.trim() }];
   }
 
   isCorrectionScopedEdit(project: Projet | null): boolean {
-    if (!project || !this.needsCorrection(project)) {
-      return false;
-    }
-
+    if (!project || !this.needsCorrection(project)) { return false; }
     return this.getRequestedCorrectionFieldKeys(project).size > 0;
   }
 
   canEditProjectField(fieldKey: EditableProjectFieldKey): boolean {
     const project = this.editingProject;
-    if (!project) {
-      return false;
-    }
-
-    if (!this.needsCorrection(project)) {
-      return true;
-    }
-
-    if (!this.isCorrectionScopedEdit(project)) {
-      return true;
-    }
-
+    if (!project) { return false; }
+    if (!this.needsCorrection(project)) { return true; }
+    if (!this.isCorrectionScopedEdit(project)) { return true; }
     const requestedKeys = this.getRequestedCorrectionFieldKeys(project);
-    // Fail-open: if parsing is ambiguous, never block entrepreneur editing.
-    if (!requestedKeys.size) {
-      return true;
-    }
-
+    if (!requestedKeys.size) { return true; }
     return requestedKeys.has(fieldKey);
   }
 
   isCorrectionRequestedForField(fieldKey: EditableProjectFieldKey): boolean {
     const project = this.editingProject;
-    if (!project || !this.needsCorrection(project)) {
-      return false;
-    }
+    if (!project || !this.needsCorrection(project)) { return false; }
     return this.getRequestedCorrectionFieldKeys(project).has(fieldKey);
   }
 
-  shouldShowRequestedBadge(fieldKey: EditableProjectFieldKey): boolean {
-    return this.isCorrectionRequestedForField(fieldKey);
-  }
+  shouldShowRequestedBadge(fieldKey: EditableProjectFieldKey): boolean { return this.isCorrectionRequestedForField(fieldKey); }
 
   shouldShowLockedBadge(fieldKey: EditableProjectFieldKey): boolean {
     const project = this.editingProject;
-    if (!project || !this.needsCorrection(project) || !this.isCorrectionScopedEdit(project)) {
-      return false;
-    }
+    if (!project || !this.needsCorrection(project) || !this.isCorrectionScopedEdit(project)) { return false; }
     return !this.isCorrectionRequestedForField(fieldKey);
   }
 
-  private getRequestedCorrectionFieldKeys(project: Projet): Set<EditableProjectFieldKey> {
-    const keys = new Set<EditableProjectFieldKey>();
-    for (const hint of this.getProjectCorrectionHints(project)) {
-      const normalized = this.normalizeToEditableProjectFieldKey(hint.fieldKey);
-      if (normalized) {
-        keys.add(normalized);
-      }
-    }
-    return keys;
-  }
-
-  private normalizeToEditableProjectFieldKey(value: string): EditableProjectFieldKey | null {
-    const normalized = (value ?? '').trim();
-    if (!normalized) {
-      return null;
-    }
-    if ((EDITABLE_PROJECT_FIELDS as string[]).includes(normalized)) {
-      return normalized as EditableProjectFieldKey;
-    }
-    const fromLabel = this.toProjectFormFieldKeyFromLabel(normalized);
-    if ((EDITABLE_PROJECT_FIELDS as string[]).includes(fromLabel)) {
-      return fromLabel as EditableProjectFieldKey;
-    }
-    return null;
-  }
-
-  private toProjectFormFieldKeyFromLabel(label: string): string {
-    const normalized = label.trim().toLowerCase();
-    if (normalized === 'problem addressed') {
-      return 'problemeAdresse';
-    }
-    if (normalized === 'proposed solution') {
-      return 'solutionProposee';
-    }
-    if (normalized === 'business model') {
-      return 'businessModel';
-    }
-    if (normalized === 'innovation') {
-      return 'innovationDescription';
-    }
-    if (normalized === 'scalability') {
-      return 'scalabiliteDescription';
-    }
-    if (normalized === 'poc') {
-      return 'pocDisponible';
-    }
-    return label;
-  }
-
   getCorrectionHintForField(project: Projet, fieldKey: string): string {
-    const match = this.getProjectCorrectionHints(project).find((hint) => hint.fieldKey === fieldKey);
+    const match = this.getProjectCorrectionHints(project).find((h) => h.fieldKey === fieldKey);
     return match?.comment ?? '';
   }
 
@@ -971,9 +876,11 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     return this.getCorrectionHintForField(project, fieldKey).length > 0;
   }
 
-  isSelectedProject(project: Projet): boolean {
-    return this.selectedWorkflowProject?.id === project.id;
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Kanban & tâches
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  isSelectedProject(project: Projet): boolean { return this.selectedWorkflowProject?.id === project.id; }
 
   getWorkflowTasksByStatus(status: StatutTache): WorkflowTache[] {
     if (status === 'EN_COURS') {
@@ -983,12 +890,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   getTaskStatusLabel(task: WorkflowTache): string {
-    if (task.statutTache === 'EN_RETARD') {
-      return 'EN_COURS (retard)';
-    }
-    if (task.statutTache === 'BLOQUEE') {
-      return 'EN_COURS (bloquée)';
-    }
+    if (task.statutTache === 'EN_RETARD') { return 'EN_COURS (retard)'; }
+    if (task.statutTache === 'BLOQUEE')   { return 'EN_COURS (bloquée)'; }
     return task.statutTache;
   }
 
@@ -998,6 +901,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   openTaskModal(task: WorkflowTache): void {
+    console.log('[DEBUG] openTaskModal', { task });
     this.selectedTaskForModal = task;
     this.showTaskModal = true;
     if (!this.hasLoadedSubTasks(task.id) && !this.loadingSousTachesByTache[task.id]) {
@@ -1005,10 +909,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     }
   }
 
-  closeTaskModal(): void {
-    this.showTaskModal = false;
-    this.selectedTaskForModal = null;
-  }
+  closeTaskModal(): void { this.showTaskModal = false; this.selectedTaskForModal = null; }
 
   openSousTacheSubmitModal(subTask: WorkflowSousTache): void {
     if (!this.canOpenSousTacheSubmitModal(subTask)) {
@@ -1029,42 +930,29 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.submissionStateLabel = '';
   }
 
-  isTaskExpanded(taskId: number): boolean {
-    return this.expandedTaskId === taskId;
-  }
+  isTaskExpanded(taskId: number): boolean { return this.expandedTaskId === taskId; }
 
-  onTaskDragStart(task: WorkflowTache): void {
-    this.draggedTaskId = task.id;
-  }
-
-  allowTaskDrop(event: DragEvent): void {
-    event.preventDefault();
-  }
+  onTaskDragStart(task: WorkflowTache): void { this.draggedTaskId = task.id; }
+  allowTaskDrop(event: DragEvent): void { event.preventDefault(); }
 
   dropTaskInColumn(targetStatus: StatutTache): void {
-    if (!this.draggedTaskId) {
-      return;
-    }
-
+    if (!this.draggedTaskId) { return; }
     const task = this.workflowTaches.find((row) => row.id === this.draggedTaskId);
     this.draggedTaskId = null;
-
-    if (!task || task.statutTache === targetStatus) {
-      return;
-    }
-
+    if (!task || task.statutTache === targetStatus) { return; }
     if (!this.isAllowedTaskTransition(task.statutTache, targetStatus)) {
       this.submitMessage = `Transition non autorisée: ${task.statutTache} -> ${targetStatus}`;
       return;
     }
-
     this.updateTaskStatus(task, targetStatus);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Livrables & documents
+  // ═══════════════════════════════════════════════════════════════════════════
+
   getAllWorkflowDocuments(): WorkflowDocument[] {
-    if (this.workflowProjectDocuments.length) {
-      return this.workflowProjectDocuments;
-    }
+    if (this.workflowProjectDocuments.length) { return this.workflowProjectDocuments; }
     const documents: WorkflowDocument[] = [];
     Object.values(this.workflowDocumentsBySousTache).forEach((rows) => documents.push(...rows));
     return documents;
@@ -1076,11 +964,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   openDeliverablePreview(doc: WorkflowDocument): void {
-    if (!this.canPreviewDocument(doc)) {
-      this.downloadDeliverable(doc);
-      return;
-    }
-
+    if (!this.canPreviewDocument(doc)) { this.downloadDeliverable(doc); return; }
     this.isSubmitting = true;
     this.submitMessage = '';
     this.http.get(`${this.apiUrl}/entrepreneur/documents/${doc.id}/download`, { responseType: 'blob' }).subscribe({
@@ -1092,10 +976,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         this.showDeliverablePreviewModal = true;
         this.isSubmitting = false;
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.submitMessage = this.parseHttpError(err, 'Impossible de charger ce livrable pour visualisation.');
-      }
+      error: (err) => { this.isSubmitting = false; this.submitMessage = this.parseHttpError(err, 'Impossible de charger ce livrable pour visualisation.'); }
     });
   }
 
@@ -1119,85 +1000,53 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         URL.revokeObjectURL(objectUrl);
         this.isSubmitting = false;
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.submitMessage = this.parseHttpError(err, 'Impossible de télécharger ce livrable.');
-      }
+      error: (err) => { this.isSubmitting = false; this.submitMessage = this.parseHttpError(err, 'Impossible de télécharger ce livrable.'); }
     });
   }
 
-  hasLoadedSubTasks(tacheId: number): boolean {
-    return !!this.subTasksLoadedByTache[tacheId];
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Sous-tâches
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  getSousTachesForTask(tacheId: number): WorkflowSousTache[] {
-    return this.workflowSousTachesByTache[tacheId] ?? [];
-  }
+  hasLoadedSubTasks(tacheId: number): boolean { return !!this.subTasksLoadedByTache[tacheId]; }
+  getSousTachesForTask(tacheId: number): WorkflowSousTache[] { return this.workflowSousTachesByTache[tacheId] ?? []; }
 
   getActiveProjectDisplayScore(): string {
-    if (!this.selectedWorkflowProject) {
-      return '--';
-    }
-
+    if (!this.selectedWorkflowProject) { return '--'; }
     return String(this.selectedWorkflowProject.disciplineScore);
   }
 
   getActiveProjectStatusTone(project: Projet): 'teal' | 'amber' | 'green' | 'red' {
-    if (this.needsCorrection(project)) {
-      return 'red';
-    }
-
-    if (project.status === 'completed') {
-      return 'green';
-    }
-
-    if (project.status === 'suspended') {
-      return 'amber';
-    }
-
+    if (this.needsCorrection(project)) { return 'red'; }
+    if (project.status === 'completed') { return 'green'; }
+    if (project.status === 'suspended') { return 'amber'; }
     return 'teal';
   }
 
   getWorkflowScoreHint(): string {
-    if (!this.selectedWorkflowProject) {
-      return 'Select a project to inspect its workflow.';
-    }
-
+    if (!this.selectedWorkflowProject) { return 'Select a project to inspect its workflow.'; }
     const score = this.selectedWorkflowProject.disciplineScore;
-    if (score >= 30) {
-      return 'Good discipline. The workflow is stable.';
-    }
-
-    if (score >= 0) {
-      return 'Watch the delays and corrections closely.';
-    }
-
+    if (score >= 30) { return 'Good discipline. The workflow is stable.'; }
+    if (score >= 0)  { return 'Watch the delays and corrections closely.'; }
     return 'Risk level. The project needs immediate attention.';
   }
 
   getProjectInfoFields(project: Projet): ProjectInfoField[] {
     const toValue = (value?: string | boolean | null): string => {
-      if (typeof value === 'boolean') {
-        return value ? 'Yes' : 'No';
-      }
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim();
-      }
+      if (typeof value === 'boolean') { return value ? 'Yes' : 'No'; }
+      if (typeof value === 'string' && value.trim().length > 0) { return value.trim(); }
       return 'Not provided';
     };
-
-    const fields: ProjectInfoField[] = [
-      { key: 'problemeAdresse', label: 'Problem addressed', value: toValue(project.problemeAdresse), missing: !project.problemeAdresse?.trim() },
-      { key: 'solutionProposee', label: 'Proposed solution', value: toValue(project.solutionProposee), missing: !project.solutionProposee?.trim() },
-      { key: 'businessModel', label: 'Business model', value: toValue(project.businessModel), missing: !project.businessModel?.trim() },
-      { key: 'innovationDescription', label: 'Innovation', value: toValue(project.innovationDescription), missing: !project.innovationDescription?.trim() },
-      { key: 'scalabiliteDescription', label: 'Scalability', value: toValue(project.scalabiliteDescription), missing: !project.scalabiliteDescription?.trim() },
-      { key: 'stadeProjet', label: 'Project stage', value: toValue(project.stadeProjet), missing: !project.stadeProjet },
-      { key: 'secteur', label: 'Sector', value: toValue(project.secteur), missing: !project.secteur },
-      { key: 'pocDisponible', label: 'POC available', value: toValue(project.pocDisponible), missing: false },
+    return [
+      { key: 'problemeAdresse',       label: 'Problem addressed', value: toValue(project.problemeAdresse),       missing: !project.problemeAdresse?.trim()       },
+      { key: 'solutionProposee',      label: 'Proposed solution', value: toValue(project.solutionProposee),      missing: !project.solutionProposee?.trim()      },
+      { key: 'businessModel',         label: 'Business model',    value: toValue(project.businessModel),         missing: !project.businessModel?.trim()         },
+      { key: 'innovationDescription', label: 'Innovation',        value: toValue(project.innovationDescription), missing: !project.innovationDescription?.trim() },
+      { key: 'scalabiliteDescription',label: 'Scalability',       value: toValue(project.scalabiliteDescription),missing: !project.scalabiliteDescription?.trim()},
+      { key: 'stadeProjet',           label: 'Project stage',     value: toValue(project.stadeProjet),           missing: !project.stadeProjet                   },
+      { key: 'secteur',               label: 'Sector',            value: toValue(project.secteur),               missing: !project.secteur                       },
+      { key: 'pocDisponible',         label: 'POC available',     value: toValue(project.pocDisponible),         missing: false                                  },
     ];
-
-    return fields;
   }
 
   getCoachCorrectionsFeed(): CoachCorrectionFeedItem[] {
@@ -1205,41 +1054,20 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     this.workflowTaches.forEach((task) => {
       const taskComment = (task.commentaireCoach ?? '').trim();
-      if (taskComment) {
-        feed.push({
-          level: 'TASK',
-          title: task.titre,
-          comment: taskComment,
-          status: task.statutTache,
-        });
-      }
+      if (taskComment) { feed.push({ level: 'TASK', title: task.titre, comment: taskComment, status: task.statutTache }); }
 
-      const subTasks = this.getSousTachesForTask(task.id);
-      subTasks.forEach((subTask) => {
+      this.getSousTachesForTask(task.id).forEach((subTask) => {
         const subTaskComment = (subTask.commentaireCoach ?? '').trim();
-        if (!subTaskComment) {
-          return;
-        }
-        feed.push({
-          level: 'SUBTASK',
-          title: `${task.titre} / ${subTask.titre}`,
-          comment: subTaskComment,
-          status: subTask.statutSousTache,
-        });
+        if (!subTaskComment) { return; }
+        feed.push({ level: 'SUBTASK', title: `${task.titre} / ${subTask.titre}`, comment: subTaskComment, status: subTask.statutSousTache });
       });
     });
 
     return feed.sort((a, b) => {
       const rank = (status: StatutTache): number => {
-        if (status === 'A_CORRIGER') {
-          return 0;
-        }
-        if (status === 'EN_RETARD' || status === 'BLOQUEE') {
-          return 1;
-        }
-        if (status === 'EN_CORRECTION') {
-          return 2;
-        }
+        if (status === 'A_CORRIGER') { return 0; }
+        if (status === 'EN_RETARD' || status === 'BLOQUEE') { return 1; }
+        if (status === 'EN_CORRECTION') { return 2; }
         return 3;
       };
       return rank(a.status) - rank(b.status);
@@ -1247,35 +1075,20 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   resendCorrection(project: Projet): void {
-    if (!this.hasActionableCorrection(project)) {
-      this.submitMessage = this.getMissingActionableCorrectionHint(project);
-      return;
-    }
-
+    if (!this.hasActionableCorrection(project)) { this.submitMessage = this.getMissingActionableCorrectionHint(project); return; }
     const entrepreneurId = this.getCurrentEntrepreneurId();
-    if (!entrepreneurId) {
-      this.submitMessage = 'Entrepreneur session not found. Please sign in again.';
-      return;
-    }
-
+    if (!entrepreneurId) { this.submitMessage = 'Entrepreneur session not found. Please sign in again.'; return; }
     this.pendingCorrectionSubmission = project;
     this.showCorrectionSubmitModal = true;
   }
 
   closeCorrectionSubmitModal(): void {
-    if (this.isSubmitting) {
-      return;
-    }
-    this.showCorrectionSubmitModal = false;
-    this.pendingCorrectionSubmission = null;
+    if (!this.isSubmitting) { this.showCorrectionSubmitModal = false; this.pendingCorrectionSubmission = null; }
   }
 
   confirmCorrectionSubmission(): void {
     const project = this.pendingCorrectionSubmission;
-    if (!project) {
-      return;
-    }
-
+    if (!project) { return; }
     const entrepreneurId = this.getCurrentEntrepreneurId();
     if (!entrepreneurId) {
       this.showCorrectionSubmitModal = false;
@@ -1283,7 +1096,6 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       this.submitMessage = 'Entrepreneur session not found. Please sign in again.';
       return;
     }
-
     this.isSubmitting = true;
     this.submitMessage = '';
 
@@ -1307,61 +1119,49 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     });
   }
 
-  closeAssignedWorkflow(): void {
-    this.stopWaitingApprovalPolling();
-    this.selectedWorkflowProject = null;
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Chargement des données depuis l'API
+  // ═══════════════════════════════════════════════════════════════════════════
 
   loadSousTaches(tacheId: number): void {
+    console.log('[DEBUG] loadSousTaches: called for tacheId', tacheId);
     this.loadingSousTachesByTache[tacheId] = true;
     this.http.get<WorkflowSousTache[]>(`${this.apiUrl}/entrepreneur/taches/${tacheId}/sous-taches`).subscribe({
       next: (rows) => {
+        console.log('[DEBUG] loadSousTaches: API response', { tacheId, rows });
         this.workflowSousTachesByTache[tacheId] = rows;
         this.subTasksLoadedByTache[tacheId] = true;
-        rows.forEach((row) => {
-          this.sousTacheStatusById[row.id] = row.statutSousTache;
-        });
+        rows.forEach((row) => { this.sousTacheStatusById[row.id] = row.statutSousTache; });
         rows.forEach((st) => this.loadDocuments(st.id));
         this.loadingSousTachesByTache[tacheId] = false;
       },
-      error: () => {
-        this.loadingSousTachesByTache[tacheId] = false;
-        this.submitMessage = 'Unable to load sub-tasks.';
-      }
+      error: (err) => { console.error('[DEBUG] loadSousTaches: API error', err); this.loadingSousTachesByTache[tacheId] = false; }
     });
   }
 
   loadDocuments(sousTacheId: number): void {
     this.http.get<WorkflowDocument[]>(`${this.apiUrl}/entrepreneur/sous-taches/${sousTacheId}/documents`).subscribe({
-      next: (rows) => {
-        this.workflowDocumentsBySousTache[sousTacheId] = rows;
-      },
-      error: () => {
-        this.submitMessage = 'Unable to load sub-task documents.';
-      }
+      next: (rows) => { this.workflowDocumentsBySousTache[sousTacheId] = rows; },
+      error: () => { this.submitMessage = 'Unable to load sub-task documents.'; }
     });
   }
 
   loadProjectDocuments(projetId: string): void {
     this.http.get<WorkflowDocument[]>(`${this.apiUrl}/entrepreneur/projets/${projetId}/documents`).subscribe({
-      next: (rows) => {
-        this.workflowProjectDocuments = rows;
-      },
-      error: () => {
-        this.submitMessage = 'Unable to load project deliverables.';
-      }
+      next: (rows) => { this.workflowProjectDocuments = rows; },
+      error: () => { this.submitMessage = 'Unable to load project deliverables.'; }
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Statut des sous-tâches
+  // ═══════════════════════════════════════════════════════════════════════════
 
   updateSousTacheStatut(sousTache: WorkflowSousTache): void {
     let statut = this.sousTacheStatusById[sousTache.id] ?? sousTache.statutSousTache;
     const justification = this.sousTacheJustificationById[sousTache.id] ?? '';
 
-    if (!statut) {
-      this.submitMessage = 'Please select a status before updating.';
-      return;
-    }
-
+    if (!statut) { this.submitMessage = 'Please select a status before updating.'; return; }
     if (sousTache.statutSousTache === 'A_CORRIGER' && statut === 'TERMINEE') {
       statut = 'EN_CORRECTION';
       this.sousTacheStatusById[sousTache.id] = 'EN_CORRECTION';
@@ -1379,14 +1179,9 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         this.isSubmitting = false;
         this.submitMessage = 'Sub-task status updated successfully.';
         this.loadSousTaches(sousTache.tacheId);
-        if (this.selectedWorkflowProject) {
-          this.projetService.loadEntrepreneurProjects().subscribe();
-        }
+        if (this.selectedWorkflowProject) { this.projetService.loadEntrepreneurProjects().subscribe(); }
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.submitMessage = this.parseHttpError(err, 'Unable to update sub-task status. Please try again.');
-      }
+      error: (err) => { this.isSubmitting = false; this.submitMessage = this.parseHttpError(err, 'Unable to update sub-task status. Please try again.'); }
     });
   }
 
@@ -1399,32 +1194,23 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       this.uploadDocTypeBySousTacheId[sousTache.id] = '';
       return;
     }
-
     this.uploadFileBySousTacheId[sousTache.id] = file;
     this.uploadDocNameBySousTacheId[sousTache.id] = file.name;
     this.uploadDocTypeBySousTacheId[sousTache.id] = file.type || 'application/octet-stream';
   }
 
   getAvailableStatusOptionsForEntrepreneur(sousTache: WorkflowSousTache): StatutTache[] {
-    if (sousTache.statutSousTache === 'A_CORRIGER') {
-      return ['EN_CORRECTION'];
-    }
-
-    // Entrepreneur should not manually force coach-owned correction states.
+    if (sousTache.statutSousTache === 'A_CORRIGER') { return ['EN_CORRECTION']; }
     return this.taskStatusOptions.filter((status) => status !== 'A_CORRIGER');
   }
 
   getSubmissionTargetStatusForEntrepreneur(sousTache: WorkflowSousTache): StatutTache {
-    if (sousTache.statutSousTache === 'A_CORRIGER') {
-      return 'EN_CORRECTION';
-    }
+    if (sousTache.statutSousTache === 'A_CORRIGER') { return 'EN_CORRECTION'; }
     return 'TERMINEE';
   }
 
   canSubmitSousTache(sousTache: WorkflowSousTache): boolean {
-    if (!this.canOpenSousTacheSubmitModal(sousTache)) {
-      return false;
-    }
+    if (!this.canOpenSousTacheSubmitModal(sousTache)) { return false; }
     const hasFile = !!this.uploadFileBySousTacheId[sousTache.id];
     const hasJustification = (this.sousTacheJustificationById[sousTache.id] ?? '').trim().length >= 10;
     return hasFile && hasJustification;
@@ -1432,29 +1218,17 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   canOpenSousTacheSubmitModal(sousTache: WorkflowSousTache): boolean {
     const nonSubmittableStatuses: StatutTache[] = ['TERMINEE', 'EN_CORRECTION'];
-    if (nonSubmittableStatuses.includes(sousTache.statutSousTache)) {
-      return false;
-    }
-
+    if (nonSubmittableStatuses.includes(sousTache.statutSousTache)) { return false; }
     const parentTask = this.workflowTaches.find((task) => task.id === sousTache.tacheId);
-    if (parentTask?.statutTache === 'TERMINEE') {
-      return false;
-    }
-
+    if (parentTask?.statutTache === 'TERMINEE') { return false; }
     return true;
   }
 
   getSousTacheSubmissionBlockReason(sousTache: WorkflowSousTache): string {
-    if (sousTache.statutSousTache === 'TERMINEE') {
-      return 'Cette sous-tâche est déjà terminée: soumission désactivée.';
-    }
-    if (sousTache.statutSousTache === 'EN_CORRECTION') {
-      return 'Sous-tâche déjà re-soumise: en attente de revue coach.';
-    }
+    if (sousTache.statutSousTache === 'TERMINEE')     { return 'Cette sous-tâche est déjà terminée: soumission désactivée.'; }
+    if (sousTache.statutSousTache === 'EN_CORRECTION'){ return 'Sous-tâche déjà re-soumise: en attente de revue coach.'; }
     const parentTask = this.workflowTaches.find((task) => task.id === sousTache.tacheId);
-    if (parentTask?.statutTache === 'TERMINEE') {
-      return 'La tâche parente est terminée: nouvelle soumission désactivée.';
-    }
+    if (parentTask?.statutTache === 'TERMINEE') { return 'La tâche parente est terminée: nouvelle soumission désactivée.'; }
     return 'Soumission non disponible pour cet état.';
   }
 
@@ -1462,15 +1236,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     const file = this.uploadFileBySousTacheId[sousTache.id];
     const justification = (this.sousTacheJustificationById[sousTache.id] ?? '').trim();
 
-    if (!this.canOpenSousTacheSubmitModal(sousTache)) {
-      this.submitMessage = this.getSousTacheSubmissionBlockReason(sousTache);
-      return;
-    }
-
-    if (!file || justification.length < 10) {
-      this.submitMessage = 'Upload file and justification (min 10 chars) are required before submission.';
-      return;
-    }
+    if (!this.canOpenSousTacheSubmitModal(sousTache)) { this.submitMessage = this.getSousTacheSubmissionBlockReason(sousTache); return; }
+    if (!file || justification.length < 10) { this.submitMessage = 'Upload file and justification (min 10 chars) are required before submission.'; return; }
 
     const statut = this.getSubmissionTargetStatusForEntrepreneur(sousTache);
     this.isSubmitting = true;
@@ -1499,14 +1266,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
             this.uploadDocTypeBySousTacheId[sousTache.id] = '';
             this.loadDocuments(sousTache.id);
             this.loadSousTaches(sousTache.tacheId);
-            if (this.selectedWorkflowProject) {
-              this.projetService.loadEntrepreneurProjects().subscribe();
-            }
-
+            if (this.selectedWorkflowProject) { this.projetService.loadEntrepreneurProjects().subscribe(); }
             this.openSubmissionToast('Soumission réussie. Retour au Kanban...');
             setTimeout(() => {
               this.isSubmitting = false;
-              // UX flow: close submission windows and return focus to Kanban automatically.
               this.closeSousTacheSubmitModal();
               this.closeTaskModal();
               this.switchWorkspaceView('KANBAN');
@@ -1531,10 +1294,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   uploadSousTacheDocument(sousTache: WorkflowSousTache): void {
     const file = this.uploadFileBySousTacheId[sousTache.id];
-    if (!file) {
-      this.submitMessage = 'Please select a file before upload.';
-      return;
-    }
+    if (!file) { this.submitMessage = 'Please select a file before upload.'; return; }
 
     this.isSubmitting = true;
     this.submitMessage = '';
@@ -1542,11 +1302,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     formData.append('file', file);
 
     this.http.post<WorkflowDocument>(`${this.apiUrl}/entrepreneur/sous-taches/${sousTache.id}/documents/upload`, formData).subscribe({
-      next: () => {
-        this.onDocumentUploadSuccess(sousTache);
-      },
+      next: () => { this.onDocumentUploadSuccess(sousTache); },
       error: () => {
-        // Backward-compatible fallback for older backend builds still using JSON upload DTO.
         const timestamp = Date.now();
         this.http.post(`${this.apiUrl}/entrepreneur/sous-taches/${sousTache.id}/documents`, {
           nomFichier: `deliverable_${timestamp}`,
@@ -1555,13 +1312,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
           cheminStockage: `/uploads/${file.name}`,
           tailleFichier: file.size || 0
         }).subscribe({
-          next: () => {
-            this.onDocumentUploadSuccess(sousTache);
-          },
-          error: (fallbackErr) => {
-            this.isSubmitting = false;
-            this.submitMessage = this.parseHttpError(fallbackErr, 'Unable to upload deliverable. Please try again.');
-          }
+          next: () => { this.onDocumentUploadSuccess(sousTache); },
+          error: (fallbackErr) => { this.isSubmitting = false; this.submitMessage = this.parseHttpError(fallbackErr, 'Unable to upload deliverable. Please try again.'); }
         });
       }
     });
@@ -1571,20 +1323,9 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     const newDate = this.sousTacheExtensionDateById[sousTache.id];
     const justification = (this.sousTacheJustificationById[sousTache.id] ?? '').trim();
 
-    if (!newDate) {
-      this.submitMessage = 'Please select a new extension date.';
-      return;
-    }
-
-    if (!justification) {
-      this.submitMessage = 'Please provide a justification for the extension request.';
-      return;
-    }
-
-    if (justification.length < 10) {
-      this.submitMessage = 'Justification must be at least 10 characters long.';
-      return;
-    }
+    if (!newDate)                   { this.submitMessage = 'Please select a new extension date.'; return; }
+    if (!justification)             { this.submitMessage = 'Please provide a justification for the extension request.'; return; }
+    if (justification.length < 10)  { this.submitMessage = 'Justification must be at least 10 characters long.'; return; }
 
     this.isSubmitting = true;
     this.submitMessage = '';
@@ -1599,100 +1340,57 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         this.sousTacheExtensionDateById[sousTache.id] = '';
         this.loadSousTaches(sousTache.tacheId);
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.submitMessage = this.parseHttpError(err, 'Unable to request sub-task extension. Please try again.');
-      }
+      error: (err) => { this.isSubmitting = false; this.submitMessage = this.parseHttpError(err, 'Unable to request sub-task extension. Please try again.'); }
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Statut & helpers projet
+  // ═══════════════════════════════════════════════════════════════════════════
 
   isAssignedToCoach(project: Projet): boolean {
     return project.etatValidation === 'AFFECTE_COACH' || project.etatValidation === 'A_CORRIGER' || project.etatValidation === 'EN_REVUE';
   }
-
-  needsCorrection(project: Projet): boolean {
-    return project.etatValidation === 'A_CORRIGER';
-  }
-
-  isDraft(project: Projet): boolean {
-    return project.etatValidation === 'BROUILLON';
-  }
-
-  canEdit(project: Projet): boolean {
-    return this.isDraft(project) || this.needsCorrection(project);
-  }
-
-  statusLabel(project: Projet): string {
-    return formatProjetStatusLabel(project);
-  }
-
-  disciplineLevel(score: number): 'good' | 'watch' | 'risk' {
-    return getDisciplineLevelClass(score);
-  }
+  needsCorrection(project: Projet): boolean { return project.etatValidation === 'A_CORRIGER'; }
+  isDraft(project: Projet): boolean         { return project.etatValidation === 'BROUILLON'; }
+  canEdit(project: Projet): boolean         { return this.isDraft(project) || this.needsCorrection(project); }
+  statusLabel(project: Projet): string      { return formatProjetStatusLabel(project); }
+  disciplineLevel(score: number): 'good' | 'watch' | 'risk' { return getDisciplineLevelClass(score); }
 
   impactHintSubTask(subTask: WorkflowSousTache): string {
-    if (subTask.statutSousTache === 'BLOQUEE') {
-      return 'Blockage penalty: -15';
-    }
-    if (subTask.retardJours > 7) {
-      return 'Long delay penalty: -10';
-    }
-    if (subTask.statutSousTache === 'EN_RETARD') {
-      return 'Delay penalty: -3';
-    }
-    if (subTask.statutSousTache === 'TERMINEE') {
-      return subTask.retardJours > 0 ? 'Completed late: -3' : 'Completed on time: +5';
-    }
+    if (subTask.statutSousTache === 'BLOQUEE')  { return 'Blockage penalty: -15'; }
+    if (subTask.retardJours > 7)                { return 'Long delay penalty: -10'; }
+    if (subTask.statutSousTache === 'EN_RETARD'){ return 'Delay penalty: -3'; }
+    if (subTask.statutSousTache === 'TERMINEE') { return subTask.retardJours > 0 ? 'Completed late: -3' : 'Completed on time: +5'; }
     return 'No direct score impact yet';
   }
 
   impactHintTask(task: WorkflowTache): string {
-    if (task.statutTache === 'BLOQUEE') {
-      return 'Blockage penalty: -15';
-    }
-
-    if (task.retardJours > 7) {
-      return 'Long delay penalty: -10';
-    }
-
-    if (task.statutTache === 'EN_RETARD') {
-      return 'Delay penalty: -5';
-    }
-
-    if (task.statutTache === 'A_CORRIGER') {
-      return 'Correction penalty: -12';
-    }
-
-    if (task.statutTache === 'TERMINEE') {
-      return task.retardJours > 0 ? 'Completed late: -5' : 'Completed on time: +10';
-    }
-
+    if (task.statutTache === 'BLOQUEE')   { return 'Blockage penalty: -15'; }
+    if (task.retardJours > 7)             { return 'Long delay penalty: -10'; }
+    if (task.statutTache === 'EN_RETARD') { return 'Delay penalty: -5'; }
+    if (task.statutTache === 'A_CORRIGER'){ return 'Correction penalty: -12'; }
+    if (task.statutTache === 'TERMINEE')  { return task.retardJours > 0 ? 'Completed late: -5' : 'Completed on time: +10'; }
     return 'Active workflow item';
   }
 
-  getTaskSubtaskCount(tacheId: number): number {
-    return this.getSousTachesForTask(tacheId).length;
-  }
+  getTaskSubtaskCount(tacheId: number): number { return this.getSousTachesForTask(tacheId).length; }
+  getDocumentsForSousTache(sousTacheId: number): WorkflowDocument[] { return this.workflowDocumentsBySousTache[sousTacheId] ?? []; }
 
-  getDocumentsForSousTache(sousTacheId: number): WorkflowDocument[] {
-    return this.workflowDocumentsBySousTache[sousTacheId] ?? [];
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Calendrier
+  // ═══════════════════════════════════════════════════════════════════════════
 
   getCalendarMonthLabel(): string {
     return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(this.currentCalendarCursor);
   }
-
   goToPreviousCalendarMonth(): void {
     this.currentCalendarCursor = new Date(this.currentCalendarCursor.getFullYear(), this.currentCalendarCursor.getMonth() - 1, 1);
   }
-
   goToNextCalendarMonth(): void {
     this.currentCalendarCursor = new Date(this.currentCalendarCursor.getFullYear(), this.currentCalendarCursor.getMonth() + 1, 1);
   }
-
-  getCalendarDayHeaders(): string[] {
-    return ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  }
+  getCalendarDayHeaders(): string[] { return ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']; }
 
   getCalendarGridDays(): CalendarDayCell[] {
     const firstDayOfMonth = new Date(this.currentCalendarCursor.getFullYear(), this.currentCalendarCursor.getMonth(), 1);
@@ -1703,7 +1401,6 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     for (let i = 0; i < mondayAlignedOffset; i += 1) {
       cells.push({ date: null, tasks: [], isCurrentMonth: false, isToday: false });
     }
-
     const todayKey = this.formatDateKey(new Date());
     for (let day = 1; day <= daysInMonth; day += 1) {
       const date = new Date(this.currentCalendarCursor.getFullYear(), this.currentCalendarCursor.getMonth(), day);
@@ -1715,132 +1412,170 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         isToday: dateKey === todayKey,
       });
     }
-
     while (cells.length % 7 !== 0) {
       cells.push({ date: null, tasks: [], isCurrentMonth: false, isToday: false });
     }
-
     return cells;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Polling "waiting coach approval"
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  isWaitingCoachApproval(project: Projet | null): boolean {
+    if (!project || project.etatValidation !== 'EN_REVUE') { return false; }
+    if (project.correctionResoumiseEnAttenteCoach) { return true; }
+    return this.readPendingCoachApprovalIds().includes(project.id);
+  }
+
+  private updateWaitingApprovalPolling(project: Projet | null): void {
+    if (!project || !this.isWaitingCoachApproval(project)) { this.stopWaitingApprovalPolling(); return; }
+    this.startWaitingApprovalPolling();
+  }
+
+  private startWaitingApprovalPolling(): void {
+    if (this.waitingApprovalPollHandle) { return; }
+    this.waitingApprovalPollHandle = setInterval(() => { this.refreshSelectedProjectInPlace(); }, 10000);
+  }
+
+  private stopWaitingApprovalPolling(): void {
+    if (!this.waitingApprovalPollHandle) { return; }
+    clearInterval(this.waitingApprovalPollHandle);
+    this.waitingApprovalPollHandle = null;
+  }
+
+  private refreshSelectedProjectInPlace(): void {
+    const selectedId = this.selectedWorkflowProject?.id;
+    if (!selectedId) { return; }
+    this.projetService.loadEntrepreneurProjects().subscribe({
+      next: (projects) => {
+        const updated = projects.find((project) => project.id === selectedId);
+        if (!updated) { this.stopWaitingApprovalPolling(); return; }
+        this.selectedWorkflowProject = updated;
+        if (updated.etatValidation !== 'EN_REVUE') {
+          this.clearPendingCoachApproval(updated.id);
+          this.stopWaitingApprovalPolling();
+          this.submitMessage = updated.etatValidation === 'VALIDE' ? 'Coach approved your correction.' : this.submitMessage;
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Storage helpers
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private persistSelectedProjectId(projectId: string): void {
+    try { sessionStorage.setItem(this.selectedProjectStorageKey, projectId); } catch { }
+  }
+
+  private getPersistedSelectedProjectId(): string | null {
+    try { return sessionStorage.getItem(this.selectedProjectStorageKey); } catch { return null; }
+  }
+
+  private refreshWithSelectedProject(projectId?: string): void {
+    const idToPersist = projectId ?? this.selectedWorkflowProject?.id;
+    if (idToPersist) { this.persistSelectedProjectId(idToPersist); }
+    setTimeout(() => window.location.reload(), 800);
+  }
+
+  private persistPendingCoachApproval(projectId: string): void {
+    try {
+      const existing = this.readPendingCoachApprovalIds();
+      if (!existing.includes(projectId)) { existing.push(projectId); }
+      sessionStorage.setItem(this.pendingCoachApprovalStorageKey, JSON.stringify(existing));
+    } catch { }
+  }
+
+  private clearPendingCoachApproval(projectId: string): void {
+    try {
+      const updated = this.readPendingCoachApprovalIds().filter((id) => id !== projectId);
+      sessionStorage.setItem(this.pendingCoachApprovalStorageKey, JSON.stringify(updated));
+    } catch { }
+  }
+
+  private readPendingCoachApprovalIds(): string[] {
+    try {
+      const raw = sessionStorage.getItem(this.pendingCoachApprovalStorageKey);
+      if (!raw) { return []; }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
+    } catch { return []; }
+  }
+
+  private getCorrectionGuideStorageKey(project: Projet): string {
+    const corr = project.commentaireCorrectionCoach || '';
+    const hash = corr ? this.simpleHash(corr) : (project.updatedAt || String(project.id));
+    return `correctionGuideSeen_${project.id}_${hash}`;
+  }
+
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const chr = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Helpers privés divers
+  // ═══════════════════════════════════════════════════════════════════════════
+
   private validateProjectForm(): string | null {
     const form = this.form;
-
-    if (!form.nomStartup?.trim()) {
-      return 'Startup name is required.';
-    }
-
-    if (form.nomStartup.trim().length < 3) {
-      return 'Startup name must be at least 3 characters long.';
-    }
-
-    if (!form.description?.trim()) {
-      return 'Description is required.';
-    }
-
-    if (form.description.trim().length < 10) {
-      return 'Description must be at least 10 characters long.';
-    }
-
-    if (!form.problemeAdresse?.trim()) {
-      return 'Problem addressed is required.';
-    }
-
-    if (!form.solutionProposee?.trim()) {
-      return 'Proposed solution is required.';
-    }
-
-    if (!form.businessModel?.trim()) {
-      return 'Business model is required.';
-    }
-
-    if (!form.secteur) {
-      return 'Sector is required.';
-    }
-
-    const timelineError = this.getProjectTimelineValidationError(
-      form.dateDebutProjet,
-      form.dateFinProjet,
-      false,
-    );
-    if (timelineError) {
-      return timelineError;
-    }
-
-    return null;
+    if (!form.nomStartup?.trim())           { return 'Startup name is required.'; }
+    if (form.nomStartup.trim().length < 3)  { return 'Startup name must be at least 3 characters long.'; }
+    if (!form.description?.trim())          { return 'Description is required.'; }
+    if (form.description.trim().length < 10){ return 'Description must be at least 10 characters long.'; }
+    if (!form.problemeAdresse?.trim())      { return 'Problem addressed is required.'; }
+    if (!form.solutionProposee?.trim())     { return 'Proposed solution is required.'; }
+    if (!form.businessModel?.trim())        { return 'Business model is required.'; }
+    if (!form.secteur)                      { return 'Sector is required.'; }
+    return this.getProjectTimelineValidationError(form.dateDebutProjet, form.dateFinProjet, false);
   }
 
   private createEmptyForm(): ProjetDraftInput {
     return {
-      nomStartup: '',
-      description: '',
-      secteur: '',
-      problemeAdresse: '',
-      solutionProposee: '',
-      businessModel: '',
-      stadeProjet: 'IDEE',
-      innovationDescription: '',
-      scalabiliteDescription: '',
-      pocDisponible: false,
-      dateDebutProjet: '',
-      dateFinProjet: '',
+      nomStartup: '', description: '', secteur: '', problemeAdresse: '',
+      solutionProposee: '', businessModel: '', stadeProjet: 'IDEE',
+      innovationDescription: '', scalabiliteDescription: '', pocDisponible: false,
+      dateDebutProjet: '', dateFinProjet: '',
     };
   }
 
   private getProjectTimelineValidationError(startDate: string, endDate: string, enforceFutureStart: boolean): string | null {
-    if (!startDate || !endDate) {
-      return 'Project start and end dates are required.';
-    }
-
+    if (!startDate || !endDate) { return 'Project start and end dates are required.'; }
     const start = new Date(`${startDate}T00:00:00`);
-    const end = new Date(`${endDate}T00:00:00`);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return 'Project dates are invalid.';
-    }
-
-    if (end < start) {
-      return 'Project end date must be after start date.';
-    }
-
+    const end   = new Date(`${endDate}T00:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) { return 'Project dates are invalid.'; }
+    if (end < start) { return 'Project end date must be after start date.'; }
     if (enforceFutureStart) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (start < today) {
-        return 'Project start date cannot be in the past.';
-      }
+      if (start < today) { return 'Project start date cannot be in the past.'; }
     }
-
     const msPerDay = 1000 * 60 * 60 * 24;
     const durationDays = Math.floor((end.getTime() - start.getTime()) / msPerDay);
     if (durationDays < this.minProjectDurationDays) {
       return `Project duration must be at least ${this.minProjectDurationDays} days.`;
     }
-
     return null;
   }
 
   private toDateInputValue(date?: Date): string {
-    if (!date) {
-      return '';
-    }
-
+    if (!date) { return ''; }
     const d = date instanceof Date ? date : new Date(date);
-    if (Number.isNaN(d.getTime())) {
-      return '';
-    }
-
+    if (Number.isNaN(d.getTime())) { return ''; }
     return d.toISOString().slice(0, 10);
   }
 
   private loadAssignedCoachs(projetId: string): void {
     this.http.get<AssignedCoach[]>(`${this.apiUrl}/entrepreneur/projets/${projetId}/coachs`).subscribe({
-      next: (rows) => {
-        this.assignedCoachs = rows;
-      },
-      error: () => {
-        this.submitMessage = 'Unable to load assigned coaches.';
-      }
+      next: (rows) => { this.assignedCoachs = rows; },
+      error: () => { this.submitMessage = 'Unable to load assigned coaches.'; }
     });
   }
 
@@ -1849,38 +1584,32 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       next: (rows) => {
         this.workflowTaches = rows;
         const firstTaskDate = rows.find((row) => !!row.dateFin)?.dateFin;
-        if (firstTaskDate) {
-          this.currentCalendarCursor = this.createMonthAnchor(new Date(firstTaskDate));
-        }
+        if (firstTaskDate) { this.currentCalendarCursor = this.createMonthAnchor(new Date(firstTaskDate)); }
         this.workflowSousTachesByTache = {};
         this.workflowDocumentsBySousTache = {};
         this.subTasksLoadedByTache = {};
         this.loadingSousTachesByTache = {};
       },
-      error: () => {
-        this.submitMessage = 'Unable to load project tasks.';
-      }
+      error: () => { this.submitMessage = 'Unable to load project tasks.'; }
     });
   }
 
   private isAllowedTaskTransition(from: StatutTache, to: StatutTache): boolean {
     const allowed: Record<StatutTache, StatutTache[]> = {
-      A_FAIRE: ['EN_COURS'],
-      EN_COURS: ['A_CORRIGER', 'TERMINEE', 'EN_RETARD', 'BLOQUEE'],
-      A_CORRIGER: ['EN_CORRECTION'],
+      A_FAIRE:       ['EN_COURS'],
+      EN_COURS:      ['A_CORRIGER', 'TERMINEE', 'EN_RETARD', 'BLOQUEE'],
+      A_CORRIGER:    ['EN_CORRECTION'],
       EN_CORRECTION: ['EN_COURS', 'A_CORRIGER', 'TERMINEE'],
-      TERMINEE: [],
-      EN_RETARD: ['EN_COURS', 'A_CORRIGER', 'TERMINEE'],
-      BLOQUEE: ['EN_COURS', 'A_CORRIGER'],
+      TERMINEE:      [],
+      EN_RETARD:     ['EN_COURS', 'A_CORRIGER', 'TERMINEE'],
+      BLOQUEE:       ['EN_COURS', 'A_CORRIGER'],
     };
-
     return allowed[from].includes(to);
   }
 
   private updateTaskStatus(task: WorkflowTache, targetStatus: StatutTache): void {
     this.isSubmitting = true;
     this.submitMessage = '';
-
     this.http.patch<WorkflowTache>(`${this.apiUrl}/entrepreneur/taches/${task.id}/statut`, {
       statutTache: targetStatus,
       justificationEntrepreneur: task.justificationEntrepreneur ?? ''
@@ -1889,32 +1618,16 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
         this.isSubmitting = false;
         this.submitMessage = 'Statut de tâche mis à jour.';
         task.statutTache = targetStatus;
-        if (this.selectedWorkflowProject) {
-          this.projetService.loadEntrepreneurProjects().subscribe();
-        }
+        if (this.selectedWorkflowProject) { this.projetService.loadEntrepreneurProjects().subscribe(); }
       },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.submitMessage = this.parseHttpError(err, 'Unable to update task status.');
-      }
+      error: (err) => { this.isSubmitting = false; this.submitMessage = this.parseHttpError(err, 'Unable to update task status.'); }
     });
   }
 
   private getCurrentEntrepreneurId(): number {
-    const idUser = this.authService.currentUser?.idUser;
-    if (typeof idUser === 'number' && Number.isFinite(idUser) && idUser > 0) {
-      return idUser;
-    }
-
     const rawId = this.authService.currentUser?.id ?? '';
     const parsed = Number(rawId);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-
-    const digits = String(rawId).replace(/\D/g, '');
-    const fallback = Number(digits);
-    return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
   private parseHttpError(err: unknown, fallback: string): string {
@@ -1929,18 +1642,13 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.uploadDocNameBySousTacheId[sousTache.id] = '';
     this.uploadDocTypeBySousTacheId[sousTache.id] = '';
     this.loadDocuments(sousTache.id);
-    if (this.selectedWorkflowProject) {
-      this.loadProjectDocuments(this.selectedWorkflowProject.id);
-    }
+    if (this.selectedWorkflowProject) { this.loadProjectDocuments(this.selectedWorkflowProject.id); }
   }
 
   private openSubmissionToast(message: string): void {
     this.submissionToastMessage = message;
     this.showSubmissionToast = true;
-    setTimeout(() => {
-      this.showSubmissionToast = false;
-      this.submissionToastMessage = '';
-    }, 1800);
+    setTimeout(() => { this.showSubmissionToast = false; this.submissionToastMessage = ''; }, 1800);
   }
 
   private revokeDeliverablePreviewUrl(): void {
@@ -1951,13 +1659,42 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   private formatDateKey(date: Date): string {
-    const year = date.getFullYear();
+    const year  = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const day   = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
   private createMonthAnchor(date: Date): Date {
     return new Date(date.getFullYear(), date.getMonth(), 1);
+  }
+
+  private getRequestedCorrectionFieldKeys(project: Projet): Set<EditableProjectFieldKey> {
+    const keys = new Set<EditableProjectFieldKey>();
+    for (const hint of this.getProjectCorrectionHints(project)) {
+      const normalized = this.normalizeToEditableProjectFieldKey(hint.fieldKey);
+      if (normalized) { keys.add(normalized); }
+    }
+    return keys;
+  }
+
+  private normalizeToEditableProjectFieldKey(value: string): EditableProjectFieldKey | null {
+    const normalized = (value ?? '').trim();
+    if (!normalized) { return null; }
+    if ((EDITABLE_PROJECT_FIELDS as string[]).includes(normalized)) { return normalized as EditableProjectFieldKey; }
+    const fromLabel = this.toProjectFormFieldKeyFromLabel(normalized);
+    if ((EDITABLE_PROJECT_FIELDS as string[]).includes(fromLabel)) { return fromLabel as EditableProjectFieldKey; }
+    return null;
+  }
+
+  private toProjectFormFieldKeyFromLabel(label: string): string {
+    const normalized = label.trim().toLowerCase();
+    if (normalized === 'problem addressed') { return 'problemeAdresse'; }
+    if (normalized === 'proposed solution') { return 'solutionProposee'; }
+    if (normalized === 'business model')    { return 'businessModel'; }
+    if (normalized === 'innovation')        { return 'innovationDescription'; }
+    if (normalized === 'scalability')       { return 'scalabiliteDescription'; }
+    if (normalized === 'poc')               { return 'pocDisponible'; }
+    return label;
   }
 }

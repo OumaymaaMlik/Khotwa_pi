@@ -76,7 +76,12 @@ export class ProjetService {
   getById(id: string): Projet | undefined { return this._projets.find(p => p.id === id); }
 
   loadEntrepreneurProjects(): Observable<Projet[]> {
-    const entrepreneurId = Number(this.auth.currentUser?.idUser ?? this.auth.currentUser?.id ?? 0);
+    const entrepreneurId = Number(this.auth.currentUser?.id ?? 0);
+    if (!entrepreneurId || isNaN(entrepreneurId) || entrepreneurId <= 0) {
+      return new Observable(observer => {
+        observer.error(new Error('Session expirée ou invalide. Veuillez vous reconnecter.'));
+      });
+    }
     return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/entrepreneur/projets`, {
       params: { entrepreneurId: String(entrepreneurId) }
     }).pipe(
@@ -97,7 +102,7 @@ export class ProjetService {
   }
 
   loadCoachAssignedProjects(): Observable<Projet[]> {
-    const coachId = Number(this.auth.currentUser?.idUser ?? this.auth.currentUser?.id ?? 0);
+    const coachId = Number(this.auth.currentUser?.id ?? 0);
     return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/coach/projets-affectes`, {
       params: { coachId: String(coachId) }
     }).pipe(
@@ -113,7 +118,7 @@ export class ProjetService {
   }
 
   createProjet(form: ProjetDraftInput): Observable<Projet> {
-    const entrepreneurId = Number(this.auth.currentUser?.idUser ?? this.auth.currentUser?.id ?? 0);
+    const entrepreneurId = Number(this.auth.currentUser?.id ?? 0);
     
     // Defensive check: prevent invalid FK constraint violation
     if (entrepreneurId <= 0) {
@@ -148,7 +153,7 @@ export class ProjetService {
   }
 
   updateProjet(id: string, form: ProjetDraftInput): Observable<Projet> {
-    const entrepreneurId = Number(this.auth.currentUser?.idUser ?? this.auth.currentUser?.id ?? 0);
+    const entrepreneurId = Number(this.auth.currentUser?.id ?? 0);
     const payload = {
       nomStartup: form.nomStartup,
       description: form.description,
@@ -175,7 +180,7 @@ export class ProjetService {
   }
 
   submitProjet(id: string): Observable<Projet> {
-    const entrepreneurId = Number(this.auth.currentUser?.idUser ?? this.auth.currentUser?.id ?? 0);
+    const entrepreneurId = Number(this.auth.currentUser?.id ?? 0);
     return this.http.post<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets/${id}/soumettre`, null, {
       params: { entrepreneurId: String(entrepreneurId) }
     }).pipe(
@@ -187,7 +192,7 @@ export class ProjetService {
   }
 
   deleteProjet(id: string): Observable<void> {
-    const entrepreneurId = Number(this.auth.currentUser?.idUser ?? this.auth.currentUser?.id ?? 0);
+    const entrepreneurId = Number(this.auth.currentUser?.id ?? 0);
     return this.http.delete<void>(`${this.apiUrl}/entrepreneur/projets/${id}`, {
       params: { entrepreneurId: String(entrepreneurId) }
     }).pipe(
@@ -214,7 +219,7 @@ export class ProjetService {
   }
   delete(id: string): void { this._projets = this._projets.filter(p => p.id !== id); }
 
-  private toProjetModel(row: BackendProjetResponse): Projet {
+  private toProjetModel(row: BackendProjetResponse & { projectCorrectionRequired?: boolean }): Projet {
     const disciplineScore = row.scoreDisciplineGlobal ?? 0;
     return {
       id: String(row.id),
@@ -243,6 +248,7 @@ export class ProjetService {
       etapes: [],
       createdAt: new Date(row.dateCreation),
       updatedAt: new Date(row.dateDerniereMiseAJour),
+      projectCorrectionRequired: row.statutCorrectionProjet === 'DEMANDEE' || row.statutCorrectionProjet === 'RECORRECTION_DEMANDEE',
     };
   }
 

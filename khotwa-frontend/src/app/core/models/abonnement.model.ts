@@ -4,7 +4,7 @@ export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
 
 export interface Abonnement {
   idSubscription: number;
-  idUser: number;
+    // idUser: number; // Removed as it is not used in frontend
   plan: PlanType;
   status: SubscriptionStatus;
   dateDebut: string;
