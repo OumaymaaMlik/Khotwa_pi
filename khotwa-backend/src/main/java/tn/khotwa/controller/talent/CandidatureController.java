@@ -1,4 +1,45 @@
+// controller/CandidatureController.java
 package tn.khotwa.controller.talent;
 
+import tn.khotwa.DTO.talent.MatchingResponseDTO;
+import tn.khotwa.entity.talent.Candidature;
+import tn.khotwa.service.sertalent.CandidatureService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/candidatures")
+@CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class CandidatureController {
+
+    private final CandidatureService candidatureService;
+
+    // POST /api/candidatures  body: { talentId, annonceId, message }
+    @PostMapping
+    public ResponseEntity<Candidature> postuler(@RequestBody Map<String, Object> body) {
+        Long talentId = Long.valueOf(body.get("talentId").toString());
+        Long annonceId = Long.valueOf(body.get("annonceId").toString());
+        String message = (String) body.getOrDefault("message", "");
+        return ResponseEntity.ok(candidatureService.postuler(talentId, annonceId, message));
+    }
+
+    // GET /api/candidatures/matching/{annonceId} — Liste des candidats triés par score
+    @GetMapping("/matching/{annonceId}")
+    public ResponseEntity<List<MatchingResponseDTO>> getMatching(@PathVariable Long annonceId) {
+        return ResponseEntity.ok(candidatureService.getMatchingPourAnnonce(annonceId));
+    }
+
+    // GET /api/candidatures/annonce/{annonceId} — Liste des candidatures pour une annonce
+    @GetMapping("/annonce/{annonceId}")
+    public ResponseEntity<List<Candidature>> getCandidaturesAnnonce(@PathVariable Long annonceId) {
+        return ResponseEntity.ok(candidatureService.getCandidaturesParAnnonce(annonceId));
+    }
+    @GetMapping("/talent/{talentId}")
+    public ResponseEntity<List<Candidature>> getCandidaturesByTalent(@PathVariable Long talentId) {
+        return ResponseEntity.ok(candidatureService.getCandidaturesByTalent(talentId));
+    }
 }
