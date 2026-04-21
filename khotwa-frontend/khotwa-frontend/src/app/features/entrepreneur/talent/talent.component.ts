@@ -41,7 +41,9 @@ export class EntrepreneurTalentComponent implements OnInit {
     { code: 'FRONTEND', label: 'Frontend / Design system' },
     { code: 'DATA_ML', label: 'Data / ML Engineer' },
     { code: 'MLOPS', label: 'MLOps / DataOps' },
+    { code: 'GENAI', label: 'GenAI Engineer / LLMOps' },
     { code: 'DEVOPS', label: 'DevOps / SRE' },
+    { code: 'BLOCKCHAIN', label: 'Blockchain / Web3 Architect' },
     { code: 'CLOUD', label: 'Cloud / Architecte' },
     { code: 'CYBER', label: 'Cybersécurité' },
     { code: 'PRODUCT', label: 'Product / PM' },
@@ -78,15 +80,25 @@ export class EntrepreneurTalentComponent implements OnInit {
 
   loadTalents(): void {
     this.talentService.getTalents().subscribe({
-      next: (data: TalentProfile[]) => (this.talents = data),
-      error: (err: any) => console.error('Erreur talents:', err),
+      next: (data: TalentProfile[]) => {
+        this.talents = data;
+      },
+      error: (err: any) => {
+        console.error('Erreur talents:', err);
+        this.error = 'Impossible de charger les talents. Vérifiez le backend.';
+      },
     });
   }
 
   loadAnnonces(): void {
     this.talentService.getAnnonces().subscribe({
-      next: (data: Annonce[]) => (this.annonces = data),
-      error: (err: any) => console.error('Erreur annonces:', err),
+      next: (data: Annonce[]) => {
+        this.annonces = data;
+      },
+      error: (err: any) => {
+        console.error('Erreur annonces:', err);
+        this.error = 'Impossible de charger les offres. Vérifiez GET /api/annonces.';
+      },
     });
   }
 
@@ -295,6 +307,7 @@ export class EntrepreneurTalentComponent implements OnInit {
         },
         error: () => {
           this.hiringAiLoading = false;
+          this.error = 'La génération IA a échoué. Vérifiez /api/ai/hiring-advice.';
         },
       });
   }
