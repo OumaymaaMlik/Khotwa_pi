@@ -1,0 +1,50 @@
+<div class="vis-page">
+  <div class="vis-hero">
+    <h1>Bonjour, {{ auth.currentUser?.prenom }}</h1>
+    <p>Parcourez les offres, complétez votre profil talent et pilotez votre stratégie de candidature.</p>
+  </div>
+
+  <div *ngIf="!hasProfil" class="vis-banner vis-banner--warn">
+    <strong>Profil talent requis</strong> pour postuler. Renseignez vos compétences sur
+    <a routerLink="/visitor/profil">Mon profil talent</a>.
+  </div>
+
+  <div class="vis-stats" *ngIf="!loading">
+    <a routerLink="/visitor/annonces" class="vis-stat-card">
+      <span class="vis-stat-val">{{ annoncesCount }}</span>
+      <span class="vis-stat-lbl">Offres publiées</span>
+    </a>
+    <a routerLink="/visitor/candidatures" class="vis-stat-card">
+      <span class="vis-stat-val">{{ candidaturesCount }}</span>
+      <span class="vis-stat-lbl">Mes candidatures</span>
+    </a>
+    <a routerLink="/visitor/profil" class="vis-stat-card">
+      <span class="vis-stat-val">{{ profileCompletion }}%</span>
+      <span class="vis-stat-lbl">Complétude du profil</span>
+    </a>
+  </div>
+
+  <div class="vis-actions">
+    <a routerLink="/visitor/annonces" class="vis-btn vis-btn--primary">Voir les offres</a>
+    <a routerLink="/visitor/profil" class="vis-btn vis-btn--ghost">Mon profil talent</a>
+    <a routerLink="/visitor/candidatures" class="vis-btn vis-btn--ghost">Mes candidatures</a>
+  </div>
+
+  <div class="vis-ai-card">
+    <div class="vis-ai-head">
+      <h3>Assistant IA Carrière</h3>
+      <span class="vis-ai-badge">Spring AI ready</span>
+    </div>
+    <p>Décris ton objectif, puis laisse l’IA proposer les prochaines actions.</p>
+    <textarea [(ngModel)]="aiGoal" rows="2" placeholder="Ex: Devenir top candidat sur les offres Spring/Angular"></textarea>
+    <button class="vis-btn vis-btn--primary" (click)="askAi()" [disabled]="aiLoading">
+      {{ aiLoading ? 'Analyse…' : 'Générer un plan IA' }}
+    </button>
+    <div *ngIf="aiAdvice" class="vis-ai-result">
+      <p>{{ aiAdvice }}</p>
+      <ul>
+        <li *ngFor="let b of aiBullets">{{ b }}</li>
+      </ul>
+    </div>
+  </div>
+</div>

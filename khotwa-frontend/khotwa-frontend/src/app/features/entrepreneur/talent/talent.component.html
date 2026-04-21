@@ -1,0 +1,399 @@
+<!-- talent.component.html -->
+<div class="page animate-1 tm-page">
+
+  <div *ngIf="successMsg" class="kh-alert kh-alert--success">✓ {{ successMsg }}</div>
+  <div *ngIf="error" class="kh-alert kh-alert--danger">
+    ⚠ {{ error }}
+    <button type="button" class="tm-alert-dismiss" (click)="error=''" aria-label="Fermer">✕</button>
+  </div>
+
+  <header class="tm-hero">
+    <div class="tm-hero__grid">
+      <div class="tm-hero__copy">
+        <p class="tm-eyebrow">Talent marketplace · Spring-ready</p>
+        <h1 class="kh-page-title tm-hero__title">Recrutement intelligent</h1>
+        <p class="page-sub tm-hero__sub">
+          Publiez des offres riches, ciblez des métiers avancés, exploitez le matching et l’assistant IA recrutement.
+        </p>
+        <div class="tm-hero__chips">
+          <span class="tm-chip"><strong>{{ talents.length }}</strong> talents</span>
+          <span class="tm-chip"><strong>{{ annonces.length }}</strong> annonces</span>
+          <span class="tm-chip tm-chip--outline">IA · <code>/api/ai/hiring-advice</code></span>
+        </div>
+      </div>
+      <div class="tm-hero__panel">
+        <p class="tm-hero__panel-title">Actions</p>
+        <button type="button" class="kh-btn kh-btn--primary tm-hero__btn" (click)="showForm=true; showEditForm=false; view='annonces'">
+          + Nouvelle offre
+        </button>
+        <button type="button" class="kh-btn kh-btn--ghost tm-hero__btn" (click)="view='talents'">
+          Explorer les talents
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tm-layout">
+    <div class="tm-main">
+
+      <!-- Formulaire CRÉATION -->
+      <section class="form-panel animate-2 tm-form" *ngIf="showForm">
+        <div class="form-panel__header">
+          <div>
+            <h3>Nouvelle annonce</h3>
+            <p class="tm-form-lead">Titre, type, compétences, métiers cibles et description — tout part vers votre API.</p>
+          </div>
+          <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm" (click)="showForm=false">Fermer</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="poste">Intitulé du poste</label>
+            <input id="poste" class="kh-input" type="text" [(ngModel)]="newAnnonce.poste" placeholder="ex. Lead Full-stack, Data Engineer…" />
+          </div>
+          <div class="form-group">
+            <label for="type">Type de contrat</label>
+            <select id="type" class="kh-input" [(ngModel)]="newAnnonce.type">
+              <option value="cofondateur">Co-fondateur</option>
+              <option value="stagiaire">Stagiaire</option>
+              <option value="emploi">CDI / temps plein</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="loc">Localisation</label>
+            <input id="loc" class="kh-input" type="text" [(ngModel)]="newAnnonce.localisation" placeholder="Tunis, Hybride, Remote…" />
+          </div>
+          <div class="form-group">
+            <label for="skills">Compétences requises <span class="form-hint">(virgules)</span></label>
+            <input id="skills" class="kh-input" type="text" [(ngModel)]="newAnnonce.competences" placeholder="Spring Boot, Angular, PostgreSQL…" />
+          </div>
+        </div>
+        <div class="form-group tm-metiers-block">
+          <label>Métiers &amp; familles avancées</label>
+          <p class="form-hint tm-metiers-hint">Sélectionnez une ou plusieurs cibles — utiles pour le matching et l’IA.</p>
+          <div class="tm-metier-chips">
+            <button type="button" class="tm-metier-chip"
+                    *ngFor="let m of metiersCatalog"
+                    [class.tm-metier-chip--on]="newAnnonce.metiers.includes(m.code)"
+                    (click)="toggleMetier(m.code)">
+              {{ m.label }}
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="desc">Description du poste</label>
+          <textarea id="desc" class="kh-input tm-textarea" rows="4" [(ngModel)]="newAnnonce.description"
+                    placeholder="Missions, stack, niveau attendu, avantages…"></textarea>
+        </div>
+        <button type="button" class="kh-btn kh-btn--primary" (click)="submitAnnonce()" [disabled]="loading">
+          {{ loading ? 'Publication…' : 'Publier l’annonce' }}
+        </button>
+      </section>
+
+      <!-- Formulaire MODIFICATION -->
+      <section class="form-panel animate-2 tm-form tm-form--edit" *ngIf="showEditForm">
+        <div class="form-panel__header">
+          <h3>Modifier — {{ editData.titre }}</h3>
+          <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm" (click)="annulerEdition()">Fermer</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Intitulé</label>
+            <input class="kh-input" type="text" [(ngModel)]="editData.titre" />
+          </div>
+          <div class="form-group">
+            <label for="edit-type">Type</label>
+            <select id="edit-type" name="typePoste" class="kh-input" [(ngModel)]="editData.typePoste" aria-label="Type de poste">
+              <option value="COFONDATEUR">Co-fondateur</option>
+              <option value="STAGIAIRE">Stagiaire</option>
+              <option value="EMPLOI">CDI</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Compétences <span class="form-hint">(virgules)</span></label>
+            <input class="kh-input" type="text" [(ngModel)]="editData.competencesRequises" />
+          </div>
+          <div class="form-group">
+            <label>Localisation</label>
+            <input class="kh-input" type="text" [(ngModel)]="editData.localisation" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="kh-input tm-textarea" rows="3" [(ngModel)]="editData.description"></textarea>
+        </div>
+        <div class="tm-form-actions">
+          <button type="button" class="kh-btn kh-btn--primary" (click)="sauvegarderModification()" [disabled]="loading">
+            {{ loading ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+          <button type="button" class="kh-btn kh-btn--ghost" (click)="annulerEdition()">Annuler</button>
+        </div>
+      </section>
+
+      <!-- Onglets + toolbar -->
+      <div class="tm-tabs-row">
+        <div class="tabs tm-tabs">
+          <button type="button" class="tab" [class.active]="view==='talents'" (click)="view='talents'">
+            Talents <span class="tab-count">{{ filteredTalents.length }}</span>
+          </button>
+          <button type="button" class="tab" [class.active]="view==='annonces'" (click)="view='annonces'">
+            Offres <span class="tab-count">{{ filteredAnnonces.length }}</span>
+          </button>
+        </div>
+        <div class="tm-toolbar" *ngIf="view==='talents'">
+          <input type="search" class="tm-search" [(ngModel)]="searchTalent" placeholder="Rechercher un talent, email, compétence…" />
+        </div>
+        <div class="tm-toolbar" *ngIf="view==='annonces'">
+          <input type="search" class="tm-search" [(ngModel)]="searchAnnonce" placeholder="Filtrer les offres…" />
+        </div>
+      </div>
+
+      <!-- Liste TALENTS -->
+      <div *ngIf="view==='talents'" class="tm-card-grid animate-3">
+        <article *ngFor="let t of filteredTalents" class="card tm-talent-card">
+          <div class="talent-header">
+            <div class="talent-avatar">{{ t.nom?.charAt(0) }}</div>
+            <div class="talent-header__body">
+              <p class="card-name">{{ t.prenom }} {{ t.nom }}</p>
+              <p class="card-meta">{{ t.email }}</p>
+              <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm tm-profile-btn" (click)="ouvrirProfil(t)">
+                Voir le profil
+              </button>
+            </div>
+            <span class="kh-badge" [class.kh-badge--green]="t.disponible" [class.kh-badge--gray]="!t.disponible">
+              {{ t.disponible ? 'Disponible' : 'Indisponible' }}
+            </span>
+          </div>
+          <div class="skills">
+            <span *ngFor="let c of competencesPourAffichage(t)" class="skill-tag">
+              {{ c.nom }}<ng-container *ngIf="c.niveau != null && c.niveau > 0"> ({{ c.niveau }}/5)</ng-container>
+            </span>
+          </div>
+        </article>
+        <p *ngIf="filteredTalents.length === 0" class="tm-empty">Aucun talent ne correspond à votre recherche.</p>
+      </div>
+
+      <!-- Liste ANNONCES -->
+      <div *ngIf="view === 'annonces'" class="tm-card-grid animate-3">
+        <article *ngFor="let a of filteredAnnonces" class="card tm-listing-card"
+                 [class.tm-listing-card--highlight]="editData?.id === a.id && showEditForm">
+          <div class="listing-card__head">
+            <span class="kh-badge"
+              [class.kh-badge--orange]="a.typePoste?.toUpperCase() === 'COFONDATEUR'"
+              [class.kh-badge--teal]="a.typePoste?.toUpperCase() === 'STAGIAIRE'"
+              [class.kh-badge--green]="a.typePoste?.toUpperCase() === 'EMPLOI'">
+              {{ a.typePoste }}
+            </span>
+            <div class="action-icons">
+              <button type="button" class="icon edit" (click)="ouvrirEdition(a)" title="Modifier">✏</button>
+              <button type="button" class="icon delete" (click)="deleteAnnonce(a.id)" title="Supprimer">🗑</button>
+            </div>
+          </div>
+          <p class="card-name">{{ a.titre }}</p>
+          <p class="card-meta tm-listing-startup">{{ a.startupNom || a.startup?.nom || 'Startup' }}</p>
+          <div class="skills tm-listing-skills">
+            <span *ngFor="let c of getCompetences(a.competencesRequises)" class="skill-tag">{{ c }}</span>
+          </div>
+          <p *ngIf="a.localisation" class="tm-listing-loc">📍 {{ a.localisation }}</p>
+          <div class="listing-card__footer">
+            <button type="button" class="kh-btn kh-btn--primary kh-btn--sm w-full" (click)="voirCandidatures(a)">
+              Matching &amp; candidatures
+            </button>
+          </div>
+        </article>
+        <div *ngIf="filteredAnnonces.length === 0" class="empty-state tm-empty-wide">
+          <p>Aucune offre ne correspond au filtre.</p>
+          <button type="button" class="kh-btn kh-btn--primary" (click)="showForm=true">Créer une offre</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panneau latéral — Spring AI recrutement -->
+    <aside class="tm-aside">
+      <div class="tm-ai-card">
+        <div class="tm-ai-card__head">
+          <span class="tm-ai-icon">✨</span>
+          <div>
+            <h3>Assistant IA recrutement</h3>
+            <p>Endpoint Spring AI conseillé : <code>POST /api/ai/hiring-advice</code></p>
+          </div>
+        </div>
+        <p class="tm-ai-intro">
+          Renseignez le formulaire « Nouvelle annonce » puis générez une fiche de poste, des questions d’entretien et une checklist d’onboarding.
+        </p>
+        <label class="tm-ai-label">Contexte startup (optionnel)</label>
+        <textarea class="kh-input tm-textarea tm-ai-context" rows="3" [(ngModel)]="hiringContext"
+                  placeholder="Secteur, stade, équipe actuelle, contraintes budget…"></textarea>
+        <button type="button" class="kh-btn kh-btn--primary w-full" (click)="runHiringAi()" [disabled]="hiringAiLoading">
+          {{ hiringAiLoading ? 'Génération IA…' : 'Générer avec l’IA' }}
+        </button>
+        <div *ngIf="hiringAiResult" class="tm-ai-output">
+          <h4>Fiche synthèse</h4>
+          <p>{{ hiringAiResult.fichePoste }}</p>
+          <h4>Compétences suggérées</h4>
+          <ul>
+            <li *ngFor="let s of hiringAiResult.competencesSuggerees">{{ s }}</li>
+          </ul>
+          <h4>Questions d’entretien</h4>
+          <ul>
+            <li *ngFor="let q of hiringAiResult.questionsEntretien">{{ q }}</li>
+          </ul>
+          <h4>Onboarding</h4>
+          <ul>
+            <li *ngFor="let o of hiringAiResult.checklistOnboarding">{{ o }}</li>
+          </ul>
+          <h4>Risques / écarts</h4>
+          <ul>
+            <li *ngFor="let r of hiringAiResult.risquesOuGaps">{{ r }}</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- MODAL — MATCHING -->
+<div class="modal-backdrop" *ngIf="selectedAnnonce" (click)="fermerModal()">
+  <div class="modal modal-matching" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ selectedAnnonce.titre }}</h3>
+      <div class="modal-header__actions">
+        <button type="button" class="icon edit" (click)="ouvrirEdition(selectedAnnonce)" title="Modifier">✏</button>
+        <button type="button" class="icon delete" (click)="deleteAnnonce(selectedAnnonce.id)" title="Supprimer">🗑</button>
+        <button type="button" class="close-btn" (click)="fermerModal()">✕</button>
+      </div>
+    </div>
+    <div class="annonce-details-panel">
+      <div class="annonce-meta-row">
+        <span class="kh-badge"
+          [class.kh-badge--orange]="(selectedAnnonce.typePoste||'').toUpperCase() === 'COFONDATEUR'"
+          [class.kh-badge--teal]="(selectedAnnonce.typePoste||'').toUpperCase() === 'STAGIAIRE'"
+          [class.kh-badge--green]="(selectedAnnonce.typePoste||'').toUpperCase() === 'EMPLOI'">
+          {{ selectedAnnonce.typePoste }}
+        </span>
+        <span *ngIf="selectedAnnonce.localisation" class="tm-meta-chip">📍 {{ selectedAnnonce.localisation }}</span>
+        <span *ngIf="selectedAnnonce.startupNom || selectedAnnonce.startup?.nom" class="tm-meta-chip">
+          🏢 {{ selectedAnnonce.startupNom || selectedAnnonce.startup?.nom }}
+        </span>
+      </div>
+      <p *ngIf="selectedAnnonce.description" class="annonce-desc">{{ selectedAnnonce.description }}</p>
+      <div *ngIf="selectedAnnonce.competencesRequises" class="tm-modal-skills">
+        <p class="tm-section-label">Compétences requises</p>
+        <div class="skills">
+          <span *ngFor="let c of getCompetences(selectedAnnonce.competencesRequises)" class="skill-tag">{{ c }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="tm-modal-divider"></div>
+    <div class="matching-list">
+      <div class="matching-list__head">
+        <p class="matching-list__title">Matching</p>
+        <div class="matching-toolbar">
+          <span class="matching-count" *ngIf="!matchingLoading">{{ sortedMatching.length }} profil(s)</span>
+          <label class="tm-sort-label">
+            Trier
+            <select class="tm-sort-select" [(ngModel)]="sortMatching">
+              <option value="score">Score</option>
+              <option value="nom">Nom</option>
+              <option value="niveau">Niveau</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div *ngIf="matchingLoading" class="modal-loading modal-loading--pulse">Calcul du matching…</div>
+      <div *ngIf="!matchingLoading && sortedMatching.length === 0" class="modal-empty">
+        <p class="modal-empty__title">Aucun résultat</p>
+        <p class="modal-empty__hint">Vérifiez l’endpoint <code>GET /api/candidatures/matching/:id</code></p>
+      </div>
+      <div *ngFor="let m of sortedMatching; let i = index" class="match-card match-card--modern">
+        <div class="match-card__top">
+          <div class="match-identity">
+            <div class="match-avatar match-avatar--lg">{{ initialsFromNom(m.nomTalent) }}</div>
+            <div class="match-info">
+              <div class="match-name-row">
+                <h4 class="match-name">{{ m.nomTalent }}</h4>
+                <span class="niveau-pill"
+                      [class.niveau-pill--excellent]="niveauTone(m.niveau) === 'excellent'"
+                      [class.niveau-pill--bon]="niveauTone(m.niveau) === 'bon'"
+                      [class.niveau-pill--faible]="niveauTone(m.niveau) === 'faible'">
+                  {{ m.niveau || '—' }}
+                </span>
+              </div>
+              <p class="email">{{ m.emailTalent }}</p>
+            </div>
+          </div>
+          <div class="match-score-block">
+            <div class="score-donut"
+                 [style.--accent]="getScoreColor(m.matchingScore)"
+                 [style.--pct]="(m.matchingScore > 100 ? 100 : m.matchingScore < 0 ? 0 : m.matchingScore) + '%'">
+              <div class="score-donut__inner">
+                <span class="score-donut__value">{{ m.matchingScore | number:'1.0-1' }}</span>
+                <span class="score-donut__unit">%</span>
+              </div>
+            </div>
+            <span class="match-rank">#{{ i + 1 }}</span>
+          </div>
+        </div>
+        <div class="score-bar-wrap score-bar-wrap--tight">
+          <div class="score-bar-fill"
+               [style.width.%]="m.matchingScore > 100 ? 100 : m.matchingScore < 0 ? 0 : m.matchingScore"
+               [style.background]="getScoreColor(m.matchingScore)"></div>
+        </div>
+        <div class="match-skills-grid" *ngIf="(m.competencesCommunes?.length) || (m.competencesManquantes?.length)">
+          <div class="match-skills-col" *ngIf="m.competencesCommunes?.length">
+            <span class="match-skills-label match-skills-label--ok">En commun</span>
+            <div class="skills">
+              <span *ngFor="let s of m.competencesCommunes" class="skill-tag skill-tag--match">{{ s }}</span>
+            </div>
+          </div>
+          <div class="match-skills-col" *ngIf="m.competencesManquantes?.length">
+            <span class="match-skills-label match-skills-label--miss">À renforcer</span>
+            <div class="skills">
+              <span *ngFor="let s of m.competencesManquantes" class="skill-tag skill-tag--gap">{{ s }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="match-card__actions">
+          <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm" (click)="ouvrirProfil(m)">Profil</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL — PROFIL -->
+<div class="modal-backdrop" *ngIf="showProfileModal" (click)="fermerProfil()">
+  <div class="modal tm-profile-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Profil candidat</h3>
+      <button type="button" class="close-btn" (click)="fermerProfil()">✕</button>
+    </div>
+    <div class="tm-profile-body">
+      <h2 class="tm-profile-name">{{ selectedCandidate?.prenom }} {{ selectedCandidate?.nom }}</h2>
+      <p class="tm-profile-email">{{ selectedCandidate?.email }}</p>
+      <span class="kh-badge"
+            [class.kh-badge--green]="selectedCandidate?.disponible"
+            [class.kh-badge--gray]="!selectedCandidate?.disponible">
+        {{ selectedCandidate?.disponible ? 'Disponible' : 'Indisponible' }}
+      </span>
+      <div class="tm-profile-block">
+        <strong>Diplôme</strong>
+        <p>{{ selectedCandidate?.diplome || '—' }}</p>
+      </div>
+      <div class="tm-profile-block">
+        <strong>Compétences</strong>
+        <div class="skills">
+          <span *ngFor="let s of competencesPourAffichage(selectedCandidate)" class="skill-tag">
+            {{ s.nom }}<ng-container *ngIf="s.niveau != null && s.niveau > 0"> ({{ s.niveau }}/5)</ng-container>
+          </span>
+        </div>
+      </div>
+      <button type="button" class="kh-btn kh-btn--primary" (click)="contacterParEmail(selectedCandidate?.email)">
+        Contacter (Gmail)
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,170 @@
+.vis-page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px 4px 40px;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+.vis-hero h1 {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+  letter-spacing: -0.3px;
+}
+
+.vis-hero p {
+  margin: 0 0 24px;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.vis-banner {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+
+.vis-banner--warn {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+}
+
+.vis-banner a {
+  color: #c2410c;
+  font-weight: 600;
+}
+
+.vis-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.vis-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.18s, border-color 0.18s;
+}
+
+.vis-stat-card:hover {
+  border-color: rgba(29, 158, 117, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.vis-stat-val {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d9e75;
+}
+
+.vis-stat-lbl {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.vis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vis-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  background: #fff;
+  color: #334155;
+}
+
+.vis-btn--primary {
+  background: #1d9e75;
+  color: #fff;
+  border-color: #1d9e75;
+}
+
+.vis-btn--primary:hover {
+  background: #0f6e56;
+  border-color: #0f6e56;
+}
+
+.vis-btn--ghost:hover {
+  background: #f1f5f9;
+}
+
+.vis-ai-card {
+  margin-top: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(160deg, #ffffff, #f8fbfb);
+  border-radius: 14px;
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.vis-ai-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vis-ai-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.vis-ai-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f6e56;
+  background: #e1f5ee;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.vis-ai-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.vis-ai-card textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.vis-ai-result {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+.vis-ai-result ul {
+  margin: 8px 0 0 18px;
+  color: #475569;
+  font-size: 13px;
+}
