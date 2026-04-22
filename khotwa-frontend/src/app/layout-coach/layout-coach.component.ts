@@ -123,9 +123,9 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
     this.notifService.markRead(notification.id);
     this.notifOpen = false;
     if (notification.senderId) {
-      this.router.navigateByUrl(`${this.rolePrefix}/messages?conversationId=${notification.senderId}`);
+      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: notification.senderId } });
     } else {
-      this.router.navigateByUrl(`${this.rolePrefix}/messages`);
+      this.router.navigate([`${this.rolePrefix}/messages`]);
     }
   }
 

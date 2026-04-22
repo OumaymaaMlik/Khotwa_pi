@@ -25,7 +25,7 @@
         <div class="kh-progress"><div class="kh-progress__fill" [style.width.%]="t.score"></div></div>
       </div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px">
-        <button class="kh-btn kh-btn--primary kh-btn--sm">Contacter</button>
+        <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="onContactTalent(t.id)">Contacter</button>
         <button class="kh-btn kh-btn--ghost kh-btn--sm">Profil</button>
       </div>
     </div>

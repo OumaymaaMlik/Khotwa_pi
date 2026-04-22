@@ -37,8 +37,8 @@
 .empty-chat { display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);gap:12px; }
 .empty-chat svg { opacity:0.25; }
 .msg-bubble-wrap { position:relative;display:flex;align-items:center;gap:8px; }
-.msg-wrap.mine .msg-bubble-wrap { flex-direction:row; }
-.msg-wrap:not(.mine) .msg-bubble-wrap { flex-direction: row-reverse; }
+.msg-wrap.mine .msg-bubble-wrap { flex-direction:row-reverse; }
+.msg-wrap:not(.mine) .msg-bubble-wrap { flex-direction: row; }
 .msg-delete-btn { opacity:0;background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;transition:all 0.15s;flex-shrink:0; }
 .msg-reply-btn { opacity:0;background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;transition:all 0.15s;flex-shrink:0; }
 .msg-bubble-wrap:hover .msg-delete-btn,
@@ -265,4 +265,18 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.msg-wrap:not(.mine) .msg-bubble {
+  order: 1; 
+}
+.msg-wrap:not(.mine) .msg-actions {
+  order: 2;
+}
+
+.msg-wrap.mine .msg-actions {
+  order: 2;
+}
+.msg-wrap.mine .msg-bubble {
+  order: 1;
 }

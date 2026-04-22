@@ -135,15 +135,16 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
     this.notifService.markRead(notif.id);
     this.notifOpen = false;
 
-    // Redirection : vers la conversation si senderId présent, sinon messages généraux
-    const target = notif.senderId
-      ? `${this.rolePrefix}/messages?conversationId=${notif.senderId}`
-      : `${this.rolePrefix}/messages`;
-
     if (notif.link) {
       this.router.navigateByUrl(notif.link);
+      return;
+    }
+
+    // Redirection : vers la conversation si senderId présent
+    if (notif.senderId) {
+      this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId: notif.senderId } });
     } else {
-      this.router.navigateByUrl(target);
+      this.router.navigate(['/entrepreneur/messages']);
     }
   }
 

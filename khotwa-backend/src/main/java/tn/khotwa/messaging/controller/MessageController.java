@@ -120,4 +120,11 @@ public class MessageController {
         return ResponseEntity.ok(new ArrayList<>(onlineUserStore.getOnlineUsers()));
     }
 
+    @PostMapping("/initiate")
+    public ResponseEntity<MessageDTO> initiateContact(@RequestParam Long senderId, @RequestParam Long receiverId) {
+        String welcomeContent = "Hello! I saw your profile on the Talent Marketplace and would like to connect.";
+        MessageDTO result = messageService.sendSystemAutoMessage(senderId, receiverId, welcomeContent);
+        return ResponseEntity.ok(result);
+    }
+
 }
