@@ -2,7 +2,8 @@ package tn.khotwa.dto.projet;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import tn.khotwa.enums.StatutTache;
+import tn.khotwa.enums.projectEnum.StatutTache;
+
 
 @Data
 public class SousTacheStatutUpdateRequestDto {

@@ -22,12 +22,12 @@ export class EntrepreneurDashboardComponent implements OnInit {
     this.loading = true;
     const userId = this.auth.currentUser?.idUser;
     this.projetService.getProjetsEntrepreneur(userId).subscribe({
-      next: p => {
+      next: (p: ProjetResponseDto[]) => {
         this.projets = p;
-        this.enCours = p.filter(proj => proj.statutProjet === 'EN_COURS').length;
+        this.enCours = p.filter(proj => proj.status === 'in_progress').length;
         // progression moyenne basée sur le score de discipline
         this.progression = p.length
-          ? Math.round(p.reduce((s, proj) => s + (proj.scoreDisciplineGlobal ?? 0), 0) / p.length)
+          ? Math.round(p.reduce((s: number, proj: ProjetResponseDto) => s + (proj.disciplineScore ?? 0), 0) / p.length)
           : 0;
         // taches: on n'a pas encore l'endpoint agrégé, on expose 0/0 par défaut
         this.tachesTerminees = 0;

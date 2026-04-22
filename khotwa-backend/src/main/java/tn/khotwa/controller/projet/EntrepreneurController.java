@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.khotwa.dto.projet.*;
@@ -16,48 +15,54 @@ import tn.khotwa.service.projet.ProjetService;
 import tn.khotwa.service.projet.ProjetCoachService;
 import tn.khotwa.service.projet.ProjetStateMachineService;
 import tn.khotwa.service.projet.TacheService;
-import tn.khotwa.service.UserServices.CurrentUserService;
+
+import tn.khotwa.dto.projet.CountdownDto;
+import tn.khotwa.service.projet.RetardService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/entrepreneur")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ENTREPRENEUR')")
 public class EntrepreneurController {
 
     private final ProjetService projetService;
     private final ProjetCoachService projetCoachService;
     private final ProjetStateMachineService stateMachineService;
     private final TacheService tacheService;
-    private final CurrentUserService currentUser;
+    private final RetardService retardService;
 
     @PostMapping("/projets")
-    public ResponseEntity<ProjetResponseDto> createProjet(@Valid @RequestBody ProjetCreateRequestDto dto) {
-        return ResponseEntity.ok(projetService.createProjet(currentUser.getCurrentUserId(), dto));
+    public ResponseEntity<ProjetResponseDto> createProjet(@RequestParam Long entrepreneurId,
+                                                          @Valid @RequestBody ProjetCreateRequestDto dto) {
+        return ResponseEntity.ok(projetService.createProjet(entrepreneurId, dto));
     }
 
     @PutMapping("/projets/{projetId}")
     public ResponseEntity<ProjetResponseDto> updateProjet(@PathVariable Long projetId,
+                                                          @RequestParam Long entrepreneurId,
                                                           @Valid @RequestBody ProjetUpdateRequestDto dto) {
-        return ResponseEntity.ok(projetService.updateProjetBrouillon(projetId, currentUser.getCurrentUserId(), dto));
+        return ResponseEntity.ok(projetService.updateProjetBrouillon(projetId, entrepreneurId, dto));
     }
 
     @PostMapping("/projets/{projetId}/soumettre")
-    public ResponseEntity<ProjetResponseDto> soumettre(@PathVariable Long projetId) {
-        projetService.ensureOwnership(projetId, currentUser.getCurrentUserId());
+    public ResponseEntity<ProjetResponseDto> soumettre(@PathVariable Long projetId,
+                                                       @RequestParam Long entrepreneurId) {
+        projetService.ensureOwnership(projetId, entrepreneurId);
         return ResponseEntity.ok(projetService.byId(stateMachineService.soumettreProjet(projetId).getId()));
     }
 
     @PostMapping("/projets/{projetId}/resoumettre-correction")
-    public ResponseEntity<ProjetResponseDto> resoumettreCorrection(@PathVariable Long projetId) {
-        projetService.ensureOwnership(projetId, currentUser.getCurrentUserId());
+    public ResponseEntity<ProjetResponseDto> resoumettreCorrection(@PathVariable Long projetId,
+                                                                   @RequestParam Long entrepreneurId) {
+        projetService.ensureOwnership(projetId, entrepreneurId);
         return ResponseEntity.ok(projetService.byId(stateMachineService.resoumettreCorrection(projetId).getId()));
     }
 
     @DeleteMapping("/projets/{projetId}")
-    public ResponseEntity<Void> deleteProjetBrouillon(@PathVariable Long projetId) {
-        projetService.deleteProjetBrouillon(projetId, currentUser.getCurrentUserId());
+    public ResponseEntity<Void> deleteProjetBrouillon(@PathVariable Long projetId,
+                                                      @RequestParam Long entrepreneurId) {
+        projetService.deleteProjetBrouillon(projetId, entrepreneurId);
         return ResponseEntity.noContent().build();
     }
 
@@ -73,6 +78,12 @@ public class EntrepreneurController {
         return ResponseEntity.ok(tacheService.updateStatutSousTache(sousTacheId, dto));
     }
 
+    @PostMapping("/sous-taches/{sousTacheId}/documents")
+    public ResponseEntity<Document> uploadDocument(@PathVariable Long sousTacheId,
+                                                   @RequestBody DocumentUploadRequestDto dto) {
+        return ResponseEntity.ok(tacheService.uploaderDocumentSousTache(sousTacheId, dto));
+    }
+
     @PostMapping(value = "/sous-taches/{sousTacheId}/documents/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Document> uploadDocumentFile(@PathVariable Long sousTacheId,
                                                        @RequestParam("file") MultipartFile file) {
@@ -80,8 +91,8 @@ public class EntrepreneurController {
     }
 
     @GetMapping("/projets")
-    public ResponseEntity<List<ProjetResponseDto>> projetsByEntrepreneur() {
-        return ResponseEntity.ok(projetService.projetsByEntrepreneur(currentUser.getCurrentUserId()));
+    public ResponseEntity<List<ProjetResponseDto>> projetsByEntrepreneur(@RequestParam Long entrepreneurId) {
+        return ResponseEntity.ok(projetService.projetsByEntrepreneur(entrepreneurId));
     }
 
     @GetMapping("/projets/{projetId}/taches")
@@ -99,6 +110,11 @@ public class EntrepreneurController {
         return ResponseEntity.ok(tacheService.sousTachesTache(tacheId));
     }
 
+    @GetMapping("/sous-taches/{sousTacheId}/documents")
+    public ResponseEntity<List<Document>> documentsSousTache(@PathVariable Long sousTacheId) {
+        return ResponseEntity.ok(tacheService.documentsSousTache(sousTacheId));
+    }
+
     @GetMapping("/projets/{projetId}/documents")
     public ResponseEntity<List<Document>> documentsProjet(@PathVariable Long projetId) {
         return ResponseEntity.ok(tacheService.documentsProjet(projetId));
@@ -108,9 +124,14 @@ public class EntrepreneurController {
     public ResponseEntity<byte[]> telechargerDocument(@PathVariable Long documentId) {
         Document document = tacheService.documentById(documentId);
         byte[] content = tacheService.lireContenuDocument(documentId);
+
         MediaType contentType;
-        try { contentType = MediaType.parseMediaType(document.getTypeContenu()); }
-        catch (Exception ex) { contentType = MediaType.APPLICATION_OCTET_STREAM; }
+        try {
+            contentType = MediaType.parseMediaType(document.getTypeContenu());
+        } catch (Exception ex) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
         return ResponseEntity.ok()
                 .contentType(contentType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getNomOriginal() + "\"")
@@ -121,5 +142,16 @@ public class EntrepreneurController {
     public ResponseEntity<Tache> demanderProlongationTache(@PathVariable Long tacheId,
                                                            @Valid @RequestBody ProlongationRequestDto dto) {
         return ResponseEntity.ok(tacheService.demanderProlongationTache(tacheId, dto));
+    }
+
+    @PostMapping("/sous-taches/{sousTacheId}/demander-prolongation")
+    public ResponseEntity<SousTache> demanderProlongationSousTache(@PathVariable Long sousTacheId,
+                                                                   @Valid @RequestBody ProlongationRequestDto dto) {
+        return ResponseEntity.ok(tacheService.demanderProlongationSousTache(sousTacheId, dto));
+    }
+
+    @GetMapping("/projets/{projetId}/countdowns")
+    public ResponseEntity<List<CountdownDto>> countdownsProjet(@PathVariable Long projetId) {
+        return ResponseEntity.ok(retardService.getCountdownsForProjet(projetId));
     }
 }

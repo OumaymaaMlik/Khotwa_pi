@@ -1,14 +1,21 @@
-<<<<<<< HEAD
-/khotwa-backend/target/
-/khotwa-backend/*.jar
+HELP.md
 
-/khotwa-frontend/node_modules/
-/khotwa-frontend/dist/
-/khotwa-frontend/.angular/
-=======
+# ======================
+# Maven / Spring Boot
+# ======================
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
+# ======================
+# Angular / Frontend
+# ======================
+khotwa-frontend/node_modules/
+khotwa-frontend/dist/
+khotwa-frontend/.angular/
 
-# Archives
-*.zip
-node_modules/
->>>>>>> amira
+# ======================
+# Backend uploads
+# ======================
+khotwa-backend/uploads/

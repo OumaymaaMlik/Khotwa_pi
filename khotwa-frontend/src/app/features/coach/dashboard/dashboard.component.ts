@@ -7,40 +7,63 @@ export class CoachDashboardComponent implements OnInit {
 
   projets:     ProjetResponseDto[] = [];
   validations: any[] = [];
-  loading = false;
+  loading   = false;
+  loadError: string | null = null;
 
-  constructor(private projetService: ProjetService, private auth: AuthService) {}
+  constructor(private projetService: ProjetService, public auth: AuthService) {}
 
   ngOnInit() { this.load(); }
 
   load() {
     this.loading = true;
-    const coachId = this.auth.currentUser?.idUser;
-    this.projetService.getProjetsCoach(coachId).subscribe({
-      next: p => {
+    this.loadError = null;
+    this.projetService.getProjetsCoach().subscribe({
+      next: (p: ProjetResponseDto[]) => {
         this.projets = p;
-        // Les projets EN_REVUE ou A_CORRIGER sont des validations en attente
         this.validations = p
-          .filter(proj => proj.etatValidation === 'EN_REVUE' || proj.etatValidation === 'A_CORRIGER')
+          .filter(proj =>
+            proj.etatValidation === 'EN_REVUE' ||
+            proj.etatValidation === 'A_CORRIGER' ||
+            proj.etatValidation === 'AFFECTE_COACH'
+          )
           .map(proj => ({
-            task:    proj.nomStartup,
-            startup: proj.entrepreneurNomAffiche ?? `Entrepreneur #${proj.entrepreneurId}`,
-            status:  proj.etatValidation === 'EN_REVUE' ? 'pending' : 'correction',
+            task:    proj.titre,
+            startup: `Entrepreneur #${proj.entrepreneurId}`,
+            status:  proj.etatValidation === 'EN_REVUE'    ? 'pending'
+                   : proj.etatValidation === 'A_CORRIGER'  ? 'correction'
+                   : 'pending',
             doc:     '—',
-            date:    proj.dateDerniereMiseAJour?.slice(0, 10) ?? '',
+            // Accès sécurisé à updatedAt
+            date:    (proj.updatedAt instanceof Date && !isNaN(proj.updatedAt.getTime()))
+                       ? proj.updatedAt.toISOString().slice(0, 10)
+                       : '',
           }));
         this.loading = false;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.projets     = [];
+        this.validations = [];
+        this.loadError   = 'Impossible de charger les projets. Vérifiez que l\'API tourne (port 8084) et que vous êtes connecté en tant que coach.';
+        this.loading     = false;
+      },
     });
   }
 
+  get coachFirstName(): string {
+    return this.auth.currentUser?.firstName?.trim() || 'Coach';
+  }
+
   get stats() {
+    const pendingEv = (ev: string | undefined) =>
+      ev === 'EN_REVUE' || ev === 'A_CORRIGER' || ev === 'AFFECTE_COACH';
     return {
-      total:       this.projets.length,
-      enCours:     this.projets.filter(p => p.statutProjet === 'EN_COURS').length,
-      enRevue:     this.projets.filter(p => p.etatValidation === 'EN_REVUE').length,
-      aCorrection: this.projets.filter(p => p.etatValidation === 'A_CORRIGER').length,
+      total:              this.projets.length,
+      enCours:            this.projets.filter(p => p.status === 'in_progress').length,
+      pendingValidations: this.projets.filter(p => pendingEv(p.etatValidation)).length,
+      enRevue:            this.projets.filter(p => p.etatValidation === 'EN_REVUE').length,
+      aCorrection:        this.projets.filter(p => p.etatValidation === 'A_CORRIGER').length,
+      sessionsThisMonth:  0,
+      slaAlerts:          0,
     };
   }
 }

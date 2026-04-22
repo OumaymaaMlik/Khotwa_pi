@@ -9,12 +9,11 @@ import tn.khotwa.dto.projet.ProjetCoachResponseDto;
 import tn.khotwa.dto.projet.ReaffectationCoachRequestDto;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.ProjetCoach;
-import tn.khotwa.enums.RoleCoachProjet;
+import tn.khotwa.enums.projectEnum.RoleCoachProjet;
 import tn.khotwa.exception.BusinessException;
 import tn.khotwa.repository.projet.ProjetCoachRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

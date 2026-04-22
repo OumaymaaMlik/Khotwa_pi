@@ -16,7 +16,7 @@ export class CoachStartupsComponent implements OnInit {
     this.loading = true;
     const coachId = this.auth.currentUser?.idUser;
     this.projetService.getProjetsCoach(coachId).subscribe({
-      next: p => { this.projets = p; this.loading = false; },
+      next: (p: ProjetResponseDto[]) => { this.projets = p; this.loading = false; },
       error: () => this.loading = false
     });
   }

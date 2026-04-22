@@ -3,8 +3,9 @@ package tn.khotwa.dto.projet;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import tn.khotwa.enums.PrioriteTache;
-import tn.khotwa.enums.TypeTache;
+import tn.khotwa.enums.projectEnum.PrioriteTache;
+import tn.khotwa.enums.projectEnum.TypeTache;
+
 
 import java.time.LocalDate;
 

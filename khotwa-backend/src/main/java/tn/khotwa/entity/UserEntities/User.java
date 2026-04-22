@@ -65,6 +65,10 @@ public class User {
 
     @Column(name = "startup")
     private String startup;
+    private String region;
+    private String specialite;
+    private String disponibilite;
+    private String nomAffiche;
 
     @Default
     @Column(name = "must_change_password", nullable = false)

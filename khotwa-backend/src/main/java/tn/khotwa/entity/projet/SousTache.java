@@ -3,8 +3,8 @@ package tn.khotwa.entity.projet;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import tn.khotwa.enums.PrioriteTache;
-import tn.khotwa.enums.StatutTache;
+import tn.khotwa.enums.projectEnum.PrioriteTache;
+import tn.khotwa.enums.projectEnum.StatutTache;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

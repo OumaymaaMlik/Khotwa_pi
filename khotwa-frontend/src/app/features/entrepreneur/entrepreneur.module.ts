@@ -26,6 +26,7 @@ const routes: Routes = [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: EntrepreneurDashboardComponent  },
       { path: 'projets',      component: EntrepreneurProjetsComponent     },
+      { path: 'projets/new',  component: EntrepreneurProjetsComponent, data: { createMode: true } },
       { path: 'workflows',    component: EntrepreneurWorkflowsComponent   },
       { path: 'planning',     component: EntrepreneurPlanningComponent    },
       { path: 'messages',     component: EntrepreneurMessagesComponent    },

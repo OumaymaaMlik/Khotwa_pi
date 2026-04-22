@@ -62,6 +62,7 @@ export class AuthService {
       tap(profile => {
         this._currentUser = {
           idUser:             profile.idUser,
+          id:                 String(profile.idUser ?? ''),
           firstName:          profile.firstName,
           lastName:           profile.lastName,
           emailAddress:       profile.emailAddress,

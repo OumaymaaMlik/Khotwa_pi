@@ -1,4 +1,4 @@
-package tn.khotwa.config;
+package tn.khotwa.config.projectConfig;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

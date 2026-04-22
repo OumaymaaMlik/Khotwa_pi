@@ -77,7 +77,10 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
           // Charger les notifications
           this.notifService.reload();
         }
-      }
+      },
+      error: () => {
+        // e.g. ad-blocker, 403 on /me — keep existing login session; IDs still come from idUser in localStorage
+      },
     });
   }
 

@@ -7,23 +7,36 @@ import tn.khotwa.dto.projet.ProjetCreateRequestDto;
 import tn.khotwa.dto.projet.ProjetResponseDto;
 import tn.khotwa.dto.projet.ProjetUpdateRequestDto;
 import tn.khotwa.entity.projet.Projet;
-import tn.khotwa.enums.EtatValidationProjet;
-import tn.khotwa.enums.StatutProjet;
+import tn.khotwa.entity.projet.ProjetCorrection;
+import tn.khotwa.enums.projectEnum.EtatValidationProjet;
+import tn.khotwa.enums.projectEnum.ProjetCorrectionStatut;
+import tn.khotwa.enums.projectEnum.StatutProjet;
 import tn.khotwa.exception.BusinessException;
+import tn.khotwa.repository.projet.ProjetCorrectionRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProjetService {
 
+    private static final long MIN_PROJECT_DURATION_DAYS = 30;
+
     private final ProjetRepository projetRepository;
+    private final ProjetCorrectionRepository projetCorrectionRepository;
     private final DtoMapper mapper;
 
     @Transactional
     public ProjetResponseDto createProjet(Long entrepreneurId, ProjetCreateRequestDto dto) {
+        validateProjectTimeline(dto.getDateDebutProjet(), dto.getDateFinProjet());
+
         Projet projet = Projet.builder()
                 .nomStartup(dto.getNomStartup())
                 .description(dto.getDescription())
@@ -35,6 +48,8 @@ public class ProjetService {
                 .innovationDescription(dto.getInnovationDescription())
                 .scalabiliteDescription(dto.getScalabiliteDescription())
                 .pocDisponible(dto.isPocDisponible())
+                .dateDebutProjet(dto.getDateDebutProjet())
+                .dateFinProjet(dto.getDateFinProjet())
                 .dateCreation(LocalDateTime.now())
                 .dateDerniereMiseAJour(LocalDateTime.now())
                 .statutProjet(StatutProjet.EN_COURS)
@@ -43,14 +58,17 @@ public class ProjetService {
                 .entrepreneurId(entrepreneurId)
                 .build();
 
-        return mapper.toProjetResponse(projetRepository.save(projet));
+        return enrichWithLatestCorrection(mapper.toProjetResponse(projetRepository.save(projet)));
     }
 
     @Transactional
     public ProjetResponseDto updateProjetBrouillon(Long projetId, Long entrepreneurId, ProjetUpdateRequestDto dto) {
         Projet projet = getOwnedProjet(projetId, entrepreneurId);
 
-        if (projet.getEtatValidation() != EtatValidationProjet.BROUILLON) {
+        validateProjectTimeline(dto.getDateDebutProjet(), dto.getDateFinProjet());
+
+        if (projet.getEtatValidation() != EtatValidationProjet.BROUILLON
+            && projet.getEtatValidation() != EtatValidationProjet.A_CORRIGER) {
             throw new BusinessException("Projet non modifiable dans cet etat");
         }
         if (projet.getStatutProjet() == StatutProjet.ARCHIVE
@@ -69,9 +87,11 @@ public class ProjetService {
         projet.setInnovationDescription(dto.getInnovationDescription());
         projet.setScalabiliteDescription(dto.getScalabiliteDescription());
         projet.setPocDisponible(dto.isPocDisponible());
+        projet.setDateDebutProjet(dto.getDateDebutProjet());
+        projet.setDateFinProjet(dto.getDateFinProjet());
         projet.setDateDerniereMiseAJour(LocalDateTime.now());
 
-        return mapper.toProjetResponse(projetRepository.save(projet));
+        return enrichWithLatestCorrection(mapper.toProjetResponse(projetRepository.save(projet)));
     }
 
     @Transactional
@@ -90,18 +110,139 @@ public class ProjetService {
     }
 
     public List<ProjetResponseDto> projetsByEntrepreneur(Long entrepreneurId) {
-        return projetRepository.findByEntrepreneurId(entrepreneurId).stream().map(mapper::toProjetResponse).toList();
+        List<ProjetResponseDto> projets = projetRepository.findByEntrepreneurId(entrepreneurId)
+                .stream()
+                .map(mapper::toProjetResponse)
+                .toList();
+        return enrichWithLatestCorrection(projets);
     }
 
     public ProjetResponseDto byId(Long projetId) {
         Projet projet = projetRepository.findById(projetId)
                 .orElseThrow(() -> new BusinessException("Projet introuvable"));
-        return mapper.toProjetResponse(projet);
+        return enrichWithLatestCorrection(mapper.toProjetResponse(projet));
     }
 
     public List<ProjetResponseDto> byIds(List<Long> projetIds) {
-        return projetIds.stream().distinct().map(this::byId).toList();
+        List<ProjetResponseDto> projets = projetIds.stream()
+                .distinct()
+                .map((id) -> projetRepository.findById(id)
+                        .orElseThrow(() -> new BusinessException("Projet introuvable")))
+                .map(mapper::toProjetResponse)
+                .toList();
+        return enrichWithLatestCorrection(projets);
     }
+
+    private ProjetResponseDto enrichWithLatestCorrection(ProjetResponseDto projet) {
+        projet.setStatutCorrectionProjet(null);
+        projet.setCorrectionResoumiseEnAttenteCoach(false);
+        projet.setProjectCorrectionRequired(false); // default
+
+        if (projet.getEtatValidation() != EtatValidationProjet.A_CORRIGER
+                && projet.getEtatValidation() != EtatValidationProjet.EN_REVUE) {
+            projet.setCommentaireCorrectionCoach(null);
+            projet.setDateDemandeCorrection(null);
+            return projet;
+        }
+
+        projetCorrectionRepository.findTopByProjetIdOrderByDateDemandeCorrectionDesc(projet.getId())
+                .ifPresentOrElse(
+                        correction -> {
+                            projet.setStatutCorrectionProjet(correction.getStatutCorrection());
+                            projet.setCorrectionResoumiseEnAttenteCoach(
+                                    projet.getEtatValidation() == EtatValidationProjet.EN_REVUE
+                                            && correction.getStatutCorrection() == ProjetCorrectionStatut.RESOUMISE_PAR_ENTREPRENEUR
+                            );
+                            // Only DEMANDEE means project-level correction is required
+                            if (correction.getStatutCorrection() == ProjetCorrectionStatut.DEMANDEE) {
+                                projet.setProjectCorrectionRequired(true);
+                            } else {
+                                projet.setProjectCorrectionRequired(false);
+                            }
+                            if (projet.getEtatValidation() == EtatValidationProjet.A_CORRIGER
+                                    || projet.getEtatValidation() == EtatValidationProjet.EN_REVUE) {
+                                applyCorrectionDisplayFields(projet, correction);
+                            } else {
+                                projet.setCommentaireCorrectionCoach(null);
+                                projet.setDateDemandeCorrection(null);
+                            }
+                        },
+                        () -> {
+                            projet.setCommentaireCorrectionCoach(null);
+                            projet.setDateDemandeCorrection(null);
+                            projet.setStatutCorrectionProjet(null);
+                            projet.setCorrectionResoumiseEnAttenteCoach(false);
+                            projet.setProjectCorrectionRequired(false);
+                        }
+                );
+        return projet;
+    }
+
+    private List<ProjetResponseDto> enrichWithLatestCorrection(List<ProjetResponseDto> projets) {
+        List<Long> projetIds = projets.stream().map(ProjetResponseDto::getId).toList();
+        Map<Long, ProjetCorrection> latestByProject = projetCorrectionRepository.findLatestByProjetIds(projetIds).stream()
+                .collect(Collectors.toMap(ProjetCorrection::getProjetId, Function.identity(), (left, right) -> {
+                    if (left.getDateDemandeCorrection().isAfter(right.getDateDemandeCorrection())) {
+                        return left;
+                    }
+                    return right;
+                }));
+
+        for (ProjetResponseDto projet : projets) {
+            projet.setStatutCorrectionProjet(null);
+            projet.setCorrectionResoumiseEnAttenteCoach(false);
+
+            if (projet.getEtatValidation() != EtatValidationProjet.A_CORRIGER
+                    && projet.getEtatValidation() != EtatValidationProjet.EN_REVUE) {
+                projet.setCommentaireCorrectionCoach(null);
+                projet.setDateDemandeCorrection(null);
+                continue;
+            }
+
+            ProjetCorrection latest = latestByProject.get(projet.getId());
+            if (latest == null) {
+                projet.setCommentaireCorrectionCoach(null);
+                projet.setDateDemandeCorrection(null);
+                continue;
+            }
+
+            projet.setStatutCorrectionProjet(latest.getStatutCorrection());
+            projet.setCorrectionResoumiseEnAttenteCoach(
+                    projet.getEtatValidation() == EtatValidationProjet.EN_REVUE
+                            && latest.getStatutCorrection() == ProjetCorrectionStatut.RESOUMISE_PAR_ENTREPRENEUR
+            );
+
+                if (projet.getEtatValidation() == EtatValidationProjet.A_CORRIGER
+                        || projet.getEtatValidation() == EtatValidationProjet.EN_REVUE) {
+                    applyCorrectionDisplayFields(projet, latest);
+                } else {
+                    projet.setCommentaireCorrectionCoach(null);
+                    projet.setDateDemandeCorrection(null);
+                }
+        }
+
+        return projets;
+    }
+
+        private void applyCorrectionDisplayFields(ProjetResponseDto projet, ProjetCorrection latest) {
+            String latestComment = latest.getCommentaire();
+            if (latestComment != null && !latestComment.trim().isEmpty()) {
+                projet.setCommentaireCorrectionCoach(latestComment);
+                projet.setDateDemandeCorrection(latest.getDateDemandeCorrection());
+                return;
+            }
+
+            List<ProjetCorrection> fallback = projetCorrectionRepository.findLatestNonBlankCommentByProjetId(projet.getId());
+            if (!fallback.isEmpty()) {
+                ProjetCorrection withComment = fallback.get(0);
+                projet.setCommentaireCorrectionCoach(withComment.getCommentaire());
+                projet.setDateDemandeCorrection(withComment.getDateDemandeCorrection());
+                return;
+            }
+
+            projet.setCommentaireCorrectionCoach(null);
+            projet.setDateDemandeCorrection(null);
+        }
 
     private Projet getOwnedProjet(Long projetId, Long entrepreneurId) {
         Projet projet = projetRepository.findById(projetId)
@@ -112,5 +253,20 @@ public class ProjetService {
         }
 
         return projet;
+    }
+
+    private void validateProjectTimeline(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new BusinessException("Les dates de debut et de fin du projet sont obligatoires");
+        }
+
+        if (endDate.isBefore(startDate)) {
+            throw new BusinessException("La date de fin du projet doit etre posterieure a la date de debut");
+        }
+
+        long durationDays = ChronoUnit.DAYS.between(startDate, endDate);
+        if (durationDays < MIN_PROJECT_DURATION_DAYS) {
+            throw new BusinessException("La duree minimale du projet est de " + MIN_PROJECT_DURATION_DAYS + " jours");
+        }
     }
 }
