@@ -1,4 +1,4 @@
-package tn.khotwa.controller.Collaboration;
+package tn.khotwa.controller.collaboration;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tn.khotwa.dto.Collaboration.CreateMarketingCollaborationRequest;
-import tn.khotwa.dto.Collaboration.MarketingCollaborationDTO;
-import tn.khotwa.service.Collaboration.MarketingCollaborationService;
+import tn.khotwa.dto.collaboration.CreateMarketingCollaborationRequest;
+import tn.khotwa.dto.collaboration.MarketingCollaborationDTO;
+import tn.khotwa.service.collaboration.MarketingCollaborationService;
 
 @RestController
 @RequestMapping("/api/marketing-collaborations")

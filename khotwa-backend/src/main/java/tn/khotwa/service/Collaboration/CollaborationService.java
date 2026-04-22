@@ -1,27 +1,27 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.CollaborationMember;
-import tn.khotwa.entity.Collaboration.CollaborationRequest;
-import tn.khotwa.entity.Collaboration.Project;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.CollaborationMember;
+import tn.khotwa.entity.collaboration.CollaborationRequest;
+import tn.khotwa.entity.collaboration.Project;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.CollaborationRequestScenario;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.CollaborationType;
-import tn.khotwa.enums.Collaboration.RequestStatus;
+import tn.khotwa.enums.collaboration.CollaborationRequestScenario;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.CollaborationType;
+import tn.khotwa.enums.collaboration.RequestStatus;
 import tn.khotwa.enums.User.Role;
-import tn.khotwa.exception.Collaboration.BusinessException;
-import tn.khotwa.exception.Collaboration.ForbiddenOperationException;
-import tn.khotwa.exception.Collaboration.ResourceNotFoundException;
-import tn.khotwa.repository.Collaboration.CollaborationMemberRepository;
-import tn.khotwa.repository.Collaboration.CollaborationRequestRepository;
-import tn.khotwa.repository.Collaboration.CollaborationRepository;
-import tn.khotwa.repository.Collaboration.ProjectRepository;
+import tn.khotwa.exception.collaboration.BusinessException;
+import tn.khotwa.exception.collaboration.ForbiddenOperationException;
+import tn.khotwa.exception.collaboration.ResourceNotFoundException;
+import tn.khotwa.repository.collaboration.CollaborationMemberRepository;
+import tn.khotwa.repository.collaboration.CollaborationRequestRepository;
+import tn.khotwa.repository.collaboration.CollaborationRepository;
+import tn.khotwa.repository.collaboration.ProjectRepository;
 import tn.khotwa.service.User.CurrentUserService;
 import tn.khotwa.service.User.UserService;
 
@@ -514,3 +514,4 @@ public class CollaborationService {
         );
     }
 }
+

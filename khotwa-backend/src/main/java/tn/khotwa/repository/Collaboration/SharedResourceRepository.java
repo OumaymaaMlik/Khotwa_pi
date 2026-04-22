@@ -1,11 +1,11 @@
-package tn.khotwa.repository.Collaboration;
+package tn.khotwa.repository.collaboration;
 
 import java.util.Optional;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
-import tn.khotwa.entity.Collaboration.SharedResource;
-import tn.khotwa.enums.Collaboration.AvailabilityStatus;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
+import tn.khotwa.entity.collaboration.SharedResource;
+import tn.khotwa.enums.collaboration.AvailabilityStatus;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
 
 public interface SharedResourceRepository extends JpaRepository<SharedResource, Long> {
 
@@ -23,3 +23,4 @@ public interface SharedResourceRepository extends JpaRepository<SharedResource, 
             AvailabilityStatus availabilityStatus
     );
 }
+

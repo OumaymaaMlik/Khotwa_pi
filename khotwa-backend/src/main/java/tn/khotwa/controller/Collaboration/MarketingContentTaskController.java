@@ -1,4 +1,4 @@
-package tn.khotwa.controller.Collaboration;
+package tn.khotwa.controller.collaboration;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tn.khotwa.dto.Collaboration.CreateMarketingContentTaskRequest;
-import tn.khotwa.dto.Collaboration.MarketingContentTaskDTO;
-import tn.khotwa.dto.Collaboration.UpdateMarketingContentTaskStatusRequest;
-import tn.khotwa.service.Collaboration.MarketingContentTaskService;
+import tn.khotwa.dto.collaboration.CreateMarketingContentTaskRequest;
+import tn.khotwa.dto.collaboration.MarketingContentTaskDTO;
+import tn.khotwa.dto.collaboration.UpdateMarketingContentTaskStatusRequest;
+import tn.khotwa.service.collaboration.MarketingContentTaskService;
 
 @RestController
 @RequestMapping("/api/marketing-content-tasks")

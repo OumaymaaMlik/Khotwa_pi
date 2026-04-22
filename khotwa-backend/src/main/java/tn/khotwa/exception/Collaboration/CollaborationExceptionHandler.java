@@ -1,4 +1,4 @@
-package tn.khotwa.exception.Collaboration;
+package tn.khotwa.exception.collaboration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(basePackages = "tn.khotwa.controller.Collaboration")
+@RestControllerAdvice(basePackages = "tn.khotwa.controller.collaboration")
 public class CollaborationExceptionHandler {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

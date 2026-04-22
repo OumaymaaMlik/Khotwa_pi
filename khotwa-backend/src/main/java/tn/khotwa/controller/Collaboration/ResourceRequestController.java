@@ -1,4 +1,4 @@
-package tn.khotwa.controller.Collaboration;
+package tn.khotwa.controller.collaboration;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tn.khotwa.dto.Collaboration.CreateResourceRequestRequest;
-import tn.khotwa.dto.Collaboration.ResourceRequestDTO;
-import tn.khotwa.dto.Collaboration.UpdateResourceRequestStatusRequest;
-import tn.khotwa.service.Collaboration.ResourceRequestService;
+import tn.khotwa.dto.collaboration.CreateResourceRequestRequest;
+import tn.khotwa.dto.collaboration.ResourceRequestDTO;
+import tn.khotwa.dto.collaboration.UpdateResourceRequestStatusRequest;
+import tn.khotwa.service.collaboration.ResourceRequestService;
 
 @RestController
 @RequestMapping("/api/resource-requests")
@@ -58,3 +58,4 @@ public class ResourceRequestController {
                 .toList();
     }
 }
+

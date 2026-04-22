@@ -1,13 +1,13 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.entity.Collaboration.SharedResource;
-import tn.khotwa.enums.Collaboration.AvailabilityStatus;
-import tn.khotwa.enums.Collaboration.ResourceType;
+import tn.khotwa.entity.collaboration.SharedResource;
+import tn.khotwa.enums.collaboration.AvailabilityStatus;
+import tn.khotwa.enums.collaboration.ResourceType;
 
 @Getter
 @Setter

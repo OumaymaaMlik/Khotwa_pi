@@ -1,4 +1,4 @@
-package tn.khotwa.exception.Collaboration;
+package tn.khotwa.exception.collaboration;
 
 public class AccessDeniedException extends RuntimeException {
 

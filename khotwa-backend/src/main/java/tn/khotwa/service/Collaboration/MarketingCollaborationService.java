@@ -1,18 +1,18 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.MarketingCollaboration;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.MarketingCollaboration;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.CampaignType;
-import tn.khotwa.enums.Collaboration.CollaborationType;
-import tn.khotwa.exception.Collaboration.BusinessException;
-import tn.khotwa.exception.Collaboration.ResourceNotFoundException;
-import tn.khotwa.repository.Collaboration.MarketingCollaborationRepository;
+import tn.khotwa.enums.collaboration.CampaignType;
+import tn.khotwa.enums.collaboration.CollaborationType;
+import tn.khotwa.exception.collaboration.BusinessException;
+import tn.khotwa.exception.collaboration.ResourceNotFoundException;
+import tn.khotwa.repository.collaboration.MarketingCollaborationRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -89,3 +89,4 @@ public class MarketingCollaborationService {
         return marketingCollaboration;
     }
 }
+

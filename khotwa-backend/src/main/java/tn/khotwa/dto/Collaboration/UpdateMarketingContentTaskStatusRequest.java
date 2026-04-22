@@ -1,4 +1,4 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.enums.Collaboration.TaskStatus;
+import tn.khotwa.enums.collaboration.TaskStatus;
 
 @Getter
 @Setter

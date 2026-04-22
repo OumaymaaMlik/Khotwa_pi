@@ -1,4 +1,4 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,18 +13,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.OptimisticLockingFailureException;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.Project;
-import tn.khotwa.entity.Collaboration.SharedResource;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.Project;
+import tn.khotwa.entity.collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.AvailabilityStatus;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.CollaborationType;
-import tn.khotwa.enums.Collaboration.ResourceType;
+import tn.khotwa.enums.collaboration.AvailabilityStatus;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.CollaborationType;
+import tn.khotwa.enums.collaboration.ResourceType;
 import tn.khotwa.enums.User.Role;
-import tn.khotwa.exception.Collaboration.BusinessException;
-import tn.khotwa.repository.Collaboration.ResourceRequestRepository;
-import tn.khotwa.repository.Collaboration.SharedResourceRepository;
+import tn.khotwa.exception.collaboration.BusinessException;
+import tn.khotwa.repository.collaboration.ResourceRequestRepository;
+import tn.khotwa.repository.collaboration.SharedResourceRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @ExtendWith(MockitoExtension.class)
@@ -224,3 +224,4 @@ class SharedResourceServiceTest {
         return collaboration;
     }
 }
+

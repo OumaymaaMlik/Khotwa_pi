@@ -1,4 +1,4 @@
-package tn.khotwa.repository.Collaboration;
+package tn.khotwa.repository.collaboration;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -6,10 +6,10 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.dto.Collaboration.CollaborationTypeCountView;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.CollaborationType;
+import tn.khotwa.dto.collaboration.CollaborationTypeCountView;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.CollaborationType;
 
 public interface CollaborationRepository extends JpaRepository<Collaboration, Long> {
 
@@ -50,7 +50,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
     @Query("""
         select c
         from Collaboration c
-        where c.status = tn.khotwa.enums.Collaboration.CollaborationStatus.CLOSED
+        where c.status = tn.khotwa.enums.collaboration.CollaborationStatus.CLOSED
         order by c.createdAt desc
         """)
     List<Collaboration> findAllClosedCollaborations();
@@ -59,7 +59,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
         select c
         from Collaboration c
         where c.project.owner.idUser = :ownerUserId
-          and c.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+          and c.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         order by c.createdAt desc
         """)
     List<Collaboration> findActiveCollaborationsByProjectOwner(@Param("ownerUserId") Long ownerUserId);
@@ -68,7 +68,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
         select c.type as collaborationType,
                count(c) as collaborationCount
         from Collaboration c
-        where c.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+        where c.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         group by c.type
         order by c.type asc
         """)
@@ -78,7 +78,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
         select c
         from Collaboration c
         where c.createdAt between :startDate and :endDate
-          and c.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+          and c.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         order by c.createdAt desc
         """)
     List<Collaboration> findCollaborationsCreatedDuring(
@@ -86,3 +86,4 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
             @Param("endDate") LocalDateTime endDate
     );
 }
+

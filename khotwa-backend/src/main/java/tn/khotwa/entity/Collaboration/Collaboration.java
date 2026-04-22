@@ -1,4 +1,4 @@
-package tn.khotwa.entity.Collaboration;
+package tn.khotwa.entity.collaboration;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -24,8 +24,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.CollaborationType;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.CollaborationType;
 
 @Getter
 @Setter

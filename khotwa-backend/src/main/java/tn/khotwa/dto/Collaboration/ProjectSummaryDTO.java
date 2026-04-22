@@ -1,6 +1,6 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
-import tn.khotwa.entity.Collaboration.Project;
+import tn.khotwa.entity.collaboration.Project;
 
 public record ProjectSummaryDTO(
         Long id,

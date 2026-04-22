@@ -1,4 +1,4 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -6,16 +6,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.SharedResource;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.AvailabilityStatus;
-import tn.khotwa.enums.Collaboration.CollaborationType;
-import tn.khotwa.enums.Collaboration.ResourceType;
-import tn.khotwa.exception.Collaboration.BusinessException;
-import tn.khotwa.exception.Collaboration.ResourceNotFoundException;
-import tn.khotwa.repository.Collaboration.ResourceRequestRepository;
-import tn.khotwa.repository.Collaboration.SharedResourceRepository;
+import tn.khotwa.enums.collaboration.AvailabilityStatus;
+import tn.khotwa.enums.collaboration.CollaborationType;
+import tn.khotwa.enums.collaboration.ResourceType;
+import tn.khotwa.exception.collaboration.BusinessException;
+import tn.khotwa.exception.collaboration.ResourceNotFoundException;
+import tn.khotwa.repository.collaboration.ResourceRequestRepository;
+import tn.khotwa.repository.collaboration.SharedResourceRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -187,3 +187,4 @@ public class SharedResourceService {
         }
     }
 }
+

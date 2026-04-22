@@ -1,19 +1,19 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.CollaborationRequest;
-import tn.khotwa.entity.Collaboration.MarketingCollaboration;
-import tn.khotwa.entity.Collaboration.MarketingContentTask;
-import tn.khotwa.entity.Collaboration.Project;
-import tn.khotwa.entity.Collaboration.ResourceRequest;
-import tn.khotwa.entity.Collaboration.SharedResource;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.CollaborationRequest;
+import tn.khotwa.entity.collaboration.MarketingCollaboration;
+import tn.khotwa.entity.collaboration.MarketingContentTask;
+import tn.khotwa.entity.collaboration.Project;
+import tn.khotwa.entity.collaboration.ResourceRequest;
+import tn.khotwa.entity.collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.User.Role;
-import tn.khotwa.exception.Collaboration.AccessDeniedException;
-import tn.khotwa.exception.Collaboration.ForbiddenOperationException;
-import tn.khotwa.repository.Collaboration.CollaborationMemberRepository;
+import tn.khotwa.exception.collaboration.AccessDeniedException;
+import tn.khotwa.exception.collaboration.ForbiddenOperationException;
+import tn.khotwa.repository.collaboration.CollaborationMemberRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -266,3 +266,4 @@ public class CollaborationAuthorizationService {
         return user.getRole() == Role.ENTREPRENEUR;
     }
 }
+

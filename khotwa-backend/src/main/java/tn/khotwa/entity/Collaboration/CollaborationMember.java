@@ -1,4 +1,4 @@
-package tn.khotwa.entity.Collaboration;
+package tn.khotwa.entity.collaboration;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

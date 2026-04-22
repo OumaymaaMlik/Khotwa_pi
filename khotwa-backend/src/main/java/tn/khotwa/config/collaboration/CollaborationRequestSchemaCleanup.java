@@ -1,4 +1,4 @@
-package tn.khotwa.config;
+package tn.khotwa.config.collaboration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
@@ -128,3 +128,4 @@ public class CollaborationRequestSchemaCleanup implements ApplicationRunner {
         }
     }
 }
+

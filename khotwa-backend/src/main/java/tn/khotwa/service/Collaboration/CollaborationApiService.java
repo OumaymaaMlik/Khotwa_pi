@@ -1,16 +1,16 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.dto.Collaboration.WeeklyCollaborationReportDTO;
-import tn.khotwa.dto.Collaboration.ProjectSummaryDTO;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.CollaborationRequest;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.CollaborationType;
-import tn.khotwa.repository.Collaboration.ProjectRepository;
+import tn.khotwa.dto.collaboration.WeeklyCollaborationReportDTO;
+import tn.khotwa.dto.collaboration.ProjectSummaryDTO;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.CollaborationRequest;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.CollaborationType;
+import tn.khotwa.repository.collaboration.ProjectRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -93,3 +93,4 @@ public class CollaborationApiService {
         return weeklyCollaborationReportService.getLatestWeeklyReport();
     }
 }
+

@@ -1,4 +1,4 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 public interface CollaborationMemberCountView {
 
@@ -6,3 +6,4 @@ public interface CollaborationMemberCountView {
 
     Long getMemberCount();
 }
+

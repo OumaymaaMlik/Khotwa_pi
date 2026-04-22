@@ -1,4 +1,4 @@
-package tn.khotwa.entity.Collaboration;
+package tn.khotwa.entity.collaboration;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,8 +21,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.CollaborationRequestScenario;
-import tn.khotwa.enums.Collaboration.RequestStatus;
+import tn.khotwa.enums.collaboration.CollaborationRequestScenario;
+import tn.khotwa.enums.collaboration.RequestStatus;
 
 @Getter
 @Setter
@@ -123,3 +123,4 @@ public class CollaborationRequest {
                 : CollaborationRequestScenario.COLLAB_INVITATION;
     }
 }
+

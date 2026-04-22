@@ -1,12 +1,12 @@
-package tn.khotwa.repository.Collaboration;
+package tn.khotwa.repository.collaboration;
 
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.dto.Collaboration.CollaborationMemberCountView;
-import tn.khotwa.entity.Collaboration.CollaborationMember;
+import tn.khotwa.dto.collaboration.CollaborationMemberCountView;
+import tn.khotwa.entity.collaboration.CollaborationMember;
 
 public interface CollaborationMemberRepository extends JpaRepository<CollaborationMember, Long> {
 
@@ -42,9 +42,10 @@ public interface CollaborationMemberRepository extends JpaRepository<Collaborati
         select member.collaboration.id as collaborationId,
                count(member) as memberCount
         from CollaborationMember member
-        where member.collaboration.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+        where member.collaboration.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         group by member.collaboration.id
         order by member.collaboration.id asc
         """)
     List<CollaborationMemberCountView> countMembersPerCollaboration();
 }
+

@@ -1,4 +1,4 @@
-package tn.khotwa.entity.Collaboration;
+package tn.khotwa.entity.collaboration;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,8 +21,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.enums.Collaboration.CampaignType;
-import tn.khotwa.enums.Collaboration.MarketingCollaborationStatus;
+import tn.khotwa.enums.collaboration.CampaignType;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
 
 @Getter
 @Setter

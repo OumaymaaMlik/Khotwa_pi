@@ -1,4 +1,4 @@
-package tn.khotwa.controller.Collaboration;
+package tn.khotwa.controller.collaboration;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -6,10 +6,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tn.khotwa.dto.Collaboration.ProjectCollaborationContextDto;
-import tn.khotwa.dto.Collaboration.ProjectSummaryDTO;
-import tn.khotwa.service.Collaboration.CollaborationApiService;
-import tn.khotwa.service.Collaboration.ProjectOverviewService;
+import tn.khotwa.dto.collaboration.ProjectCollaborationContextDto;
+import tn.khotwa.dto.collaboration.ProjectSummaryDTO;
+import tn.khotwa.service.collaboration.CollaborationApiService;
+import tn.khotwa.service.collaboration.ProjectOverviewService;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -29,3 +29,4 @@ public class ProjectController {
         return projectOverviewService.getProjectContext(projectId);
     }
 }
+

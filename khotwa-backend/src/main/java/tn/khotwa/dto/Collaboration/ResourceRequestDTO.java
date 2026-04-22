@@ -1,14 +1,14 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.entity.Collaboration.ResourceRequest;
-import tn.khotwa.enums.Collaboration.ResourceRequestStatus;
-import tn.khotwa.enums.Collaboration.ResourceType;
-import tn.khotwa.enums.Collaboration.Urgency;
+import tn.khotwa.entity.collaboration.ResourceRequest;
+import tn.khotwa.enums.collaboration.ResourceRequestStatus;
+import tn.khotwa.enums.collaboration.ResourceType;
+import tn.khotwa.enums.collaboration.Urgency;
 
 @Getter
 @Setter
@@ -46,3 +46,4 @@ public class ResourceRequestDTO {
         );
     }
 }
+

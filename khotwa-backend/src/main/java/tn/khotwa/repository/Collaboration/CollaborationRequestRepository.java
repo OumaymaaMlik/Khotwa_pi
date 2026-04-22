@@ -1,19 +1,19 @@
-package tn.khotwa.repository.Collaboration;
+package tn.khotwa.repository.collaboration;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.dto.Collaboration.CollaborationPendingRequestCountView;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.CollaborationRequest;
+import tn.khotwa.dto.collaboration.CollaborationPendingRequestCountView;
+import tn.khotwa.entity.collaboration.Collaboration;
+import tn.khotwa.entity.collaboration.CollaborationRequest;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.CollaborationRequestScenario;
-import tn.khotwa.enums.Collaboration.RequestStatus;
+import tn.khotwa.enums.collaboration.CollaborationRequestScenario;
+import tn.khotwa.enums.collaboration.RequestStatus;
 
 public interface CollaborationRequestRepository extends JpaRepository<CollaborationRequest, Long> {
 
-    long countByStatusAndTargetCollaboration_Status(RequestStatus status, tn.khotwa.enums.Collaboration.CollaborationStatus collaborationStatus);
+    long countByStatusAndTargetCollaboration_Status(RequestStatus status, tn.khotwa.enums.collaboration.CollaborationStatus collaborationStatus);
 
     @Query("""
         select case when count(request) > 0 then true else false end
@@ -37,12 +37,12 @@ public interface CollaborationRequestRepository extends JpaRepository<Collaborat
         from CollaborationRequest request
         where request.targetCollaboration.id = :targetCollaborationId
           and request.scenario = :scenario
-          and request.status = tn.khotwa.enums.Collaboration.RequestStatus.PENDING
+          and request.status = tn.khotwa.enums.collaboration.RequestStatus.PENDING
           and (
-                (:scenario = tn.khotwa.enums.Collaboration.CollaborationRequestScenario.JOIN_REQUEST
+                (:scenario = tn.khotwa.enums.collaboration.CollaborationRequestScenario.JOIN_REQUEST
                     and request.requesterUser.idUser = :userId)
                 or
-                (:scenario = tn.khotwa.enums.Collaboration.CollaborationRequestScenario.COLLAB_INVITATION
+                (:scenario = tn.khotwa.enums.collaboration.CollaborationRequestScenario.COLLAB_INVITATION
                     and request.targetUser.idUser = :userId)
               )
         """)
@@ -68,7 +68,7 @@ public interface CollaborationRequestRepository extends JpaRepository<Collaborat
     @Query("""
         select request
         from CollaborationRequest request
-        where request.status = tn.khotwa.enums.Collaboration.RequestStatus.PENDING
+        where request.status = tn.khotwa.enums.collaboration.RequestStatus.PENDING
           and request.targetCollaboration is not null
         order by request.createdAt desc
         """)
@@ -78,10 +78,11 @@ public interface CollaborationRequestRepository extends JpaRepository<Collaborat
         select request.targetCollaboration.id as collaborationId,
                count(request) as pendingRequestCount
         from CollaborationRequest request
-        where request.status = tn.khotwa.enums.Collaboration.RequestStatus.PENDING
-          and request.targetCollaboration.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+        where request.status = tn.khotwa.enums.collaboration.RequestStatus.PENDING
+          and request.targetCollaboration.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         group by request.targetCollaboration.id
         order by request.targetCollaboration.id asc
         """)
     List<CollaborationPendingRequestCountView> countPendingRequestsPerCollaboration();
 }
+

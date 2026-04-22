@@ -1,4 +1,4 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 public record ProjectCollaborationContextDto(
         Long projectId,
@@ -57,3 +57,4 @@ public record ProjectCollaborationContextDto(
     ) {
     }
 }
+

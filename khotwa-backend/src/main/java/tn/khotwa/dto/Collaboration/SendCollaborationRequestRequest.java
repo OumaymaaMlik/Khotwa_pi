@@ -1,4 +1,4 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -20,3 +20,4 @@ public class SendCollaborationRequestRequest {
     @Positive
     private Long targetCollaborationId;
 }
+

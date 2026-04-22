@@ -1,14 +1,14 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.entity.Collaboration.MarketingContentTask;
-import tn.khotwa.enums.Collaboration.ContentType;
-import tn.khotwa.enums.Collaboration.Platform;
-import tn.khotwa.enums.Collaboration.TaskStatus;
+import tn.khotwa.entity.collaboration.MarketingContentTask;
+import tn.khotwa.enums.collaboration.ContentType;
+import tn.khotwa.enums.collaboration.Platform;
+import tn.khotwa.enums.collaboration.TaskStatus;
 
 @Getter
 @Setter

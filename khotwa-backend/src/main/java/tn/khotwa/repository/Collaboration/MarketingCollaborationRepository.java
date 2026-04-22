@@ -1,11 +1,11 @@
-package tn.khotwa.repository.Collaboration;
+package tn.khotwa.repository.collaboration;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import tn.khotwa.entity.Collaboration.MarketingCollaboration;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.MarketingCollaborationStatus;
+import tn.khotwa.entity.collaboration.MarketingCollaboration;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
 
 public interface MarketingCollaborationRepository extends JpaRepository<MarketingCollaboration, Long> {
 
@@ -29,9 +29,10 @@ public interface MarketingCollaborationRepository extends JpaRepository<Marketin
     @Query("""
         select campaign
         from MarketingCollaboration campaign
-        where campaign.status = tn.khotwa.enums.Collaboration.MarketingCollaborationStatus.ACTIVE
-          and campaign.collaboration.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+        where campaign.status = tn.khotwa.enums.collaboration.MarketingCollaborationStatus.ACTIVE
+          and campaign.collaboration.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         order by campaign.createdAt desc
         """)
     List<MarketingCollaboration> findActiveMarketingCampaigns();
 }
+

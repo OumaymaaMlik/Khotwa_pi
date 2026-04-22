@@ -1,10 +1,10 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.entity.Collaboration.CollaborationMember;
+import tn.khotwa.entity.collaboration.CollaborationMember;
 import tn.khotwa.entity.User.User;
 
 @Getter
@@ -30,3 +30,4 @@ public class CollaborationMemberDTO {
         );
     }
 }
+

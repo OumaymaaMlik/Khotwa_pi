@@ -1,11 +1,11 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.enums.Collaboration.ResourceRequestStatus;
+import tn.khotwa.enums.collaboration.ResourceRequestStatus;
 
 @Getter
 @Setter
@@ -17,3 +17,4 @@ public class UpdateResourceRequestStatusRequest {
     private ResourceRequestStatus status;
     private Long matchedResourceId;
 }
+

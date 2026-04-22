@@ -1,25 +1,25 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.dto.Collaboration.ProjectCollaborationContextDto;
-import tn.khotwa.entity.Collaboration.Project;
+import tn.khotwa.dto.collaboration.ProjectCollaborationContextDto;
+import tn.khotwa.entity.collaboration.Project;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.Collaboration.AvailabilityStatus;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.MarketingCollaborationStatus;
-import tn.khotwa.enums.Collaboration.ResourceRequestStatus;
-import tn.khotwa.enums.Collaboration.TaskStatus;
-import tn.khotwa.enums.Collaboration.Urgency;
-import tn.khotwa.exception.Collaboration.ResourceNotFoundException;
-import tn.khotwa.repository.Collaboration.CollaborationMemberRepository;
-import tn.khotwa.repository.Collaboration.CollaborationRepository;
-import tn.khotwa.repository.Collaboration.MarketingCollaborationRepository;
-import tn.khotwa.repository.Collaboration.MarketingContentTaskRepository;
-import tn.khotwa.repository.Collaboration.ProjectRepository;
-import tn.khotwa.repository.Collaboration.ResourceRequestRepository;
-import tn.khotwa.repository.Collaboration.SharedResourceRepository;
+import tn.khotwa.enums.collaboration.AvailabilityStatus;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
+import tn.khotwa.enums.collaboration.ResourceRequestStatus;
+import tn.khotwa.enums.collaboration.TaskStatus;
+import tn.khotwa.enums.collaboration.Urgency;
+import tn.khotwa.exception.collaboration.ResourceNotFoundException;
+import tn.khotwa.repository.collaboration.CollaborationMemberRepository;
+import tn.khotwa.repository.collaboration.CollaborationRepository;
+import tn.khotwa.repository.collaboration.MarketingCollaborationRepository;
+import tn.khotwa.repository.collaboration.MarketingContentTaskRepository;
+import tn.khotwa.repository.collaboration.ProjectRepository;
+import tn.khotwa.repository.collaboration.ResourceRequestRepository;
+import tn.khotwa.repository.collaboration.SharedResourceRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -185,3 +185,4 @@ public class ProjectOverviewService {
         return Math.toIntExact(value);
     }
 }
+

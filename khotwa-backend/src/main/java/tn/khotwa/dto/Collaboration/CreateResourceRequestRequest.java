@@ -1,4 +1,4 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -6,8 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.enums.Collaboration.ResourceType;
-import tn.khotwa.enums.Collaboration.Urgency;
+import tn.khotwa.enums.collaboration.ResourceType;
+import tn.khotwa.enums.collaboration.Urgency;
 
 @Getter
 @Setter

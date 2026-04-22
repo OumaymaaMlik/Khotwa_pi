@@ -1,4 +1,4 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,3 +15,4 @@ public class WeeklyCollaborationReportScheduler {
         weeklyCollaborationReportService.generateWeeklyReport();
     }
 }
+

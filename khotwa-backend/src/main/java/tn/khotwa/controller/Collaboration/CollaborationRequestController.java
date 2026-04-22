@@ -1,4 +1,4 @@
-package tn.khotwa.controller.Collaboration;
+package tn.khotwa.controller.collaboration;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tn.khotwa.dto.Collaboration.CollaborationRequestDTO;
-import tn.khotwa.dto.Collaboration.SendCollaborationRequestRequest;
-import tn.khotwa.service.Collaboration.CollaborationApiService;
+import tn.khotwa.dto.collaboration.CollaborationRequestDTO;
+import tn.khotwa.dto.collaboration.SendCollaborationRequestRequest;
+import tn.khotwa.service.collaboration.CollaborationApiService;
 
 @RestController
 @RequestMapping("/api/collaboration-requests")
@@ -69,3 +69,4 @@ public class CollaborationRequestController {
         return CollaborationRequestDTO.fromEntity(collaborationApiService.rejectCollaborationRequest(id));
     }
 }
+

@@ -1,6 +1,6 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
-import tn.khotwa.enums.Collaboration.CollaborationType;
+import tn.khotwa.enums.collaboration.CollaborationType;
 
 public interface CollaborationTypeCountView {
 
@@ -8,3 +8,4 @@ public interface CollaborationTypeCountView {
 
     Long getCollaborationCount();
 }
+

@@ -1,8 +1,8 @@
-package tn.khotwa.dto.Collaboration;
+package tn.khotwa.dto.collaboration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import tn.khotwa.entity.Collaboration.WeeklyCollaborationReport;
+import tn.khotwa.entity.collaboration.WeeklyCollaborationReport;
 
 public record WeeklyCollaborationReportDTO(
         Long id,
@@ -32,3 +32,4 @@ public record WeeklyCollaborationReportDTO(
         );
     }
 }
+

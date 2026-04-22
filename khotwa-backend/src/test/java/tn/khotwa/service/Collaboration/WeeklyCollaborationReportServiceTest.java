@@ -1,4 +1,4 @@
-package tn.khotwa.service.Collaboration;
+package tn.khotwa.service.collaboration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,18 +13,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tn.khotwa.dto.Collaboration.WeeklyCollaborationReportDTO;
-import tn.khotwa.entity.Collaboration.WeeklyCollaborationReport;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.MarketingCollaborationStatus;
-import tn.khotwa.enums.Collaboration.RequestStatus;
-import tn.khotwa.enums.Collaboration.ResourceRequestStatus;
-import tn.khotwa.repository.Collaboration.CollaborationRepository;
-import tn.khotwa.repository.Collaboration.CollaborationRequestRepository;
-import tn.khotwa.repository.Collaboration.MarketingCollaborationRepository;
-import tn.khotwa.repository.Collaboration.MarketingContentTaskRepository;
-import tn.khotwa.repository.Collaboration.ResourceRequestRepository;
-import tn.khotwa.repository.Collaboration.WeeklyCollaborationReportRepository;
+import tn.khotwa.dto.collaboration.WeeklyCollaborationReportDTO;
+import tn.khotwa.entity.collaboration.WeeklyCollaborationReport;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
+import tn.khotwa.enums.collaboration.RequestStatus;
+import tn.khotwa.enums.collaboration.ResourceRequestStatus;
+import tn.khotwa.repository.collaboration.CollaborationRepository;
+import tn.khotwa.repository.collaboration.CollaborationRequestRepository;
+import tn.khotwa.repository.collaboration.MarketingCollaborationRepository;
+import tn.khotwa.repository.collaboration.MarketingContentTaskRepository;
+import tn.khotwa.repository.collaboration.ResourceRequestRepository;
+import tn.khotwa.repository.collaboration.WeeklyCollaborationReportRepository;
 
 @ExtendWith(MockitoExtension.class)
 class WeeklyCollaborationReportServiceTest {
@@ -144,3 +144,4 @@ class WeeklyCollaborationReportServiceTest {
         verify(weeklyCollaborationReportRepository).save(existingReport);
     }
 }
+

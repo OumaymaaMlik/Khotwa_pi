@@ -1,13 +1,13 @@
-package tn.khotwa.repository.Collaboration;
+package tn.khotwa.repository.collaboration;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.entity.Collaboration.ResourceRequest;
-import tn.khotwa.enums.Collaboration.CollaborationStatus;
-import tn.khotwa.enums.Collaboration.ResourceRequestStatus;
-import tn.khotwa.enums.Collaboration.Urgency;
+import tn.khotwa.entity.collaboration.ResourceRequest;
+import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.ResourceRequestStatus;
+import tn.khotwa.enums.collaboration.Urgency;
 
 public interface ResourceRequestRepository extends JpaRepository<ResourceRequest, Long> {
 
@@ -38,9 +38,10 @@ public interface ResourceRequestRepository extends JpaRepository<ResourceRequest
     @Query("""
         select request
         from ResourceRequest request
-        where request.status = tn.khotwa.enums.Collaboration.ResourceRequestStatus.OPEN
-          and request.collaboration.status = tn.khotwa.enums.Collaboration.CollaborationStatus.ACTIVE
+        where request.status = tn.khotwa.enums.collaboration.ResourceRequestStatus.OPEN
+          and request.collaboration.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         order by request.createdAt desc
         """)
     List<ResourceRequest> findOpenResourceRequests();
 }
+
