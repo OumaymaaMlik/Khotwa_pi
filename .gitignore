@@ -7,3 +7,5 @@ out-tsc/
 .angular/
 target/
 .agent.md
+*.log
+*.err
