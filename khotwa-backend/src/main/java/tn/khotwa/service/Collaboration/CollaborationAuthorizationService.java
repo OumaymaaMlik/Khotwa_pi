@@ -8,8 +8,10 @@ import tn.khotwa.entity.Collaboration.MarketingCollaboration;
 import tn.khotwa.entity.Collaboration.MarketingContentTask;
 import tn.khotwa.entity.Collaboration.Project;
 import tn.khotwa.entity.Collaboration.ResourceRequest;
+import tn.khotwa.entity.Collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.User.Role;
+import tn.khotwa.exception.Collaboration.AccessDeniedException;
 import tn.khotwa.exception.Collaboration.ForbiddenOperationException;
 import tn.khotwa.repository.Collaboration.CollaborationMemberRepository;
 
@@ -27,12 +29,12 @@ public class CollaborationAuthorizationService {
         throw new ForbiddenOperationException("Only the project owner or admin can create the collaboration.");
     }
 
-    public void checkCanCreateProjectInvitation(User actor, Project project) {
-        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(project.getOwner().getIdUser()))) {
+    public void checkCanInviteToCollaboration(User actor, Collaboration collaboration) {
+        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(collaboration.getOwner().getIdUser()))) {
             return;
         }
 
-        throw new ForbiddenOperationException("Only the project owner or admin can invite members to a collaboration.");
+        throw new ForbiddenOperationException("Only the collaboration owner or admin can invite members to this collaboration.");
     }
 
     public void checkCanManageOwnedCollaboration(User actor, Collaboration collaboration) {
@@ -89,11 +91,11 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanCreateCollaborationRequest(User actor) {
-        if (isEntrepreneur(actor)) {
+        if (isAdmin(actor) || isEntrepreneur(actor)) {
             return;
         }
 
-        throw new ForbiddenOperationException("Only entrepreneurs can initiate collaboration requests.");
+        throw new ForbiddenOperationException("Only entrepreneurs or admin can initiate collaboration requests.");
     }
 
     public void checkCanViewProjectRequests(User actor, Project project) {
@@ -109,15 +111,19 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanRespondToCollaborationRequest(User actor, CollaborationRequest request) {
+        if (actor.getIdUser().equals(request.getRequesterUser().getIdUser())) {
+            throw new AccessDeniedException("The requester cannot process their own collaboration request.");
+        }
+
+        if (actor.getIdUser().equals(request.getTargetUser().getIdUser())) {
+            return;
+        }
+
         if (isAdmin(actor)) {
             return;
         }
 
-        if (isEntrepreneur(actor) && actor.getIdUser().equals(request.getExpectedResponder().getIdUser())) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only the expected responder or admin can respond to this collaboration request.");
+        throw new AccessDeniedException("Only the target user or admin can respond to this collaboration request.");
     }
 
     public void checkCanViewProject(User actor, Project project, boolean isProjectCollaborationMember) {
@@ -159,6 +165,18 @@ public class CollaborationAuthorizationService {
         throw new ForbiddenOperationException("Only collaboration members or admin can create resource requests.");
     }
 
+    public void checkCanManageSharedResource(User actor, SharedResource resource) {
+        if (isAdmin(actor)) {
+            return;
+        }
+
+        if (isEntrepreneur(actor) && actor.getIdUser().equals(resource.getOwnerUser().getIdUser())) {
+            return;
+        }
+
+        throw new ForbiddenOperationException("Only the resource owner or admin can manage shared resources.");
+    }
+
     public void checkCanUpdateResourceRequestStatus(User actor, ResourceRequest request) {
         if (isAdmin(actor)) {
             return;
@@ -169,7 +187,19 @@ public class CollaborationAuthorizationService {
             return;
         }
 
-        throw new ForbiddenOperationException("Only the project owner or admin can update resource request status.");
+        throw new ForbiddenOperationException("Only the collaboration owner or admin can update resource request status.");
+    }
+
+    public void checkCanDeleteResourceRequest(User actor, ResourceRequest request) {
+        if (isAdmin(actor)) {
+            return;
+        }
+
+        if (isEntrepreneur(actor) && actor.getIdUser().equals(request.getRequesterUser().getIdUser())) {
+            return;
+        }
+
+        throw new ForbiddenOperationException("Only the requester or admin can remove this resource request.");
     }
 
     public void checkCanCreateMarketingCollaboration(User actor, Collaboration collaboration) {

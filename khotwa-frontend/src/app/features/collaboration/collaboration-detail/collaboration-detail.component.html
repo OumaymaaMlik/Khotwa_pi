@@ -15,11 +15,34 @@
       </div>
 
       <div class="detail-header-grid">
-        <app-project-context-card
-          *ngIf="projectContext"
-          [projectContext]="projectContext"
-          [role]="currentUserRole">
-        </app-project-context-card>
+        <div class="kh-card collaboration-overview-card">
+          <div class="collaboration-overview-card__header">
+            <div>
+              <h2 class="kh-section-title">{{ currentCollaboration.projectName }}</h2>
+              <p class="detail-section__description">
+                Backend-driven collaboration overview from the collaboration detail endpoint.
+              </p>
+            </div>
+            <span class="kh-badge kh-badge--teal">{{ collaborationTypeLabel }}</span>
+          </div>
+          <div class="collaboration-overview-card__grid">
+            <div class="collaboration-overview-card__item">
+              <span class="detail-section__eyebrow">Owner</span>
+              <strong>{{ currentCollaboration.ownerName || 'Unknown owner' }}</strong>
+              <p>{{ currentCollaboration.ownerEmail || 'No email available' }}</p>
+            </div>
+            <div class="collaboration-overview-card__item">
+              <span class="detail-section__eyebrow">Status</span>
+              <strong>{{ currentCollaboration.status }}</strong>
+              <p>{{ members.length }} member{{ members.length === 1 ? '' : 's' }}</p>
+            </div>
+            <div class="collaboration-overview-card__item">
+              <span class="detail-section__eyebrow">Project</span>
+              <strong>{{ currentCollaboration.projectName || 'Unnamed project' }}</strong>
+              <p>Linked project for this collaboration.</p>
+            </div>
+          </div>
+        </div>
 
         <app-collaboration-actions
           [collaboration]="currentCollaboration"
@@ -27,6 +50,7 @@
           [currentUserId]="currentUserId"
           [canUpdateStatus]="canUpdateStatus"
           [canLeave]="canLeaveCollaboration"
+          [isReadOnly]="currentCollaboration.status === 'CLOSED'"
           (statusUpdated)="onStatusUpdated($event)"
           (collaborationLeft)="onCollaborationLeft($event)">
         </app-collaboration-actions>
@@ -51,9 +75,7 @@
         [role]="currentUserRole"
         [currentUserId]="currentUserId"
         [canRemoveMembers]="canRemoveMembers"
-        [canLeave]="canLeaveCollaboration"
-        (memberRemoved)="onMemberRemoved($event)"
-        (collaborationLeft)="onCollaborationLeft($event)">
+        (memberRemoved)="onMemberRemoved($event)">
       </app-members-block>
     </section>
 
@@ -63,23 +85,25 @@
         <div>
           <h2 class="kh-section-title">Collaboration requests</h2>
           <p class="detail-section__description">
-            Track invitations and join requests that affect the collaboration lifecycle.
+            Track invitations and join requests linked directly to this collaboration.
           </p>
         </div>
       </div>
 
-      <div *ngIf="requestScopeMessage" class="kh-card collab-empty">
-        {{ requestScopeMessage }}
-      </div>
-
       <app-requests-block
-        *ngIf="!requestScopeMessage"
         [requests]="collaborationRequests"
         [viewMode]="'collaboration'"
         [role]="currentUserRole"
         [currentUserId]="currentUserId"
+        [collaborationStatus]="currentCollaboration.status"
+        [requestActionInFlightId]="collaborationRequestActionInFlightId"
+        [canRespond]="currentUserRole !== 'coach'"
+        [canInvite]="canInviteToCollaboration"
+        [inviteCandidates]="inviteCandidates"
+        [inviteActionInFlight]="inviteActionInFlight"
         (requestAccepted)="onRequestAccepted($event)"
-        (requestRejected)="onRequestRejected($event)">
+        (requestRejected)="onRequestRejected($event)"
+        (requestCreated)="onInviteRequestCreated($event)">
       </app-requests-block>
     </section>
 
@@ -98,36 +122,21 @@
         [resources]="sharedResources"
         [resourceRequests]="resourceRequests"
         [role]="currentUserRole"
-        [canCreateResource]="isMember"
-        [canRequestResource]="isMember"
+        [currentUserId]="currentUserId"
+        [collaborationOwnerId]="currentCollaboration.ownerId"
+        [collaborationStatus]="currentCollaboration.status"
+        [resourceRequestActionInFlightId]="resourceRequestActionInFlightId"
+        [canCreateResource]="canCreateResource"
+        [canRequestResource]="canCreateResourceRequest"
         [canUpdateResourceRequestStatuses]="canUpdateResourceRequestStatuses"
+        [errorMessage]="error"
         (createResource)="onCreateResource($event)"
+        (updateResource)="onUpdateResource($event)"
+        (removeResource)="onRemoveResource($event)"
         (createResourceRequest)="onCreateResourceRequest($event)"
+        (removeResourceRequest)="onRemoveResourceRequest($event)"
         (updateResourceRequestStatus)="onUpdateResourceRequestStatus($event)">
       </app-resources-block>
-    </section>
-
-    <section *ngIf="isMarketingCollaboration" class="detail-section">
-      <div class="detail-section__intro">
-        <span class="detail-section__eyebrow">Marketing</span>
-        <div>
-          <h2 class="kh-section-title">Campaigns and tasks</h2>
-          <p class="detail-section__description">
-            Follow the marketing work connected to this marketing collaboration in a single section.
-          </p>
-        </div>
-      </div>
-
-      <app-marketing-block
-        [campaigns]="marketingCampaigns"
-        [tasks]="marketingTasks"
-        [role]="currentUserRole"
-        [canCreateCampaign]="isMember"
-        [canManageTasks]="isMember"
-        (createCampaign)="onCreateCampaign($event)"
-        (createTask)="onCreateTask($event)"
-        (updateTaskStatus)="onUpdateTaskStatus($event)">
-      </app-marketing-block>
     </section>
   </ng-container>
 </div>

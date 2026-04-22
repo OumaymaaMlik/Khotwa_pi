@@ -13,6 +13,8 @@ export interface ResourceRequest {
   resourceType: ResourceType;
   urgency: Urgency;
   status: ResourceRequestStatus;
+  matchedResourceId?: number | null;
+  matchedResourceName?: string | null;
   createdAt: string;
 }
 
@@ -22,4 +24,9 @@ export interface CreateResourceRequestPayload {
   description?: string | null;
   resourceType: ResourceType;
   urgency: Urgency;
+}
+
+export interface UpdateResourceRequestStatusPayload {
+  status: ResourceRequestStatus;
+  matchedResourceId?: number | null;
 }

@@ -39,7 +39,7 @@ export class CollaborationRequestsComponent implements OnChanges {
   }
 
   typeLabel(request: CollaborationRequest): string {
-    return getCollaborationTypeLabel(request.type);
+    return getCollaborationTypeLabel(request.targetCollaborationType);
   }
 
   loadRequests(): void {

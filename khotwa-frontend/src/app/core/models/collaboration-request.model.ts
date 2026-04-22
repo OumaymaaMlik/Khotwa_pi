@@ -1,7 +1,7 @@
 import { CollaborationType } from './collaboration.model';
 
 export type RequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
-export type CollaborationRequestScenario = 'PROJECT_INVITATION' | 'COLLABORATION_JOIN_REQUEST';
+export type CollaborationRequestScenario = 'JOIN_REQUEST' | 'COLLAB_INVITATION';
 
 export interface CollaborationRequest {
   id: number;
@@ -14,17 +14,14 @@ export interface CollaborationRequest {
   projectId: number;
   projectName?: string;
   scenario: CollaborationRequestScenario;
-  targetCollaborationId?: number | null;
-  targetCollaborationType?: CollaborationType | null;
-  type: CollaborationType;
+  targetCollaborationId: number;
+  targetCollaborationType: CollaborationType;
   status: RequestStatus;
   createdAt: string;
-  respondedAt: string | null;
+  processedAt: string | null;
 }
 
 export interface SendCollaborationRequestRequest {
-  projectId?: number | null;
-  type: CollaborationType;
   targetUserId?: number | null;
-  targetCollaborationId?: number | null;
+  targetCollaborationId: number;
 }

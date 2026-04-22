@@ -1,10 +1,7 @@
 export type ResourceType =
-  | 'FUNDING'
-  | 'EQUIPMENT'
+  | 'MATERIAL'
   | 'SOFTWARE'
-  | 'SERVICE'
-  | 'EXPERTISE'
-  | 'OTHER';
+  | 'HUMAN';
 
 export type AvailabilityStatus = 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE';
 
@@ -26,6 +23,13 @@ export interface CreateSharedResourcePayload {
   name: string;
   description?: string | null;
   resourceType: ResourceType;
-  availabilityStatus: AvailabilityStatus;
+  availabilityStatus?: AvailabilityStatus | null;
+  quantity?: number | null;
+}
+
+export interface UpdateSharedResourcePayload {
+  name: string;
+  description?: string | null;
+  resourceType: ResourceType;
   quantity?: number | null;
 }

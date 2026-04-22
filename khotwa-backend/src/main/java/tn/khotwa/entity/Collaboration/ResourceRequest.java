@@ -61,6 +61,10 @@ public class ResourceRequest {
     @Column(nullable = false)
     private ResourceRequestStatus status = ResourceRequestStatus.OPEN;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matched_resource_id")
+    private SharedResource matchedResource;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

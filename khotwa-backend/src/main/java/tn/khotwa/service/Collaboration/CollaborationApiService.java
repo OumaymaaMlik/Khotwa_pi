@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import tn.khotwa.dto.Collaboration.WeeklyCollaborationReportDTO;
 import tn.khotwa.dto.Collaboration.ProjectSummaryDTO;
 import tn.khotwa.entity.Collaboration.Collaboration;
 import tn.khotwa.entity.Collaboration.CollaborationRequest;
@@ -17,6 +18,7 @@ import tn.khotwa.service.User.CurrentUserService;
 public class CollaborationApiService {
 
     private final CollaborationService collaborationService;
+    private final WeeklyCollaborationReportService weeklyCollaborationReportService;
     private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
 
@@ -55,8 +57,8 @@ public class CollaborationApiService {
         collaborationService.leaveCollaboration(collaborationId);
     }
 
-    public CollaborationRequest createCollaborationRequest(Long projectId, Long targetUserId, CollaborationType type, Long targetCollaborationId) {
-        return collaborationService.createCollaborationRequest(projectId, targetUserId, type, targetCollaborationId);
+    public CollaborationRequest createCollaborationRequest(Long targetUserId, Long targetCollaborationId) {
+        return collaborationService.createCollaborationRequest(targetUserId, targetCollaborationId);
     }
 
     public List<CollaborationRequest> getSentCollaborationRequests() {
@@ -65,6 +67,10 @@ public class CollaborationApiService {
 
     public List<CollaborationRequest> getReceivedCollaborationRequests() {
         return collaborationService.getReceivedCollaborationRequests();
+    }
+
+    public List<CollaborationRequest> getCollaborationScopedRequests(Long collaborationId) {
+        return collaborationService.getCollaborationScopedRequests(collaborationId);
     }
 
     public List<CollaborationRequest> getProjectCollaborationRequests(Long projectId) {
@@ -77,5 +83,13 @@ public class CollaborationApiService {
 
     public CollaborationRequest rejectCollaborationRequest(Long requestId) {
         return collaborationService.rejectCollaborationRequest(requestId);
+    }
+
+    public WeeklyCollaborationReportDTO generateWeeklyCollaborationReport() {
+        return weeklyCollaborationReportService.generateWeeklyReport();
+    }
+
+    public WeeklyCollaborationReportDTO getLatestWeeklyCollaborationReport() {
+        return weeklyCollaborationReportService.getLatestWeeklyReport();
     }
 }

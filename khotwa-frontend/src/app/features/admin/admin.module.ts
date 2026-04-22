@@ -7,6 +7,7 @@ import { LayoutComponent } from '../../layout/layout.component';
 import { CollaborationModule } from '../collaboration/collaboration.module';
 import { CollaborationDetailComponent } from '../collaboration/collaboration-detail/collaboration-detail.component';
 import { CollaborationListComponent } from '../collaboration/collaboration-list/collaboration-list.component';
+import { CollaborationSentRequestsPageComponent } from '../collaboration/collaboration-sent-requests-page/collaboration-sent-requests-page.component';
 
 import { AdminDashboardComponent }    from './dashboard/dashboard.component';
 import { AdminProjetsComponent }       from './projets/projets.component';
@@ -26,6 +27,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: AdminDashboardComponent },
       { path: 'collaborations', component: CollaborationListComponent },
+      { path: 'collaborations/requests', component: CollaborationSentRequestsPageComponent },
       { path: 'collaborations/:id', component: CollaborationDetailComponent },
       { path: 'projets',      component: AdminProjetsComponent },
       { path: 'messages',     component: AdminMessagesComponent },

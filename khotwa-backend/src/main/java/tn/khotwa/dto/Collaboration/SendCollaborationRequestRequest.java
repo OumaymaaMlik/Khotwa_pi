@@ -1,11 +1,11 @@
 package tn.khotwa.dto.Collaboration;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tn.khotwa.enums.Collaboration.CollaborationType;
 
 @Getter
 @Setter
@@ -13,9 +13,10 @@ import tn.khotwa.enums.Collaboration.CollaborationType;
 @AllArgsConstructor
 public class SendCollaborationRequestRequest {
 
-    private Long projectId;
+    @Positive
     private Long targetUserId;
+
     @NotNull
-    private CollaborationType type;
+    @Positive
     private Long targetCollaborationId;
 }

@@ -25,13 +25,19 @@
             {{ project.name }}
           </option>
         </select>
+        <span *ngIf="formErrors.projectId" class="collab-readonly collab-readonly--error">{{ formErrors.projectId }}</span>
       </label>
 
       <label>
         <span>Collaboration type</span>
-        <select name="type" [(ngModel)]="model.type" [disabled]="typeAvailabilityLoading || !hasAvailableTypes">
+        <select
+          name="type"
+          [(ngModel)]="model.type"
+          (ngModelChange)="formErrors.type = undefined; error = ''"
+          [disabled]="typeAvailabilityLoading || !hasAvailableTypes">
           <option *ngFor="let type of availableTypes" [ngValue]="type">{{ typeLabel(type) }}</option>
         </select>
+        <span *ngIf="formErrors.type" class="collab-readonly collab-readonly--error">{{ formErrors.type }}</span>
       </label>
 
       <p *ngIf="projectsLoading" class="collab-note">Loading your projects...</p>
@@ -39,7 +45,6 @@
       <p *ngIf="!projectsLoading && !hasProjects" class="collab-note">You don't have any projects yet. Create a project first to start collaborating.</p>
       <p *ngIf="!typeAvailabilityLoading && model.projectId && !hasAvailableTypes" class="collab-note">All collaboration types are already used for this project.</p>
       <p *ngIf="projectsError" class="collab-readonly collab-readonly--error">{{ projectsError }}</p>
-      <p *ngIf="submitted && !model.projectId && hasProjects" class="collab-readonly collab-readonly--error">Project selection is required.</p>
 
       <button type="submit" class="kh-btn kh-btn--primary" [disabled]="loading || projectsLoading || typeAvailabilityLoading || !hasProjects || !hasAvailableTypes">
         {{ loading ? 'Creating...' : 'Create collaboration' }}

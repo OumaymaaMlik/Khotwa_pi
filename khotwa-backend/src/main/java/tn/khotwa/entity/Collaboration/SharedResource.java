@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -54,9 +55,12 @@ public class SharedResource {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AvailabilityStatus availabilityStatus = AvailabilityStatus.AVAILABLE;
+    private AvailabilityStatus availabilityStatus = AvailabilityStatus.LIMITED;
 
-    private Integer quantity;
+    private Integer quantity = 1;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

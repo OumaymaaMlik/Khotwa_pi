@@ -29,13 +29,12 @@ public class CollaborationRequestDTO {
     private Long targetCollaborationId;
     private CollaborationType targetCollaborationType;
     private RequestStatus status;
-    private CollaborationType type;
     private LocalDateTime createdAt;
-    private LocalDateTime respondedAt;
+    private LocalDateTime processedAt;
 
     public static CollaborationRequestDTO fromEntity(CollaborationRequest request) {
-        Long targetCollaborationId = request.getTargetCollaboration() != null ? request.getTargetCollaboration().getId() : null;
-        CollaborationType targetCollaborationType = request.getTargetCollaboration() != null ? request.getTargetCollaboration().getType() : null;
+        Long targetCollaborationId = request.getTargetCollaboration().getId();
+        CollaborationType targetCollaborationType = request.getTargetCollaboration().getType();
 
         return new CollaborationRequestDTO(
                 request.getId(),
@@ -45,15 +44,14 @@ public class CollaborationRequestDTO {
                 request.getTargetUser().getIdUser(),
                 request.getTargetUser().getFullName(),
                 request.getTargetUser().getEmailAddress(),
-                request.getProject().getId(),
-                request.getProject().getName(),
+                request.getTargetCollaboration().getProject().getId(),
+                request.getTargetCollaboration().getProject().getName(),
                 request.getScenario(),
                 targetCollaborationId,
                 targetCollaborationType,
                 request.getStatus(),
-                request.getType(),
                 request.getCreatedAt(),
-                request.getRespondedAt()
+                request.getProcessedAt()
         );
     }
 }

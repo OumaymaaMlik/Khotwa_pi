@@ -15,4 +15,5 @@ public class UpdateResourceRequestStatusRequest {
 
     @NotNull
     private ResourceRequestStatus status;
+    private Long matchedResourceId;
 }

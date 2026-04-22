@@ -22,7 +22,6 @@ public class CreateSharedResourceRequest {
     private String description;
     @NotNull
     private ResourceType resourceType;
-    @NotNull
     private AvailabilityStatus availabilityStatus;
     private Integer quantity;
 }

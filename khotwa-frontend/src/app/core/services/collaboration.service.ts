@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   Collaboration,
@@ -26,12 +26,14 @@ import {
   CreateResourceRequestPayload,
   ResourceRequest,
   ResourceRequestStatus,
+  UpdateResourceRequestStatusPayload,
 } from '../models/resource-request.model';
 import { ProjectCollaborationContext } from '../models/project-collaboration-context.model';
 import { ProjectSummary } from '../models/project-summary.model';
 import {
   CreateSharedResourcePayload,
   SharedResource,
+  UpdateSharedResourcePayload,
 } from '../models/shared-resource.model';
 
 const API_BASE = '/api';
@@ -108,25 +110,16 @@ export class CollaborationService {
     return this.http.get<CollaborationRequest[]>(`${API_BASE}/collaboration-requests/received`);
   }
 
+  getCollaborationScopedRequests(collaborationId: number): Observable<CollaborationRequest[]> {
+    return this.http.get<CollaborationRequest[]>(`${API_BASE}/collaboration-requests/collaboration/${collaborationId}`);
+  }
+
   acceptRequest(requestId: number): Observable<CollaborationRequest> {
     return this.http.post<CollaborationRequest>(`${API_BASE}/collaboration-requests/${requestId}/accept`, {});
   }
 
   rejectRequest(requestId: number): Observable<CollaborationRequest> {
     return this.http.post<CollaborationRequest>(`${API_BASE}/collaboration-requests/${requestId}/reject`, {});
-  }
-
-  cancelRequest(_requestId: number): Observable<void> {
-    return of(void 0);
-  }
-
-  respondToRequest(
-    requestId: number,
-    response: 'accepted' | 'rejected'
-  ): Observable<CollaborationRequest> {
-    return response === 'accepted'
-      ? this.acceptRequest(requestId)
-      : this.rejectRequest(requestId);
   }
 
   getProjectContext(projectId: number): Observable<ProjectCollaborationContext> {
@@ -145,15 +138,32 @@ export class CollaborationService {
     return this.http.post<SharedResource>(`${API_BASE}/shared-resources`, payload);
   }
 
+  updateResource(resourceId: number, payload: UpdateSharedResourcePayload): Observable<SharedResource> {
+    return this.http.put<SharedResource>(`${API_BASE}/shared-resources/${resourceId}`, payload);
+  }
+
+  deleteResource(resourceId: number): Observable<void> {
+    return this.http.delete<void>(`${API_BASE}/shared-resources/${resourceId}`);
+  }
+
   createResourceRequest(payload: CreateResourceRequestPayload): Observable<ResourceRequest> {
     return this.http.post<ResourceRequest>(`${API_BASE}/resource-requests`, payload);
   }
 
+  deleteResourceRequest(requestId: number): Observable<void> {
+    return this.http.delete<void>(`${API_BASE}/resource-requests/${requestId}`);
+  }
+
   updateResourceRequestStatus(
     requestId: number,
-    status: ResourceRequestStatus
+    statusOrPayload: ResourceRequestStatus | UpdateResourceRequestStatusPayload
   ): Observable<ResourceRequest> {
-    return this.http.put<ResourceRequest>(`${API_BASE}/resource-requests/${requestId}/status`, { status });
+    const payload =
+      typeof statusOrPayload === 'string'
+        ? { status: statusOrPayload }
+        : statusOrPayload;
+
+    return this.http.put<ResourceRequest>(`${API_BASE}/resource-requests/${requestId}/status`, payload);
   }
 
   getMarketingCampaigns(collaborationId: number): Observable<MarketingCollaboration[]> {

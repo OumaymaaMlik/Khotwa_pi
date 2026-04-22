@@ -10,6 +10,7 @@ import tn.khotwa.entity.Collaboration.CollaborationMember;
 import tn.khotwa.entity.Collaboration.CollaborationRequest;
 import tn.khotwa.entity.Collaboration.Project;
 import tn.khotwa.entity.User.User;
+import tn.khotwa.enums.Collaboration.CollaborationRequestScenario;
 import tn.khotwa.enums.Collaboration.CollaborationStatus;
 import tn.khotwa.enums.Collaboration.CollaborationType;
 import tn.khotwa.enums.Collaboration.RequestStatus;
@@ -109,15 +110,35 @@ public class CollaborationService {
         return collaborationRepository.save(collaboration);
     }
 
-    public CollaborationRequest createCollaborationRequest(Long projectId, Long targetUserId, CollaborationType type, Long targetCollaborationId) {
-        validateCollaborationType(type);
+    public CollaborationRequest createCollaborationRequest(Long targetUserId, Long targetCollaborationId) {
         User actor = currentUserService.requireCurrentUser();
         authorizationService.checkCanCreateCollaborationRequest(actor);
-        if (targetCollaborationId != null) {
-            return createJoinCollaborationRequest(actor, targetCollaborationId, targetUserId, type);
+
+        if (targetCollaborationId == null) {
+            throw new BusinessException("targetCollaborationId is required.");
         }
 
-        return createProjectInvitationRequest(actor, projectId, targetUserId, type);
+        Collaboration targetCollaboration = getCollaborationOrThrow(targetCollaborationId);
+        ensureActiveCollaboration(targetCollaboration, "Only active collaborations can receive collaboration requests.");
+        User collaborationOwner = requireEntrepreneurUser(
+                targetCollaboration.getOwner(),
+                "Project owner must be an entrepreneur to manage a collaboration."
+        );
+
+        if (targetUserId != null
+                && !targetUserId.equals(collaborationOwner.getIdUser())
+                && actor.getRole() != Role.ADMIN
+                && !actor.getIdUser().equals(collaborationOwner.getIdUser())) {
+            throw new BusinessException("Target user must be the owner of the collaboration.");
+        }
+
+        CollaborationRequestScenario scenario = resolveScenario(targetUserId, collaborationOwner);
+
+        if (scenario == CollaborationRequestScenario.JOIN_REQUEST) {
+            return createJoinCollaborationRequest(actor, targetCollaboration, collaborationOwner);
+        }
+
+        return createCollaborationInvitationRequest(actor, targetUserId, targetCollaboration);
     }
 
     public CollaborationRequest acceptCollaborationRequest(Long requestId) {
@@ -130,18 +151,17 @@ public class CollaborationService {
             throw new BusinessException("Only pending collaboration requests can be accepted.");
         }
 
-        if (request.isJoinRequest()) {
-            Collaboration collaboration = request.getTargetCollaboration();
-            ensureSameProject(collaboration, request.getProject().getId());
-            ensureWritableCollaboration(collaboration);
-            addMemberIfAbsent(collaboration, request.getRequesterUser());
-        } else {
-            Collaboration collaboration = findOrCreateCollaborationForInvitation(request.getProject(), request.getType());
-            addMemberIfAbsent(collaboration, request.getTargetUser());
-        }
+        Collaboration collaboration = request.getTargetCollaboration();
+        ensureActiveCollaboration(collaboration, "Only active collaborations can accept collaboration requests.");
+        ensureUserIsNotMember(
+                collaboration,
+                request.getSubjectUser(),
+                "The user is already a member of this collaboration."
+        );
+        addMember(collaboration, request.getSubjectUser());
 
         request.setStatus(RequestStatus.ACCEPTED);
-        request.setRespondedAt(LocalDateTime.now());
+        request.setProcessedAt(LocalDateTime.now());
         return collaborationRequestRepository.save(request);
     }
 
@@ -156,7 +176,7 @@ public class CollaborationService {
         }
 
         request.setStatus(RequestStatus.REJECTED);
-        request.setRespondedAt(LocalDateTime.now());
+        request.setProcessedAt(LocalDateTime.now());
         return collaborationRequestRepository.save(request);
     }
 
@@ -177,7 +197,7 @@ public class CollaborationService {
     @Transactional(readOnly = true)
     public List<Collaboration> getCollaborationsByProjectId(Long projectId) {
         User actor = currentUserService.requireCurrentUser();
-        return collaborationRepository.findAllByProjectId(projectId)
+        return collaborationRepository.findAllByProjectIdOrderByCreatedAtDesc(projectId)
                 .stream()
                 .filter(collaboration -> canViewCollaboration(actor, collaboration))
                 .toList();
@@ -186,13 +206,33 @@ public class CollaborationService {
     @Transactional(readOnly = true)
     public List<CollaborationRequest> getSentCollaborationRequests() {
         User actor = currentUserService.requireCurrentUser();
-        return collaborationRequestRepository.findAllByRequesterUserId(actor.getIdUser());
+        return collaborationRequestRepository.findAllByRequesterUser_IdUserOrderByCreatedAtDesc(actor.getIdUser());
     }
 
     @Transactional(readOnly = true)
     public List<CollaborationRequest> getReceivedCollaborationRequests() {
         User actor = currentUserService.requireCurrentUser();
-        return collaborationRequestRepository.findAllByTargetUserId(actor.getIdUser());
+        return collaborationRequestRepository.findAllByTargetUser_IdUserOrderByCreatedAtDesc(actor.getIdUser());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CollaborationRequest> getCollaborationScopedRequests(Long collaborationId) {
+        Collaboration collaboration = getCollaborationOrThrow(collaborationId);
+        User actor = currentUserService.requireCurrentUser();
+        boolean isMember = collaborationMemberRepository.existsByCollaborationIdAndUserId(
+                collaborationId,
+                actor.getIdUser()
+        );
+
+        try {
+            authorizationService.checkCanViewCollaboration(actor, collaboration, isMember);
+            return collaborationRequestRepository.findAllByTargetCollaboration_IdOrderByCreatedAtDesc(collaborationId);
+        } catch (ForbiddenOperationException exception) {
+            return collaborationRequestRepository.findAllByTargetCollaboration_IdAndTargetUser_IdUserOrderByCreatedAtDesc(
+                    collaborationId,
+                    actor.getIdUser()
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -200,7 +240,7 @@ public class CollaborationService {
         User actor = currentUserService.requireCurrentUser();
         Project project = getProject(projectId);
         authorizationService.checkCanViewProjectRequests(actor, project);
-        return collaborationRequestRepository.findAllByProjectId(projectId);
+        return collaborationRequestRepository.findAllByTargetCollaboration_Project_IdOrderByCreatedAtDesc(projectId);
     }
 
     @Transactional(readOnly = true)
@@ -252,8 +292,14 @@ public class CollaborationService {
     }
 
     private CollaborationRequest getCollaborationRequest(Long requestId) {
-        return collaborationRequestRepository.findById(requestId)
+        CollaborationRequest request = collaborationRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaboration request not found."));
+
+        if (request.getTargetCollaboration() == null) {
+            throw new BusinessException("Legacy project-wide collaboration requests are no longer supported.");
+        }
+
+        return request;
     }
 
     private Collaboration createCollaborationInternal(Project project, CollaborationType type) {
@@ -276,86 +322,57 @@ public class CollaborationService {
 
     private CollaborationRequest createJoinCollaborationRequest(
             User actor,
-            Long targetCollaborationId,
-            Long targetUserId,
-            CollaborationType type
+            Collaboration targetCollaboration,
+            User collaborationOwner
     ) {
-        Collaboration targetCollaboration = getCollaborationOrThrow(targetCollaborationId);
-        ensureWritableCollaboration(targetCollaboration);
-
-        if (type != targetCollaboration.getType()) {
-            throw new BusinessException("Collaboration request type must match the target collaboration type.");
+        requireEntrepreneurUser(actor, "JOIN_REQUEST requester must be an entrepreneur.");
+        if (collaborationOwner.getIdUser().equals(actor.getIdUser())) {
+            throw new BusinessException("Collaboration owners cannot create join requests for their own collaboration.");
         }
+        ensureUserIsNotMember(targetCollaboration, actor, "You are already a member of this collaboration.");
 
-        User targetUser = requireEntrepreneurUser(
-                targetCollaboration.getOwner(),
-                "Project owner must be an entrepreneur to manage a collaboration."
+        return saveCollaborationRequest(
+                actor,
+                collaborationOwner,
+                targetCollaboration,
+                CollaborationRequestScenario.JOIN_REQUEST
         );
-
-        if (targetUserId != null && !targetUser.getIdUser().equals(targetUserId)) {
-            throw new BusinessException("Target user must be the owner of the collaboration.");
-        }
-        if (targetUser.getIdUser().equals(actor.getIdUser())) {
-            throw new BusinessException("Cannot create a collaboration request targeting yourself.");
-        }
-        if (collaborationMemberRepository.existsByCollaborationIdAndUserId(targetCollaborationId, actor.getIdUser())) {
-            throw new BusinessException("You are already a member of this collaboration.");
-        }
-        if (collaborationRequestRepository.existsPendingJoinRequest(actor.getIdUser(), targetCollaborationId)) {
-            throw new BusinessException("A pending join request already exists for this collaboration.");
-        }
-
-        return saveCollaborationRequest(actor, targetUser, targetCollaboration.getProject(), type, targetCollaboration);
     }
 
-    private CollaborationRequest createProjectInvitationRequest(
+    private CollaborationRequest createCollaborationInvitationRequest(
             User actor,
-            Long projectId,
             Long targetUserId,
-            CollaborationType type
+            Collaboration targetCollaboration
     ) {
-        if (projectId == null) {
-            throw new BusinessException("projectId is required for project invitations.");
-        }
         if (targetUserId == null) {
-            throw new BusinessException("targetUserId is required for project invitations.");
+            throw new BusinessException("targetUserId is required for collaboration invitations.");
         }
 
-        Project project = getProject(projectId);
+        authorizationService.checkCanInviteToCollaboration(actor, targetCollaboration);
+
         User targetUser = requireEntrepreneurUser(
                 userService.getRequiredUser(targetUserId),
                 "Collaboration requests can only target entrepreneurs."
         );
-
-        authorizationService.checkCanCreateProjectInvitation(actor, project);
+        User collaborationOwner = requireEntrepreneurUser(
+                targetCollaboration.getOwner(),
+                "Project owner must be an entrepreneur to manage a collaboration."
+        );
 
         if (targetUser.getIdUser().equals(actor.getIdUser())) {
             throw new BusinessException("Cannot create a collaboration request targeting yourself.");
         }
-
-        ensureProjectOwnerCanBeMember(project);
-        if (collaborationRepository.existsByProject_IdAndType(project.getId(), type)) {
-            throw new BusinessException("A collaboration of this type already exists for the project.");
+        if (targetUser.getIdUser().equals(collaborationOwner.getIdUser())) {
+            throw new BusinessException("COLLAB_INVITATION targetUser cannot be the collaboration owner.");
         }
-        if (collaborationRequestRepository.existsPendingProjectInvitation(
-                actor.getIdUser(),
-                targetUser.getIdUser(),
-                project.getId(),
-                type
-        )) {
-            throw new BusinessException("A matching pending invitation already exists for this project.");
-        }
+        ensureUserIsNotMember(targetCollaboration, targetUser, "The target user is already a member of this collaboration.");
 
-        return saveCollaborationRequest(actor, targetUser, project, type, null);
-    }
-
-    private Collaboration findOrCreateCollaborationForInvitation(Project project, CollaborationType type) {
-        return collaborationRepository.findFirstByProject_IdAndTypeOrderByCreatedAtAsc(project.getId(), type)
-                .map(existingCollaboration -> {
-                    ensureWritableCollaboration(existingCollaboration);
-                    return existingCollaboration;
-                })
-                .orElseGet(() -> createCollaborationInternal(project, type));
+        return saveCollaborationRequest(
+                actor,
+                targetUser,
+                targetCollaboration,
+                CollaborationRequestScenario.COLLAB_INVITATION
+        );
     }
 
     private void ensureOwnerMembership(Collaboration collaboration) {
@@ -384,12 +401,7 @@ public class CollaborationService {
         );
     }
 
-    private void addMemberIfAbsent(Collaboration collaboration, User user) {
-        Long userId = user.getIdUser();
-        if (collaborationMemberRepository.existsByCollaborationIdAndUserId(collaboration.getId(), userId)) {
-            return;
-        }
-
+    private void addMember(Collaboration collaboration, User user) {
         CollaborationMember member = new CollaborationMember();
         member.setCollaboration(collaboration);
         member.setUser(requireEntrepreneurUser(user, "Only entrepreneur users can be collaboration members."));
@@ -397,28 +409,75 @@ public class CollaborationService {
         collaborationMemberRepository.save(member);
     }
 
-    private void ensureSameProject(Collaboration collaboration, Long projectId) {
-        if (!collaboration.getProject().getId().equals(projectId)) {
-            throw new BusinessException("Target collaboration must belong to the provided project.");
+    private void ensureUserIsNotMember(Collaboration collaboration, User user, String message) {
+        if (collaborationMemberRepository.existsByCollaborationIdAndUserId(collaboration.getId(), user.getIdUser())) {
+            throw new BusinessException(message);
         }
     }
 
     private CollaborationRequest saveCollaborationRequest(
             User requesterUser,
             User targetUser,
-            Project project,
-            CollaborationType type,
-            Collaboration targetCollaboration
+            Collaboration targetCollaboration,
+            CollaborationRequestScenario scenario
     ) {
+        ensureNoPendingRequestConflict(requesterUser, targetUser, targetCollaboration, scenario);
+
         CollaborationRequest request = new CollaborationRequest();
         request.setRequesterUser(requesterUser);
         request.setTargetUser(targetUser);
-        request.setProject(project);
+        request.setProject(targetCollaboration.getProject());
         request.setTargetCollaboration(targetCollaboration);
-        request.setType(type);
+        request.setScenario(scenario);
         request.setStatus(RequestStatus.PENDING);
         request.setCreatedAt(LocalDateTime.now());
         return collaborationRequestRepository.save(request);
+    }
+
+    private void ensureNoPendingRequestConflict(
+            User requesterUser,
+            User targetUser,
+            Collaboration targetCollaboration,
+            CollaborationRequestScenario scenario
+    ) {
+        if (collaborationRequestRepository.existsByRequesterAndTargetUserAndCollaborationAndScenarioAndStatus(
+                requesterUser,
+                targetUser,
+                targetCollaboration,
+                scenario,
+                RequestStatus.PENDING
+        )) {
+            throw new BusinessException("A matching pending collaboration request already exists.");
+        }
+
+        User subjectUser = scenario == CollaborationRequestScenario.JOIN_REQUEST ? requesterUser : targetUser;
+        CollaborationRequestScenario oppositeScenario = scenario == CollaborationRequestScenario.JOIN_REQUEST
+                ? CollaborationRequestScenario.COLLAB_INVITATION
+                : CollaborationRequestScenario.JOIN_REQUEST;
+
+        if (collaborationRequestRepository.existsPendingRequestForUserAndCollaborationAndScenario(
+                subjectUser.getIdUser(),
+                targetCollaboration.getId(),
+                oppositeScenario
+        )) {
+            throw new BusinessException("A conflicting pending collaboration request already exists for this user and collaboration.");
+        }
+    }
+
+    private CollaborationRequestScenario resolveScenario(Long targetUserId, User collaborationOwner) {
+        if (targetUserId == null || targetUserId.equals(collaborationOwner.getIdUser())) {
+            return CollaborationRequestScenario.JOIN_REQUEST;
+        }
+
+        return CollaborationRequestScenario.COLLAB_INVITATION;
+    }
+
+    private void ensureActiveCollaboration(Collaboration collaboration, String message) {
+        ensureOwnerMembership(collaboration);
+
+        if (collaboration.getStatus() != CollaborationStatus.ACTIVE) {
+            throw new BusinessException(message);
+        }
     }
 
     private void validateCollaborationType(CollaborationType type) {

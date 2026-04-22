@@ -10,21 +10,16 @@
 
   <div *ngIf="showBody && loading" class="kh-card collab-empty">Loading collaborations...</div>
 
-  <div *ngIf="showBody && !loading && sortedCollaborations.length" class="collaboration-grid">
+  <div *ngIf="showBody && !loading && collaborations.length" class="collaboration-grid">
     <app-collaboration-card
-      *ngFor="let collaboration of sortedCollaborations; trackBy: trackByCollaboration"
+      *ngFor="let collaboration of collaborations; trackBy: trackByCollaboration"
       [collaboration]="collaboration"
-      [role]="auth.isAdmin ? 'admin' : auth.isCoach ? 'coach' : 'entrepreneur'"
-      [compact]="compact"
-      [routerLink]="collaborationLink(collaboration.id)">
+      (open)="onOpenCollaboration($event)">
     </app-collaboration-card>
   </div>
 
   <div *ngIf="showBody && !loading && !collaborations.length" class="kh-card collab-empty">
     <h2 class="kh-section-title">{{ emptyStateTitle || 'No collaborations yet' }}</h2>
-    <p>{{ emptyStateDescription || 'You do not have any collaborations yet. Create one to start managing members, resources, and marketing work.' }}</p>
-    <a *ngIf="emptyStateActionLabel && emptyStateActionLink" [routerLink]="emptyStateActionLink" class="kh-btn kh-btn--primary">
-      {{ emptyStateActionLabel }}
-    </a>
+    <p>{{ emptyStateDescription || 'No collaborations were returned by the backend.' }}</p>
   </div>
 </div>

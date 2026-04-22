@@ -25,6 +25,8 @@ public class ResourceRequestDTO {
     private ResourceType resourceType;
     private Urgency urgency;
     private ResourceRequestStatus status;
+    private Long matchedResourceId;
+    private String matchedResourceName;
     private LocalDateTime createdAt;
 
     public static ResourceRequestDTO fromEntity(ResourceRequest request) {
@@ -38,6 +40,8 @@ public class ResourceRequestDTO {
                 request.getResourceType(),
                 request.getUrgency(),
                 request.getStatus(),
+                request.getMatchedResource() != null ? request.getMatchedResource().getId() : null,
+                request.getMatchedResource() != null ? request.getMatchedResource().getName() : null,
                 request.getCreatedAt()
         );
     }

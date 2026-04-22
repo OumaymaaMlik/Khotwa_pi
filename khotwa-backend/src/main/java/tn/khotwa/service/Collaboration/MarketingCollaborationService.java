@@ -74,7 +74,7 @@ public class MarketingCollaborationService {
         );
         authorizationService.checkCanViewCollaboration(actor, collaboration, collaborationService.isMember(collaboration, actor));
 
-        return marketingCollaborationRepository.findAllByCollaborationId(collaborationId);
+        return marketingCollaborationRepository.findAllByCollaborationIdOrderByCreatedAtDesc(collaborationId);
     }
 
     @Transactional(readOnly = true)

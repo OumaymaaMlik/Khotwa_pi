@@ -27,7 +27,10 @@ public class CollaborationRequestController {
             @Valid @RequestBody SendCollaborationRequestRequest request
     ) {
         CollaborationRequestDTO response = CollaborationRequestDTO.fromEntity(
-                collaborationApiService.createCollaborationRequest(request.getProjectId(), request.getTargetUserId(), request.getType(), request.getTargetCollaborationId())
+                collaborationApiService.createCollaborationRequest(
+                        request.getTargetUserId(),
+                        request.getTargetCollaborationId()
+                )
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -43,6 +46,14 @@ public class CollaborationRequestController {
     @GetMapping("/received")
     public List<CollaborationRequestDTO> getReceivedRequests() {
         return collaborationApiService.getReceivedCollaborationRequests()
+                .stream()
+                .map(CollaborationRequestDTO::fromEntity)
+                .toList();
+    }
+
+    @GetMapping("/collaboration/{collaborationId}")
+    public List<CollaborationRequestDTO> getCollaborationScopedRequests(@PathVariable Long collaborationId) {
+        return collaborationApiService.getCollaborationScopedRequests(collaborationId)
                 .stream()
                 .map(CollaborationRequestDTO::fromEntity)
                 .toList();

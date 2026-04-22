@@ -1,6 +1,6 @@
 package tn.khotwa.enums.Collaboration;
 
 public enum CollaborationRequestScenario {
-    PROJECT_INVITATION,
-    COLLABORATION_JOIN_REQUEST
+    JOIN_REQUEST,
+    COLLAB_INVITATION
 }

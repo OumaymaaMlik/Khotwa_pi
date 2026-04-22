@@ -5,8 +5,6 @@ import {
   getCollaborationTypeLabel,
 } from '../../../core/models/collaboration.model';
 
-type Role = 'entrepreneur' | 'admin' | 'coach';
-
 @Component({
   selector: 'app-collaboration-card',
   templateUrl: './collaboration-card.component.html',
@@ -14,17 +12,11 @@ type Role = 'entrepreneur' | 'admin' | 'coach';
 })
 export class CollaborationCardComponent {
   @Input() collaboration!: Collaboration;
-  @Input() role!: Role;
-  @Input() compact?: boolean;
 
   @Output() open = new EventEmitter<Collaboration>();
 
   onOpen(): void {
     this.open.emit(this.collaboration);
-  }
-
-  get memberCount(): number {
-    return this.collaboration?.members?.length ?? 0;
   }
 
   typeLabel(type: CollaborationType): string {

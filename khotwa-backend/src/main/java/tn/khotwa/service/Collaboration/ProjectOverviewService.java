@@ -1,17 +1,10 @@
 package tn.khotwa.service.Collaboration;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tn.khotwa.dto.Collaboration.ProjectCollaborationContextDto;
-import tn.khotwa.entity.Collaboration.Collaboration;
-import tn.khotwa.entity.Collaboration.MarketingCollaboration;
-import tn.khotwa.entity.Collaboration.MarketingContentTask;
 import tn.khotwa.entity.Collaboration.Project;
-import tn.khotwa.entity.Collaboration.ResourceRequest;
-import tn.khotwa.entity.Collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.Collaboration.AvailabilityStatus;
 import tn.khotwa.enums.Collaboration.CollaborationStatus;
@@ -60,42 +53,73 @@ public class ProjectOverviewService {
         );
         authorizationService.checkCanViewProject(actor, project, isProjectCollaborationMember);
 
-        List<Collaboration> collaborations = collaborationRepository.findAllByProjectId(projectId);
-        List<SharedResource> resources = sharedResourceRepository.findAllByProjectId(projectId);
-        List<ResourceRequest> resourceRequests = resourceRequestRepository.findAllByProjectId(projectId);
-        List<MarketingCollaboration> marketingCollaborations = marketingCollaborationRepository.findAllByProjectId(projectId);
-        List<MarketingContentTask> marketingTasks = marketingContentTaskRepository.findAllByProjectId(projectId);
+        int totalCollaborations = toInt(collaborationRepository.countByProject_Id(projectId));
+        int activeCollaborations = toInt(collaborationRepository.countByProject_IdAndStatus(
+                projectId,
+                CollaborationStatus.ACTIVE
+        ));
+        int suspendedCollaborations = toInt(collaborationRepository.countByProject_IdAndStatus(
+                projectId,
+                CollaborationStatus.SUSPENDED
+        ));
+        int closedCollaborations = toInt(collaborationRepository.countByProject_IdAndStatus(
+                projectId,
+                CollaborationStatus.CLOSED
+        ));
 
-        int activeCollaborations = countCollaborationsByStatus(collaborations, CollaborationStatus.ACTIVE);
-        int suspendedCollaborations = countCollaborationsByStatus(collaborations, CollaborationStatus.SUSPENDED);
-        int closedCollaborations = countCollaborationsByStatus(collaborations, CollaborationStatus.CLOSED);
+        int totalResources = toInt(sharedResourceRepository.countByCollaboration_Project_IdAndCollaboration_Status(
+                projectId,
+                CollaborationStatus.ACTIVE
+        ));
+        int availableResources = toInt(sharedResourceRepository.countByCollaboration_Project_IdAndCollaboration_StatusAndAvailabilityStatus(
+                projectId,
+                CollaborationStatus.ACTIVE,
+                AvailabilityStatus.AVAILABLE
+        ));
+        int openRequests = toInt(resourceRequestRepository.countByCollaboration_Project_IdAndCollaboration_StatusAndStatus(
+                projectId,
+                CollaborationStatus.ACTIVE,
+                ResourceRequestStatus.OPEN
+        ));
+        int highPriorityOpenRequests = toInt(
+                resourceRequestRepository.countByCollaboration_Project_IdAndCollaboration_StatusAndStatusAndUrgency(
+                        projectId,
+                        CollaborationStatus.ACTIVE,
+                        ResourceRequestStatus.OPEN,
+                        Urgency.HIGH
+                )
+        );
 
-        int availableResources = (int) resources.stream()
-                .filter(resource -> resource.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE)
-                .count();
-        int openRequests = (int) resourceRequests.stream()
-                .filter(this::isOpenResourceRequest)
-                .count();
-        int highPriorityOpenRequests = (int) resourceRequests.stream()
-                .filter(this::isHighPriorityOpenRequest)
-                .count();
-
-        int activeCampaigns = (int) marketingCollaborations.stream()
-                .filter(campaign -> campaign.getStatus() == MarketingCollaborationStatus.ACTIVE)
-                .count();
-        int publishedTasks = (int) marketingTasks.stream()
-                .filter(task -> task.getStatus() == TaskStatus.PUBLISHED)
-                .count();
-        int overdueTasks = (int) marketingTasks.stream()
-                .filter(this::isOverdueMarketingTask)
-                .count();
+        int totalCampaigns = toInt(marketingCollaborationRepository.countByCollaboration_Project_IdAndCollaboration_Status(
+                projectId,
+                CollaborationStatus.ACTIVE
+        ));
+        int activeCampaigns = toInt(
+                marketingCollaborationRepository.countByCollaboration_Project_IdAndCollaboration_StatusAndStatus(
+                        projectId,
+                        CollaborationStatus.ACTIVE,
+                        MarketingCollaborationStatus.ACTIVE
+                )
+        );
+        int totalTasks = toInt(marketingContentTaskRepository
+                .countByMarketingCollaboration_Collaboration_Project_IdAndMarketingCollaboration_Collaboration_Status(
+                        projectId,
+                        CollaborationStatus.ACTIVE
+                ));
+        int publishedTasks = toInt(marketingContentTaskRepository
+                .countByMarketingCollaboration_Collaboration_Project_IdAndMarketingCollaboration_Collaboration_StatusAndStatus(
+                        projectId,
+                        CollaborationStatus.ACTIVE,
+                        TaskStatus.PUBLISHED
+                ));
+        int overdueTasks = toInt(marketingContentTaskRepository.countOverdueMarketingContentTasksByProjectId(projectId));
 
         boolean hasAnyDelay = overdueTasks > 0;
         boolean hasBlockingExecutionRisk = suspendedCollaborations > 0
                 || highPriorityOpenRequests > 0
                 || overdueTasks > 0;
 
-        String projectStatus = determineProjectStatus(collaborations);
+        String projectStatus = determineProjectStatus(activeCollaborations, suspendedCollaborations, closedCollaborations);
         String projectDescription = buildProjectDescription(project);
 
         return new ProjectCollaborationContextDto(
@@ -116,56 +140,35 @@ public class ProjectOverviewService {
                         hasBlockingExecutionRisk
                 ),
                 new ProjectCollaborationContextDto.CollaborationContext(
-                        collaborations.size(),
+                        totalCollaborations,
                         activeCollaborations,
                         suspendedCollaborations,
                         closedCollaborations
                 ),
                 new ProjectCollaborationContextDto.ResourceContext(
-                        resources.size(),
+                        totalResources,
                         availableResources,
                         openRequests,
                         highPriorityOpenRequests
                 ),
                 new ProjectCollaborationContextDto.MarketingContext(
-                        marketingCollaborations.size(),
+                        totalCampaigns,
                         activeCampaigns,
-                        marketingTasks.size(),
+                        totalTasks,
                         publishedTasks,
                         overdueTasks
                 )
         );
     }
 
-    private int countCollaborationsByStatus(List<Collaboration> collaborations, CollaborationStatus status) {
-        return (int) collaborations.stream()
-                .filter(collaboration -> collaboration.getStatus() == status)
-                .count();
-    }
-
-    private boolean isOpenResourceRequest(ResourceRequest request) {
-        return request.getStatus() == ResourceRequestStatus.OPEN
-                || request.getStatus() == ResourceRequestStatus.MATCHED;
-    }
-
-    private boolean isHighPriorityOpenRequest(ResourceRequest request) {
-        return request.getUrgency() == Urgency.HIGH && isOpenResourceRequest(request);
-    }
-
-    private boolean isOverdueMarketingTask(MarketingContentTask task) {
-        return task.getDueDate() != null
-                && task.getDueDate().isBefore(LocalDateTime.now())
-                && task.getStatus() != TaskStatus.PUBLISHED;
-    }
-
-    private String determineProjectStatus(List<Collaboration> collaborations) {
-        if (collaborations.stream().anyMatch(collaboration -> collaboration.getStatus() == CollaborationStatus.ACTIVE)) {
+    private String determineProjectStatus(int activeCollaborations, int suspendedCollaborations, int closedCollaborations) {
+        if (activeCollaborations > 0) {
             return CollaborationStatus.ACTIVE.name();
         }
-        if (collaborations.stream().anyMatch(collaboration -> collaboration.getStatus() == CollaborationStatus.SUSPENDED)) {
+        if (suspendedCollaborations > 0) {
             return CollaborationStatus.SUSPENDED.name();
         }
-        if (collaborations.stream().anyMatch(collaboration -> collaboration.getStatus() == CollaborationStatus.CLOSED)) {
+        if (closedCollaborations > 0) {
             return CollaborationStatus.CLOSED.name();
         }
         return NOT_STARTED_STATUS;
@@ -176,5 +179,9 @@ public class ProjectOverviewService {
             return DEFAULT_PROJECT_DESCRIPTION;
         }
         return "Collaboration workspace for " + project.getName().trim() + ".";
+    }
+
+    private int toInt(long value) {
+        return Math.toIntExact(value);
     }
 }

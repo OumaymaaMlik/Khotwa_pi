@@ -101,7 +101,7 @@ public class MarketingContentTaskService {
 
         authorizationService.checkCanViewMarketingCollaboration(actor, marketingCollaboration);
 
-        return marketingContentTaskRepository.findAllByMarketingCollaborationId(marketingCollaborationId);
+        return marketingContentTaskRepository.findAllByMarketingCollaborationIdOrderByDueDateAsc(marketingCollaborationId);
     }
 
     @Transactional(readOnly = true)

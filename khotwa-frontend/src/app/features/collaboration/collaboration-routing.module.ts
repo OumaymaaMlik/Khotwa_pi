@@ -15,11 +15,13 @@ export const entrepreneurCollaborationRoutes: Routes = [
 
 export const adminCollaborationRoutes: Routes = [
   { path: '', component: CollaborationListComponent },
+  { path: 'requests', component: CollaborationSentRequestsPageComponent },
   { path: ':id', component: CollaborationDetailComponent },
 ];
 
 export const coachCollaborationRoutes: Routes = [
   { path: '', component: CollaborationListComponent },
+  { path: 'requests', component: CollaborationSentRequestsPageComponent },
   { path: ':id', component: CollaborationDetailComponent },
 ];
 

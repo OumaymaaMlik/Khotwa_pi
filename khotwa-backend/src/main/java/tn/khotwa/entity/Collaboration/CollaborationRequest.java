@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -21,7 +22,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.Collaboration.CollaborationRequestScenario;
-import tn.khotwa.enums.Collaboration.CollaborationType;
 import tn.khotwa.enums.Collaboration.RequestStatus;
 
 @Getter
@@ -30,7 +30,16 @@ import tn.khotwa.enums.Collaboration.RequestStatus;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "collaboration_requests", indexes = @Index(columnList = "createdAt"))
+@Table(
+        name = "collaboration_requests",
+        indexes = {
+                @Index(name = "idx_collaboration_request_created_at", columnList = "created_at"),
+                @Index(
+                        name = "idx_collaboration_request_pending_lookup",
+                        columnList = "requester_user_id,target_user_id,target_collaboration_id,scenario,status"
+                )
+        }
+)
 public class CollaborationRequest {
 
     @Id
@@ -38,14 +47,19 @@ public class CollaborationRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private LocalDateTime respondedAt;
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private RequestStatus status = RequestStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scenario", nullable = false)
+    private CollaborationRequestScenario scenario;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "requester_user_id", nullable = false)
@@ -59,38 +73,53 @@ public class CollaborationRequest {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_collaboration_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "target_collaboration_id", nullable = false)
     private Collaboration targetCollaboration;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private CollaborationType type;
-
     @PrePersist
-    public void prePersist() {
+    @PreUpdate
+    public void syncState() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+
+        if (targetCollaboration != null) {
+            project = targetCollaboration.getProject();
+        }
+
+        if (scenario == null) {
+            scenario = inferScenario();
         }
     }
 
     public CollaborationRequestScenario getScenario() {
-        return targetCollaboration == null
-                ? CollaborationRequestScenario.PROJECT_INVITATION
-                : CollaborationRequestScenario.COLLABORATION_JOIN_REQUEST;
+        return scenario != null ? scenario : inferScenario();
     }
 
-    public boolean isProjectInvitation() {
-        return getScenario() == CollaborationRequestScenario.PROJECT_INVITATION;
+    public boolean isCollaborationInvitation() {
+        return getScenario() == CollaborationRequestScenario.COLLAB_INVITATION;
     }
 
     public boolean isJoinRequest() {
-        return getScenario() == CollaborationRequestScenario.COLLABORATION_JOIN_REQUEST;
+        return getScenario() == CollaborationRequestScenario.JOIN_REQUEST;
     }
 
     public User getExpectedResponder() {
-        return isProjectInvitation()
-                ? targetUser
-                : targetCollaboration.getOwner();
+        return targetUser;
+    }
+
+    public User getSubjectUser() {
+        return isCollaborationInvitation() ? targetUser : requesterUser;
+    }
+
+    private CollaborationRequestScenario inferScenario() {
+        if (targetCollaboration == null || targetCollaboration.getOwner() == null || targetUser == null) {
+            return null;
+        }
+
+        return targetUser.getIdUser().equals(targetCollaboration.getOwner().getIdUser())
+                ? CollaborationRequestScenario.JOIN_REQUEST
+                : CollaborationRequestScenario.COLLAB_INVITATION;
     }
 }

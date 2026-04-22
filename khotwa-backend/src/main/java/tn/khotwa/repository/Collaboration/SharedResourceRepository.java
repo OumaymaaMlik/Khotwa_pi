@@ -1,26 +1,25 @@
 package tn.khotwa.repository.Collaboration;
 
+import java.util.Optional;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import tn.khotwa.entity.Collaboration.SharedResource;
+import tn.khotwa.enums.Collaboration.AvailabilityStatus;
+import tn.khotwa.enums.Collaboration.CollaborationStatus;
 
 public interface SharedResourceRepository extends JpaRepository<SharedResource, Long> {
 
-    @Query("""
-        select sr
-        from SharedResource sr
-        where sr.collaboration.id = :collaborationId
-        order by sr.createdAt desc
-        """)
-    List<SharedResource> findAllByCollaborationId(@Param("collaborationId") Long collaborationId);
+    Optional<SharedResource> findByIdAndCollaborationId(Long id, Long collaborationId);
 
-    @Query("""
-        select sr
-        from SharedResource sr
-        where sr.collaboration.project.id = :projectId
-        order by sr.createdAt desc
-        """)
-    List<SharedResource> findAllByProjectId(@Param("projectId") Long projectId);
+    List<SharedResource> findAllByCollaborationIdOrderByCreatedAtDesc(Long collaborationId);
+
+    List<SharedResource> findAllByCollaboration_Project_IdOrderByCreatedAtDesc(Long projectId);
+
+    long countByCollaboration_Project_IdAndCollaboration_Status(Long projectId, CollaborationStatus collaborationStatus);
+
+    long countByCollaboration_Project_IdAndCollaboration_StatusAndAvailabilityStatus(
+            Long projectId,
+            CollaborationStatus collaborationStatus,
+            AvailabilityStatus availabilityStatus
+    );
 }

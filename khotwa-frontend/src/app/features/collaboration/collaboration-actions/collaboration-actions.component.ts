@@ -13,6 +13,7 @@ export class CollaborationActionsComponent {
   @Input() role!: Role;
   @Input() canUpdateStatus?: boolean;
   @Input() canLeave?: boolean;
+  @Input() isReadOnly = false;
   @Input() currentUserId?: number;
 
   @Output() statusUpdated = new EventEmitter<{ collaborationId: number; newStatus: CollaborationStatus }>();
@@ -27,5 +28,25 @@ export class CollaborationActionsComponent {
       collaborationId: this.collaboration.id,
       userId: this.currentUserId ?? 0
     });
+  }
+
+  get canShowStatusActions(): boolean {
+    return !!this.canUpdateStatus && !this.isReadOnly && this.collaboration?.status !== 'CLOSED';
+  }
+
+  get canShowLeaveAction(): boolean {
+    return !!this.canLeave && !this.isReadOnly && this.collaboration?.status === 'ACTIVE';
+  }
+
+  get canActivate(): boolean {
+    return this.canShowStatusActions && this.collaboration?.status === 'SUSPENDED';
+  }
+
+  get canSuspend(): boolean {
+    return this.canShowStatusActions && this.collaboration?.status === 'ACTIVE';
+  }
+
+  get canClose(): boolean {
+    return this.canShowStatusActions;
   }
 }

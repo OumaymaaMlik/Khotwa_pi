@@ -12,6 +12,11 @@ import {
 } from '../../../core/models/collaboration.model';
 import { ProjectSummary } from '../../../core/models/project-summary.model';
 
+type CreateCollaborationFormErrors = {
+  projectId?: string;
+  type?: string;
+};
+
 @Component({
   selector: 'app-collaboration-create',
   templateUrl: './collaboration-create.component.html',
@@ -33,6 +38,7 @@ export class CollaborationCreateComponent implements OnInit {
   error = '';
   success = '';
   projectsError = '';
+  formErrors: CreateCollaborationFormErrors = {};
 
   readonly types: CollaborationType[] = [...COLLABORATION_TYPES];
 
@@ -74,6 +80,7 @@ export class CollaborationCreateComponent implements OnInit {
   private loadMyProjects(): void {
     this.projectsLoading = true;
     this.projectsError = '';
+    this.error = '';
 
     this.collaborationService.getMyProjects()
       .pipe(finalize(() => { this.projectsLoading = false; }))
@@ -93,6 +100,8 @@ export class CollaborationCreateComponent implements OnInit {
 
   onProjectChange(projectId: number): void {
     this.model.projectId = projectId;
+    this.formErrors.projectId = undefined;
+    this.error = '';
     this.refreshAvailableTypes();
   }
 
@@ -103,6 +112,7 @@ export class CollaborationCreateComponent implements OnInit {
     }
 
     this.typeAvailabilityLoading = true;
+    this.error = '';
 
     this.collaborationService.getCollaborationsByProjectId(this.model.projectId)
       .pipe(finalize(() => { this.typeAvailabilityLoading = false; }))
@@ -131,14 +141,17 @@ export class CollaborationCreateComponent implements OnInit {
     this.submitted = true;
     this.error = '';
     this.success = '';
+    this.formErrors = {};
 
     if (!this.canSubmit) {
       this.error = 'Only entrepreneurs can create collaborations.';
       return;
     }
 
-    if (!this.hasProjects || !this.model.projectId) {
-      this.error = 'Select one of your projects to continue.';
+    this.formErrors = this.validateForm();
+
+    if (Object.keys(this.formErrors).length > 0) {
+      this.error = 'Please correct the highlighted fields.';
       return;
     }
 
@@ -148,8 +161,12 @@ export class CollaborationCreateComponent implements OnInit {
     }
 
     this.loading = true;
+    const payload: CreateCollaborationRequest = {
+      projectId: this.model.projectId,
+      type: this.model.type,
+    };
 
-    this.collaborationService.createCollaboration(this.model)
+    this.collaborationService.createCollaboration(payload)
       .pipe(finalize(() => { this.loading = false; }))
       .subscribe({
         next: (collaboration: Collaboration) => {
@@ -168,5 +185,21 @@ export class CollaborationCreateComponent implements OnInit {
   private extractError(err: unknown): string {
     const error = err as { error?: { message?: string }; message?: string };
     return error.error?.message ?? error.message ?? 'An unexpected error occurred.';
+  }
+
+  private validateForm(): CreateCollaborationFormErrors {
+    const errors: CreateCollaborationFormErrors = {};
+
+    if (!this.hasProjects || !this.model.projectId) {
+      errors.projectId = 'Project selection is required.';
+    }
+
+    if (!this.model.type || !this.availableTypes.includes(this.model.type)) {
+      errors.type = this.hasAvailableTypes
+        ? 'Choose an available collaboration type.'
+        : 'No collaboration type is available for this project.';
+    }
+
+    return errors;
   }
 }

@@ -7,6 +7,7 @@ import { LayoutCoachComponent } from '../../layout-coach/layout-coach.component'
 import { CollaborationModule } from '../collaboration/collaboration.module';
 import { CollaborationDetailComponent } from '../collaboration/collaboration-detail/collaboration-detail.component';
 import { CollaborationListComponent } from '../collaboration/collaboration-list/collaboration-list.component';
+import { CollaborationSentRequestsPageComponent } from '../collaboration/collaboration-sent-requests-page/collaboration-sent-requests-page.component';
 
 import { CoachDashboardComponent }    from './dashboard/dashboard.component';
 import { CoachProjetsComponent }       from './projets/projets.component';
@@ -25,6 +26,7 @@ const routes: Routes = [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: CoachDashboardComponent    },
       { path: 'collaborations', component: CollaborationListComponent },
+      { path: 'collaborations/requests', component: CollaborationSentRequestsPageComponent },
       { path: 'collaborations/:id', component: CollaborationDetailComponent },
       { path: 'projets',      component: CoachProjetsComponent      },
       { path: 'startups',     component: CoachStartupsComponent     },
