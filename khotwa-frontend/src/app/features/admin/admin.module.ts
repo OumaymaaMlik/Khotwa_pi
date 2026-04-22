@@ -17,7 +17,6 @@ import { AdminUtilisateursComponent }  from './utilisateurs/utilisateurs.compone
 import { AdminEvenementsComponent }    from './evenements/evenements.component';
 import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
 import { AdminTalentComponent }        from './talent/talent.component';
-import { CollaborationsOverviewComponent } from './collaborations-overview/collaborations-overview.component';
 
 const routes: Routes = [
   {
@@ -45,7 +44,6 @@ const routes: Routes = [
     AdminDashboardComponent, AdminProjetsComponent,
     AdminMessagesComponent, AdminBibliothequeComponent, AdminUtilisateursComponent,
     AdminEvenementsComponent, SubscriptionsComponent, AdminTalentComponent,
-    CollaborationsOverviewComponent,
   ],
   imports: [CommonModule, FormsModule, LayoutModule, CollaborationModule, RouterModule.forChild(routes)],
 })

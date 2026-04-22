@@ -6,7 +6,6 @@ import { RouterModule } from '@angular/router';
 import { CollaborationCreateComponent } from './collaboration-create/collaboration-create.component';
 import { CollaborationDetailComponent } from './collaboration-detail/collaboration-detail.component';
 import { CollaborationListComponent } from './collaboration-list/collaboration-list.component';
-import { CollaborationRequestsComponent } from './collaboration-requests/collaboration-requests.component';
 import { CollaborationSentRequestsPageComponent } from './collaboration-sent-requests-page/collaboration-sent-requests-page.component';
 import { CollaborationMyCollaborationsPageComponent } from './collaboration-my-collaborations-page/collaboration-my-collaborations-page.component';
 import { CollaborationCardComponent } from './collaboration-card/collaboration-card.component';
@@ -22,7 +21,6 @@ import { ProjectContextCardComponent } from './project-context-card/project-cont
     CollaborationCreateComponent,
     CollaborationDetailComponent,
     CollaborationListComponent,
-    CollaborationRequestsComponent,
     CollaborationSentRequestsPageComponent,
     CollaborationMyCollaborationsPageComponent,
     CollaborationCardComponent,
@@ -42,7 +40,6 @@ import { ProjectContextCardComponent } from './project-context-card/project-cont
     CollaborationCreateComponent,
     CollaborationDetailComponent,
     CollaborationListComponent,
-    CollaborationRequestsComponent,
     CollaborationSentRequestsPageComponent,
     CollaborationMyCollaborationsPageComponent,
     CollaborationCardComponent,

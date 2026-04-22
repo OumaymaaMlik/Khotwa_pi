@@ -90,7 +90,6 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
     }
 
     const finalUrl = base + cleanPath;
-    console.log("Coach URL built:", finalUrl);
     return finalUrl;
   }
 

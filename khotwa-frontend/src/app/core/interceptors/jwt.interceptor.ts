@@ -29,8 +29,6 @@ export class JwtInterceptor implements HttpInterceptor {
       });
     }
 
-    this.logOutgoingRequest(request);
-
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401 && this.shouldLogout(token, error)) {
@@ -87,25 +85,6 @@ export class JwtInterceptor implements HttpInterceptor {
     );
 
     return JSON.parse(json) as Record<string, unknown>;
-  }
-
-  private logOutgoingRequest(request: HttpRequest<unknown>): void {
-    if (!request.url.includes('/api/projects/my')) {
-      return;
-    }
-
-    const authorizationHeader = request.headers.get('Authorization');
-    const maskedAuthorization = authorizationHeader
-      ? `${authorizationHeader.slice(0, 20)}...`
-      : '(missing)';
-
-    console.debug('[JwtInterceptor] Outgoing request headers', {
-      method: request.method,
-      url: request.urlWithParams,
-      headers: {
-        Authorization: maskedAuthorization,
-      },
-    });
   }
 
   private isAuthenticationFailure(error: HttpErrorResponse): boolean {

@@ -40,29 +40,23 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-  console.log('Current user in profile:', this.authService.currentUser);
-  console.log('Current user id:', this.currentUserId);
-
-  this.loadCurrentSubscription();
-  this.loadPlans();
-}
+    this.loadCurrentSubscription();
+    this.loadPlans();
+  }
 
   loadCurrentSubscription(): void {
-  if (!this.currentUserId) return;
+    if (!this.currentUserId) return;
 
-  console.log('currentUserId =', this.currentUserId);
-
-  this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
-    next: (data: Subscription) => {
-      console.log('subscription returned by backend =', data);
-      this.currentSubscription = data;
-    },
-    error: (err) => {
-      console.error('subscription error =', err);
-      this.currentSubscription = null;
-    }
-  });
-}
+    this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
+      next: (data: Subscription) => {
+        this.currentSubscription = data;
+      },
+      error: (err) => {
+        console.error('subscription error =', err);
+        this.currentSubscription = null;
+      }
+    });
+  }
 
   loadPlans(): void {
     this.subscriptionService.getAvailablePlans().subscribe({
@@ -216,9 +210,6 @@ export class ProfileComponent implements OnInit {
       console.error('Erreur démarrage paiement', err);
       this.isProcessing = false;
       this.paymentError = 'Unable to start payment. Please try again.';
-      console.log('selectedPlan =', this.selectedPlan);
-console.log('currentUser =', this.authService.currentUser);
-console.log('currentUserId =', this.currentUserId);
     }
     
   });

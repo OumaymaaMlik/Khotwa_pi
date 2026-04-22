@@ -36,16 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
-        log.debug("Authorization header received for {} {}", request.getMethod(), request.getServletPath());
-
         String token = header.substring(7);
         try {
             String username = jwtService.extractUsername(token);
             if (StringUtils.hasText(username) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 AppUserPrincipal userPrincipal = (AppUserPrincipal) userDetailsService.loadUserByUsername(username);
                 if (jwtService.isTokenValid(token, userPrincipal)) {
-                    log.debug("Authenticated user from JWT: {}", userPrincipal.getUsername());
                     if (userPrincipal.isMustChangePassword() && isRestrictedWhilePasswordChangeRequired(request)) {
                         writePasswordChangeRequiredResponse(response);
                         return;
@@ -84,3 +80,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         ));
     }
 }
+

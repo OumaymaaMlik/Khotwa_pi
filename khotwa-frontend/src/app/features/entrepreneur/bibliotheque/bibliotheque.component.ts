@@ -91,7 +91,6 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
     }
 
     const finalUrl = base + cleanPath;
-    console.log("URL de la ressource :", finalUrl);
     return finalUrl;
   }
 
