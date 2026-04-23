@@ -1095,3 +1095,33 @@ button {
   font-size: 14px;
   color: var(--text-main);
 }
+
+.tm-applied-offers {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.tm-applied-offer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.tm-applied-offer:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tm-applied-offer strong {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.tm-applied-offer p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}

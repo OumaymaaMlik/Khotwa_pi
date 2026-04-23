@@ -14,9 +14,14 @@ import {
   TalentAiAdviceResponse,
   HiringAiRequest,
   HiringAiResponse,
+  HiringAiChatRequest,
+  HiringAiChatResponse,
   MatchingInsight,
   SkillGapAnalysis,
-  AiRecommendation
+  AiRecommendation,
+  SkillGapAiAdviceRequest,
+  SkillGapAiAdviceResponse,
+  AppliedTalentSummary
 } from '../models/talent.model';
 
 @Injectable({ providedIn: 'root' })
@@ -164,30 +169,14 @@ updateAnnonce(id: number, data: any): Observable<any> {
     return merged;
   }
 
-  /**
-   * IA carrière (Spring AI conseillé). Si endpoint indisponible, fallback local.
-   */
   getTalentAiAdvice(payload: TalentAiAdviceRequest): Observable<TalentAiAdviceResponse> {
-    return this.http.post<TalentAiAdviceResponse>(`${this.API}/ai/talent-advice`, payload).pipe(
-      catchError(() => of(this.buildLocalAdvice(payload))),
-    );
+    return this.http.post<TalentAiAdviceResponse>(`${this.API}/ai/talent-advice`, payload)
+      .pipe(catchError(this.handleError));
   }
 
-  private buildLocalAdvice(payload: TalentAiAdviceRequest): TalentAiAdviceResponse {
-    const skills = payload.competences.filter(Boolean);
-    const topMissing = ['Spring Boot', 'System Design', 'Docker', 'Communication', 'English']
-      .filter((s) => !skills.some((k) => k.toLowerCase() === s.toLowerCase()))
-      .slice(0, 3);
-    return {
-      resume: `Objectif détecté: ${payload.goal}. Le profil est prometteur avec ${skills.length} compétence(s) déclarée(s).`,
-      pointsForts: skills.slice(0, 3),
-      competencesPrioritaires: topMissing,
-      nextActions: [
-        'Adapter le CV aux 3 compétences demandées les plus fréquentes.',
-        'Publier 2 projets concrets avec métriques de résultat.',
-        'Postuler de façon ciblée sur 5 annonces similaires.',
-      ],
-    };
+  getSkillGapAiAdvice(payload: SkillGapAiAdviceRequest): Observable<SkillGapAiAdviceResponse> {
+    return this.http.post<SkillGapAiAdviceResponse>(`${this.API}/ai/skill-gap-advice`, payload)
+      .pipe(catchError(this.handleError));
   }
 
   /**
@@ -198,6 +187,11 @@ updateAnnonce(id: number, data: any): Observable<any> {
     return this.http.post<HiringAiResponse>(`${this.API}/ai/hiring-advice`, payload).pipe(
       catchError(() => of(this.buildLocalHiringAdvice(payload))),
     );
+  }
+
+  getHiringAiChat(payload: HiringAiChatRequest): Observable<HiringAiChatResponse> {
+    return this.http.post<HiringAiChatResponse>(`${this.API}/ai/hiring-chat`, payload)
+      .pipe(catchError(this.handleError));
   }
 
   getMatchingInsight(talentId: number, jobId: number): Observable<MatchingInsight> {
@@ -212,6 +206,11 @@ updateAnnonce(id: number, data: any): Observable<any> {
 
   getAiRecommendations(): Observable<AiRecommendation[]> {
     return this.http.get<AiRecommendation[]>(`${this.API}/ai/recommendations`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getTalentsWithAppliedOffers(): Observable<AppliedTalentSummary[]> {
+    return this.http.get<AppliedTalentSummary[]>(`${this.API}/candidatures/talents-applied`)
       .pipe(catchError(this.handleError));
   }
 

@@ -2,6 +2,8 @@
 package tn.khotwa.service.sertalent;
 
 import tn.khotwa.DTO.talent.MatchingResponseDTO;
+import tn.khotwa.DTO.talent.AppliedOfferDTO;
+import tn.khotwa.DTO.talent.AppliedTalentSummaryDTO;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -100,5 +102,40 @@ public class CandidatureService {
     }
     public List<Candidature> getCandidaturesByTalent(Long talentId) {
         return candidatureRepository.findByTalentId(talentId);
+    }
+
+    public List<AppliedTalentSummaryDTO> getTalentsWithAppliedOffers() {
+        List<Candidature> rows = candidatureRepository.findAll();
+        Map<Long, List<Candidature>> byTalent = rows.stream()
+                .filter(c -> c.getTalent() != null && c.getTalent().getId() != null)
+                .collect(Collectors.groupingBy(c -> c.getTalent().getId()));
+
+        return byTalent.values().stream().map(group -> {
+            Candidature first = group.get(0);
+            TalentProfile t = first.getTalent();
+            List<AppliedOfferDTO> offres = group.stream()
+                    .filter(c -> c.getAnnonce() != null)
+                    .sorted(Comparator.comparing(Candidature::getDateCandidature, Comparator.nullsLast(Comparator.reverseOrder())))
+                    .map(c -> AppliedOfferDTO.builder()
+                            .annonceId(c.getAnnonce().getId())
+                            .titreAnnonce(c.getAnnonce().getTitre())
+                            .typePoste(c.getAnnonce().getTypePoste() != null ? c.getAnnonce().getTypePoste().name() : null)
+                            .localisation(c.getAnnonce().getLocalisation())
+                            .matchingScore(c.getMatchingScore())
+                            .dateCandidature(c.getDateCandidature() != null ? c.getDateCandidature().toString() : null)
+                            .statut(c.getStatut() != null ? c.getStatut().name() : null)
+                            .build())
+                    .collect(Collectors.toList());
+
+            return AppliedTalentSummaryDTO.builder()
+                    .talentId(t.getId())
+                    .nom(t.getNom())
+                    .prenom(t.getPrenom())
+                    .email(t.getEmail())
+                    .competences(t.getCompetences())
+                    .offres(offres)
+                    .build();
+        }).sorted(Comparator.comparing((AppliedTalentSummaryDTO x) -> x.getOffres() != null ? x.getOffres().size() : 0).reversed())
+                .collect(Collectors.toList());
     }
 }

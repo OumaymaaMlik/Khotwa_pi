@@ -26,8 +26,8 @@
         <button type="button" class="kh-btn kh-btn--primary tm-hero__btn" (click)="showForm=true; showEditForm=false; view='annonces'">
           + Nouvelle offre
         </button>
-        <button type="button" class="kh-btn kh-btn--ghost tm-hero__btn" (click)="view='talents'">
-          Explorer les talents
+        <button type="button" class="kh-btn kh-btn--ghost tm-hero__btn" (click)="view='applicants'">
+          Candidats ayant postule
         </button>
       </div>
     </div>
@@ -136,44 +136,51 @@
       <!-- Onglets + toolbar -->
       <div class="tm-tabs-row">
         <div class="tabs tm-tabs">
-          <button type="button" class="tab" [class.active]="view==='talents'" (click)="view='talents'">
-            Talents <span class="tab-count">{{ filteredTalents.length }}</span>
+          <button type="button" class="tab" [class.active]="view==='applicants'" (click)="view='applicants'">
+            Candidats postules <span class="tab-count">{{ filteredApplicants.length }}</span>
           </button>
           <button type="button" class="tab" [class.active]="view==='annonces'" (click)="view='annonces'">
             Offres <span class="tab-count">{{ filteredAnnonces.length }}</span>
           </button>
         </div>
-        <div class="tm-toolbar" *ngIf="view==='talents'">
-          <input type="search" class="tm-search" [(ngModel)]="searchTalent" placeholder="Rechercher un talent, email, compétence…" />
+        <div class="tm-toolbar" *ngIf="view==='applicants'">
+          <input type="search" class="tm-search" [(ngModel)]="searchApplicants" placeholder="Rechercher candidat, offre, competence..." />
         </div>
         <div class="tm-toolbar" *ngIf="view==='annonces'">
           <input type="search" class="tm-search" [(ngModel)]="searchAnnonce" placeholder="Filtrer les offres…" />
         </div>
       </div>
 
-      <!-- Liste TALENTS -->
-      <div *ngIf="view==='talents'" class="tm-card-grid animate-3">
-        <article *ngFor="let t of filteredTalents" class="card tm-talent-card">
+      <!-- Liste CANDIDATS AYANT POSTULE -->
+      <div *ngIf="view==='applicants'" class="tm-card-grid animate-3">
+        <article *ngFor="let t of filteredApplicants" class="card tm-talent-card">
           <div class="talent-header">
             <div class="talent-avatar">{{ t.nom?.charAt(0) }}</div>
             <div class="talent-header__body">
               <p class="card-name">{{ t.prenom }} {{ t.nom }}</p>
               <p class="card-meta">{{ t.email }}</p>
-              <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm tm-profile-btn" (click)="ouvrirProfil(t)">
-                Voir le profil
-              </button>
             </div>
-            <span class="kh-badge" [class.kh-badge--green]="t.disponible" [class.kh-badge--gray]="!t.disponible">
-              {{ t.disponible ? 'Disponible' : 'Indisponible' }}
+            <span class="kh-badge kh-badge--teal">
+              {{ t.offres.length }} offre(s)
             </span>
           </div>
           <div class="skills">
-            <span *ngFor="let c of competencesPourAffichage(t)" class="skill-tag">
-              {{ c.nom }}<ng-container *ngIf="c.niveau != null && c.niveau > 0"> ({{ c.niveau }}/5)</ng-container>
+            <span *ngFor="let c of getCompetences(t.competences)" class="skill-tag">
+              {{ c }}
             </span>
           </div>
+          <div class="tm-applied-offers">
+            <p class="tm-section-label">Offres postulees</p>
+            <div class="tm-applied-offer" *ngFor="let o of t.offres">
+              <div>
+                <strong>{{ o.titreAnnonce }}</strong>
+                <p>{{ o.typePoste || 'Type N/A' }} · {{ o.localisation || 'Localisation N/A' }}</p>
+              </div>
+              <span class="kh-badge kh-badge--green" *ngIf="o.matchingScore != null">{{ o.matchingScore | number:'1.0-0' }}%</span>
+            </div>
+          </div>
         </article>
-        <p *ngIf="filteredTalents.length === 0" class="tm-empty">Aucun talent ne correspond à votre recherche.</p>
+        <p *ngIf="filteredApplicants.length === 0" class="tm-empty">Aucun candidat trouve pour ce filtre.</p>
       </div>
 
       <!-- Liste ANNONCES -->
@@ -237,7 +244,7 @@
           <ul>
             <li *ngFor="let s of hiringAiResult.competencesSuggerees">{{ s }}</li>
           </ul>
-          <h4>Questions d’entretien</h4>
+          <h4>Questions d'entretien</h4>
           <ul>
             <li *ngFor="let q of hiringAiResult.questionsEntretien">{{ q }}</li>
           </ul>
@@ -257,6 +264,24 @@
               [{{ i.type }} - {{ i.confidenceScore }}%] {{ i.content }}
             </li>
           </ul>
+        </div>
+        <div class="tm-ai-output">
+          <h4>Chat IA + RAG recrutement</h4>
+          <p>Posez une question. Le modele utilise le contexte des offres et candidatures pour suggerer les meilleures questions d'entretien et axes de focus.</p>
+          <textarea class="kh-input tm-textarea tm-ai-context" rows="3" [(ngModel)]="hiringChatQuestion"
+                    placeholder="Ex: Sur quoi dois-je concentrer l'entretien pour un backend junior sur l'offre X ?"></textarea>
+          <button type="button" class="kh-btn kh-btn--primary w-full" (click)="runHiringChat()" [disabled]="hiringChatLoading">
+            {{ hiringChatLoading ? 'Generation chat...' : 'Envoyer au chat IA' }}
+          </button>
+          <div *ngIf="hiringChatResult" class="tm-chat-result">
+            <p><strong>{{ hiringChatResult.answer }}</strong></p>
+            <h4>Questions d'entretien recommandees</h4>
+            <ul><li *ngFor="let q of hiringChatResult.interviewQuestions">{{ q }}</li></ul>
+            <h4>Focus prioritaire</h4>
+            <ul><li *ngFor="let f of hiringChatResult.focusAreas">{{ f }}</li></ul>
+            <h4>Next steps</h4>
+            <ul><li *ngFor="let s of hiringChatResult.suggestedNextSteps">{{ s }}</li></ul>
+          </div>
         </div>
       </div>
     </aside>

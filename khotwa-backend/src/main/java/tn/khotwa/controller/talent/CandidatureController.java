@@ -2,6 +2,7 @@
 package tn.khotwa.controller.talent;
 
 import tn.khotwa.DTO.talent.MatchingResponseDTO;
+import tn.khotwa.DTO.talent.AppliedTalentSummaryDTO;
 import tn.khotwa.entity.talent.Candidature;
 import tn.khotwa.service.sertalent.CandidatureService;
 import lombok.RequiredArgsConstructor;
@@ -41,5 +42,10 @@ public class CandidatureController {
     @GetMapping("/talent/{talentId}")
     public ResponseEntity<List<Candidature>> getCandidaturesByTalent(@PathVariable Long talentId) {
         return ResponseEntity.ok(candidatureService.getCandidaturesByTalent(talentId));
+    }
+
+    @GetMapping("/talents-applied")
+    public ResponseEntity<List<AppliedTalentSummaryDTO>> getTalentsApplied() {
+        return ResponseEntity.ok(candidatureService.getTalentsWithAppliedOffers());
     }
 }

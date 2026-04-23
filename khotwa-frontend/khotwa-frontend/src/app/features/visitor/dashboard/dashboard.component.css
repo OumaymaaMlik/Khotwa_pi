@@ -1,23 +1,58 @@
 .vis-page {
-  max-width: 880px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 8px 4px 40px;
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
 }
 
+.vis-card {
+  border: 1px solid rgba(42, 191, 191, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(160deg, #ffffff, #f4fcfc);
+  box-shadow: 0 14px 36px rgba(7, 15, 20, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vis-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(7, 15, 20, 0.12);
+}
+
 .vis-hero h1 {
-  font-size: 26px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 700;
+  color: #0d2626;
+  margin: 0 0 10px;
   letter-spacing: -0.3px;
 }
 
 .vis-hero p {
-  margin: 0 0 24px;
-  color: #64748b;
+  margin: 0 0 18px;
+  color: #4b6969;
   font-size: 15px;
   line-height: 1.55;
+}
+
+.vis-hero {
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+.vis-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.vis-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(42, 191, 191, 0.26);
+  background: rgba(42, 191, 191, 0.1);
+  color: #0b7070;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .vis-banner {
@@ -53,21 +88,22 @@
   padding: 20px;
   border-radius: 14px;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(42, 191, 191, 0.22);
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 0.18s, border-color 0.18s;
+  transition: transform 0.2s ease, box-shadow 0.18s, border-color 0.18s;
 }
 
 .vis-stat-card:hover {
-  border-color: rgba(29, 158, 117, 0.35);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(42, 191, 191, 0.45);
+  box-shadow: 0 8px 24px rgba(42, 191, 191, 0.15);
+  transform: translateY(-2px);
 }
 
 .vis-stat-val {
   font-size: 28px;
   font-weight: 700;
-  color: #1d9e75;
+  color: #1a9999;
 }
 
 .vis-stat-lbl {
@@ -95,17 +131,20 @@
   cursor: pointer;
   background: #fff;
   color: #334155;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .vis-btn--primary {
-  background: #1d9e75;
+  background: linear-gradient(135deg, #2abfbf, #1a9999);
   color: #fff;
-  border-color: #1d9e75;
+  border-color: #1a9999;
 }
 
 .vis-btn--primary:hover {
-  background: #0f6e56;
+  background: linear-gradient(135deg, #1a9999, #0f6e56);
   border-color: #0f6e56;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(42, 191, 191, 0.35);
 }
 
 .vis-btn--ghost:hover {
@@ -114,8 +153,8 @@
 
 .vis-ai-card {
   margin-top: 24px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: linear-gradient(160deg, #ffffff, #f8fbfb);
+  border: 1px solid rgba(42, 191, 191, 0.2);
+  background: linear-gradient(160deg, #ffffff, #f1fbfb);
   border-radius: 14px;
   padding: 18px;
   display: grid;
@@ -138,7 +177,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #0f6e56;
-  background: #e1f5ee;
+  background: rgba(42, 191, 191, 0.14);
   padding: 4px 9px;
   border-radius: 999px;
 }
@@ -156,6 +195,13 @@
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vis-ai-card textarea:focus {
+  outline: none;
+  border-color: #2abfbf;
+  box-shadow: 0 0 0 3px rgba(42, 191, 191, 0.15);
 }
 
 .vis-ai-result {

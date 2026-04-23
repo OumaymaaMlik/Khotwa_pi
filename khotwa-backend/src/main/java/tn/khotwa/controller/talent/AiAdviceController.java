@@ -6,6 +6,10 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import tn.khotwa.DTO.talent.HiringAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.HiringAiAdviceResponseDTO;
+import tn.khotwa.DTO.talent.HiringAiChatRequestDTO;
+import tn.khotwa.DTO.talent.HiringAiChatResponseDTO;
+import tn.khotwa.DTO.talent.SkillGapAiAdviceRequestDTO;
+import tn.khotwa.DTO.talent.SkillGapAiAdviceResponseDTO;
 import tn.khotwa.DTO.talent.TalentAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.TalentAiAdviceResponseDTO;
 import tn.khotwa.entity.talent.AiRecommendation;
@@ -27,9 +31,19 @@ public class AiAdviceController {
         return ResponseEntity.ok(aiAdviceService.buildHiringAdvice(body));
     }
 
+    @PostMapping("/hiring-chat")
+    public ResponseEntity<HiringAiChatResponseDTO> hiringChat(@Valid @RequestBody HiringAiChatRequestDTO body) {
+        return ResponseEntity.ok(aiAdviceService.hiringChat(body));
+    }
+
     @PostMapping("/talent-advice")
     public ResponseEntity<TalentAiAdviceResponseDTO> talentAdvice(@Valid @RequestBody TalentAiAdviceRequestDTO body) {
         return ResponseEntity.ok(aiAdviceService.buildTalentAdvice(body));
+    }
+
+    @PostMapping("/skill-gap-advice")
+    public ResponseEntity<SkillGapAiAdviceResponseDTO> skillGapAdvice(@Valid @RequestBody SkillGapAiAdviceRequestDTO body) {
+        return ResponseEntity.ok(aiAdviceService.buildSkillGapAdvice(body));
     }
 
     @GetMapping("/recommendations")

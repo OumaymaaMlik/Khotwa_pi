@@ -2,9 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { TalentService } from '../../../core/services/talent.service';
 import {
-  AiRecommendation,
   Annonce,
-  SkillGapAnalysis,
+  SkillGapAiAdviceResponse,
   TalentAiAdviceResponse,
   TalentProfileEntity
 } from '../../../core/models/talent.model';
@@ -35,8 +34,10 @@ export class VisitorProfilComponent implements OnInit {
   selectedJobId: number | null = null;
   jobs: Annonce[] = [];
   aiAdvice: TalentAiAdviceResponse | null = null;
-  skillGap: SkillGapAnalysis | null = null;
-  aiRecommendations: AiRecommendation[] = [];
+  skillGapAdvice: SkillGapAiAdviceResponse | null = null;
+  careerAiLoading = false;
+  skillGapLoading = false;
+  careerGoal = 'Trouver un poste backend moderne adapte a mon niveau';
 
   niveaux = [
     { v: 'JUNIOR', l: 'Junior' },
@@ -71,11 +72,25 @@ export class VisitorProfilComponent implements OnInit {
       });
     }
     this.talentService.getAnnonces().subscribe({ next: (jobs) => this.jobs = jobs ?? [] });
-    this.loadAiRecommendations();
   }
 
   get isUpdate(): boolean {
     return this.auth.currentUser?.talentProfileId != null;
+  }
+
+  get profileCompletion(): number {
+    const checks = [
+      this.form.nom,
+      this.form.prenom,
+      this.form.email,
+      this.form.telephone,
+      this.form.bio,
+      this.form.competences,
+      this.form.cvUrl,
+      this.form.linkedinUrl,
+    ];
+    const done = checks.filter((v) => !!v && String(v).trim().length > 0).length;
+    return Math.round((done / checks.length) * 100);
   }
 
   save(): void {
@@ -115,28 +130,50 @@ export class VisitorProfilComponent implements OnInit {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
+    this.careerAiLoading = true;
     this.talentService.getTalentAiAdvice({
-      goal: 'Evolution de carrière',
+      goal: this.careerGoal.trim() || 'Evolution de carriere',
       competences: skills,
       niveauExperience: this.form.niveauExperience,
       bio: this.form.bio,
     }).subscribe({
-      next: (res) => this.aiAdvice = res,
+      next: (res) => {
+        this.aiAdvice = res;
+        this.careerAiLoading = false;
+      },
+      error: () => {
+        this.saveError = 'Assistant carrière indisponible. Vérifiez la configuration Gemini API.';
+        this.careerAiLoading = false;
+      },
     });
   }
 
   analyzeSkillGap(): void {
-    const tid = this.auth.currentUser?.talentProfileId;
-    if (tid == null || this.selectedJobId == null) return;
-    this.talentService.getSkillGap(tid, this.selectedJobId).subscribe({
-      next: (res) => this.skillGap = res,
-      error: () => this.saveError = 'Impossible de calculer le skill gap.',
-    });
-  }
-
-  loadAiRecommendations(): void {
-    this.talentService.getAiRecommendations().subscribe({
-      next: (rows) => this.aiRecommendations = rows ?? [],
+    if (this.selectedJobId == null) return;
+    const skills = (this.form.competences || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const selectedJob = this.jobs.find((j) => j.id === this.selectedJobId);
+    const requiredSkills = (selectedJob?.competencesRequises || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    this.skillGapLoading = true;
+    this.talentService.getSkillGapAiAdvice({
+      jobTitle: selectedJob?.titre || 'Offre sélectionnée',
+      requiredSkills,
+      currentSkills: skills,
+      experienceLevel: this.form.niveauExperience,
+    }).subscribe({
+      next: (res) => {
+        this.skillGapAdvice = res;
+        this.skillGapLoading = false;
+      },
+      error: () => {
+        this.saveError = 'Analyse skill gap indisponible. Vérifiez la configuration Gemini API.';
+        this.skillGapLoading = false;
+      },
     });
   }
 }

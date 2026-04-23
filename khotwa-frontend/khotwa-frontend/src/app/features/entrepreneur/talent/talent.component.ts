@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { TalentService } from '../../../core/services/talent.service';
 import {
   Annonce,
+  AppliedTalentSummary,
   AiRecommendation,
+  HiringAiChatResponse,
   HiringAiResponse,
   MatchingResultDTO,
   TalentCompetence,
@@ -17,9 +19,10 @@ import {
 export class EntrepreneurTalentComponent implements OnInit {
   constructor(private talentService: TalentService) {}
 
-  view: 'talents' | 'annonces' = 'talents';
+  view: 'applicants' | 'annonces' = 'applicants';
 
   talents: TalentProfile[] = [];
+  appliedTalents: AppliedTalentSummary[] = [];
   annonces: Annonce[] = [];
   matchingResults: MatchingResultDTO[] = [];
   matchingLoading = false;
@@ -53,6 +56,9 @@ export class EntrepreneurTalentComponent implements OnInit {
     { code: 'BIZDEV', label: 'Business Developer' },
     { code: 'FINANCE', label: 'Finance / FP&A' },
     { code: 'LEGAL', label: 'Legal / Compliance' },
+    { code: 'AI_AGENT_ARCHITECT', label: 'AI Agent Architect' },
+    { code: 'DIGITAL_TWIN_ENGINEER', label: 'Digital Twin Engineer' },
+    { code: 'QUANTUM_SOFTWARE', label: 'Quantum Software Engineer' },
   ];
 
   newAnnonce = {
@@ -66,7 +72,7 @@ export class EntrepreneurTalentComponent implements OnInit {
 
   editData: any = {};
 
-  searchTalent = '';
+  searchApplicants = '';
   searchAnnonce = '';
   sortMatching: 'score' | 'nom' | 'niveau' = 'score';
 
@@ -74,9 +80,13 @@ export class EntrepreneurTalentComponent implements OnInit {
   hiringAiResult: HiringAiResponse | null = null;
   hiringContext = '';
   aiInsights: AiRecommendation[] = [];
+  hiringChatQuestion = '';
+  hiringChatLoading = false;
+  hiringChatResult: HiringAiChatResponse | null = null;
 
   ngOnInit(): void {
     this.loadTalents();
+    this.loadAppliedTalents();
     this.loadAnnonces();
     this.loadAiInsights();
   }
@@ -101,6 +111,17 @@ export class EntrepreneurTalentComponent implements OnInit {
       error: (err: any) => {
         console.error('Erreur annonces:', err);
         this.error = 'Impossible de charger les offres. Vérifiez GET /api/annonces.';
+      },
+    });
+  }
+
+  loadAppliedTalents(): void {
+    this.talentService.getTalentsWithAppliedOffers().subscribe({
+      next: (rows) => {
+        this.appliedTalents = rows ?? [];
+      },
+      error: () => {
+        this.error = 'Impossible de charger les candidats ayant postule.';
       },
     });
   }
@@ -257,11 +278,12 @@ export class EntrepreneurTalentComponent implements OnInit {
     this.matchingLoading = false;
   }
 
-  get filteredTalents(): TalentProfile[] {
-    const q = this.searchTalent.trim().toLowerCase();
-    if (!q) return this.talents;
-    return this.talents.filter((t) => {
-      const blob = `${t.prenom} ${t.nom} ${t.email} ${this.competencesPourAffichage(t).map((c) => c.nom).join(' ')}`.toLowerCase();
+  get filteredApplicants(): AppliedTalentSummary[] {
+    const q = this.searchApplicants.trim().toLowerCase();
+    if (!q) return this.appliedTalents;
+    return this.appliedTalents.filter((t) => {
+      const offers = (t.offres ?? []).map((o) => `${o.titreAnnonce} ${o.typePoste || ''} ${o.localisation || ''}`).join(' ');
+      const blob = `${t.prenom} ${t.nom} ${t.email} ${t.competences || ''} ${offers}`.toLowerCase();
       return blob.includes(q);
     });
   }
@@ -319,6 +341,27 @@ export class EntrepreneurTalentComponent implements OnInit {
   loadAiInsights(): void {
     this.talentService.getAiRecommendations().subscribe({
       next: (rows) => this.aiInsights = rows ?? [],
+    });
+  }
+
+  runHiringChat(): void {
+    const question = this.hiringChatQuestion.trim();
+    if (!question) return;
+    this.hiringChatLoading = true;
+    this.hiringChatResult = null;
+    this.talentService.getHiringAiChat({
+      question,
+      contexte: this.hiringContext.trim() || undefined,
+      annonceId: this.selectedAnnonceId ?? undefined,
+    }).subscribe({
+      next: (res) => {
+        this.hiringChatResult = res;
+        this.hiringChatLoading = false;
+      },
+      error: () => {
+        this.error = 'Le chat IA recrutement est indisponible.';
+        this.hiringChatLoading = false;
+      },
     });
   }
 

@@ -116,6 +116,19 @@ export interface HiringAiResponse {
   risquesOuGaps: string[];
 }
 
+export interface HiringAiChatRequest {
+  question: string;
+  contexte?: string;
+  annonceId?: number;
+}
+
+export interface HiringAiChatResponse {
+  answer: string;
+  interviewQuestions: string[];
+  focusAreas: string[];
+  suggestedNextSteps: string[];
+}
+
 export interface MatchingInsight {
   talentId: number;
   jobId: number;
@@ -133,6 +146,20 @@ export interface SkillGapAnalysis {
   recommendedLearningPath: string[];
 }
 
+export interface SkillGapAiAdviceRequest {
+  jobTitle: string;
+  requiredSkills: string[];
+  currentSkills: string[];
+  experienceLevel?: string;
+}
+
+export interface SkillGapAiAdviceResponse {
+  summary: string;
+  missingSkills: string[];
+  recommendedLearningPath: string[];
+  actionPlan: string[];
+}
+
 export interface AiRecommendation {
   id: number;
   type: 'HIRING' | 'TALENT';
@@ -141,4 +168,23 @@ export interface AiRecommendation {
   createdAt: string;
   relatedJobId?: number;
   relatedTalentId?: number;
+}
+
+export interface AppliedOffer {
+  annonceId: number;
+  titreAnnonce: string;
+  typePoste?: string;
+  localisation?: string;
+  matchingScore?: number;
+  dateCandidature?: string;
+  statut?: string;
+}
+
+export interface AppliedTalentSummary {
+  talentId: number;
+  nom: string;
+  prenom: string;
+  email: string;
+  competences: string;
+  offres: AppliedOffer[];
 }

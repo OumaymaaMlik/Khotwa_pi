@@ -1,7 +1,17 @@
 <div class="vis-page">
-  <div class="vis-hero">
+  <div class="vis-hero vis-card">
     <h1>Bonjour, {{ auth.currentUser?.prenom }}</h1>
-    <p>Parcourez les offres, complétez votre profil talent et pilotez votre stratégie de candidature.</p>
+    <p>Un espace visitor plus clair, moderne et aligne avec le style entrepreneur pour piloter vos candidatures.</p>
+    <div class="vis-highlights">
+      <span class="vis-pill">Experience premium</span>
+      <span class="vis-pill">Insights dynamiques</span>
+      <span class="vis-pill">IA Gemini</span>
+    </div>
+    <div class="vis-actions">
+      <a routerLink="/visitor/annonces" class="vis-btn vis-btn--primary">Voir les offres</a>
+      <a routerLink="/visitor/profil" class="vis-btn vis-btn--ghost">Mettre a jour mon profil</a>
+      <a routerLink="/visitor/candidatures" class="vis-btn vis-btn--ghost">Mes candidatures</a>
+    </div>
   </div>
 
   <div *ngIf="!hasProfil" class="vis-banner vis-banner--warn">
@@ -24,16 +34,10 @@
     </a>
   </div>
 
-  <div class="vis-actions">
-    <a routerLink="/visitor/annonces" class="vis-btn vis-btn--primary">Voir les offres</a>
-    <a routerLink="/visitor/profil" class="vis-btn vis-btn--ghost">Mon profil talent</a>
-    <a routerLink="/visitor/candidatures" class="vis-btn vis-btn--ghost">Mes candidatures</a>
-  </div>
-
-  <div class="vis-ai-card">
+  <div class="vis-ai-card vis-card">
     <div class="vis-ai-head">
       <h3>Assistant IA Carrière</h3>
-      <span class="vis-ai-badge">Spring AI ready</span>
+      <span class="vis-ai-badge">Gemini API</span>
     </div>
     <p>Décris ton objectif, puis laisse l’IA proposer les prochaines actions.</p>
     <textarea [(ngModel)]="aiGoal" rows="2" placeholder="Ex: Devenir top candidat sur les offres Spring/Angular"></textarea>
@@ -41,7 +45,7 @@
       {{ aiLoading ? 'Analyse…' : 'Générer un plan IA' }}
     </button>
     <div *ngIf="aiAdvice" class="vis-ai-result">
-      <p>{{ aiAdvice }}</p>
+      <p><strong>Resultat IA:</strong> {{ aiAdvice }}</p>
       <ul>
         <li *ngFor="let b of aiBullets">{{ b }}</li>
       </ul>
