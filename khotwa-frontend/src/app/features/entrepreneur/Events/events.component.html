@@ -1,0 +1,548 @@
+<div class="page-container">
+
+  
+
+  <!-- PLAN SWITCHER BAR -->
+  <div class="plan-switcher-bar" *ngIf="isPlanSelected">
+    <div class="psb-left">
+      <div class="psb-badge" [ngClass]="planColorClass">{{ planLabel }}</div>
+      <span class="psb-desc">{{ planDescription }}</span>
+    </div>
+    <div class="psb-actions">
+      <button class="psb-plan-btn" [class.active]="selectedPlanView==='FREE'" (click)="selectPlanView('FREE')">Free</button>
+      <button class="psb-plan-btn" [class.active]="selectedPlanView==='PREMIUM'" [class.psb-plan-btn--locked]="isLockedPlan('PREMIUM')" (click)="selectPlanView('PREMIUM')">
+        ⭐ Premium <span *ngIf="isLockedPlan('PREMIUM')">🔒</span>
+      </button>
+      <button class="psb-plan-btn" [class.active]="selectedPlanView==='INSTITUTIONAL'" [class.psb-plan-btn--locked]="isLockedPlan('INSTITUTIONAL')" (click)="selectPlanView('INSTITUTIONAL')">
+        🏛️ Institutional <span *ngIf="isLockedPlan('INSTITUTIONAL')">🔒</span>
+      </button>
+    </div>
+    <div class="psb-upgrade-toast" *ngIf="upgradeToastPlan">
+      <span>🔒 {{ upgradeToastPlan }} plan required</span>
+      <button (click)="upgrade()">Upgrade →</button>
+      <button class="psb-toast-close" (click)="upgradeToastPlan=null">✕</button>
+    </div>
+  </div>
+
+  <!-- HERO PLAN SELECTION -->
+  <div class="hero-section" *ngIf="!isPlanSelected">
+    <div class="hero-content">
+      <div class="hero-badge">Khotwa Platform</div>
+      <h1>Events &amp; Workshops</h1>
+      <p>Develop your entrepreneurial skills with our certified events.</p>
+      <div class="plan-selector-label">Choose your access level</div>
+      <div class="plan-cards">
+        <div class="plan-card" (click)="selectPlanView('FREE')">
+          <h4>Free</h4><p>Free events only</p>
+          <span class="plan-cta">Get Started →</span>
+        </div>
+        <div class="plan-card" [class.plan-card--featured]="true" (click)="selectPlanView('PREMIUM')">
+          <div class="plan-popular">⭐ Recommended</div>
+          <h4>Premium</h4><p>Free + Premium Events</p>
+          <span class="plan-cta" *ngIf="!isLockedPlan('PREMIUM')">Access →</span>
+          <span class="plan-cta plan-cta--locked" *ngIf="isLockedPlan('PREMIUM')">Upgrade to unlock</span>
+        </div>
+        <div class="plan-card" [class.plan-card--locked]="isLockedPlan('INSTITUTIONAL')" (click)="selectPlanView('INSTITUTIONAL')">
+          <h4>Institutional</h4><p>Group and corporate access</p>
+          <span class="plan-cta" *ngIf="!isLockedPlan('INSTITUTIONAL')">Explore →</span>
+          <span class="plan-cta plan-cta--locked" *ngIf="isLockedPlan('INSTITUTIONAL')">Upgrade required</span>
+        </div>
+      </div>
+      <div class="hero-upgrade-toast" *ngIf="upgradeToastPlan">
+        <span>🔒 A <strong>{{ upgradeToastPlan }}</strong> plan is required.</span>
+        <button (click)="upgrade()">Upgrade</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" *ngIf="isPlanSelected">
+
+    <!-- WELCOME BAR -->
+<div class="welcome-bar">
+  <div class="welcome-left">
+    <div class="welcome-text">
+      <span class="welcome-greeting">Welcome back</span>
+      <span class="welcome-name">Hello, Entrepreneur</span>
+    </div>
+  </div>
+  <div class="welcome-right">
+    <div class="welcome-badge">
+      <span class="welcome-dot"></span>
+      {{ planLabel }} plan
+    </div>
+  </div>
+</div>
+
+    <!-- Header -->
+    <div class="dash-header" [ngClass]="'dash-header--' + planColorClass">
+      <div class="dash-title-area">
+        <h2>{{ planLabel }} Events</h2>
+        <p>{{ planDescription }}</p>
+      </div>
+      <div class="dash-stats">
+        <div class="dash-stat"><strong>{{ filteredEvents.length }}</strong><span>Events</span></div>
+        <div class="dash-stat-divider"></div>
+        <div class="dash-stat"><strong>{{ bookings.length }}</strong><span>Bookings</span></div>
+        <div class="dash-stat-divider"></div>
+        <div class="view-toggle">
+          <button [class.active]="viewMode==='grid'" (click)="switchView('grid')">Grid</button>
+          <button [class.active]="viewMode==='calendar'" (click)="switchView('calendar')">Calendar</button>
+        </div>
+        <button class="psb-plan-btn" (click)="openMyEventsHistory()">My events history</button>
+      </div>
+    </div>
+
+    <!-- ── TOAST STACK ── -->
+    <div class="toast-stack">
+      <div class="booking-toast"
+        *ngIf="toastType"
+        [class.booking-toast--confirmed]="toastType === 'confirmed'"
+        [class.booking-toast--waitlist]="toastType === 'waitlist'"
+        [class.booking-toast--cancelled]="toastType === 'cancelled'"
+        [class.booking-toast--error]="toastType === 'error'">
+        <div class="toast-check">
+          <svg *ngIf="toastType==='confirmed'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg *ngIf="toastType==='waitlist'"  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg *ngIf="toastType==='cancelled'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg *ngIf="toastType==='error'"     width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+        </div>
+        <div class="toast-body">
+          <strong>{{ toastType==='confirmed' ? 'Booking confirmed!' : toastType==='waitlist' ? 'Added to waitlist' : toastType==='cancelled' ? 'Cancelled' : 'Error' }}</strong>
+          <span>{{ toastMessage }}</span>
+        </div>
+        <button class="toast-close" (click)="closeToast()">✕</button>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-search-wrap">
+        <input type="text" class="filter-search-input" placeholder="Search by name, speaker..." [(ngModel)]="searchText" (ngModelChange)="applyFilters()"/>
+        <button class="filter-search-clear" *ngIf="searchText" (click)="searchText=''; applyFilters()">✕</button>
+      </div>
+      <div class="filter-group">
+        <label>Month</label>
+        <select [(ngModel)]="monthFilter" (ngModelChange)="applyFilters()">
+          <option value="ALL">All months</option>
+          <option *ngFor="let m of months; let i = index" [value]="i + 1">{{ m }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Type</label>
+        <select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
+          <option value="ALL">All types</option>
+          <option value="WEBINAR">Webinar</option>
+          <option value="PITCH">Pitch</option>
+          <option value="FORMATION">Training</option>
+          <option value="COACHING">Coaching</option>
+        </select>
+      </div>
+      <button class="filter-reset-btn" (click)="resetFilters()" *ngIf="hasActiveFilters">Clear</button>
+      <span class="filter-results-count" *ngIf="hasActiveFilters">{{ filteredEvents.length }} result(s)</span>
+    </div>
+
+    <!-- GRID VIEW -->
+    <ng-container *ngIf="viewMode === 'grid'">
+      <div class="events-grid" *ngIf="filteredEvents.length > 0; else emptyState">
+        <div class="ev-card" *ngFor="let ev of filteredEvents"
+          [ngClass]="'ev-card--' + (ev.planType?.toLowerCase() || 'free')"
+          [class.ev-card--waitlist]="isOnWaitlist(ev)"
+          [class.ev-card--attended]="isAttended(ev)">
+
+          <div class="ev-accent" [ngClass]="ev.type?.toLowerCase()"></div>
+          <div class="ev-body">
+            <div class="ev-top">
+              <div class="ev-badges">
+                <span class="ev-type-pill" [ngClass]="ev.type?.toLowerCase()">{{ ev.type }}</span>
+                <span class="ev-plan-pill" [ngClass]="ev.planType?.toLowerCase()" *ngIf="ev.planType">{{ ev.planType }}</span>
+                <span class="ev-booked-badge ev-booked-badge--waitlist" *ngIf="!isAlreadyBooked(ev) && ev.placesRestantes === 0">
+                  Full
+                </span>
+              </div>
+              <span class="ev-booked-badge ev-booked-badge--confirmed" *ngIf="isConfirmed(ev)">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Booked
+              </span>
+              <span class="ev-booked-badge ev-booked-badge--waitlist" *ngIf="isOnWaitlist(ev)">
+                ⏳ Waitlist #{{ getWaitlistPosition(ev) }}
+              </span>
+              <span class="ev-booked-badge ev-booked-badge--attended" *ngIf="isAttended(ev)">
+                ✅ Attended
+              </span>
+            </div>
+
+            <h3 class="ev-title">{{ ev.titre }}</h3>
+
+            <div class="ev-meta">
+              <div class="ev-meta-item">📅 {{ ev.date | date:'dd MMM yyyy' }}</div>
+              <div class="ev-meta-item">🕐 {{ ev.heure }}</div>
+              <div class="ev-meta-item" *ngIf="ev.intervenant">👤 {{ ev.intervenant }}</div>
+              <div class="ev-meta-item" [class.ev-meta-item--full]="ev.placesRestantes === 0">
+                {{ ev.placesRestantes === 0 ? '🔴 Full' : ev.placesRestantes + ' spots left' }}
+              </div>
+            </div>
+
+            <div class="ev-actions">
+              <button class="ev-btn-details" (click)="openDetails(ev)">Details</button>
+
+              <!-- QR Code button: visible if CONFIRMED -->
+              <button class="ev-btn-qr ev-btn-qr--active"
+                *ngIf="isConfirmed(ev)"
+                (click)="openQrCode(ev)"
+                title="Show QR Code to join the meeting">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>
+                </svg>
+                QR
+              </button>
+
+              <!-- Main action button -->
+              <button class="ev-btn-reserve"
+                [class.ev-btn-reserve--booked]="isConfirmed(ev)"
+                [class.ev-btn-reserve--waitlist]="isOnWaitlist(ev)"
+                [class.ev-btn-reserve--attended]="isAttended(ev)"
+                [disabled]="isAttended(ev) || ((isConfirmed(ev) || isOnWaitlist(ev)) && !canCancelBooking(ev))"
+                (click)="isAlreadyBooked(ev) ? cancelBooking(ev) : openBookingModal(ev)">
+                <ng-container *ngIf="isConfirmed(ev)">{{ canCancelBooking(ev) ? 'Cancel' : 'Cancellation closed (<24h)' }}</ng-container>
+                <ng-container *ngIf="isOnWaitlist(ev)">{{ canCancelBooking(ev) ? 'Leave queue' : 'Cancellation closed (<24h)' }}</ng-container>
+                <ng-container *ngIf="isAttended(ev)">✅ Present</ng-container>
+                <ng-container *ngIf="!isAlreadyBooked(ev) && ev.placesRestantes > 0">Book</ng-container>
+                <ng-container *ngIf="!isAlreadyBooked(ev) && ev.placesRestantes === 0">Join waitlist</ng-container>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- CALENDAR VIEW -->
+    <ng-container *ngIf="viewMode === 'calendar'">
+      <div class="calendar-wrapper" [ngClass]="'calendar-wrapper--' + planColorClass">
+        <div class="cal-header">
+          <button class="cal-nav-btn" (click)="prevMonth()">‹</button>
+          <div class="cal-title">
+            <span class="cal-month">{{ months[calendarMonth] }}</span>
+            <span class="cal-year">{{ calendarYear }}</span>
+          </div>
+          <button class="cal-nav-btn" (click)="nextMonth()">›</button>
+        </div>
+        <div class="cal-weekdays">
+          <div *ngFor="let d of weekDays">{{ d }}</div>
+        </div>
+        <div class="cal-days">
+          <div *ngFor="let day of calendarDays" class="cal-day"
+            [class.cal-day--empty]="day === null"
+            [class.cal-day--today]="isToday(day)"
+            [class.cal-day--has-events]="getDayEvents(day).length > 0"
+            [class.cal-day--booked]="hasDayBooking(day)"
+            (click)="openDayPopup(day)">
+            <span class="cal-day-num" *ngIf="day">{{ day }}</span>
+            <div class="cal-dots" *ngIf="getDayEvents(day).length > 0">
+              <span *ngFor="let ev of getDayEvents(day).slice(0,3)" class="cal-dot" [ngClass]="ev.type?.toLowerCase()"></span>
+            </div>
+          </div>
+        </div>
+        <div class="cal-day-popup" *ngIf="calendarDayDetails">
+          <div class="cal-popup-header">
+            <span>{{ calendarDetailDay }} {{ months[calendarMonth] }}</span>
+            <button (click)="closeDayPopup()">✕</button>
+          </div>
+          <div class="cal-popup-events">
+            <div class="cal-popup-ev" *ngFor="let ev of calendarDayDetails">
+              <div class="cal-popup-ev-info">
+                <span class="cal-popup-ev-type">{{ ev.type }}</span>
+                <strong>{{ ev.titre }}</strong>
+                <span>{{ ev.heure }} — {{ ev.intervenant }}</span>
+                <span>{{ ev.placesRestantes }} spots left</span>
+              </div>
+              <div class="cal-popup-ev-actions">
+                <button class="cal-popup-details-btn" (click)="openDetails(ev); closeDayPopup()">Details</button>
+                <button class="cal-popup-reserve-btn"
+                  [class.reserved]="isAlreadyBooked(ev)"
+                  [disabled]="isAttended(ev) || ((isConfirmed(ev) || isOnWaitlist(ev)) && !canCancelBooking(ev))"
+                  (click)="isAlreadyBooked(ev) ? cancelBooking(ev) : openBookingModal(ev); closeDayPopup()">
+                  {{ isConfirmed(ev) ? (canCancelBooking(ev) ? 'Cancel' : 'Cancellation closed (<24h)') : isOnWaitlist(ev) ? (canCancelBooking(ev) ? 'Leave queue' : 'Cancellation closed (<24h)') : ev.placesRestantes === 0 ? 'Join waitlist' : 'Book' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #emptyState>
+      <div class="empty-state-box">
+        <h3>No events found</h3>
+        <button class="ev-btn-reset" (click)="resetFilters()">Reset filters</button>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- MODAL BOOKING -->
+  <div class="modal-backdrop" *ngIf="bookingTarget" (click)="closeBookingModal()">
+    <div class="ev-modal" (click)="$event.stopPropagation()">
+      <div class="ev-modal-header">
+        <div>
+          <h3>{{ bookingTarget.titre }}</h3>
+          <p>{{ bookingTarget.placesRestantes === 0 ? 'Event full — you will join the waitlist' : 'Confirm your booking' }}</p>
+        </div>
+        <button class="ev-modal-close" (click)="closeBookingModal()">✕</button>
+      </div>
+      <div class="ev-modal-body">
+        <div class="ev-modal-row"><span>Date</span><strong>{{ bookingTarget.date | date:'dd MMMM yyyy' }}</strong></div>
+        <div class="ev-modal-row"><span>Time</span><strong>{{ bookingTarget.heure }}</strong></div>
+        <div class="ev-modal-row"><span>Speaker</span><strong>{{ bookingTarget.intervenant || '—' }}</strong></div>
+        <div class="ev-modal-row"><span>Type</span><strong>{{ bookingTarget.type }}</strong></div>
+        <div class="ev-modal-row"><span>Plan</span><strong>{{ bookingTarget.planType || 'FREE' }}</strong></div>
+        <div class="ev-modal-row">
+          <span>Spots</span>
+          <strong [style.color]="bookingTarget.placesRestantes === 0 ? '#ef4444' : 'inherit'">
+            {{ bookingTarget.placesRestantes === 0 ? 'Full' : bookingTarget.placesRestantes + ' remaining' }}
+          </strong>
+        </div>
+        <div class="ev-modal-limit-error" *ngIf="limitErrorMessage">
+          ⚠️ {{ limitErrorMessage }}
+        </div>
+        <div class="ev-modal-waitlist-info" *ngIf="bookingTarget.placesRestantes === 0 && !limitErrorMessage">
+          ℹ️ You will be placed on the waiting list. If a spot opens, you will be automatically confirmed and notified by email.
+        </div>
+      </div>
+      <div class="ev-modal-footer">
+        <button class="ev-btn-cancel" (click)="closeBookingModal()">Cancel</button>
+        <button class="ev-btn-confirm" (click)="confirmBooking()" [disabled]="!!limitErrorMessage">
+          {{ bookingTarget.placesRestantes === 0 ? 'Join waitlist' : 'Confirm' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETAILS -->
+  <div class="modal-backdrop" *ngIf="selectedEvent" (click)="closeDetails()">
+    <div class="ev-modal" (click)="$event.stopPropagation()">
+      <div class="ev-modal-header">
+        <div>
+          <h3>{{ selectedEvent.titre }}</h3>
+          <p>{{ selectedEvent.description }}</p>
+        </div>
+        <button class="ev-modal-close" (click)="closeDetails()">✕</button>
+      </div>
+      <div class="ev-modal-body">
+        <div class="ev-modal-row"><span>Date</span><strong>{{ selectedEvent.date | date:'dd MMMM yyyy' }}</strong></div>
+        <div class="ev-modal-row"><span>Time</span><strong>{{ selectedEvent.heure }}</strong></div>
+        <div class="ev-modal-row"><span>Speaker</span><strong>{{ selectedEvent.intervenant || '—' }}</strong></div>
+        <div class="ev-modal-row"><span>Type</span><strong>{{ selectedEvent.type }}</strong></div>
+        <div class="ev-modal-row"><span>Spots</span><strong>{{ selectedEvent.placesRestantes }}/{{ selectedEvent.placesTotal }}</strong></div>
+        <div class="ev-modal-row" *ngIf="selectedEvent.lienMeet">
+          <span>Meet Link</span>
+          <a [href]="selectedEvent.lienMeet" target="_blank" class="ev-meet-link">Join →</a>
+        </div>
+      </div>
+      <div class="ev-modal-footer">
+        <button class="ev-btn-cancel" (click)="closeDetails()">Close</button>
+        <button class="ev-btn-confirm" (click)="openBookingModal(selectedEvent); closeDetails()" *ngIf="!isAlreadyBooked(selectedEvent)">
+          {{ selectedEvent.placesRestantes === 0 ? 'Join waitlist' : 'Book' }}
+        </button>
+        <button class="ev-btn-cancel" (click)="cancelBooking(selectedEvent); closeDetails()" *ngIf="isConfirmed(selectedEvent) || isOnWaitlist(selectedEvent)">
+          {{ isOnWaitlist(selectedEvent) ? 'Leave queue' : 'Cancel booking' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QR CODE -->
+  <div class="modal-backdrop" *ngIf="qrCodeModal" (click)="closeQrModal()">
+    <div class="ev-modal ev-modal--qr" (click)="$event.stopPropagation()">
+      <div class="ev-modal-header">
+        <div>
+          <h3>📅 Join the Meeting</h3>
+          <p class="qr-subtitle" *ngIf="qrMeetTitre">{{ qrMeetTitre }}</p>
+          <p>Scan the QR code to access the Teams meeting directly</p>
+        </div>
+        <button class="ev-modal-close" (click)="closeQrModal()">✕</button>
+      </div>
+      <div class="ev-modal-body ev-modal-body--qr">
+        <img [src]="qrCodeImage" alt="QR Code Teams" class="qr-image" *ngIf="qrCodeImage"/>
+        <p class="qr-hint">📱 Scan with your phone → Teams opens directly</p>
+        <div class="qr-teams-badge" *ngIf="qrMeetLink">
+          <span class="qr-teams-icon">🟣</span>
+          <span class="qr-teams-label">Microsoft Teams Link</span>
+        </div>
+      </div>
+      <div class="ev-modal-footer">
+        <a *ngIf="qrMeetLink"
+           [href]="qrMeetLink"
+           target="_blank"
+           class="ev-btn-teams">
+          🟣 Open Teams
+        </a>
+        <button class="ev-btn-cancel" (click)="closeQrModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MY EVENTS HISTORY -->
+  <div class="modal-backdrop my-events-backdrop" *ngIf="showMyEventsModal" (click)="closeMyEventsHistory()">
+    <div class="ev-modal ev-modal--history" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="ev-modal-header ev-modal-header--history">
+        <div class="history-header-content">
+          <div class="history-header-icon">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+    <rect x="3" y="4" width="18" height="18" rx="2"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+  </svg>
+</div>
+        </div>
+        <button class="ev-modal-close" (click)="closeMyEventsHistory()">✕</button>
+      </div>
+
+      <!-- Onglets -->
+      <div class="history-tabs">
+  <button class="history-tab" [class.history-tab--active]="myEventsTab==='UPCOMING'" (click)="setMyEventsTab('UPCOMING')">
+    <svg class="history-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+    </svg>
+    <span class="history-tab-label">Upcoming</span>
+    <span class="history-tab-count" *ngIf="myEventsTab==='UPCOMING' && !myEventsLoading">{{ myEventsHistory.length }}</span>
+  </button>
+  <button class="history-tab" [class.history-tab--active]="myEventsTab==='PAST'" (click)="setMyEventsTab('PAST')">
+    <svg class="history-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span class="history-tab-label">Past</span>
+    <span class="history-tab-count" *ngIf="myEventsTab==='PAST' && !myEventsLoading">{{ myEventsHistory.length }}</span>
+  </button>
+  <button class="history-tab" [class.history-tab--active]="myEventsTab==='CANCELLED'" (click)="setMyEventsTab('CANCELLED')">
+    <svg class="history-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+    <span class="history-tab-label">Cancelled</span>
+    <span class="history-tab-count" *ngIf="myEventsTab==='CANCELLED' && !myEventsLoading">{{ myEventsHistory.length }}</span>
+  </button>
+  <button class="history-tab" [class.history-tab--active]="myEventsTab==='PENDING'" (click)="setMyEventsTab('PENDING')">
+    <svg class="history-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+    <span class="history-tab-label">Pending</span>
+    <span class="history-tab-count" *ngIf="myEventsTab==='PENDING' && !myEventsLoading">{{ myEventsHistory.length }}</span>
+  </button>
+</div>
+
+      <!-- Corps -->
+      <div class="ev-modal-body ev-modal-body--history">
+
+        <!-- Loading -->
+        <div class="history-loading" *ngIf="myEventsLoading">
+          <div class="history-spinner"></div>
+          <span>Loading...</span>
+        </div>
+
+        <!-- Error -->
+        <div class="history-error" *ngIf="myEventsError && !myEventsLoading">
+          ⚠️ {{ myEventsError }}
+        </div>
+
+        <!-- Liste des réservations -->
+        <ng-container *ngIf="!myEventsLoading && !myEventsError">
+          <div class="history-list" *ngIf="myEventsHistory.length > 0; else myEventsEmptyState">
+            <div class="history-item" *ngFor="let dto of myEventsHistory"
+              [class.history-item--cancelled]="dto.status === 'CANCELLED' || dto.statut === 'CANCELLED'"
+              [class.history-item--attended]="dto.status === 'ATTENDED'">
+
+              <!-- Bandeau couleur type -->
+              <div class="history-item-accent" [ngClass]="dto.type?.toLowerCase()"></div>
+
+              <div class="history-item-body">
+                <!-- Ligne 1 : badges + statut -->
+                <div class="history-item-top">
+                  <div class="ev-badges">
+                    <span class="ev-type-pill" [ngClass]="dto.type?.toLowerCase()">{{ dto.type }}</span>
+                    <span class="ev-plan-pill" [ngClass]="dto.planType?.toLowerCase()" *ngIf="dto.planType">
+                      {{ dto.planType }}
+                    </span>
+                  </div>
+                  <span class="ev-booked-badge" [ngClass]="getStatusClass(dto.status)">
+                    <ng-container [ngSwitch]="dto.status">
+                      <ng-container *ngSwitchCase="'CONFIRMED'">✓ Confirmed</ng-container>
+                      <ng-container *ngSwitchCase="'WAITLIST'">⏳ Waitlist #{{ dto.waitlistPosition }}</ng-container>
+                      <ng-container *ngSwitchCase="'ATTENDED'">✅ Attended</ng-container>
+                      <ng-container *ngSwitchCase="'CANCELLED'">✕ Cancelled</ng-container>
+                      <ng-container *ngSwitchCase="'PENDING'">⏳ Pending</ng-container>
+                    </ng-container>
+                  </span>
+                </div>
+
+                <!-- Titre -->
+                <h4 class="history-item-title">{{ dto.titre }}</h4>
+
+                <!-- Méta -->
+                <div class="ev-meta">
+                  <div class="ev-meta-item">📅 {{ dto.date | date:'dd MMM yyyy' }}</div>
+                  <div class="ev-meta-item" *ngIf="dto.heure">🕐 {{ dto.heure | slice:0:5 }}</div>
+                  <div class="ev-meta-item" *ngIf="dto.intervenant">👤 {{ dto.intervenant }}</div>
+                  <div class="ev-meta-item" *ngIf="dto.attendedAt">
+                    ✅ Attended on {{ dto.attendedAt | date:'dd MMM yyyy HH:mm' }}
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="ev-actions history-item-actions">
+                  <!-- QR code (CONFIRMED uniquement) -->
+                  <button class="ev-btn-qr ev-btn-qr--active"
+                    *ngIf="dto.status === 'CONFIRMED'"
+                    (click)="openQrCodeFromHistory(dto)"
+                    title="Show QR Code">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>
+                    </svg>
+                    QR
+                  </button>
+
+                  <!-- Annuler (CONFIRMED / WAITLIST / PENDING, avant -24h) -->
+                  <button class="ev-btn-reserve"
+                    *ngIf="dto.status === 'CONFIRMED' || dto.status === 'WAITLIST' || dto.status === 'PENDING'"
+                    [class.ev-btn-reserve--booked]="dto.status === 'CONFIRMED'"
+                    [class.ev-btn-reserve--waitlist]="dto.status === 'WAITLIST' || dto.status === 'PENDING'"
+                    [disabled]="!canCancelFromDto(dto)"
+                    (click)="cancelFromHistory(dto)">
+                    {{ canCancelFromDto(dto)
+                        ? (dto.status === 'WAITLIST' ? 'Leave queue' : 'Cancel')
+                        : 'Cancellation closed (<24h)' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #myEventsEmptyState>
+            <div class="empty-state-box">
+              <div class="empty-state-icon">
+                <ng-container [ngSwitch]="myEventsTab">
+                  <ng-container *ngSwitchCase="'UPCOMING'">🗓️</ng-container>
+                  <ng-container *ngSwitchCase="'PAST'">✅</ng-container>
+                  <ng-container *ngSwitchCase="'CANCELLED'">❌</ng-container>
+                  <ng-container *ngSwitchDefault>⏳</ng-container>
+                </ng-container>
+              </div>
+              <h3>No {{ myEventsTab.toLowerCase() }} events</h3>
+              <p *ngIf="myEventsTab === 'UPCOMING'">Book an event to see it here.</p>
+            </div>
+          </ng-template>
+        </ng-container>
+      </div>
+
+      <!-- Footer -->
+      <div class="ev-modal-footer">
+        <button class="ev-btn-cancel" (click)="closeMyEventsHistory()">Close</button>
+      </div>
+    </div>
+  </div>
+
+</div>

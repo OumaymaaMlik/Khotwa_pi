@@ -1,0 +1,147 @@
+<div class="page animate-1">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="kh-page-title">Talent Marketplace</h1>
+      <p class="page-sub">Browse talent profiles and open listings from KHOTWA startups</p>
+    </div>
+    <div class="visitor-notice">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>Join KHOTWA to contact talent</span>
+      <a routerLink="/login" class="notice-link">Sign up →</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="vis-kpis animate-2">
+    <div class="vis-kpi">
+      <span class="vis-kpi__val">{{ talents.length }}</span>
+      <span class="vis-kpi__label">Registered talents</span>
+    </div>
+    <div class="vis-kpi">
+      <span class="vis-kpi__val" style="color:var(--green)">{{ availableCount }}</span>
+      <span class="vis-kpi__label">Available now</span>
+    </div>
+    <div class="vis-kpi">
+      <span class="vis-kpi__val" style="color:var(--amber)">{{ listings.length }}</span>
+      <span class="vis-kpi__label">Open listings</span>
+    </div>
+    <div class="vis-kpi">
+      <span class="vis-kpi__val" style="color:var(--violet)">{{ allSkills.length }}</span>
+      <span class="vis-kpi__label">Unique skills</span>
+    </div>
+  </div>
+
+  <!-- Tabs + search -->
+  <div class="toolbar animate-3">
+    <div class="view-tabs">
+      <button class="vtab" [class.active]="view==='talents'"  (click)="view='talents'">
+        👤 Talents ({{ talents.length }})
+      </button>
+      <button class="vtab" [class.active]="view==='listings'" (click)="view='listings'">
+        📋 Listings ({{ listings.length }})
+      </button>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" placeholder="Search…" [(ngModel)]="search" />
+      </div>
+      <select class="skill-filter" [(ngModel)]="filterSkill" *ngIf="view==='talents'">
+        <option value="">All skills</option>
+        <option *ngFor="let s of allSkills" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── TALENTS grid ─────────────────────────────────── -->
+  <div class="talent-grid animate-4" *ngIf="view==='talents'">
+    <div *ngFor="let t of filteredTalents" class="talent-card kh-card">
+
+      <!-- Header -->
+      <div class="talent-card__head">
+        <div class="talent-avatar">{{ t.nom[0] }}</div>
+        <div class="talent-info">
+          <p class="talent-name">{{ t.nom }}</p>
+          <p class="talent-poste">{{ t.poste }}</p>
+          <div class="talent-meta-row">
+            <span>📍 {{ t.location }}</span>
+            <span>⏱ {{ t.exp }}</span>
+          </div>
+        </div>
+        <span class="avail-badge" [class.avail--yes]="t.disponible" [class.avail--no]="!t.disponible">
+          {{ t.disponible ? '✓ Available' : '✗ Unavailable' }}
+        </span>
+      </div>
+
+      <!-- Skills -->
+      <div class="skills-wrap">
+        <span *ngFor="let c of t.competences" class="skill-tag">{{ c }}</span>
+      </div>
+
+      <!-- Score -->
+      <div class="score-section">
+        <div class="score-header">
+          <span>Global score</span>
+          <strong style="color:var(--amber)">{{ t.score }}%</strong>
+        </div>
+        <div class="kh-progress">
+          <div class="kh-progress__fill" [style.width.%]="t.score"
+               [style.background]="t.score >= 85 ? 'var(--green)' : t.score >= 70 ? 'var(--amber)' : 'var(--red)'"></div>
+        </div>
+      </div>
+
+      <!-- CTA (read-only) -->
+      <div class="talent-card__footer">
+        <a routerLink="/login" class="kh-btn kh-btn--sm talent-cta" [class.talent-cta--disabled]="!t.disponible">
+          {{ t.disponible ? '✉ Contact' : 'Unavailable' }}
+        </a>
+        <a routerLink="/login" class="kh-btn kh-btn--ghost kh-btn--sm">View profile</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LISTINGS grid ───────────────────────────────── -->
+  <div class="listing-grid animate-4" *ngIf="view==='listings'">
+    <div *ngFor="let l of filteredListings" class="listing-card kh-card">
+
+      <div class="listing-card__top">
+        <span class="kh-badge" [class]="typeColors[l.type]">{{ l.type }}</span>
+        <span class="match-badge">{{ l.match }}% match</span>
+      </div>
+
+      <h3 class="listing-title">{{ l.poste }}</h3>
+      <p class="listing-startup">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        {{ l.startup }}
+      </p>
+      <p class="listing-desc">{{ l.description }}</p>
+
+      <div class="skills-wrap" style="margin-bottom:0">
+        <span *ngFor="let c of l.competences" class="skill-tag">{{ c }}</span>
+      </div>
+
+      <div class="listing-card__footer">
+        <a routerLink="/login" class="kh-btn kh-btn--sm" style="background:linear-gradient(135deg,#F5A623,#D4881E);color:white;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;flex:1">
+          🚀 Apply — Sign up first
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="(view==='talents' && filteredTalents.length === 0) || (view==='listings' && filteredListings.length === 0)">
+    <div class="empty-icon">🔍</div>
+    <p>No results for your search.</p>
+    <button class="kh-btn kh-btn--ghost" (click)="search=''; filterSkill=''">Reset</button>
+  </div>
+
+</div>
