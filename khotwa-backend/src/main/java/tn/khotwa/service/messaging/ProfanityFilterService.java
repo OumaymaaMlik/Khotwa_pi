@@ -1,4 +1,4 @@
-package tn.khotwa.messaging.service;
+package tn.khotwa.service.messaging;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;

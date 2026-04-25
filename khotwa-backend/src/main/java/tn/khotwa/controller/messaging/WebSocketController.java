@@ -1,6 +1,6 @@
-package tn.khotwa.messaging.controller;
+package tn.khotwa.controller.messaging;
 
-import tn.khotwa.messaging.config.WebSocketEventPublisher;
+import tn.khotwa.config.websocket.WebSocketEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;

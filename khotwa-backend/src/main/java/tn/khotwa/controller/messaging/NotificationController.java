@@ -1,7 +1,7 @@
-package tn.khotwa.messaging.controller;
+package tn.khotwa.controller.messaging;
 
-import tn.khotwa.messaging.dto.NotificationDTO;
-import tn.khotwa.messaging.service.NotificationService;
+import tn.khotwa.dto.messaging.NotificationDTO;
+import tn.khotwa.service.messaging.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,10 +1,10 @@
-package tn.khotwa.messaging.service;
+package tn.khotwa.service.messaging;
 
-import tn.khotwa.messaging.dto.MessageMapper;
-import tn.khotwa.messaging.dto.NotificationDTO;
-import tn.khotwa.messaging.entity.Notification;
-import tn.khotwa.messaging.entity.NotificationType;
-import tn.khotwa.messaging.repository.NotificationRepository;
+import tn.khotwa.dto.messaging.MessageMapper;
+import tn.khotwa.dto.messaging.NotificationDTO;
+import tn.khotwa.entity.Notification;
+import tn.khotwa.entity.NotificationType;
+import tn.khotwa.repository.messaging.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;

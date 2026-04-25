@@ -1,13 +1,12 @@
-package tn.khotwa.messaging.repository;
+package tn.khotwa.repository.messaging;
 
-import tn.khotwa.messaging.entity.Message;
-import tn.khotwa.messaging.entity.MessageStatus;
+import tn.khotwa.entity.Message;
+import tn.khotwa.entity.MessageStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import tn.khotwa.messaging.entity.MessageType;
-import tn.khotwa.messaging.entity.MessageStatus;
+import tn.khotwa.entity.MessageType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;

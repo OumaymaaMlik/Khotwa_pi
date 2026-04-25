@@ -1,4 +1,4 @@
-package tn.khotwa.messaging.entity;
+package tn.khotwa.entity;
 
 public enum MessageType {
     DIRECT_MESSAGE,

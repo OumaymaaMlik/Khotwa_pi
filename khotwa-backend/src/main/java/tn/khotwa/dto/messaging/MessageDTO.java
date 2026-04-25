@@ -1,7 +1,7 @@
-package tn.khotwa.messaging.dto;
+package tn.khotwa.dto.messaging;
 
-import tn.khotwa.messaging.entity.MessageStatus;
-import tn.khotwa.messaging.entity.MessageType;
+import tn.khotwa.entity.MessageStatus;
+import tn.khotwa.entity.MessageType;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -13,6 +13,7 @@ public class MessageDTO {
     private Long senderId;
     private Long receiverId;
     private String senderName;
+    private String receiverName;
     private MessageType type;
     private MessageStatus status;
     private LocalDateTime createdAt;

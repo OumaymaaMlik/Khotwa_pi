@@ -1,7 +1,7 @@
-package tn.khotwa.messaging.repository;
+package tn.khotwa.repository.messaging;
 
 import org.springframework.data.jpa.repository.Query;
-import tn.khotwa.messaging.entity.Notification;
+import tn.khotwa.entity.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

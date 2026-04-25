@@ -1,11 +1,11 @@
-package tn.khotwa.messaging.controller;
+package tn.khotwa.controller.messaging;
 
-import tn.khotwa.messaging.config.OnlineUserStore;
-import tn.khotwa.messaging.dto.MessageDTO;
-import tn.khotwa.messaging.entity.Message;
-import tn.khotwa.messaging.entity.MessageStatus;
-import tn.khotwa.messaging.entity.MessageType;
-import tn.khotwa.messaging.service.MessageService;
+import tn.khotwa.config.websocket.OnlineUserStore;
+import tn.khotwa.dto.messaging.MessageDTO;
+import tn.khotwa.entity.Message;
+import tn.khotwa.entity.MessageStatus;
+import tn.khotwa.entity.MessageType;
+import tn.khotwa.service.messaging.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
-import tn.khotwa.messaging.config.WebSocketEventPublisher;
+import tn.khotwa.config.websocket.WebSocketEventPublisher;
 
 
 @RestController

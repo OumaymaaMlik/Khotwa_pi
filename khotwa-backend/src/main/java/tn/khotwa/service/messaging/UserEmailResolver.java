@@ -1,4 +1,4 @@
-package tn.khotwa.messaging.service;
+package tn.khotwa.service.messaging;
 
 public interface UserEmailResolver {
     String getEmailByUserId(Long userId);

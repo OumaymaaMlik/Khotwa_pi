@@ -1,15 +1,15 @@
-package tn.khotwa.messaging.service;
+package tn.khotwa.service.messaging;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import tn.khotwa.messaging.config.WebSocketEventPublisher;
-import tn.khotwa.messaging.dto.MessageDTO;
-import tn.khotwa.messaging.dto.MessageMapper;
-import tn.khotwa.messaging.dto.NotificationDTO;
-import tn.khotwa.messaging.entity.Message;
-import tn.khotwa.messaging.entity.MessageStatus;
-import tn.khotwa.messaging.entity.MessageType;
-import tn.khotwa.messaging.entity.NotificationType;
-import tn.khotwa.messaging.repository.MessageRepository;
+import tn.khotwa.config.websocket.WebSocketEventPublisher;
+import tn.khotwa.dto.messaging.MessageDTO;
+import tn.khotwa.dto.messaging.MessageMapper;
+import tn.khotwa.dto.messaging.NotificationDTO;
+import tn.khotwa.entity.Message;
+import tn.khotwa.entity.MessageStatus;
+import tn.khotwa.entity.MessageType;
+import tn.khotwa.entity.NotificationType;
+import tn.khotwa.repository.messaging.MessageRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -52,8 +52,12 @@ public class MessageService {
         String senderName = userRepository.findById(saved.getSenderId())
                 .map(u -> u.getFirstName() + " " + u.getLastName())
                 .orElse("Khotwa User");
+        String receiverName = userRepository.findById(saved.getReceiverId())
+                .map(u -> u.getFirstName() + " " + u.getLastName())
+                .orElse("Khotwa User");
 
-        MessageDTO dto = MessageMapper.toMessageDTO(saved, senderName);
+
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, senderName, receiverName);
         eventPublisher.publishNewMessage(dto);
 
         NotificationDTO notif = notificationService.createNotification(
@@ -80,37 +84,44 @@ public class MessageService {
     public Page<MessageDTO> getInbox(Long receiverId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return messageRepository.findByReceiverId(receiverId, pageable).map(msg -> {
-            String name = userRepository.findById(msg.getSenderId())
+            String sname = userRepository.findById(msg.getSenderId())
+                    .map(u -> u.getFirstName() + " " + u.getLastName())
+                    .orElse("Unknown User");
+            String rname = userRepository.findById(msg.getSenderId())
                     .map(u -> u.getFirstName() + " " + u.getLastName())
                     .orElse("Unknown User");
 
-            return MessageMapper.toMessageDTO(msg, name);
+            return MessageMapper.toMessageDTO(msg, sname, rname);
         });
     }
 
     public Page<MessageDTO> getSent(Long senderId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return messageRepository.findBySenderId(senderId, pageable)
-                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())));
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId()), getFullName(msg.getReceiverId())));
     }
 
     public List<MessageDTO> getInboxByType(Long receiverId, MessageType type) {
         return messageRepository.findByReceiverIdAndType(receiverId, type)
                 .stream()
-                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())))
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId()), getFullName(msg.getReceiverId())))
                 .collect(Collectors.toList());
     }
 
     public Page<MessageDTO> getActiveInbox(Long receiverId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return messageRepository.findByReceiverIdAndStatusNot(receiverId, MessageStatus.ARCHIVED, pageable)
-                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())));
+                .map(msg -> MessageMapper.toMessageDTO(
+                        msg,
+                        getFullName(msg.getSenderId()),
+                        getFullName(msg.getReceiverId())
+                ));
     }
 
     public List<MessageDTO> searchMessages(Long userId, String query) {
         return messageRepository.searchMessages(userId, query)
                 .stream()
-                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId())))
+                .map(msg -> MessageMapper.toMessageDTO(msg, getFullName(msg.getSenderId()), getFullName(msg.getReceiverId())))
                 .collect(Collectors.toList());
     }
 
@@ -138,7 +149,7 @@ public class MessageService {
         }
 
         Message saved = messageRepository.save(message);
-        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()));
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()), getFullName(saved.getReceiverId()));
         eventPublisher.publishMessageUpdate(dto);
         return dto;
     }
@@ -160,7 +171,7 @@ public class MessageService {
         message.setBody("message deleted");
         message.setFileUrl(null);
         Message saved = messageRepository.save(message);
-        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()));
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()), getFullName(saved.getReceiverId()));
         eventPublisher.publishMessageUpdate(dto);
         return dto;
     }
@@ -175,7 +186,7 @@ public class MessageService {
             message.setDeletedForUsers(existing + "," + userId);
         }
         Message saved = messageRepository.save(message);
-        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()));
+        MessageDTO dto = MessageMapper.toMessageDTO(saved, getFullName(saved.getSenderId()), getFullName(saved.getReceiverId()));
         eventPublisher.publishMessageUpdate(dto);
         return dto;
     }

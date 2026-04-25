@@ -1,12 +1,12 @@
-package tn.khotwa.messaging.service;
+package tn.khotwa.service.messaging;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import tn.khotwa.messaging.entity.Message;
-import tn.khotwa.messaging.entity.Notification;
-import tn.khotwa.messaging.repository.MessageRepository;
-import tn.khotwa.messaging.repository.NotificationRepository;
+import tn.khotwa.entity.Message;
+import tn.khotwa.entity.Notification;
+import tn.khotwa.repository.messaging.MessageRepository;
+import tn.khotwa.repository.messaging.NotificationRepository;
 import tn.khotwa.service.SubscriptionServices.Notification.EmailService;
 
 import java.time.LocalDateTime;

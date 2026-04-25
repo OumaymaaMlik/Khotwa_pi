@@ -1,4 +1,4 @@
-package tn.khotwa.messaging.exception;
+package tn.khotwa.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

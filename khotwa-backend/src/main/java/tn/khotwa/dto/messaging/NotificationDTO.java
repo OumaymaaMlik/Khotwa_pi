@@ -1,6 +1,6 @@
-package tn.khotwa.messaging.dto;
+package tn.khotwa.dto.messaging;
 
-import tn.khotwa.messaging.entity.NotificationType;
+import tn.khotwa.entity.NotificationType;
 import lombok.Data;
 import java.time.LocalDateTime;
 

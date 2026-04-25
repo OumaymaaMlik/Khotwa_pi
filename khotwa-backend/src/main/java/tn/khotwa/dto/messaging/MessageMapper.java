@@ -1,13 +1,14 @@
-package tn.khotwa.messaging.dto;
+package tn.khotwa.dto.messaging;
 
-import tn.khotwa.messaging.entity.Message;
-import tn.khotwa.messaging.entity.Notification;
+import tn.khotwa.entity.Message;
+import tn.khotwa.entity.Notification;
 
 public class MessageMapper {
 
-    public static MessageDTO toMessageDTO(Message message, String senderName) {
+    public static MessageDTO toMessageDTO(Message message, String senderName, String receiverName) {
         MessageDTO dto = new MessageDTO();
         dto.setSenderName(senderName);
+        dto.setReceiverName(receiverName);
         dto.setId(message.getId());
         dto.setSubject(message.getSubject());
         dto.setBody(message.getBody());

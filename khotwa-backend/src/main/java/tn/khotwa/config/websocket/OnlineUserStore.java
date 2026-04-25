@@ -1,4 +1,4 @@
-package tn.khotwa.messaging.config;
+package tn.khotwa.config.websocket;
 
 import org.springframework.stereotype.Component;
 import java.util.Collections;

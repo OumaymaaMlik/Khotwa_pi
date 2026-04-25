@@ -1,4 +1,4 @@
-package tn.khotwa.messaging.entity;
+package tn.khotwa.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

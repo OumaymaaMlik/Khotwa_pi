@@ -1,11 +1,10 @@
-package tn.khotwa.messaging.controller;
+package tn.khotwa.controller.messaging;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/files")

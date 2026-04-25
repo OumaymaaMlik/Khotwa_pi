@@ -1,10 +1,10 @@
-package tn.khotwa.messaging.config;
+package tn.khotwa.config.websocket;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
-import tn.khotwa.messaging.dto.MessageDTO;
-import tn.khotwa.messaging.dto.NotificationDTO;
+import tn.khotwa.dto.messaging.MessageDTO;
+import tn.khotwa.dto.messaging.NotificationDTO;
 
 @Component
 @RequiredArgsConstructor
