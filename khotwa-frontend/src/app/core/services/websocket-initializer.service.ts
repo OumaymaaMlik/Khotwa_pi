@@ -3,10 +3,12 @@ import { WebSocketService } from './websocket.service';
 import { AuthService } from './auth.service';
 import { MessageService } from './message.service';
 import { OnlineStatusService } from './online-status.service';
+import { Subscription } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketInitializerService {
   private currentUserId: number | null = null;
+  private statusSubscription?: Subscription;
 
   constructor(
     private wsService: WebSocketService,
@@ -42,7 +44,14 @@ export class WebSocketInitializerService {
     console.log('WebSocket: Initializing for user', userId);
 
     this.wsService.connect(userId);
-    this.onlineStatusService.addOnlineUser(userId);
+    this.statusSubscription?.unsubscribe();
+    this.statusSubscription = this.wsService.status$.subscribe(event => {
+      if (event.online) {
+        this.onlineStatusService.addOnlineUser(event.userId);
+      } else {
+        this.onlineStatusService.removeOnlineUser(event.userId);
+      }
+    });
 
     this.messageService.announceOnline(userId).subscribe({
       next: (onlineUsers) => {
@@ -56,10 +65,19 @@ export class WebSocketInitializerService {
 
   private handleLogout(): void {
     console.log('WebSocket: User logged out, disconnecting');
+    this.statusSubscription?.unsubscribe();
+    this.statusSubscription = undefined;
+
     if (this.currentUserId) {
+      const userId = this.currentUserId;
       this.onlineStatusService.removeOnlineUser(this.currentUserId);
+      this.messageService.announceOffline(userId).subscribe({
+        error: (err) => console.error('Failed to announce offline status:', err)
+      });
       this.currentUserId = null;
     }
+
+    this.onlineStatusService.clearOnlineUsers();
     this.wsService.disconnect();
   }
 }

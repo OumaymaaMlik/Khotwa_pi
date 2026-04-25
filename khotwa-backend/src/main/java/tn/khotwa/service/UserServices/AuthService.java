@@ -8,6 +8,6 @@ import tn.khotwa.dto.user.UserResponse;
 public interface AuthService {
 
     UserResponse register(RegisterRequest request);
-
     AuthResponse login(LoginRequest request);
+    AuthResponse loginWithGoogle(String idToken, String role, String mode);
 }

@@ -18,8 +18,8 @@
 
     <!-- Tab switcher -->
     <div class="auth-tabs">
-      <button class="tab-btn" [class.active]="mode==='signin'" (click)="mode='signin'; error=''; success=''">Sign In</button>
-      <button class="tab-btn" [class.active]="mode==='signup'" (click)="mode='signup'; error=''; success=''">Sign Up</button>
+      <button class="tab-btn" [class.active]="mode==='signin'" (click)="setMode('signin')">Sign In</button>
+      <button class="tab-btn" [class.active]="mode==='signup'" (click)="setMode('signup')">Sign Up</button>
     </div>
 
     <!-- ══ SIGN IN ══════════════════════════════════════════════ -->
@@ -56,6 +56,14 @@
         <span *ngIf="loading" class="spinner"></span>
       </button>
 
+      <div class="visitor-divider"><span>or continue with</span></div>
+      <div class="google-wrap">
+        <div id="google-signin-btn" class="google-btn-host"></div>
+        <button *ngIf="!googleSigninInitialized" class="btn-google-fallback" (click)="onGoogleSignInError()" [disabled]="loading">
+          Google Sign-In unavailable
+        </button>
+      </div>
+
       <!-- Visitor shortcut -->
       <div class="visitor-divider"><span>or</span></div>
       <button class="btn-visitor" (click)="continueAsVisitor()" [disabled]="loading">
@@ -63,7 +71,7 @@
       </button>
 
       <p class="form-switch">Don't have an account?
-        <a (click)="mode='signup'; error=''; success=''">Sign up</a>
+        <a (click)="setMode('signup')">Sign up</a>
       </p>
     </div>
 
@@ -143,8 +151,23 @@
         <span *ngIf="loading" class="spinner"></span>
       </button>
 
+      <div class="visitor-divider"><span>or sign up with</span></div>
+      <div class="google-wrap">
+        <p class="google-role-label">{{ googleSignupRoleLabel }}</p>
+        <div
+          id="google-signup-btn"
+          class="google-btn-host"
+          [class.google-disabled]="!selectedRole"
+          [attr.aria-disabled]="!selectedRole"
+        ></div>
+        <p class="google-helper-text" *ngIf="!selectedRole">Choose your role to continue with Google.</p>
+        <button *ngIf="!googleSignupInitialized" class="btn-google-fallback" (click)="onGoogleSignInError()" [disabled]="loading">
+          Google Sign-Up unavailable
+        </button>
+      </div>
+
       <p class="form-switch">Already have an account?
-        <a (click)="mode='signin'; error=''; success=''">Sign in</a>
+        <a (click)="setMode('signin')">Sign in</a>
       </p>
     </div>
 

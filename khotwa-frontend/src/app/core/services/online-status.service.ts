@@ -23,6 +23,10 @@ export class OnlineStatusService {
     this.onlineUsers$.next(new Set(current));
   }
 
+  clearOnlineUsers() {
+    this.onlineUsers$.next(new Set());
+  }
+
   getOnlineUsers(): Observable<Set<number>> {
     return this.onlineUsers$.asObservable();
   }
