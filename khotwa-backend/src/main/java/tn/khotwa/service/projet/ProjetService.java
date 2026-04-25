@@ -11,7 +11,7 @@ import tn.khotwa.entity.projet.ProjetCorrection;
 import tn.khotwa.enums.projectEnum.EtatValidationProjet;
 import tn.khotwa.enums.projectEnum.ProjetCorrectionStatut;
 import tn.khotwa.enums.projectEnum.StatutProjet;
-import tn.khotwa.exception.projectException.BusinessException;
+import tn.khotwa.exception.BusinessException;
 import tn.khotwa.repository.projet.ProjetCorrectionRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
 

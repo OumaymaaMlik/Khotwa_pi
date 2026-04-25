@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProjetService, ProjetDraftInput } from '../../../core/services/projet.service';
 import { Projet, SecteurProjet, SECTEUR_PROJET_OPTIONS, getDisciplineLevelClass, formatProjetStatusLabel } from '../../../core/models';
+import { AiPitchService, PitchFieldKey } from '../../../core/services/ai-pitch.service';
 
 // ─── Types locaux ────────────────────────────────────────────────────────────
 
@@ -258,6 +259,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private authService: AuthService,
     private router: Router,
+    private aiPitchService: AiPitchService,  // ← ajouter
+
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1606,6 +1609,98 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     };
     return allowed[from].includes(to);
   }
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Propriétés AI Pitch Improver
+  // ═══════════════════════════════════════════════════════════════════════════
+  aiErrorByField: { [key: string]: string | undefined } = {};
+  aiSuggestionByField: { [key: string]: string | undefined } = {};
+  aiImprovingField: string | null = null;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AI Pitch Improver
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  improveWithAi(fieldKey: PitchFieldKey): void {
+    const currentValue = this.getAiFieldValue(fieldKey);
+    if (!currentValue || String(currentValue).trim().length < 10) {
+      this.aiErrorByField[fieldKey] = 'Please write at least 10 characters before using AI improvement.';
+      return;
+    }
+
+    this.aiImprovingField = fieldKey;
+    this.aiSuggestionByField[fieldKey] = undefined;
+    this.aiErrorByField[fieldKey] = undefined;
+
+    this.aiPitchService.improveText(fieldKey, String(currentValue)).subscribe({
+      next: (res) => {
+        this.aiSuggestionByField[fieldKey] = res.improvedText;
+        this.aiImprovingField = null;
+      },
+      error: () => {
+        this.aiErrorByField[fieldKey] = 'AI service unavailable. Please try again.';
+        this.aiImprovingField = null;
+      }
+    });
+  }
+
+  acceptAiSuggestion(fieldKey: PitchFieldKey): void {
+    const suggestion = this.aiSuggestionByField[fieldKey];
+    if (suggestion) {
+      this.setAiFieldValue(fieldKey, suggestion);
+    }
+    this.aiSuggestionByField[fieldKey] = undefined;
+    this.aiErrorByField[fieldKey] = undefined;
+  }
+
+  rejectAiSuggestion(fieldKey: PitchFieldKey): void {
+    this.aiSuggestionByField[fieldKey] = undefined;
+    this.aiErrorByField[fieldKey] = undefined;
+  }
+
+  isAiImproving(fieldKey: PitchFieldKey): boolean {
+    return this.aiImprovingField === fieldKey;
+  }
+
+  hasAiSuggestion(fieldKey: PitchFieldKey): boolean {
+    return !!this.aiSuggestionByField[fieldKey];
+  }
+
+  getAiSuggestion(fieldKey: PitchFieldKey): string {
+    return this.aiSuggestionByField[fieldKey] ?? '';
+  }
+
+  getAiError(fieldKey: PitchFieldKey): string {
+    return this.aiErrorByField[fieldKey] ?? '';
+  }
+
+  private getAiFieldValue(fieldKey: PitchFieldKey): string {
+    if (this.isConversationCreationContext()) {
+      if (fieldKey === 'description' || fieldKey === 'problemeAdresse') {
+        return String(this.conversationForm.pitch ?? '');
+      }
+      return String(this.conversationForm[fieldKey] ?? '');
+    }
+    return String(this.form[fieldKey] ?? '');
+  }
+
+  private setAiFieldValue(fieldKey: PitchFieldKey, value: string): void {
+    if (this.isConversationCreationContext()) {
+      if (fieldKey === 'description' || fieldKey === 'problemeAdresse') {
+        this.conversationForm.pitch = value;
+        return;
+      }
+      this.conversationForm[fieldKey] = value;
+      return;
+    }
+    this.form[fieldKey] = value;
+  }
+
+  private isConversationCreationContext(): boolean {
+    return this.showCreateProjectModal && this.createProjectStep === 4;
+  }
 
   private updateTaskStatus(task: WorkflowTache, targetStatus: StatutTache): void {
     this.isSubmitting = true;
@@ -1697,4 +1792,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     if (normalized === 'poc')               { return 'pocDisponible'; }
     return label;
   }
+
+
+  
+
 }

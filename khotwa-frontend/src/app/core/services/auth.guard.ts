@@ -7,7 +7,7 @@ export class AuthGuard implements CanActivate {
   constructor(private auth: AuthService, private router: Router) {}
 
   canActivate(): boolean | UrlTree {
-    if (this.auth.currentUser && localStorage.getItem('khotwa-jwt')) {
+    if (this.auth.currentUser && localStorage.getItem('khotwa_token')) {
       return true;
     }
     return this.router.createUrlTree(['/login']);

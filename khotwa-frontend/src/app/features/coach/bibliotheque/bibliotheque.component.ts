@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, NgZone } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RessourceService, Ressource, Categorie, ProgressStatus, PlanType } from '../../../core/services/ressource.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { forkJoin } from 'rxjs';
 
 declare const pdfjsLib: any;
@@ -55,14 +56,17 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
     PDF: '📄', VIDEO: '🎥', EXCEL: '📊', WORD: '📝', IMAGE: '🖼️', LINK: '🔗'
   };
 
-  userId = 3;
-  userRole = 'COACH';
-  userPlan: PlanType = 'FREE'; // FREE | PREMIUM | INSTITUTIONAL
-  
+  get userId(): number   { return this.auth.currentUser?.idUser ?? 0; }
+  get userRole(): string { return this.auth.currentUser?.role   ?? 'COACH'; }
+  get userPlan(): PlanType {
+    return (this.auth.currentUser?.planType as PlanType) ?? 'FREE';
+  }
+
   private apiBase = this.svc.getApiOrigin();
 
   constructor(
     private svc: RessourceService,
+    private auth: AuthService,
     private sanitizer: DomSanitizer,
     private zone: NgZone
   ) {}
@@ -154,12 +158,41 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
     this.revokeBlobUrl();
     this.blobUrl = null; this.rawBlobUrl = ''; this.pdfDoc = null;
 
-    if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+    if (r.type === 'LINK' || (!r.urlFichier && r.urlExterne)) {
+      // LINK → consultation instantanée = 100% COMPLETED
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+      window.open(r.urlExterne!, '_blank');
+      this.showViewer = false;
+    } else if (r.type === 'IMAGE') {
+      // IMAGE → affichage immédiat = 100% COMPLETED
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+    } else if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+      // PDF / VIDEO → démarrer à IN_PROGRESS 1%
       this.svc.updateProgressionHttp(this.userId, r.id, 'IN_PROGRESS', 1).subscribe();
     }
 
+    // ── Rendu du contenu (indépendant de la progression) ──
     if (r.type === 'VIDEO') {
-      this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+      if (r.urlFichier && !r.urlFichier.startsWith('http')) {
+        this.viewerLoading = true;
+        this.showViewer = true;
+        this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+          next: (blob: Blob) => {
+            this.rawBlobUrl = URL.createObjectURL(blob);
+            this.viewerUrl = this.rawBlobUrl;
+            this.viewerLoading = false;
+          },
+          error: () => {
+            this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+            this.viewerLoading = false;
+          }
+        });
+      } else {
+        this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+        this.showViewer = true;
+      }
       this.showViewer = true;
       this.startSaveInterval(r);
     } else if (r.type === 'PDF' || r.type === 'IMAGE') {
@@ -171,7 +204,12 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
           this.viewerLoading = false;
           if (r.type === 'PDF') this.loadPdfJs(this.rawBlobUrl, r);
         },
-        error: () => { this.viewerLoading = false; }
+        error: (err: any) => {
+          console.error('Download error:', err);
+          this.viewerLoading = false;
+          this.showViewer = false;
+          alert(err?.error?.message || 'Impossible de charger la ressource.');
+        }
       });
     } else {
       this.viewerUrl = this.formatFullUrl(r.urlExterne || r.urlFichier);
@@ -255,22 +293,25 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
   }
 
   downloadRessource(r: Ressource) {
-    const url = this.formatFullUrl(r.urlFichier || (r as any).urlExterne);
-    if (!url) { alert('No file attached.'); return; }
-
-    fetch(url, { headers: { 'X-User-Id': String(this.userId), 'X-User-Role': this.userRole } })
-      .then(res => {
-        if (!res.ok) throw new Error('Download failed');
-        return res.blob();
-      })
-      .then(blob => {
+    // On passe par HttpClient (et donc le JwtInterceptor) pour inclure le token JWT.
+    // Le fetch natif contourne l'interceptor Angular => 403 garanti.
+    if (r.urlExterne) {
+      window.open(r.urlExterne, '_blank');
+      return;
+    }
+    this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+      next: (blob: Blob) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = (r as any).nomFichierOriginal || r.titre || 'document';
         a.click();
         URL.revokeObjectURL(a.href);
-      })
-      .catch(() => window.open(url, '_blank'));
+      },
+      error: (err: any) => {
+        console.error('Erreur telechargement:', err);
+        alert(err?.error?.message || 'Impossible de telecharger la ressource.');
+      }
+    });
   }
 
   isCompleted(r: Ressource): boolean { return r.maProgress?.status === 'COMPLETED'; }

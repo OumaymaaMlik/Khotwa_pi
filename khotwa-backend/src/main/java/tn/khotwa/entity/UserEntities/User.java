@@ -1,15 +1,23 @@
 package tn.khotwa.entity.UserEntities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import lombok.*;
-import tn.khotwa.entity.projet.Projet;
-import tn.khotwa.entity.projet.ProjetCoach;
-import tn.khotwa.entity.projet.Tache;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Builder.Default;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.enums.UserEnum.Role;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -28,7 +36,6 @@ public class User {
     @Column(name = "avatar")
     private String avatar;
 
-    // Unified schema fields
     @Column(name = "email_address", nullable = false, unique = true)
     private String emailAddress;
 
@@ -38,36 +45,35 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-
-
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Builder.Default
-    @Column(name = "must_change_password", nullable = false)
-    private boolean mustChangePassword = true;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "pending_plan")
-    private tn.khotwa.enums.SubscriptionEnums.PlanType pendingPlan;
+    private PlanType pendingPlan;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "plan_type")
-    private tn.khotwa.enums.SubscriptionEnums.PlanType planType;
+    private PlanType planType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+    @Column(name = "startup")
+    private String startup;
     private String region;
     private String specialite;
     private String disponibilite;
     private String nomAffiche;
 
-    @Column(name = "startup")
-    private String startup;
+    @Default
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = true;
+
     @PrePersist
     @PreUpdate
     public void normalizeEmailAddress() {
@@ -75,24 +81,4 @@ public class User {
             emailAddress = emailAddress.trim().toLowerCase();
         }
     }
-
-    @OneToMany(mappedBy = "entrepreneur")
-    @JsonIgnore
-    @Builder.Default
-    private List<Projet> projetsEntrepreneur = new ArrayList<>();
-
-    @OneToMany(mappedBy = "admin")
-    @JsonIgnore
-    @Builder.Default
-    private List<Projet> projetsAdmin = new ArrayList<>();
-
-    @OneToMany(mappedBy = "coachCreateur")
-    @JsonIgnore
-    @Builder.Default
-    private List<Tache> tachesCreees = new ArrayList<>();
-
-    @OneToMany(mappedBy = "coach")
-    @JsonIgnore
-    @Builder.Default
-    private List<ProjetCoach> affectationsCoach = new ArrayList<>();
 }

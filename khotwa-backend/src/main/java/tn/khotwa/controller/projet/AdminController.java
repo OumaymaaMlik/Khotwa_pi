@@ -52,8 +52,8 @@ public class AdminController {
     @GetMapping("/projets/soumis")
     public ResponseEntity<List<ProjetResponseDto>> projetsSoumis() {
         List<ProjetResponseDto> projets = projetRepository.findByEtatValidation(EtatValidationProjet.SOUMIS_ADMIN).stream()
-            .map(p -> projetService.byId(p.getId()))
-            .toList();
+                .map(p -> projetService.byId(p.getId()))
+                .toList();
         return ResponseEntity.ok(projets);
     }
 
@@ -75,7 +75,7 @@ public class AdminController {
 
     @PostMapping("/projets/{projetId}/affectations/multiple")
     public ResponseEntity<List<ProjetCoachResponseDto>> affecterCoachs(@PathVariable Long projetId,
-                                                                        @RequestBody AffectationCoachMultipleRequestDto dto) {
+                                                                       @RequestBody AffectationCoachMultipleRequestDto dto) {
         List<ProjetCoachResponseDto> affectations = projetCoachService.affecterCoachs(projetId, dto);
         stateMachineService.affecterCoach(projetId, dto.getAdminId());
         return ResponseEntity.ok(affectations);
@@ -83,7 +83,7 @@ public class AdminController {
 
     @PostMapping("/projets/{projetId}/reaffectations")
     public ResponseEntity<ProjetCoachResponseDto> reaffecterCoach(@PathVariable Long projetId,
-                                                                   @RequestBody ReaffectationCoachRequestDto dto) {
+                                                                  @RequestBody ReaffectationCoachRequestDto dto) {
         return ResponseEntity.ok(projetCoachService.reaffecterCoach(projetId, dto));
     }
 
@@ -121,7 +121,7 @@ public class AdminController {
 
     @GetMapping("/coachs/disponibles")
     public ResponseEntity<List<CoachDisponibiliteDto>> coachsDisponibles() {
-        List<CoachDisponibiliteDto> coachs = userRepository.findByRole(Role.COACH)
+        List<CoachDisponibiliteDto> coachs = userRepository.findByRoleAsEntity(Role.COACH)
                 .stream()
                 .map(this::toCoachDisponibilite)
                 .toList();
@@ -165,14 +165,21 @@ public class AdminController {
 
     private CoachDisponibiliteDto toCoachDisponibilite(User coach) {
         long chargeActive = projetCoachRepository.countByCoachIdAndActifTrue(coach.getIdUser());
+
+        // Fallback sur firstName + lastName si nomAffiche n'est pas renseigné
+        String nomAffiche = coach.getNomAffiche();
+        if (nomAffiche == null || nomAffiche.isBlank()) {
+            nomAffiche = (coach.getFirstName() + " " + coach.getLastName()).trim();
+        }
+
         return CoachDisponibiliteDto.builder()
                 .coachId(coach.getIdUser())
-                .nomAffiche(coach.getNomAffiche())
+                .nomAffiche(nomAffiche)
                 .specialite(coach.getSpecialite())
-            .secteur(coach.getRegion())
+                .secteur(coach.getRegion())
                 .disponibilite(coach.getDisponibilite())
-            .chargeActuelle(chargeActive)
-            .nombreProjetsActifs(chargeActive)
+                .chargeActuelle(chargeActive)
+                .nombreProjetsActifs(chargeActive)
                 .build();
     }
 }

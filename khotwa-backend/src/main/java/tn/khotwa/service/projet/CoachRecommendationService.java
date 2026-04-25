@@ -10,7 +10,7 @@ import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.projectEnum.DisponibilitePeriodeStatut;
 import tn.khotwa.enums.UserEnum.Role;
 import tn.khotwa.enums.projectEnum.SecteurProjet;
-import tn.khotwa.exception.projectException.BusinessException;
+import tn.khotwa.exception.BusinessException;
 import tn.khotwa.repository.projet.CoachDisponibilitePeriodeRepository;
 import tn.khotwa.repository.projet.ProjetCoachRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
@@ -43,7 +43,7 @@ public class CoachRecommendationService {
             throw new BusinessException("Le projet doit avoir une date de debut et une date de fin");
         }
 
-        List<User> coachs = userRepository.findByRole(Role.COACH);
+        List<User> coachs = userRepository.findByRoleAsEntity(Role.COACH);
         if (coachs.isEmpty()) {
             return emptyRecommendation(projetId);
         }
@@ -71,9 +71,15 @@ public class CoachRecommendationService {
             double equiteScore = computeEquityScore(charge, averageLoad) * 20.0;
             double global = round2(timeScore + metierScore + disponibiliteScore + equiteScore);
 
-                candidats.add(CoachRecommandationDto.builder()
+            // Fallback sur firstName + lastName si nomAffiche n'est pas renseigné
+            String nomAffiche = coach.getNomAffiche();
+            if (nomAffiche == null || nomAffiche.isBlank()) {
+                nomAffiche = (coach.getFirstName() + " " + coach.getLastName()).trim();
+            }
+
+            candidats.add(CoachRecommandationDto.builder()
                     .coachId(coach.getIdUser())
-                    .coachNomAffiche(coach.getNomAffiche())
+                    .coachNomAffiche(nomAffiche)
                     .scoreGlobal(global)
                     .scoreTemps(round2(timeScore))
                     .scoreMetier(round2(metierScore))

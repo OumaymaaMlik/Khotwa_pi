@@ -703,18 +703,114 @@
               <div class="project-form-field project-form-field--full">
                 <label>Proposed solution</label>
                 <textarea [(ngModel)]="conversationForm.solutionProposee" class="project-input project-textarea" rows="3" placeholder="How does the solution work?"></textarea>
+                <!-- Bouton Improve with AI -->
+                <div class="ai-pitch-row">
+                  <button
+                    type="button"
+                    class="kh-btn kh-btn--ghost kh-btn--sm ai-improve-btn"
+                    (click)="improveWithAi('solutionProposee')"
+                    [disabled]="isAiImproving('solutionProposee')"
+                  >
+                    <span *ngIf="!isAiImproving('solutionProposee')">✨ Improve with AI</span>
+                    <span *ngIf="isAiImproving('solutionProposee')">⏳ Improving…</span>
+                  </button>
+                  <span *ngIf="getAiError('solutionProposee')" class="ai-error-msg">{{ getAiError('solutionProposee') }}</span>
+                </div>
+                <!-- Suggestion AI -->
+                <div *ngIf="hasAiSuggestion('solutionProposee')" class="ai-suggestion-box">
+                  <div class="ai-suggestion-box__header">
+                    <span class="ai-suggestion-box__label">✨ AI suggestion</span>
+                  </div>
+                  <p class="ai-suggestion-box__text">{{ getAiSuggestion('solutionProposee') }}</p>
+                  <div class="ai-suggestion-box__actions">
+                    <button type="button" class="kh-btn kh-btn--primary kh-btn--sm" (click)="acceptAiSuggestion('solutionProposee')">✅ Accept</button>
+                    <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm"  (click)="rejectAiSuggestion('solutionProposee')">✗ Reject</button>
+                  </div>
+                </div>
               </div>
               <div class="project-form-field project-form-field--full">
                 <label>Business model</label>
                 <textarea [(ngModel)]="conversationForm.businessModel" class="project-input project-textarea" rows="3" placeholder="Subscription, commission, B2B..."></textarea>
+                <!-- Bouton Improve with AI -->
+                <div class="ai-pitch-row">
+                  <button
+                    type="button"
+                    class="kh-btn kh-btn--ghost kh-btn--sm ai-improve-btn"
+                    (click)="improveWithAi('businessModel')"
+                    [disabled]="isAiImproving('businessModel')"
+                  >
+                    <span *ngIf="!isAiImproving('businessModel')">✨ Improve with AI</span>
+                    <span *ngIf="isAiImproving('businessModel')">⏳ Improving…</span>
+                  </button>
+                  <span *ngIf="getAiError('businessModel')" class="ai-error-msg">{{ getAiError('businessModel') }}</span>
+                </div>
+                <!-- Suggestion AI -->
+                <div *ngIf="hasAiSuggestion('businessModel')" class="ai-suggestion-box">
+                  <div class="ai-suggestion-box__header">
+                    <span class="ai-suggestion-box__label">✨ AI suggestion</span>
+                  </div>
+                  <p class="ai-suggestion-box__text">{{ getAiSuggestion('businessModel') }}</p>
+                  <div class="ai-suggestion-box__actions">
+                    <button type="button" class="kh-btn kh-btn--primary kh-btn--sm" (click)="acceptAiSuggestion('businessModel')">✅ Accept</button>
+                    <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm"  (click)="rejectAiSuggestion('businessModel')">✗ Reject</button>
+                  </div>
+                </div>
               </div>
               <div class="project-form-field project-form-field--full">
                 <label>Innovation description</label>
                 <textarea [(ngModel)]="conversationForm.innovationDescription" class="project-input project-textarea" rows="2" placeholder="What is unique in this project?"></textarea>
+                <!-- Bouton Improve with AI -->
+                <div class="ai-pitch-row">
+                  <button
+                    type="button"
+                    class="kh-btn kh-btn--ghost kh-btn--sm ai-improve-btn"
+                    (click)="improveWithAi('innovationDescription')"
+                    [disabled]="isAiImproving('innovationDescription')"
+                  >
+                    <span *ngIf="!isAiImproving('innovationDescription')">✨ Improve with AI</span>
+                    <span *ngIf="isAiImproving('innovationDescription')">⏳ Improving…</span>
+                  </button>
+                  <span *ngIf="getAiError('innovationDescription')" class="ai-error-msg">{{ getAiError('innovationDescription') }}</span>
+                </div>
+                <!-- Suggestion AI -->
+                <div *ngIf="hasAiSuggestion('innovationDescription')" class="ai-suggestion-box">
+                  <div class="ai-suggestion-box__header">
+                    <span class="ai-suggestion-box__label">✨ AI suggestion</span>
+                  </div>
+                  <p class="ai-suggestion-box__text">{{ getAiSuggestion('innovationDescription') }}</p>
+                  <div class="ai-suggestion-box__actions">
+                    <button type="button" class="kh-btn kh-btn--primary kh-btn--sm" (click)="acceptAiSuggestion('innovationDescription')">✅ Accept</button>
+                    <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm"  (click)="rejectAiSuggestion('innovationDescription')">✗ Reject</button>
+                  </div>
+                </div>
               </div>
               <div class="project-form-field project-form-field--full">
                 <label>Scalability description</label>
                 <textarea [(ngModel)]="conversationForm.scalabiliteDescription" class="project-input project-textarea" rows="2" placeholder="How can it scale?"></textarea>
+                <!-- Bouton Improve with AI -->
+                <div class="ai-pitch-row">
+                  <button
+                    type="button"
+                    class="kh-btn kh-btn--ghost kh-btn--sm ai-improve-btn"
+                    (click)="improveWithAi('scalabiliteDescription')"
+                    [disabled]="isAiImproving('scalabiliteDescription')"
+                  >
+                    <span *ngIf="!isAiImproving('scalabiliteDescription')">✨ Improve with AI</span>
+                    <span *ngIf="isAiImproving('scalabiliteDescription')">⏳ Improving…</span>
+                  </button>
+                  <span *ngIf="getAiError('scalabiliteDescription')" class="ai-error-msg">{{ getAiError('scalabiliteDescription') }}</span>
+                </div>
+                <!-- Suggestion AI -->
+                <div *ngIf="hasAiSuggestion('scalabiliteDescription')" class="ai-suggestion-box">
+                  <div class="ai-suggestion-box__header">
+                    <span class="ai-suggestion-box__label">✨ AI suggestion</span>
+                  </div>
+                  <p class="ai-suggestion-box__text">{{ getAiSuggestion('scalabiliteDescription') }}</p>
+                  <div class="ai-suggestion-box__actions">
+                    <button type="button" class="kh-btn kh-btn--primary kh-btn--sm" (click)="acceptAiSuggestion('scalabiliteDescription')">✅ Accept</button>
+                    <button type="button" class="kh-btn kh-btn--ghost kh-btn--sm"  (click)="rejectAiSuggestion('scalabiliteDescription')">✗ Reject</button>
+                  </div>
+                </div>
               </div>
               <label class="project-form-check project-form-field--full">
                 <input type="checkbox" [(ngModel)]="conversationForm.pocDisponible" />

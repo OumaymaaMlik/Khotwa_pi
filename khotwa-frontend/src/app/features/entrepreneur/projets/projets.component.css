@@ -3380,4 +3380,77 @@
   border-radius: 4px;
   margin-left: 8px;
 }
+
+
+/* ─── AI Pitch Improver ──────────────────────────────────────────────────── */
+.ai-pitch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.ai-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid #2abfbf;
+  color: #2abfbf;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ai-improve-btn:hover:not(:disabled) {
+  background: #2abfbf;
+  color: #fff;
+}
+
+.ai-improve-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-error-msg {
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.ai-suggestion-box {
+  margin-top: 10px;
+  border: 1px solid #2abfbf;
+  border-radius: 10px;
+  background: #f0fafa;
+  padding: 14px 16px;
+}
+
+.ai-suggestion-box__header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ai-suggestion-box__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2abfbf;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ai-suggestion-box__text {
+  font-size: 13px;
+  color: #1c2f43;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+  white-space: pre-wrap;
+}
+
+.ai-suggestion-box__actions {
+  display: flex;
+  gap: 8px;
+}
 }

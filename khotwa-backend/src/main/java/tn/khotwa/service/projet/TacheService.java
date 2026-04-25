@@ -14,7 +14,7 @@ import tn.khotwa.entity.projet.Tache;
 import tn.khotwa.enums.projectEnum.EtatValidationProjet;
 import tn.khotwa.enums.projectEnum.StatutProjet;
 import tn.khotwa.enums.projectEnum.StatutTache;
-import tn.khotwa.exception.projectException.BusinessException;
+import tn.khotwa.exception.BusinessException;
 import tn.khotwa.repository.projet.DocumentRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.projet.SousTacheRepository;

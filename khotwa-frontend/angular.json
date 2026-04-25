@@ -16,20 +16,34 @@
             "outputPath": "dist/khotwa-ng",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
-            "tsConfig": "tsconfig.app.json",
-            "assets": [
-              "src/assets",
-              { "glob": "**/*", "input": "public", "output": "/" }
+            "polyfills": [
+              "zone.js",
+              "src/polyfills.ts" 
             ],
-            "styles": ["src/styles.css"],
+            "tsConfig": "tsconfig.app.json",
+           "assets": [
+  "src/favicon.ico",
+  "src/assets"
+],
+            "styles": [
+       "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+          "src/styles.css"
+          ],
             "scripts": []
           },
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" },
-                { "type": "anyComponentStyle", "maximumWarning": "20kB", "maximumError": "50kB" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "56kB",
+                  "maximumError": "72kB"
+                }
               ],
               "outputHashing": "all"
             },
@@ -43,6 +57,11 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+              "liveReload": true
+
+          },
           "configurations": {
             "production": { "buildTarget": "khotwa-ng:build:production" },
             "development": { "buildTarget": "khotwa-ng:build:development" }

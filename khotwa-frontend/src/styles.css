@@ -1,9 +1,3 @@
-@font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: url(https://fonts.gstatic.com/s/materialicons/v126/flUhRq6tzZclQEJ-Vdg-IuiaDsNZ.ttf) format('truetype');
-}
 /* ══════════════════════════════════════════════════════════════
    KHOTWA — Global Styles
    Fonts: Plus Jakarta Sans (headings) + Inter (body)
@@ -123,21 +117,6 @@ h1, h2, h3, h4, h5, h6,
 }
 .kh-card:hover { box-shadow: var(--shadow-hover); }
 
-/* ── Fluent 2 Cards ───────────────────────────────────────── */
-.kh-card--fluent {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
-}
-.kh-card--fluent:hover {
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-}
-
 /* ── Buttons ──────────────────────────────────────────────── */
 .kh-btn {
   display: inline-flex;
@@ -183,50 +162,6 @@ h1, h2, h3, h4, h5, h6,
 .kh-btn--danger:hover { background: rgba(232,74,74,0.16); }
 .kh-btn--sm    { padding: 5px 11px; font-size: 12px; border-radius: var(--r-sm); }
 .kh-btn--icon  { padding: 7px; width: 32px; height: 32px; justify-content: center; border-radius: var(--r-sm); }
-
-/* ── Fluent 2 Buttons ─────────────────────────────────────── */
-.kh-btn--fluent {
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-.kh-btn--fluent:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-.kh-btn--fluent:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.kh-btn--fluent-primary {
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
-  color: #fff;
-}
-.kh-btn--fluent-primary:hover {
-  background: linear-gradient(135deg, var(--orange-dark) 0%, #A93917 100%);
-}
-.kh-btn--fluent-secondary {
-  background: rgba(232, 98, 42, 0.1);
-  color: var(--orange);
-  border: 1px solid rgba(232, 98, 42, 0.2);
-}
-.kh-btn--fluent-secondary:hover {
-  background: rgba(232, 98, 42, 0.16);
-  border-color: rgba(232, 98, 42, 0.3);
-}
-.kh-btn--fluent-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: none;
-}
-.kh-btn--fluent-ghost:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: var(--text-primary);
-}
 
 /* ── Badges ───────────────────────────────────────────────── */
 .kh-badge {
@@ -293,107 +228,11 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(232,98,42,0.1);
 }
 
-/* ── Fluent 2 Inputs ──────────────────────────────────────── */
-.kh-input--fluent,
-.kh-select--fluent {
-  padding: 11px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.98);
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: var(--text-primary);
-  transition: all 0.15s ease;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
-}
-.kh-input--fluent:focus,
-.kh-select--fluent:focus {
-  outline: none;
-  border-color: rgba(232, 98, 42, 0.4);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02), 0 0 0 3px rgba(232, 98, 42, 0.08);
-}
-.kh-input--fluent::placeholder {
-  color: var(--text-muted);
-}
-
 /* ── Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar         { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track   { background: transparent; }
 ::-webkit-scrollbar-thumb   { background: rgba(0,0,0,0.14); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.24); }
-
-/* ── Fluent 2 Toggle Switch ───────────────────────────────── */
-.kh-toggle--fluent {
-  position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 28px;
-  cursor: pointer;
-}
-.kh-toggle--fluent input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.kh-toggle--fluent-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 99px;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-}
-.kh-toggle--fluent-slider::before {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
-  background: #fff;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-}
-.kh-toggle--fluent input:checked + .kh-toggle--fluent-slider {
-  background: var(--orange);
-  border-color: var(--orange-dark);
-}
-.kh-toggle--fluent input:checked + .kh-toggle--fluent-slider::before {
-  transform: translateX(20px);
-}
-
-/* ── Fluent 2 Radio Button ────────────────────────────────── */
-.kh-radio--fluent {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  padding: 8px 0;
-}
-.kh-radio--fluent input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.kh-radio--fluent-circle {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(0, 0, 0, 0.15);
-  border-radius: 50%;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-  background: #fff;
-}
-.kh-radio--fluent input:checked + .kh-radio--fluent-circle {
-  border-color: var(--orange);
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
-  box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px var(--orange-dark);
-}
 
 /* ── Animations ───────────────────────────────────────────── */
 @keyframes fadeInUp {
@@ -408,30 +247,11 @@ input:focus, select:focus, textarea:focus {
   to { transform: rotate(360deg); }
 }
 
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-
 .animate-1 { animation: fadeInUp 0.38s 0.05s both ease-out; }
 .animate-2 { animation: fadeInUp 0.38s 0.10s both ease-out; }
 .animate-3 { animation: fadeInUp 0.38s 0.15s both ease-out; }
 .animate-4 { animation: fadeInUp 0.38s 0.20s both ease-out; }
 .animate-5 { animation: fadeInUp 0.38s 0.25s both ease-out; }
-
-/* ── Fluent 2 Animations (calm, smooth) ──────────────────── */
-.fade-in { animation: fadeIn 0.2s ease-out; }
-.fade-out { animation: fadeOut 0.2s ease-out; }
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
-}
 
 /* ── Table styles ─────────────────────────────────────────── */
 .table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--bg-card); }

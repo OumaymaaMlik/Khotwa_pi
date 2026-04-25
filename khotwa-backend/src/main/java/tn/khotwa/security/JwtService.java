@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import tn.khotwa.entity.UserEntities.User;
 
-
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
@@ -38,12 +37,12 @@ public class JwtService {
 
         Instant now = Instant.now();
         return Jwts.builder()
-            .claims(claims)
-            .subject(user.getEmailAddress())
-            .issuedAt(Date.from(now))
-            .expiration(Date.from(now.plusMillis(expirationMs)))
-            .signWith(signingKey, io.jsonwebtoken.SignatureAlgorithm.HS256)
-            .compact();
+                .claims(claims)
+                .subject(user.getEmailAddress())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(signingKey)
+                .compact();
     }
 
     public String extractUsername(String token) {
@@ -67,11 +66,10 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        Jws<Claims> parsedClaims =
-                Jwts.parser()
-            .setSigningKey(signingKey)
-            .build()
-            .parseClaimsJws(token);
-        return parsedClaims.getBody();
+        Jws<Claims> parsedClaims = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token);
+        return parsedClaims.getPayload();
     }
 }

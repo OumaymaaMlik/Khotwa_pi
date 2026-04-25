@@ -3,13 +3,25 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { JwtInterceptor } from './core/services/jwt.interceptor';
+import { JwtInterceptor } from './core/interceptors/jwt.interceptor';
+import { APP_INITIALIZER } from '@angular/core';
+import { WebSocketInitializerService } from './core/services/websocket-initializer.service';
 
 @NgModule({
   declarations: [AppComponent],
   imports: [BrowserModule, HttpClientModule, AppRoutingModule],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (wsInit: WebSocketInitializerService) => () => wsInit.initialize(),
+      deps: [WebSocketInitializerService],
+      multi: true
+    },
+    {
+      provide:  HTTP_INTERCEPTORS,
+      useClass: JwtInterceptor,
+      multi:    true
+    }
   ],
   bootstrap: [AppComponent],
 })

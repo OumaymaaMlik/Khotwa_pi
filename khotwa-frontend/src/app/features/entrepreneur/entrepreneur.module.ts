@@ -12,8 +12,11 @@ import { EntrepreneurWorkflowsComponent }    from './workflows/workflows.compone
 import { EntrepreneurPlanningComponent }     from './planning/planning.component';
 import { EntrepreneurMessagesComponent }     from './messages/messages.component';
 import { EntrepreneurBibliothequeComponent } from './bibliotheque/bibliotheque.component';
-import { EntrepreneurProgresssComponent } from './progressions/progressions.component';
+import { EntrepreneurProgressionsComponent } from './progressions/progressions.component';
 import { EntrepreneurTalentComponent }       from './talent/talent.component';
+import { EntrepreneurNotificationsComponent } from './notifications/notifications.component';
+import { ProfileComponent }                  from './profile/profile.component';          // ← existing PayPal page, untouched
+import { EntrepreneurAccountPageComponent }  from './account-page/account-page.component'; // ← new account page
 
 const routes: Routes = [
   {
@@ -22,14 +25,18 @@ const routes: Routes = [
     children: [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: EntrepreneurDashboardComponent  },
-      { path: 'projets',      component: EntrepreneurProjetsComponent, data: { createMode: false } },
+      { path: 'projets',      component: EntrepreneurProjetsComponent     },
       { path: 'projets/new',  component: EntrepreneurProjetsComponent, data: { createMode: true } },
       { path: 'workflows',    component: EntrepreneurWorkflowsComponent   },
       { path: 'planning',     component: EntrepreneurPlanningComponent    },
       { path: 'messages',     component: EntrepreneurMessagesComponent    },
       { path: 'bibliotheque', component: EntrepreneurBibliothequeComponent},
       { path: 'talent',       component: EntrepreneurTalentComponent      },
-      { path: 'progressions', component: EntrepreneurProgresssComponent},
+      { path: 'progressions', component: EntrepreneurProgressionsComponent},
+      { path: 'notifications', component: EntrepreneurNotificationsComponent },
+      { path: 'profile',      component: ProfileComponent                      },
+      { path: 'account',      component: EntrepreneurAccountPageComponent  },
+
     ],
   },
 ];
@@ -39,7 +46,9 @@ const routes: Routes = [
     EntrepreneurDashboardComponent, EntrepreneurProjetsComponent,
     EntrepreneurWorkflowsComponent, EntrepreneurPlanningComponent,
     EntrepreneurMessagesComponent,  EntrepreneurBibliothequeComponent,
-    EntrepreneurTalentComponent,    EntrepreneurProgresssComponent,
+    EntrepreneurTalentComponent,    EntrepreneurProgressionsComponent,
+    ProfileComponent,EntrepreneurNotificationsComponent,
+    EntrepreneurAccountPageComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

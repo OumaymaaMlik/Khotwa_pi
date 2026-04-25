@@ -20,3 +20,75 @@
 .done-badge{padding:4px 12px;background:#EAF3DE;color:#27500A;border-radius:20px;font-size:12px;font-weight:700}
 .empty-prog{text-align:center;padding:60px;display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--text-muted)}
 .empty-prog p:first-child{font-size:48px}
+
+/* ── Cartes entrepreneur ─────────────────────────────────────────── */
+.entrepreneur-card {
+  margin-bottom: 14px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.entrepreneur-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  transition: background 0.15s;
+}
+.entrepreneur-header:hover { background: var(--bg-hover, rgba(0,0,0,0.03)); }
+
+.entrepreneur-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2ABFBF, #1a9999);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.entrepreneur-info { flex: 1; min-width: 0; }
+.entrepreneur-name  { font-size: 14px; font-weight: 600; margin: 0; }
+.entrepreneur-email { font-size: 11px; color: var(--text-muted); margin: 2px 0 0; }
+
+.entrepreneur-kpis {
+  display: flex; gap: 20px; align-items: center;
+}
+.ekpi { text-align: center; }
+.ekpi-val   { display: block; font-size: 18px; font-weight: 700; line-height: 1; }
+.ekpi-label { display: block; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.taux-wrap  { display: flex; align-items: center; gap: 6px; }
+
+.toggle-icon {
+  font-size: 18px; color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.toggle-icon.open { transform: rotate(180deg); }
+
+/* ── Détail progressions ─────────────────────────────────────────── */
+.entrepreneur-detail {
+  border-top: 1px solid var(--border, #eee);
+  background: var(--bg-subtle, #fafafa);
+}
+
+.prog-detail-list { padding: 8px 16px 12px; }
+
+.prog-detail-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+}
+.prog-detail-item:last-child { border-bottom: none; }
+
+.prog-detail-icon { font-size: 18px; flex-shrink: 0; }
+.prog-detail-info { flex: 1; min-width: 0; }
+.prog-detail-titre { font-size: 13px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prog-detail-type  { font-size: 11px; color: var(--text-muted); margin: 2px 0 0; }
+
+.prog-detail-right {
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.status-badge { font-size: 11px; font-weight: 600; white-space: nowrap; }

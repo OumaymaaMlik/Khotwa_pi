@@ -43,3 +43,124 @@ h1 { font-family: 'Plus Jakarta Sans',sans-serif; font-size: 24px; font-weight: 
 .form-switch a:hover { text-decoration: underline; }
 
 @keyframes fadeInDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── Visitor shortcut ─────────────────────────────── */
+.visitor-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0 12px;
+}
+.visitor-divider::before, .visitor-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+.visitor-divider span {
+  font-size: 11px; color: rgba(232,228,220,0.3);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.btn-visitor {
+  width: 100%; padding: 11px; border-radius: 11px;
+  background: rgba(245,166,35,0.10);
+  border: 1px solid rgba(245,166,35,0.25);
+  color: #F5A623;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 16px;
+}
+.btn-visitor:hover {
+  background: rgba(245,166,35,0.18);
+  border-color: rgba(245,166,35,0.45);
+  transform: translateY(-1px);
+}
+
+/* ── Brand logo image ─────────────────────────────── */
+.brand-logo { height: 56px; width: auto; object-fit: contain; }
+
+/* ── Champs en erreur ─────────────────────────────── */
+.input-err {
+  border-color: rgba(232,74,74,0.6) !important;
+  box-shadow: 0 0 0 3px rgba(232,74,74,0.12) !important;
+}
+
+/* ── Indicateur requis ────────────────────────────── */
+.req { color: #E84A4A; margin-left: 2px; }
+
+/* ── Hint mot de passe ────────────────────────────── */
+.field-hint {
+  font-size: 11px;
+  color: rgba(245,166,35,0.8);
+  margin-top: 3px;
+}
+
+/* ── Succès ───────────────────────────────────────── */
+.form-success {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: #27AE7A;
+  margin-bottom: 12px; padding: 8px 12px;
+  background: rgba(39,174,122,0.10);
+  border-radius: 8px; border: 1px solid rgba(39,174,122,0.25);
+}
+
+/* ── Spinner loading ──────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Bouton disabled ──────────────────────────────── */
+.btn-submit:disabled,
+.btn-visitor:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ── Error icon ───────────────────────────────────── */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ── Visitor button ───────────────────────────────── */
+.visitor-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0 12px;
+}
+.visitor-divider::before, .visitor-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+.visitor-divider span {
+  font-size: 11px; color: rgba(232,228,220,0.3);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.btn-visitor {
+  width: 100%; padding: 11px; border-radius: 11px;
+  background: rgba(245,166,35,0.08);
+  border: 1px solid rgba(245,166,35,0.22);
+  color: #F5A623;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 16px;
+}
+.btn-visitor:hover:not(:disabled) {
+  background: rgba(245,166,35,0.16);
+  border-color: rgba(245,166,35,0.40);
+  transform: translateY(-1px);
+}
+
+/* ── Brand logo ───────────────────────────────────── */
+.brand-logo { height: 56px; width: auto; object-fit: contain; }
+
+/* ── Form switch link ─────────────────────────────── */
+.form-switch a { cursor: pointer; }

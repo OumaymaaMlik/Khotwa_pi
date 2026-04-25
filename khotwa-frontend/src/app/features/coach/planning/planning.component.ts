@@ -3,18 +3,9 @@ import { ProjetService } from '../../../core/services/projet.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({ selector:'app-coach-planning', templateUrl:'./planning.component.html', styleUrls:['./planning.component.css'] })
-export class CoachPlanningComponent implements OnInit {
+export class CoachPlanningComponent {
   constructor(public projetService: ProjetService, public auth: AuthService) {}
-
-  ngOnInit(): void {
-    this.projetService.loadCoachAssignedProjects().subscribe({
-      error: () => {
-        // Keep current UI state if backend data cannot be fetched.
-      }
-    });
-  }
-
-  get projets() { return this.projetService.projets; }
+  projets: any[] = [];
   filtre = 'all';
   search = '';
   selectedConv: any = null;
