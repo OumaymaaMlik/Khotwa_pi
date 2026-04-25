@@ -5,6 +5,9 @@ import { filter } from 'rxjs/operators';
 
 import { AuthService }         from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
+import { MessageService } from '../core/services/message.service';
+import { WebSocketService } from '../core/services/websocket.service';
+import { OnlineStatusService } from '../core/services/online-status.service';
 
 interface NavItem { label: string; icon: string; route: string; }
 
@@ -57,6 +60,9 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
   constructor(
     public  auth:               AuthService,
     public  notifService:       NotificationService,
+    private messageService:     MessageService,
+    private wsService:          WebSocketService,
+    private onlineStatusService: OnlineStatusService,
     private router:             Router,
     private sanitizer:          DomSanitizer
   ) {}
@@ -164,6 +170,15 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
 
   // ── Logout ───────────────────────────────────────────────────────────────
   logout(): void {
+    const userId = this.auth.currentUser?.idUser ?? 0;
+    if (userId > 0) {
+      this.messageService.announceOffline(userId).subscribe({
+        error: () => {}
+      });
+      this.onlineStatusService.removeOnlineUser(userId);
+    }
+    this.onlineStatusService.clearOnlineUsers();
+    this.wsService.disconnect();
     this.auth.logout();
     this.router.navigateByUrl('/');
   }

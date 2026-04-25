@@ -29,6 +29,7 @@
     "@angular-devkit/build-angular": "^18.2.0",
     "@angular/cli": "^18.2.0",
     "@angular/compiler-cli": "^18.2.0",
+    "@types/google.accounts": "^0.0.18",
     "@types/sockjs-client": "^1.5.4",
     "typescript": "~5.4.0"
   }

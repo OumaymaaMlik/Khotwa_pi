@@ -2,6 +2,9 @@ import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
+import { MessageService } from '../core/services/message.service';
+import { WebSocketService } from '../core/services/websocket.service';
+import { OnlineStatusService } from '../core/services/online-status.service';
 import { UserRole } from '../core/models';
 import { filter } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -66,6 +69,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
   constructor(
     public auth: AuthService,
     public notifService: NotificationService,
+    private messageService: MessageService,
+    private wsService: WebSocketService,
+    private onlineStatusService: OnlineStatusService,
     private router: Router,
     private sanitizer: DomSanitizer
   ) {}
@@ -181,6 +187,16 @@ isActive(item: NavItem): boolean {
   return this.router.url.split('?')[0] === `${this.rolePrefix}/${item.route}`;
 }  //switchRole(role: UserRole) { this.auth.login(role); this.router.navigateByUrl(this.auth.getDefaultRoute()); }
 logout(): void {
+  const userId = this.auth.currentUser?.idUser
+    ?? (this.auth.currentUser?.id != null ? Number(this.auth.currentUser.id) : 0);
+  if (userId > 0) {
+    this.messageService.announceOffline(userId).subscribe({
+      error: () => {}
+    });
+    this.onlineStatusService.removeOnlineUser(userId);
+  }
+  this.onlineStatusService.clearOnlineUsers();
+  this.wsService.disconnect();
   this.auth.logout();
   this.router.navigateByUrl('/');
 }  // ── Page title ────────────────────────────────────────────────────────────
