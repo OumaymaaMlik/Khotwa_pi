@@ -1,4 +1,14 @@
+# Angular
+khotwa-frontend/.angular/
+khotwa-frontend/dist/
+khotwa-frontend/node_modules/
 
+# IDE
+.idea/
+*.iml
+
+# TypeScript cache
+*.tsbuildinfo
 
 # Archives
 *.zip
