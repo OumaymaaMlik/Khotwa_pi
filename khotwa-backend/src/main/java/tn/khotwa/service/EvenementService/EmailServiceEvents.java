@@ -16,7 +16,7 @@ public class EmailServiceEvents {
         this.mailSender = mailSender;
     }
 
-    // ── Rappel J-1 ────────────────────────────────────────────────────────────
+
     public void sendEventReminder(Reservation reservation) {
         Evenement ev = reservation.getEvenement();
         User user = reservation.getUser();
@@ -26,7 +26,7 @@ public class EmailServiceEvents {
                 buildReminderBody(fullName, ev));
     }
 
-    // ── Confirmation place (sorti de la waitlist) ─────────────────────────────
+
     public void sendWaitlistConfirmation(Reservation reservation) {
         Evenement ev = reservation.getEvenement();
         User user = reservation.getUser();
@@ -68,7 +68,7 @@ public class EmailServiceEvents {
                 body);
     }
 
-    // ── Confirmation ajout en waitlist ────────────────────────────────────────
+
     public void sendWaitlistAdded(Reservation reservation) {
         Evenement ev = reservation.getEvenement();
         User user = reservation.getUser();
@@ -79,27 +79,10 @@ public class EmailServiceEvents {
 
                 The event "%s" is currently full.
                 You have been added to the waiting list at position #%d.
-
-                If a spot opens up, you will be automatically confirmed
-                and notified by email immediately.
-
-                ─────────────────────────────
-                Event details
-                ─────────────────────────────
-                Title   : %s
-                Date    : %s
-                Time    : %s
-                ─────────────────────────────
-
-                Best regards,
-                Khotwa Team
                 """.formatted(
                 fullName,
                 ev.getTitre(),
-                reservation.getWaitlistPosition(),
-                ev.getTitre(),
-                ev.getDate(),
-                ev.getHeure()
+                reservation.getWaitlistPosition()
         );
 
         send(user.getEmailAddress(),
@@ -107,7 +90,7 @@ public class EmailServiceEvents {
                 body);
     }
 
-    // ── Présence confirmée (ATTENDED) ─────────────────────────────────────────
+
     public void sendAttendanceConfirmed(Reservation reservation) {
         Evenement ev = reservation.getEvenement();
         User user = reservation.getUser();
@@ -129,7 +112,7 @@ public class EmailServiceEvents {
                 body);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private String buildReminderBody(String fullName, Evenement ev) {
         return """
                 Dear %s,
@@ -166,5 +149,51 @@ public class EmailServiceEvents {
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
+    }
+
+
+    public void sendReservationConfirmed(Reservation reservation) {
+        Evenement ev = reservation.getEvenement();
+        User user = reservation.getUser();
+        String fullName = user.getFirstName() + " " + user.getLastName();
+
+        String body = """
+                Bonjour %s,
+
+                Votre reservation pour l'evenement suivant est confirmee.
+
+                ═══════════════════════════════════
+                  RESERVATION CONFIRMEE ✅
+                ═══════════════════════════════════
+
+                Evenement   : %s
+                Type        : %s
+                Date        : %s
+                Heure       : %s
+                Intervenant : %s
+                Lien Meet   : %s
+
+                ───────────────────────────────────
+                Votre code QR de presence est disponible
+                dans votre espace Khotwa,
+                rubrique "Mes evenements".
+                ───────────────────────────────────
+
+                A bientot !
+
+                L'equipe Khotwa
+                """.formatted(
+                fullName,
+                ev.getTitre(),
+                ev.getType(),
+                ev.getDate(),
+                ev.getHeure() != null ? ev.getHeure().toString().substring(0, 5) : "TBA",
+                ev.getIntervenant() != null ? ev.getIntervenant() : "TBA",
+                ev.getLienMeet() != null ? ev.getLienMeet() : "N/A"
+        );
+
+        send(user.getEmailAddress(),
+                "✅ Reservation confirmee – " + ev.getTitre(),
+                body);
     }
 }

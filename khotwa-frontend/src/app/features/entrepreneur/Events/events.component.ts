@@ -82,23 +82,44 @@ export class EntrepreneurEvenementsComponent implements OnInit {
     private bookingSvc: ReservationService
   ) {}
 
-  ngOnInit(): void {
-    this.auth.getMyProfile().subscribe({
-      next:  () => this.loadUserBookings(),
-      error: ()  => this.loadUserBookings()
-    });
-    this.isPlanSelected   = false;
-    this.selectedPlanView = null;
-  }
+   private pollingInterval: any;
+ ngOnInit(): void {
+  this.auth.getMyProfile().subscribe({
+    next:  () => this.loadUserBookings(),
+    error: ()  => this.loadUserBookings()
+  });
+  this.isPlanSelected   = false;
+  this.selectedPlanView = null;
 
-  private loadUserBookings(): void {
-    const userId = this.auth.currentUser?.idUser;
-    if (!userId) return;
-    this.bookingSvc.getReservationsByUser(userId).subscribe({
-      next:  data => this.bookings = data,
-      error: err  => console.error('Erreur réservations', err)
-    });
-  }
+  // ✅ Polling toutes les 30s pour détecter les promotions waitlist
+  this.pollingInterval = setInterval(() => {
+    if (this.hasWaitlistBooking()) {
+      this.loadUserBookings();
+    }
+  }, 30000);
+}
+
+ngOnDestroy(): void {
+  if (this.pollingInterval) clearInterval(this.pollingInterval);
+}
+
+// ✅ Helper — vérifie si l'user a au moins une réservation en waitlist
+private hasWaitlistBooking(): boolean {
+  return this.bookings.some(b => b.status === 'WAITLIST');
+}
+
+ private loadUserBookings(): void {
+  const userId = this.auth.currentUser?.idUser;
+  if (!userId) return;
+  this.bookingSvc.getReservationsByUser(userId).subscribe({
+    next: data => {
+      this.bookings = data;
+      // ✅ Si une promotion a eu lieu, recharger aussi les events (places restantes)
+      if (this.selectedPlanView) this.loadEventsByPlan(this.selectedPlanView);
+    },
+    error: err => console.error('Erreur réservations', err)
+  });
+}
 
   /* ── Plan ────────────────────────────────────────────────────────────────── */
   selectPlanView(plan: PlanType): void {
@@ -155,35 +176,31 @@ export class EntrepreneurEvenementsComponent implements OnInit {
   }
 
   /* ── Booking state helpers ───────────────────────────────────────────────── */
-  getBookingForEvent(ev: Evenement): Reservation | undefined {
-    return this.bookings.find(b =>
-      (b.idEvenement === ev.idEvenement || b.evenement?.idEvenement === ev.idEvenement) &&
-      (b.status === 'CONFIRMED' || b.status === 'WAITLIST' || b.status === 'ATTENDED')
-    );
-  }
+getBookingForEvent(ev: Evenement): Reservation | undefined {
+  const all = this.bookings.filter(b =>
+    (b.idEvenement === ev.idEvenement || b.evenement?.idEvenement === ev.idEvenement) &&
+    (b.status === 'CONFIRMED' || b.status === 'WAITLIST' || b.status === 'ATTENDED')
+  );
+
+  // ✅ Priorité : CONFIRMED > ATTENDED > WAITLIST
+  return all.find(b => b.status === 'CONFIRMED')
+      ?? all.find(b => b.status === 'ATTENDED')
+      ?? all.find(b => b.status === 'WAITLIST');
+}
 
   isAlreadyBooked(ev: Evenement): boolean { return !!this.getBookingForEvent(ev); }
 
   isConfirmed(ev: Evenement): boolean {
-    return this.bookings.some(b =>
-      (b.idEvenement === ev.idEvenement || b.evenement?.idEvenement === ev.idEvenement) &&
-      b.status === 'CONFIRMED'
-    );
-  }
+  return this.getBookingForEvent(ev)?.status === 'CONFIRMED';
+}
 
-  isOnWaitlist(ev: Evenement): boolean {
-    return this.bookings.some(b =>
-      (b.idEvenement === ev.idEvenement || b.evenement?.idEvenement === ev.idEvenement) &&
-      b.status === 'WAITLIST'
-    );
-  }
 
-  isAttended(ev: Evenement): boolean {
-    return this.bookings.some(b =>
-      (b.idEvenement === ev.idEvenement || b.evenement?.idEvenement === ev.idEvenement) &&
-      b.status === 'ATTENDED'
-    );
-  }
+isOnWaitlist(ev: Evenement): boolean {
+  return this.getBookingForEvent(ev)?.status === 'WAITLIST';
+}
+isAttended(ev: Evenement): boolean {
+  return this.getBookingForEvent(ev)?.status === 'ATTENDED';
+}
 
   getWaitlistPosition(ev: Evenement): number | null {
     const b = this.bookings.find(b =>
@@ -264,35 +281,31 @@ export class EntrepreneurEvenementsComponent implements OnInit {
     });
   }
 
-  cancelBooking(ev: Evenement): void {
-    const userId = this.auth.currentUser?.idUser;
-    if (!userId) return;
-    if (!this.canCancelBooking(ev)) {
-      this.showSmartToast('error', ev.titre,
-        `Cancellations are only allowed up to ${this.CANCEL_WINDOW_HOURS} hours before the event.`);
-      return;
-    }
-    this.bookingSvc.cancelReservationByEvent(userId, ev.idEvenement).subscribe({
-      next: () => {
-        const booking = this.bookings.find(b =>
-          (b.idEvenement === ev.idEvenement || b.evenement?.idEvenement === ev.idEvenement) &&
-          (b.status === 'CONFIRMED' || b.status === 'WAITLIST' || b.status === 'PENDING')
-        );
-        if (booking) booking.status = 'CANCELLED';
-        this.showSmartToast('cancelled', ev.titre, 'Reservation cancelled.');
-        if (this.selectedPlanView) this.loadEventsByPlan(this.selectedPlanView);
-        // Rafraîchir l'historique si la modale est ouverte
-        if (this.showMyEventsModal) this.loadMyEventsTab(this.myEventsTab);
-      },
-      error: err => {
-        const msg: string = err?.error?.error || err?.message || 'Cancellation failed.';
-        this.showSmartToast('error', ev.titre, msg);
-      }
-    });
-  }
+ isCancelling = false;
 
+cancelBooking(ev: Evenement): void {
+  if (this.isCancelling) return; // ✅ Bloque les double-clics
+  const userId = this.auth.currentUser?.idUser;
+  if (!userId) return;
+  
+  this.isCancelling = true;
+  this.bookingSvc.cancelReservationByEvent(userId, ev.idEvenement).subscribe({
+    next: () => {
+      this.isCancelling = false;
+      this.loadUserBookings(); // recharge depuis serveur
+      this.showSmartToast('cancelled', ev.titre, 'Reservation cancelled.');
+      if (this.selectedPlanView) this.loadEventsByPlan(this.selectedPlanView);
+      if (this.showMyEventsModal) this.loadMyEventsTab(this.myEventsTab);
+    },
+    error: err => {
+      this.isCancelling = false;
+      const msg = err?.error?.error || err?.message || 'Cancellation failed.';
+      this.showSmartToast('error', ev.titre, msg);
+    }
+  });
+}
   /**
-   * Annuler depuis la modale historique (à partir d'un DTO).
+   * Acannnuler depuis la modale historique (à partir d'un DTO).
    * Construit un objet Evenement minimal pour réutiliser cancelBooking().
    */
   cancelFromHistory(dto: ReservationHistoryDto): void {

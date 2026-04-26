@@ -249,6 +249,11 @@ export class CoachEventsComponent implements OnInit, OnDestroy {
   // Les participants scannent → accès direct au Meet
   // ════════════════════════════════════════
 
+  // Helper — génère l'URL du QR preview pour le template
+  getQrPreviewUrl(lienMeet: string): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(lienMeet)}`;
+  }
+
   openQrMeetModal(ev: Evenement): void {
     if (!ev.lienMeet) {
       this.showToast('No meet link configured for this event.', 'error');
@@ -261,18 +266,19 @@ export class CoachEventsComponent implements OnInit, OnDestroy {
     this.qrMeetTitre   = ev.titre;
     this.qrMeetEventId = ev.idEvenement;
 
-    this.eventService.getMeetQrCode(ev.idEvenement).subscribe({
-      next: (resp) => {
-        this.qrMeetImage   = resp.qrCode;
-        this.qrMeetLink    = resp.lienMeet;
-        this.qrMeetLoading = false;
-      },
-      error: () => {
-        this.qrMeetLoading = false;
-        this.showToast('Failed to generate QR code.', 'error');
-        this.qrMeetModal = false;
-      }
-    });
+    // Génération du QR directement depuis le lienMeet (même approche que l'entrepreneur)
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ev.lienMeet)}`;
+    const img = new Image();
+    img.onload = () => {
+      this.qrMeetImage   = qrUrl;
+      this.qrMeetLoading = false;
+    };
+    img.onerror = () => {
+      // Fallback : utiliser directement l'URL sans vérification
+      this.qrMeetImage   = qrUrl;
+      this.qrMeetLoading = false;
+    };
+    img.src = qrUrl;
   }
 
   closeQrMeetModal(): void {

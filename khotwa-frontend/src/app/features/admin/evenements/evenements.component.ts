@@ -380,11 +380,11 @@ export class AdminEvenementsComponent implements OnInit {
       }
     }
 
-    // ── Validation date : pas dans le passé (create uniquement) ────
-    if (target === 'create' && form.date) {
+    // ── Validation date : doit être strictement après aujourd'hui ──
+    if (form.date) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const picked = new Date(form.date);
-      if (picked < today) errors.date = 'Date cannot be in the past';
+      if (picked <= today) errors.date = 'La date doit être postérieure à aujourd\'hui.';
     }
 
     // ── Validation lienMeet : obligatoire et doit commencer par https:// ──

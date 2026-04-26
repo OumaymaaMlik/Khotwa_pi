@@ -94,6 +94,8 @@ export class EvenementService {
     ).pipe(catchError(this.handleError));
   }
 
+  
+
   // ─────────────── IA - GÉNÉRATION AUTOMATIQUE ───────────────
   generateAiEvent(): Observable<Evenement> {
     return this.http.post<Evenement>(`${this.apiUrl}/ai/generate`, {})
@@ -115,4 +117,7 @@ export class EvenementService {
     console.error('An error occurred:', error);
     return throwError(() => new Error(error.message || 'Server Error'));
   }
+
+
+  
 }

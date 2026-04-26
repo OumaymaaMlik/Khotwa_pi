@@ -14,20 +14,14 @@ import java.util.List;
 @Repository
 public interface EvenementRepository extends JpaRepository<Evenement, Long> {
 
-    // ─────────────────────────────────────────────
-    // 1. Events created by ADMIN
-    // ─────────────────────────────────────────────
+
     @Query("SELECT e FROM Evenement e WHERE e.creator.role = 'ADMIN'")
     List<Evenement> findEventsByAdminRole();
 
-    // ─────────────────────────────────────────────
-    // 2. Simple derived query (OK)
-    // ─────────────────────────────────────────────
+
     List<Evenement> findByPlanTypeAndStatut(PlanType planType, EvenementStatus statut);
 
-    // ─────────────────────────────────────────────
-    // 3. Visible events for user (FIXED ENUM USAGE)
-    // ─────────────────────────────────────────────
+
     @Query("""
         SELECT e FROM Evenement e
         WHERE e.statut = tn.khotwa.enums.EventsEnums.EvenementStatus.ACCEPTED
@@ -47,9 +41,7 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
     """)
     List<Evenement> findVisibleForUser(@Param("plan") PlanType plan);
 
-    // ─────────────────────────────────────────────
-    // 4. All free accepted events
-    // ─────────────────────────────────────────────
+
     @Query("""
         SELECT e FROM Evenement e
         WHERE e.planType = tn.khotwa.enums.SubscriptionEnums.PlanType.FREE
@@ -57,9 +49,6 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
     """)
     List<Evenement> findAllFreeEvents();
 
-    // ─────────────────────────────────────────────
-    // 5. Free events with filters
-    // ─────────────────────────────────────────────
     @Query("""
         SELECT e FROM Evenement e
         WHERE e.planType = tn.khotwa.enums.SubscriptionEnums.PlanType.FREE
@@ -72,9 +61,6 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
             @Param("type") EvenementType type
     );
 
-    // ─────────────────────────────────────────────
-    // 6. Plan-based filtering (FIXED ENUM USAGE)
-    // ─────────────────────────────────────────────
     @Query("""
         SELECT e FROM Evenement e
         WHERE e.statut = tn.khotwa.enums.EventsEnums.EvenementStatus.ACCEPTED

@@ -26,17 +26,9 @@ public class Reservation {
 
     @Enumerated(EnumType.STRING)
     ReservationsStatus status;
-
-    // ── Liste d'attente ──────────────────────────────
-    // Position dans la file (1 = premier, null si pas en waitlist)
     Integer waitlistPosition;
-
-    // ── QR Code présence ─────────────────────────────
-    // Token unique généré à la confirmation, scanné par l'intervenant
     @Column(unique = true)
     String qrToken;
-
-    // Date/heure du scan (présence marquée)
     LocalDateTime attendedAt;
 
     @ManyToOne
@@ -46,12 +38,6 @@ public class Reservation {
     @ManyToOne
     @JsonIgnore
     Evenement evenement;
-
-    // ── Champs virtuels exposés au front ─────────────────────────────────────
-    // @Transient = ignoré par JPA (pas de colonne)
-    // @JsonProperty = inclus dans la réponse JSON malgré FieldDefaults(PRIVATE)
-    // Lombok @Getter génère getIdEvenement() / getIdUser() automatiquement.
-    // PostLoad remplit ces champs APRÈS que JPA ait chargé les relations.
 
     @Transient
     @JsonProperty("idEvenement")

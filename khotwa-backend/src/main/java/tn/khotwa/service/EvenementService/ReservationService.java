@@ -8,7 +8,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.khotwa.dto.Evenement.Reservationhistorydto;
-import tn.khotwa.dto.Evenement.Reservationhistorydto;
 import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.entity.evenement.Evenement;
 import tn.khotwa.entity.evenement.Reservation;
@@ -36,7 +35,6 @@ public class ReservationService implements IReservationService {
     @Autowired private EvenementRepository   evenementRepository;
     @Autowired private EmailServiceEvents    emailService;
 
-    // ── Limites mensuelles par plan ────────────────────────────────────────────
     private int getMonthlyLimit(PlanType plan) {
         return switch (plan) {
             case FREE          -> 2;
@@ -45,9 +43,6 @@ public class ReservationService implements IReservationService {
         };
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // RÉSERVER un événement
-    // ─────────────────────────────────────────────────────────────────────────
     @Override
     @Transactional
     public Reservation addReservation(Long idUser, Long idEvenement) {
@@ -55,6 +50,11 @@ public class ReservationService implements IReservationService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Evenement event = evenementRepository.findById(idEvenement)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        if (event.getStatut() != EvenementStatus.ACCEPTED) {
+            throw new RuntimeException(
+                    "This event is not yet accepted. Only ACCEPTED events can be reserved.");
+        }
 
         boolean alreadyExists =
                 reservationRepository.existsByUser_IdUserAndEvenement_IdEvenementAndStatus(
@@ -92,7 +92,10 @@ public class ReservationService implements IReservationService {
             event.setPlacesRestantes(event.getPlacesRestantes() - 1);
             evenementRepository.save(event);
 
-            return reservationRepository.save(reservation);
+
+            Reservation saved = reservationRepository.save(reservation);
+            return saved;
+
         } else {
             int nextPosition = reservationRepository.findMaxWaitlistPosition(event) + 1;
 
@@ -109,9 +112,6 @@ public class ReservationService implements IReservationService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ANNULER une réservation (par ID)
-    // ─────────────────────────────────────────────────────────────────────────
     @Override
     @Transactional
     public void cancelReservation(Long idReservation) {
@@ -140,9 +140,6 @@ public class ReservationService implements IReservationService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ANNULER par userId + eventId
-    // ─────────────────────────────────────────────────────────────────────────
     @Override
     @Transactional
     public void cancelByUserAndEvent(Long idUser, Long idEvenement) {
@@ -173,16 +170,6 @@ public class ReservationService implements IReservationService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HISTORIQUE ENTREPRENEUR — GET /reservation/my-events?userId=X&tab=Y
-    //
-    // Règles de filtrage identiques côté front et back :
-    //   UPCOMING  : !cancelled && !past && status != PENDING
-    //   PAST      : !cancelled && (past || status == ATTENDED)
-    //   CANCELLED : status == CANCELLED || evenement.statut == CANCELLED
-    //   PENDING   : status == PENDING
-    //   ALL       : tout
-    // ─────────────────────────────────────────────────────────────────────────
     @Override
     public List<Reservationhistorydto> getMyEventsHistory(Long userId, String tab) {
         User user = userRepository.findById(userId)
@@ -225,7 +212,6 @@ public class ReservationService implements IReservationService {
                 .collect(Collectors.toList());
     }
 
-    // ── Mapper Reservation → ReservationHistoryDto ────────────────────────────
     private Reservationhistorydto toHistoryDto(Reservation r) {
         Evenement ev = r.getEvenement();
         return Reservationhistorydto.builder()
@@ -235,7 +221,7 @@ public class ReservationService implements IReservationService {
                 .waitlistPosition(r.getWaitlistPosition())
                 .qrToken(r.getQrToken())
                 .attendedAt(r.getAttendedAt() != null ? r.getAttendedAt().toString() : null)
-                // Événement embarqué
+
                 .idEvenement(ev.getIdEvenement())
                 .titre(ev.getTitre())
                 .description(ev.getDescription())
@@ -251,7 +237,6 @@ public class ReservationService implements IReservationService {
                 .build();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
     private LocalDateTime getEventDateTime(Evenement ev) {
         LocalTime t = ev.getHeure() != null ? ev.getHeure() : LocalTime.MIDNIGHT;
         return LocalDateTime.of(ev.getDate(), t);
@@ -285,9 +270,6 @@ public class ReservationService implements IReservationService {
         try { emailService.sendWaitlistConfirmation(first); } catch (Exception ignored) {}
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // QR CODE
-    // ─────────────────────────────────────────────────────────────────────────
     @Override
     public Map<String, String> generateQrCode(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
@@ -344,7 +326,6 @@ public class ReservationService implements IReservationService {
         reservation.setAttendedAt(LocalDateTime.now());
         reservationRepository.save(reservation);
 
-        try { emailService.sendAttendanceConfirmed(reservation); } catch (Exception ignored) {}
 
         return Map.of(
                 "success",    true,
@@ -355,7 +336,6 @@ public class ReservationService implements IReservationService {
         );
     }
 
-    // ── Lectures simples ──────────────────────────────────────────────────────
     @Override
     public List<Reservation> getReservationsByUser(Long userId) {
         User user = userRepository.findById(userId)

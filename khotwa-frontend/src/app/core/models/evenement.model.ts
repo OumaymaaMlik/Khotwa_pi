@@ -16,6 +16,7 @@ export interface Evenement {
   placesRestantes: number;
   statut: EvenementStatus;
   creator?: { idUser: number };
+  creatorId?: number | null;   // null = événement généré par l'IA
   planType: PlanType;
 }
 

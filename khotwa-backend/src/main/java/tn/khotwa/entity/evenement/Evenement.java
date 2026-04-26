@@ -56,13 +56,16 @@ public class Evenement {
     @Column(nullable = false)
     private PlanType planType;
 
-    // 🔥 IMPORTANT : ignorer pour éviter erreur 500 + boucle JSON
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id")
     private User creator;
 
-    // 🔥 IMPORTANT : ignorer aussi
+    @com.fasterxml.jackson.annotation.JsonProperty("creatorId")
+    public Long getCreatorId() {
+        return creator != null ? creator.getIdUser() : null;
+    }
+
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

@@ -8,12 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tn.khotwa.entity.evenement.Evenement;
 import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
 
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.enums.UserEnum.Role;
 import tn.khotwa.repository.EvenementRepo.EvenementRepository;
+import tn.khotwa.repository.EvenementRepo.ReservationRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
 
 
@@ -27,48 +29,32 @@ public class EvenementService implements IEvenementService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ReservationRepository reservationRepository;
+
     @Override
     public Evenement addEvenement(Evenement evenement) {
-        /*if (evenement.getCreator() == null || evenement.getCreator().getIdUser() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Le créateur de l'événement est obligatoire");
-        }
 
-        if (evenement.getPlacesTotal() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Le nombre de places doit être supérieur à 0");
-        }
-
-        // 2. Récupération du créateur
-        User creator = userRepository.findById(evenement.getCreator().getIdUser())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Créateur non trouvé"));
-
-        // 3. Vérifier que c’est un ADMIN
-        if (creator.getRole() != Role.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Seul un ADMIN peut créer des événements");
-        }
-
-        // 4. Initialisation des champs automatiques
-        evenement.setCreator(creator);
-        evenement.setPlacesRestantes(evenement.getPlacesTotal());
-        evenement.setStatut(EvenementStatus.PENDING); //
         if (evenement.getDate() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Date obligatoire");
-        }// ✅ IMPORTANT
-
-        // 5. Sauvegarde
-        return evenementRepository.save(evenement);
-    }*/
-            // Si tu veux initialiser certaines valeurs avant de sauvegarder
-            if (evenement.getPlacesRestantes() == 0) {
-                evenement.setPlacesRestantes(evenement.getPlacesTotal());
-                evenement.setLienMeet(normalizeMeetUrl(evenement.getLienMeet()));
-            }
-
-            return evenementRepository.save(evenement);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La date de l’événement est obligatoire.");
         }
+        if (!evenement.getDate().isAfter(java.time.LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La date de l’événement doit être postérieure à aujourd’hui.");
+        }
+        if (evenement.getPlacesRestantes() == 0) {
+            evenement.setPlacesRestantes(evenement.getPlacesTotal());
+        }
+        evenement.setLienMeet(normalizeMeetUrl(evenement.getLienMeet()));
+
+        // Les événements (manuels ou générés par l’IA) démarrent toujours en PENDING
+        if (evenement.getStatut() == null) {
+            evenement.setStatut(EvenementStatus.PENDING);
+        }
+
+        return evenementRepository.save(evenement);
+    }
 
     private String normalizeMeetUrl(String url) {
         if (url == null || url.isBlank()) return url;
@@ -91,7 +77,11 @@ public class EvenementService implements IEvenementService {
 
         if (newEvenement.getDate() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Date obligatoire");
+                    "La date de l'événement est obligatoire.");
+        }
+        if (!newEvenement.getDate().isAfter(java.time.LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La date de l'événement doit être postérieure à aujourd'hui.");
         }
 
 
@@ -117,12 +107,20 @@ public class EvenementService implements IEvenementService {
         return evenementRepository.save(existing);
     }
 
+
     @Override
+    @Transactional
     public void deleteEvenement(Long idEvenement) {
         Evenement ev = evenementRepository.findById(idEvenement)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evenement non trouvé"));
+
+        List<Reservation> reservations = reservationRepository.findByEvenement(ev);
+        reservationRepository.deleteAll(reservations);
+
         ev.getParticipants().clear();
         evenementRepository.save(ev);
+
+
         evenementRepository.deleteById(idEvenement);
     }
 

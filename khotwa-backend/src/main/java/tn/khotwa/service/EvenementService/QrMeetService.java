@@ -12,12 +12,9 @@ import java.util.Base64;
 @Service
 public class QrMeetService {
 
-    // Génère un QR code PNG (base64) contenant l'URL du Meet.
-    // L'entrepreneur scanne ce QR avec son téléphone → navigateur ouvre le Meet.
     public String generateQrForUrl(String url) {
         try {
             QRCodeWriter writer = new QRCodeWriter();
-            // 300×300 px — lisible sur un écran de PC par un téléphone à 1 mètre
             BitMatrix matrix = writer.encode(url, BarcodeFormat.QR_CODE, 300, 300);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(matrix, "PNG", out);

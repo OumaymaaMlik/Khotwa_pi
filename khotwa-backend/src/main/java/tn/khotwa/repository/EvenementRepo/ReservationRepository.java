@@ -28,21 +28,20 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             Collection<ReservationsStatus> statuses
     );
 
-    // ── Historique entrepreneur : FETCH JOIN pour embarquer l'événement ───────
-    // Évite le problème N+1 et assure que ev != null côté service.
+
     @Query("SELECT r FROM Reservation r " +
             "JOIN FETCH r.evenement e " +
             "WHERE r.user = :user")
     List<Reservation> findByUserWithEvenement(@Param("user") User user);
 
-    // ── Rappels (reminder) ────────────────────────────────────────────────────
+
     @Query("SELECT r FROM Reservation r " +
             "JOIN FETCH r.user u " +
             "JOIN FETCH r.evenement e " +
             "WHERE e.date = :date")
     List<Reservation> findByEvenementDate(@Param("date") LocalDate date);
 
-    // ── Liste d'attente ───────────────────────────────────────────────────────
+
     @Query("SELECT r FROM Reservation r WHERE r.evenement = :event " +
             "AND r.status = 'WAITLIST' " +
             "ORDER BY r.waitlistPosition ASC")
@@ -55,7 +54,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     boolean existsByUser_IdUserAndEvenement_IdEvenementAndStatus(
             Long idUser, Long idEvenement, ReservationsStatus status);
 
-    // ── Limite mensuelle ──────────────────────────────────────────────────────
+
     @Query("SELECT COUNT(r) FROM Reservation r " +
             "WHERE r.user.idUser = :userId " +
             "AND r.evenement.type = :type " +
@@ -69,7 +68,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("startOfNextMonth") LocalDateTime startOfNextMonth
     );
 
-    // ── QR Code ───────────────────────────────────────────────────────────────
     Optional<Reservation> findByQrToken(String qrToken);
 
     List<Reservation> findByEvenementAndStatus(Evenement evenement, ReservationsStatus status);

@@ -9,26 +9,20 @@ import tn.khotwa.enums.EventsEnums.ReservationsStatus;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/**
- * DTO retourné par GET /reservation/my-events?userId=X
- * Embarque les champs essentiels de l'événement pour éviter les
- * problèmes de sérialisation JSON (relations @JsonIgnore).
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Reservationhistorydto {
 
-    // ── Réservation ───────────────────────────────────────────────────────────
     private Long             idReservation;
-    private String           dateReservation;  // ISO string
+    private String           dateReservation;
     private ReservationsStatus status;
     private Integer          waitlistPosition;
     private String           qrToken;
     private String           attendedAt;
 
-    // ── Événement embarqué ────────────────────────────────────────────────────
+
     private Long   idEvenement;
     private String titre;
     private String description;
@@ -38,8 +32,8 @@ public class Reservationhistorydto {
     private String lienMeet;
     private int    placesTotal;
     private int    placesRestantes;
-    private String type;      // EvenementType.name()
-    private String planType;  // PlanType.name()
-    private String statut;    // EvenementStatus.name()
+    private String type;
+    private String planType;
+    private String statut;
 }
 

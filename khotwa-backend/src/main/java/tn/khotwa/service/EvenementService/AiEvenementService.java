@@ -39,13 +39,11 @@ public class AiEvenementService implements IAiEvenementService {
     private static final String GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
     private static final int TOP_EVENTS_COUNT = 5;
 
-    // ─────────────────────────────────────────────────────────────
-    // Classe interne : stats enrichies d'un événement
-    // ─────────────────────────────────────────────────────────────
+
     private static class EvenementStats {
         Evenement evenement;
-        int reservationsConfirmees;   // nb de Reservation avec statut CONFIRMED
-        double tauxRemplissage;       // reservationsConfirmees / placesTotal * 100
+        int reservationsConfirmees;
+        double tauxRemplissage;
 
         EvenementStats(Evenement e, int confirmed) {
             this.evenement = e;
@@ -59,63 +57,55 @@ public class AiEvenementService implements IAiEvenementService {
         int getReservationsConfirmees() { return reservationsConfirmees; }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Point d'entrée principal
-    // ─────────────────────────────────────────────────────────────
+
     @Override
     public Evenement generateEventFromTopPopular() {
-        // 1. Récupérer tous les événements qui ont AU MOINS 1 réservation CONFIRMED
+
         List<EvenementStats> stats = buildStats();
 
         if (stats.isEmpty()) {
             throw new RuntimeException("Aucun événement avec réservations CONFIRMED trouvé.");
         }
 
-        // 2. Trier par taux de remplissage DESC, puis par nb réservations DESC
+
         stats.sort(Comparator
                 .comparingDouble(EvenementStats::getTauxRemplissage).reversed()
                 .thenComparingInt(EvenementStats::getReservationsConfirmees).reversed());
 
-        // 3. Garder le top N
+
         List<EvenementStats> top = stats.stream().limit(TOP_EVENTS_COUNT).collect(Collectors.toList());
 
-        // 4. Calculer le type dominant (pondéré par taux de remplissage)
+
         EvenementType typeDominant = computeDominantType(top);
         PlanType planDominant = computeDominantPlan(top);
 
-        // 5. Construire le prompt et appeler l'IA
+
         String prompt = buildPrompt(top, typeDominant, planDominant);
         String aiResponse = callGroqApi(prompt);
 
-        // 6. Parser + sauvegarder
         Evenement generated = parseAiResponse(aiResponse, typeDominant, planDominant);
         return evenementService.addEvenement(generated);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Construire les stats depuis la table Reservation
-    // ─────────────────────────────────────────────────────────────
+
     private List<EvenementStats> buildStats() {
-        // Charger toutes les réservations CONFIRMED en une seule requête
+
         List<Reservation> allConfirmed = reservationRepository.findAll().stream()
                 .filter(r -> ReservationsStatus.CONFIRMED.equals(r.getStatus()))
                 .collect(Collectors.toList());
 
-        // Grouper par événement
+
         Map<Evenement, Long> countByEvent = allConfirmed.stream()
                 .collect(Collectors.groupingBy(Reservation::getEvenement, Collectors.counting()));
 
-        // Créer les stats (uniquement les événements avec > 0 réservations confirmées)
+
         return countByEvent.entrySet().stream()
                 .map(entry -> new EvenementStats(entry.getKey(), entry.getValue().intValue()))
                 .filter(s -> s.reservationsConfirmees > 0)
                 .collect(Collectors.toList());
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Type dominant = type dont la SOMME des taux de remplissage est la plus haute
-    // (évite qu'un type avec beaucoup d'événements peu remplis domine)
-    // ─────────────────────────────────────────────────────────────
+
     private EvenementType computeDominantType(List<EvenementStats> top) {
         return top.stream()
                 .collect(Collectors.groupingBy(
@@ -128,7 +118,7 @@ public class AiEvenementService implements IAiEvenementService {
                 .orElse(EvenementType.WEBINAR);
     }
 
-    // Plan dominant = plan dont la somme des taux est la plus haute
+
     private PlanType computeDominantPlan(List<EvenementStats> top) {
         return top.stream()
                 .collect(Collectors.groupingBy(
@@ -141,9 +131,7 @@ public class AiEvenementService implements IAiEvenementService {
                 .orElse(PlanType.FREE);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Prompt enrichi avec les vraies statistiques de réservation
-    // ─────────────────────────────────────────────────────────────
+
     private String buildPrompt(List<EvenementStats> top, EvenementType typeDominant, PlanType planDominant) {
         StringBuilder sb = new StringBuilder();
         sb.append("Tu es un assistant pour une plateforme d'incubation de startups.\n");
@@ -196,9 +184,7 @@ public class AiEvenementService implements IAiEvenementService {
         return sb.toString();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Appel API Groq
-    // ─────────────────────────────────────────────────────────────
+
     private String callGroqApi(String prompt) {
         RestTemplate restTemplate = new RestTemplate();
         ObjectMapper mapper = new ObjectMapper();
@@ -231,11 +217,7 @@ public class AiEvenementService implements IAiEvenementService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Parser la réponse IA
-    // On passe typeDominant et planDominant en fallback pour forcer
-    // le bon type même si l'IA dévie
-    // ─────────────────────────────────────────────────────────────
+
     private Evenement parseAiResponse(String jsonResponse, EvenementType typeDominant, PlanType planDominant) {
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -297,9 +279,7 @@ public class AiEvenementService implements IAiEvenementService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Stats pour l'affichage frontend (getTopEventsStats)
-    // ─────────────────────────────────────────────────────────────
+
     @Override
     public List<Map<String, Object>> getTopEventsStats() {
         List<EvenementStats> stats = buildStats();

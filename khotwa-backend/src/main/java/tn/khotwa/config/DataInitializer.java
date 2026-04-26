@@ -10,16 +10,6 @@ import tn.khotwa.entity.UserEntities.User;
 import tn.khotwa.enums.UserEnum.Role;
 import tn.khotwa.repository.UserRepo.UserRepository;
 
-/**
- * Crée l'administrateur statique au démarrage s'il n'existe pas encore en base.
- *
- * Identifiants :
- *   Email    : admin@khotwa.tn
- *   Password : Admin@1234
- *
- * Pour changer le mot de passe, modifiez ADMIN_PASSWORD ci-dessous
- * et redémarrez l'application.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

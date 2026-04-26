@@ -18,8 +18,6 @@ public class ReservationController {
 
     @Autowired
     private IReservationService reservationService;
-
-    // ── Réservation ───────────────────────────────────────────────────────────
     @PostMapping("/add/{idUser}/{idEvenement}")
     public ResponseEntity<?> addReservation(
             @PathVariable Long idUser,
@@ -38,7 +36,6 @@ public class ReservationController {
         }
     }
 
-    // ── Annulation par ID réservation ─────────────────────────────────────────
     @PutMapping("/cancel/{idReservation}")
     public ResponseEntity<?> cancelReservation(@PathVariable Long idReservation) {
         try {
@@ -49,7 +46,7 @@ public class ReservationController {
         }
     }
 
-    // ── Annulation par userId + eventId ───────────────────────────────────────
+
     @PutMapping("/cancel/user/{idUser}/event/{idEvenement}")
     public ResponseEntity<?> cancelByUserAndEvent(
             @PathVariable Long idUser,
@@ -61,13 +58,6 @@ public class ReservationController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
-    // ── Historique entrepreneur — VUE "Mes événements" ────────────────────────
-    // GET /reservation/my-events?userId=X&tab=UPCOMING|PAST|CANCELLED|PENDING|ALL
-    //
-    // Retourne une liste de ReservationHistoryDto avec l'événement embarqué.
-    // Le filtre tab est appliqué côté serveur ; le front n'a plus besoin de
-    // vérifier la nullité de booking.evenement.
     @GetMapping("/my-events")
     public ResponseEntity<?> getMyEventsHistory(
             @RequestParam Long userId,
@@ -80,13 +70,14 @@ public class ReservationController {
         }
     }
 
-    // ── Liste d'attente ───────────────────────────────────────────────────────
+
     @GetMapping("/waitlist/event/{idEvenement}")
     public ResponseEntity<List<Reservation>> getWaitlist(@PathVariable Long idEvenement) {
         return ResponseEntity.ok(reservationService.getWaitlistByEvent(idEvenement));
     }
 
-    // ── QR Code ───────────────────────────────────────────────────────────────
+
+
     @GetMapping(value = "/qr/{idReservation}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getQrCode(@PathVariable Long idReservation) {
         try {
@@ -108,7 +99,6 @@ public class ReservationController {
         }
     }
 
-    // ── Lectures ──────────────────────────────────────────────────────────────
     @GetMapping("/all")
     public List<Reservation> getAllReservations() {
         return reservationService.getAllReservations();

@@ -45,16 +45,10 @@
   <!-- ─── PAGE HEADER ─── -->
   <header class="page-header">
     <div class="header-left">
-      <div class="header-eyebrow">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        Coach Dashboard
+      <div class="hello-coach">
+        <span class="hello-wave">👋</span>
+        <span class="hello-text">Hello, <strong>Coach</strong></span>
       </div>
-      <h1>Event Management</h1>
-      <p class="sub">Validate, plan and track all events in your space</p>
     </div>
     <div class="header-right">
       <div class="view-toggle-group">
@@ -207,21 +201,22 @@
       <section class="pending-section" *ngIf="pendingEvents.length > 0">
         <div class="section-title">
           <span class="badge-urgent">{{ pendingEvents.length }}</span>
-          Pending Approval Requests
-          <span class="section-hint">Requires your validation</span>
+          Événements en attente de validation
+          <span class="section-hint">Requiert votre validation — inclut les événements générés par l'IA</span>
         </div>
         <div class="pending-grid">
           <div *ngFor="let ev of pendingEvents" class="pending-card">
             <div class="pending-card-top">
               <span class="plan-tag" [ngClass]="ev.planType?.toLowerCase()">{{ ev.planType }}</span>
               <span class="type-tag">{{ ev.type }}</span>
+              <span class="ai-badge" *ngIf="ev.creatorId === null || ev.creatorId === undefined" title="Généré par l'IA">🤖 IA</span>
             </div>
             <h4>{{ ev.titre }}</h4>
             <div class="ev-meta">
-              <span>📅 {{ ev.date | date:'dd MMM yyyy' }}</span>
-              <span>🕐 {{ ev.heure | slice:0:5 }}</span>
+              <span>{{ ev.date | date:'dd MMM yyyy' }}</span>
+              <span>{{ ev.heure | slice:0:5 }}</span>
             </div>
-            <p class="ev-intervenant">👤 {{ ev.intervenant }}</p>
+            <p class="ev-intervenant">{{ ev.intervenant }}</p>
             <div class="action-row">
               <button class="btn-accept" (click)="openConfirm(ev.idEvenement, ev.titre, 'ACCEPTED')" [disabled]="processingId === ev.idEvenement">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -262,65 +257,81 @@
                class="event-row" [ngClass]="ev.statut?.toLowerCase()"
                [style.animation-delay]="(i * 40) + 'ms'">
 
+            <!-- Date block -->
             <div class="ev-date-block">
               <span class="ev-day">{{ ev.date | date:'dd' }}</span>
               <span class="ev-month">{{ ev.date | date:'MMM' | uppercase }}</span>
               <span class="ev-year">{{ ev.date | date:'yyyy' }}</span>
             </div>
 
+            <!-- Divider -->
+            <div class="ev-card-divider"></div>
+
+            <!-- Info block -->
             <div class="ev-info">
+              <h3 class="ev-title">{{ ev.titre }}</h3>
               <div class="ev-tags">
+                <span class="type-pill" [ngClass]="ev.type?.toLowerCase()">
+                  <span class="type-pill-dot"></span>{{ ev.type }}
+                </span>
                 <span class="plan-pill" [ngClass]="ev.planType?.toLowerCase()">{{ ev.planType }}</span>
-                <span class="type-pill">{{ ev.type }}</span>
-                <span class="status-pill" [ngClass]="ev.statut?.toLowerCase()">
-                  {{ getStatusLabel(ev.statut) }}
+              </div>
+              <div class="ev-details">
+                <span class="ev-detail-item">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  {{ ev.intervenant }}
+                </span>
+                <span class="ev-detail-sep">·</span>
+                <span class="ev-detail-item">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {{ ev.heure | slice:0:5 }}
                 </span>
               </div>
-              <h3 class="ev-title">{{ ev.titre }}</h3>
-              <div class="ev-details">
-                <span>👤 {{ ev.intervenant }}</span>
-                <span>🕐 {{ ev.heure | slice:0:5 }}</span>
+            </div>
+
+            <!-- Right side: QR image for ACCEPTED, actions for PENDING, badge for CANCELLED -->
+            <div class="ev-right-col">
+
+              <!-- PENDING actions -->
+              <div class="ev-actions" *ngIf="ev.statut === 'PENDING' || !ev.statut">
+                <button class="btn-accept sm" (click)="openConfirm(ev.idEvenement, ev.titre, 'ACCEPTED')" [disabled]="processingId === ev.idEvenement">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Accept
+                </button>
+                <button class="btn-reject sm" (click)="openConfirm(ev.idEvenement, ev.titre, 'CANCELLED')" [disabled]="processingId === ev.idEvenement">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Cancel
+                </button>
               </div>
-            </div>
 
-            <!-- Actions événement PENDING -->
-            <div class="ev-actions" *ngIf="ev.statut === 'PENDING' || !ev.statut">
-              <button class="btn-accept sm" (click)="openConfirm(ev.idEvenement, ev.titre, 'ACCEPTED')" [disabled]="processingId === ev.idEvenement">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Accept
-              </button>
-              <button class="btn-reject sm" (click)="openConfirm(ev.idEvenement, ev.titre, 'CANCELLED')" [disabled]="processingId === ev.idEvenement">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-                Cancel
-              </button>
-            </div>
+              <!-- ACCEPTED: QR image preview (clickable to open modal) -->
+              <div class="ev-qr-preview" *ngIf="ev.statut === 'ACCEPTED'" (click)="ev.lienMeet ? openQrMeetModal(ev) : null" [class.ev-qr-preview--clickable]="ev.lienMeet" [title]="ev.lienMeet ? 'Click to show full QR code' : ''">
+                <div class="ev-qr-img-wrap">
+                  <img
+                    *ngIf="ev.lienMeet"
+                    [src]="getQrPreviewUrl(ev.lienMeet)"
+                    alt="QR Meet"
+                    class="ev-qr-img"/>
+                  <div class="ev-qr-placeholder" *ngIf="!ev.lienMeet">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>
+                    </svg>
+                  </div>
+                </div>
+                <span class="ev-qr-label" *ngIf="ev.lienMeet">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Meet ready
+                </span>
+                <span class="ev-qr-label ev-qr-label--none" *ngIf="!ev.lienMeet">No link</span>
+              </div>
 
-            <!-- Bouton QR Meet — visible sur les événements ACCEPTED avec un lienMeet -->
-            <div class="ev-actions" *ngIf="ev.statut === 'ACCEPTED' && ev.lienMeet">
-              <button class="btn-qr-meet" (click)="openQrMeetModal(ev)" title="Generate QR code for Meet access">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                  <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>
-                </svg>
-                QR Meet
-              </button>
-            </div>
+              <!-- CANCELLED badge -->
+              <div class="ev-done-badge cancelled" *ngIf="ev.statut === 'CANCELLED'">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Cancelled
+              </div>
 
-            <div class="ev-done-badge accepted" *ngIf="ev.statut === 'ACCEPTED' && !ev.lienMeet">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              Accepted
-            </div>
-            <div class="ev-done-badge cancelled" *ngIf="ev.statut === 'CANCELLED'">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-              Cancelled
             </div>
           </div>
         </div>
