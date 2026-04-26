@@ -12,8 +12,12 @@ import { AdminMessagesComponent }      from './messages/messages.component';
 import { AdminBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
 import { AdminUtilisateursComponent }  from './utilisateurs/utilisateurs.component';
 import { AdminEvenementsComponent }    from './evenements/evenements.component';
-import { AdminSubscriptionsComponent }   from './abonnements/abonnements.component';
+import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
 import { AdminTalentComponent }        from './talent/talent.component';
+import { AdminNotificationsComponent } from './notifications/notifications.component';
+import { SharedModule } from '../../shared/shared.module';
+
+
 
 const routes: Routes = [
   {
@@ -28,8 +32,10 @@ const routes: Routes = [
       { path: 'bibliotheque', component: AdminBibliothequeComponent },
       { path: 'utilisateurs', component: AdminUtilisateursComponent },
       { path: 'evenements',   component: AdminEvenementsComponent },
-      { path: 'abonnements',  component: AdminSubscriptionsComponent },
+      { path: 'subcriptions',   redirectTo: 'subscriptions', pathMatch: 'full' },
+      { path: 'subscriptions',  component: SubscriptionsComponent },
       { path: 'talent',       component: AdminTalentComponent },
+      { path: 'notifications', component: AdminNotificationsComponent },
     ],
   },
 ];
@@ -38,8 +44,9 @@ const routes: Routes = [
   declarations: [
     AdminDashboardComponent, AdminProjetsComponent, AdminPlanningComponent,
     AdminMessagesComponent, AdminBibliothequeComponent, AdminUtilisateursComponent,
-    AdminEvenementsComponent, AdminSubscriptionsComponent, AdminTalentComponent,
+    AdminEvenementsComponent, SubscriptionsComponent,
+    AdminTalentComponent,AdminNotificationsComponent
   ],
-  imports: [CommonModule, FormsModule, LayoutModule, RouterModule.forChild(routes)],
+  imports: [CommonModule, FormsModule,SharedModule, LayoutModule, RouterModule.forChild(routes)],
 })
 export class AdminModule {}

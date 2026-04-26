@@ -28,11 +28,12 @@ public class CategorieController {
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> creer(@RequestBody Map<String, String> body) {
-        CategorieView cree = categorieService.creer( body.get("nom"), body.get("description"),
-            body.get("couleur"), body.get("icone")
+        CategorieView cree = categorieService.creer(
+                body.get("nom"), body.get("description"),
+                body.get("couleur"), body.get("icone"), body.get("secteur")
         );
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(Map.of("success", true, "message", "Catégorie créée", "data", cree));
+                .body(Map.of("success", true, "message", "Catégorie créée", "data", cree));
     }
 
     @PutMapping("/{id}")
@@ -40,9 +41,9 @@ public class CategorieController {
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(Map.of("success", true, "data",
-            categorieService.mettreAJour(id,
-                body.get("nom"), body.get("description"),
-                body.get("couleur"), body.get("icone"))));
+                categorieService.mettreAJour(id,
+                        body.get("nom"), body.get("description"),
+                        body.get("couleur"), body.get("icone"), body.get("secteur"))));
     }
 
     @DeleteMapping("/{id}")

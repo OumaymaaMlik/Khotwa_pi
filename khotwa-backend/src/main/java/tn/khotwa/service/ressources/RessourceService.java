@@ -17,6 +17,7 @@ import tn.khotwa.exception.ResourceNotFoundException;
 import tn.khotwa.projection.ressources.*;
 import tn.khotwa.repository.ressources.*;
 import tn.khotwa.service.AccessControlService;
+import tn.khotwa.service.ai.AiService;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -34,6 +35,7 @@ public class RessourceService implements IRessourceService {
     private final ProgressionRepository progressionRepo;
     private final FileStorageService  fileService;
     private final AccessControlService accessControl;
+    private final AiService           aiService;
 
     // ── Listing ───────────────────────────────────────────────────────
 
@@ -51,16 +53,16 @@ public class RessourceService implements IRessourceService {
         // Admin voit tout, sans filtrage par secteur
         if (role == Role.ADMIN) {
             return ressourceRepo.findToutesAvecFiltres(
-                plansAccessibles, type, catId, tag, recherche, pageable
+                    plansAccessibles, type, catId, tag, recherche, pageable
             );
         }
 
         // Coach voit tout (publiés), sans filtrage par secteur
         // Entrepreneur : filtrage automatique par secteur de son projet
         return ressourceRepo.findPubliesAvecFiltres(
-            plansAccessibles, type, catId, tag, recherche,
-            secteur,  // null pour coach, secteur du projet pour entrepreneur
-            pageable
+                plansAccessibles, type, catId, tag, recherche,
+                secteur,  // null pour coach, secteur du projet pour entrepreneur
+                pageable
         );
     }
 
@@ -69,7 +71,7 @@ public class RessourceService implements IRessourceService {
     @Override
     public EnrichedRessource getParId(Long id, Long userId, Role role, PlanType userPlan) {
         RessourceView vue = ressourceRepo.findProjectedById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
 
         accessControl.verifierAcces(role, userPlan, vue.getPlanType());
         ressourceRepo.incrementerVues(id);
@@ -79,8 +81,8 @@ public class RessourceService implements IRessourceService {
         ProgressionView progression = null;
         if (userId != null) {
             progression = progressionRepo
-                .findProjectedByUtilisateurIdAndRessourceId(userId, id)
-                .orElse(null);
+                    .findProjectedByUtilisateurIdAndRessourceId(userId, id)
+                    .orElse(null);
         }
 
         return new EnrichedRessource(vue, tags, progression);
@@ -89,7 +91,7 @@ public class RessourceService implements IRessourceService {
     @Override
     public RessourceView getVueById(Long id, Role role, PlanType userPlan) {
         RessourceView vue = ressourceRepo.findProjectedById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
         accessControl.verifierAcces(role, userPlan, vue.getPlanType());
         return vue;
     }
@@ -104,13 +106,18 @@ public class RessourceService implements IRessourceService {
             Boolean publie, MultipartFile fichier, Long adminId) {
 
         Ressource ressource = construireRessource(titre, description, type, planType,
-            dureeSec, nombrePages, publie, adminId);
+                dureeSec, nombrePages, publie, adminId);
         gererContenu(ressource, fichier, urlExterne, type);
         gererCategorie(ressource, categorieId);
         gererTags(ressource, tags);
 
         Ressource sauvegardee = ressourceRepo.save(ressource);
         log.info("Ressource créée — id={} titre={}", sauvegardee.getId(), sauvegardee.getTitre());
+        // Auto-indexation IA après création
+        if (Boolean.TRUE.equals(sauvegardee.getPublie())) {
+            try { aiService.indexerUneRessource(sauvegardee); }
+            catch (Exception e) { log.warn("Auto-indexation échouée id={}: {}", sauvegardee.getId(), e.getMessage()); }
+        }
         return ressourceRepo.findProjectedById(sauvegardee.getId()).orElseThrow();
     }
 
@@ -121,7 +128,7 @@ public class RessourceService implements IRessourceService {
             Integer nombrePages, Boolean publie) {
 
         Ressource ressource = ressourceRepo.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
 
         if (titre       != null) ressource.setTitre(titre);
         if (description != null) ressource.setDescription(description);
@@ -132,14 +139,19 @@ public class RessourceService implements IRessourceService {
         if (categorieId != null) gererCategorie(ressource, categorieId);
         if (tags        != null) gererTags(ressource, tags);
 
-        ressourceRepo.save(ressource);
+        Ressource maj = ressourceRepo.save(ressource);
+        // Auto-indexation IA après mise à jour
+        if (Boolean.TRUE.equals(maj.getPublie())) {
+            try { aiService.indexerUneRessource(maj); }
+            catch (Exception e) { log.warn("Auto-indexation échouée id={}: {}", id, e.getMessage()); }
+        }
         return ressourceRepo.findProjectedById(id).orElseThrow();
     }
 
     @Override
     public RessourceView remplacerFichier(Long id, MultipartFile fichier) {
         Ressource ressource = ressourceRepo.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
 
         fileService.supprimer(ressource.getCheminFichier());
         ressource.setCheminFichier(fileService.sauvegarder(fichier, ressource.getType()));
@@ -153,16 +165,21 @@ public class RessourceService implements IRessourceService {
     @Override
     public RessourceView togglePublie(Long id) {
         Ressource ressource = ressourceRepo.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
         ressource.setPublie(!ressource.getPublie());
-        ressourceRepo.save(ressource);
+        Ressource toggled = ressourceRepo.save(ressource);
+        // Auto-indexation IA après changement de statut publié
+        if (Boolean.TRUE.equals(toggled.getPublie())) {
+            try { aiService.indexerUneRessource(toggled); }
+            catch (Exception e) { log.warn("Auto-indexation échouée id={}: {}", id, e.getMessage()); }
+        }
         return ressourceRepo.findProjectedById(id).orElseThrow();
     }
 
     @Override
     public void supprimer(Long id) {
         Ressource ressource = ressourceRepo.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
         fileService.supprimer(ressource.getCheminFichier());
         ressourceRepo.delete(ressource);
         log.info("Ressource supprimée — id={}", id);
@@ -171,7 +188,7 @@ public class RessourceService implements IRessourceService {
     @Override
     public Path obtenirCheminFichier(Long id, Role role, PlanType userPlan) {
         RessourceView vue = ressourceRepo.findProjectedById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ressource", id));
         accessControl.verifierAcces(role, userPlan, vue.getPlanType());
         if (vue.getCheminFichier() == null) throw new ResourceNotFoundException("Aucun fichier attaché");
         ressourceRepo.incrementerTelechargements(id);
@@ -191,9 +208,9 @@ public class RessourceService implements IRessourceService {
         stats.put("parType", parType);
         if (userId != null) {
             stats.put("mesConsultees",
-                progressionRepo.countByUtilisateurIdAndStatut(userId, ProgressStatus.IN_PROGRESS));
+                    progressionRepo.countByUtilisateurIdAndStatut(userId, ProgressStatus.IN_PROGRESS));
             stats.put("mesCompletees",
-                progressionRepo.countByUtilisateurIdAndStatut(userId, ProgressStatus.COMPLETED));
+                    progressionRepo.countByUtilisateurIdAndStatut(userId, ProgressStatus.COMPLETED));
         }
         return stats;
     }
@@ -201,7 +218,7 @@ public class RessourceService implements IRessourceService {
     // ── Méthodes privées ──────────────────────────────────────────────
 
     private Ressource construireRessource(String titre, String description, ResourceType type,
-            PlanType planType, Integer dureeSec, Integer nombrePages, Boolean publie, Long adminId) {
+                                          PlanType planType, Integer dureeSec, Integer nombrePages, Boolean publie, Long adminId) {
         Ressource r = new Ressource();
         r.setTitre(titre); r.setDescription(description);
         r.setType(type); r.setPlanType(planType);
@@ -224,7 +241,7 @@ public class RessourceService implements IRessourceService {
     private void gererCategorie(Ressource r, Long categorieId) {
         if (categorieId != null) {
             Categorie cat = categorieRepo.findById(categorieId)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie", categorieId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Catégorie", categorieId));
             r.setCategorie(cat);
         }
     }

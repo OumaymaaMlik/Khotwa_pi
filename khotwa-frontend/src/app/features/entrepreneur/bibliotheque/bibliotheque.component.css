@@ -5,7 +5,7 @@
 .lib-stat{background:white;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 20px;display:flex;flex-direction:column;gap:4px;min-width:100px}
 .lib-stat__val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
 .lib-stat__label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em}
-.filters{display:flex;flex-direction:column;gap:10px}
+.filters{display:flex;flex-direction:column;gap:10px;position:relative;z-index:50;overflow:visible}
 .filter-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .filter-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);min-width:50px}
 .search-box{display:flex;align-items:center;gap:8px;background:white;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 14px;width:100%;max-width:360px}
@@ -203,4 +203,61 @@
   background: var(--orange);
   color: white;
   border-color: var(--orange);
+}
+
+/* ══ IA STYLES ══════════════════════════════════════════════ */
+.ai-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+}
+.ai-search-tip {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-left: 4px;
+}
+.ai-search-tip--active {
+  color: var(--orange);
+  font-weight: 600;
+}
+.ai-tip-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-decoration: underline;
+  padding: 0;
+}
+.ai-resume-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #fff8f5, #fff0e8);
+  border: 1px solid #fed7c4;
+  color: #e05520;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-resume-btn:hover {
+  background: linear-gradient(135deg, #FF6B35, #e05520);
+  color: white;
+  border-color: #FF6B35;
+}
+.ai-resume-btn-spark {
+  font-size: 12px;
+  animation: spin-spark 3s linear infinite;
+}
+@keyframes spin-spark {
+  0%  { transform: rotate(0deg); }
+  100%{ transform: rotate(360deg); }
 }

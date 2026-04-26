@@ -40,18 +40,18 @@ public interface RessourceRepository extends JpaRepository<Ressource, Long> {
                OR LOWER(r.titre)       LIKE LOWER(CONCAT('%', :recherche, '%'))
                OR LOWER(r.description) LIKE LOWER(CONCAT('%', :recherche, '%')))
           AND (:secteur IS NULL
-               OR r.categorie IS NULL
-               OR r.categorie.secteur IS NULL
-               OR LOWER(r.categorie.secteur) = LOWER(:secteur))
+               OR (r.categorie IS NOT NULL
+                   AND r.categorie.secteur IS NOT NULL
+                   AND LOWER(r.categorie.secteur) = LOWER(:secteur)))
     """)
     Page<RessourceSummaryView> findPubliesAvecFiltres(
-        @Param("plans")     List<PlanType> plans,
-        @Param("type")      ResourceType type,
-        @Param("catId")     Long catId,
-        @Param("tagNom")    String tagNom,
-        @Param("recherche") String recherche,
-        @Param("secteur")   String secteur,
-        Pageable pageable
+            @Param("plans")     List<PlanType> plans,
+            @Param("type")      ResourceType type,
+            @Param("catId")     Long catId,
+            @Param("tagNom")    String tagNom,
+            @Param("recherche") String recherche,
+            @Param("secteur")   String secteur,
+            Pageable pageable
     );
 
     @Query("""
@@ -66,12 +66,12 @@ public interface RessourceRepository extends JpaRepository<Ressource, Long> {
                OR LOWER(r.description) LIKE LOWER(CONCAT('%', :recherche, '%')))
     """)
     Page<RessourceSummaryView> findToutesAvecFiltres(
-        @Param("plans")     List<PlanType> plans,
-        @Param("type")      ResourceType type,
-        @Param("catId")     Long catId,
-        @Param("tagNom")    String tagNom,
-        @Param("recherche") String recherche,
-        Pageable pageable
+            @Param("plans")     List<PlanType> plans,
+            @Param("type")      ResourceType type,
+            @Param("catId")     Long catId,
+            @Param("tagNom")    String tagNom,
+            @Param("recherche") String recherche,
+            Pageable pageable
     );
 
     @Modifying
