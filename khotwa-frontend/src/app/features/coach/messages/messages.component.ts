@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ChangeDetectorRef, AfterViewChecked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { MessageService } from '../../../core/services/message.service';
+import { MessageService, ConversationRecap } from '../../../core/services/message.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { WebSocketService } from '../../../core/services/websocket.service';
 import { OnlineStatusService } from '../../../core/services/online-status.service';
@@ -14,6 +14,7 @@ import { Subscription, forkJoin } from 'rxjs';
   styleUrls: ['./messages.component.css']
 })
 export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
+  private readonly ADMIN_ID = 1;
 
   @ViewChild('fileInput') fileInput!: ElementRef;
   @ViewChild('messagesBody') messagesBody!: ElementRef;
@@ -30,6 +31,12 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   typingTimeout: any = null;
   isTyping = false;
   replyingTo: any = null;
+  showRecapCard = false;
+  recapLoading = false;
+  recapError = '';
+  recapData: ConversationRecap | null = null;
+  replySuggestions: string[] = [];
+  suggestionsLoading = false;
   private shouldScroll = false;
   private wsSubscriptions: Subscription[] = [];
   private autoSelectConversationId: number | null = null;
@@ -69,6 +76,8 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
           // Otherwise mark it for auto-selection after loading
           this.autoSelectConversationId = conversationId;
         }
+      } else if (params['contactAdmin'] === 'true') {
+        this.autoSelectConversationId = this.ADMIN_ID;
       }
     });
     this.loadInbox();
@@ -89,9 +98,16 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   // --- Core Methods ---
 
   selectConv(c: any) {
+    const participantChanged = this.selectedConv?.participantId !== c.participantId;
     this.selectedConv = { ...c, unread: 0 };
     c.unread = 0;
     this.replyingTo = null;
+    if (participantChanged) {
+      this.showRecapCard = false;
+      this.recapData = null;
+      this.recapError = '';
+      this.replySuggestions = [];
+    }
 
     // Mark messages as read on the server
     c.messages
@@ -100,8 +116,76 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
         this.messageService.updateStatus(m.id, 'READ').subscribe();
       });
 
+    this.loadReplySuggestions();
     this.shouldScroll = true;
     this.cdr.markForCheck();
+  }
+
+  private loadReplySuggestions() {
+    if (!this.selectedConv) return;
+    this.suggestionsLoading = true;
+    this.messageService.getReplySuggestions(this.currentUserId, this.selectedConv.participantId).subscribe({
+      next: (res) => {
+        this.replySuggestions = (res?.suggestions ?? []).slice(0, 3);
+        this.suggestionsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        console.error('Failed to load reply suggestions');
+        this.replySuggestions = [];
+        this.suggestionsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  applySuggestion(suggestion: string) {
+    if (!suggestion) return;
+    this.newMsg = suggestion;
+  }
+
+  toggleRecapCard() {
+    if (!this.selectedConv) return;
+    this.showRecapCard = !this.showRecapCard;
+    if (this.showRecapCard) {
+      this.loadConversationRecap();
+    }
+  }
+
+  private loadConversationRecap() {
+    if (!this.selectedConv) return;
+    this.recapLoading = true;
+    this.recapError = '';
+    this.messageService.getConversationRecap(this.currentUserId, this.selectedConv.participantId).subscribe({
+      next: (recap) => {
+        this.recapData = this.normalizeRecapForCurrentUser(recap);
+        this.recapLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.recapError = 'Unable to generate recap for now. Please try again.';
+        this.recapLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private normalizeRecapForCurrentUser(recap: ConversationRecap): ConversationRecap {
+    return {
+      summary: this.normalizeRecapText(recap.summary),
+      keyMilestones: (recap.keyMilestones ?? []).map(item => this.normalizeRecapText(item)),
+      nextSteps: (recap.nextSteps ?? []).map(item => this.normalizeRecapText(item))
+    };
+  }
+
+  private normalizeRecapText(text: string): string {
+    if (!text) return text;
+    const otherParticipantName = this.selectedConv?.nom?.trim() || 'the other participant';
+    return text
+      .replace(/\{\{\s*USER_1\s*\}\}/gi, 'you')
+      .replace(/\{\{\s*USER_2\s*\}\}/gi, otherParticipantName)
+      .replace(/\bUSER_1\b/gi, 'you')
+      .replace(/\bUSER_2\b/gi, otherParticipantName);
   }
 
   getColor(id: number): string {
@@ -177,6 +261,7 @@ export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
         if (this.selectedConv?.participantId === otherId) {
           if (msg.receiverId === this.currentUserId && msg.status === 'PENDING') {
             this.messageService.updateStatus(msg.id, 'READ').subscribe();
+            this.loadReplySuggestions();
           }
           this.shouldScroll = true;
         }
@@ -246,7 +331,23 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
 
         if (this.autoSelectConversationId) {
           const conv = this.conversations.find(c => c.participantId === this.autoSelectConversationId);
-          if (conv) this.selectConv(conv);
+          if (conv) {
+            this.selectConv(conv);
+          } else if (this.autoSelectConversationId === this.ADMIN_ID) {
+            const adminConversation = {
+              id: `conv-${this.ADMIN_ID}`,
+              participantId: this.ADMIN_ID,
+              nom: 'Admin KHOTWA',
+              initials: 'AD',
+              color: this.getColor(this.ADMIN_ID),
+              unread: 0,
+              lastMsg: '',
+              time: '',
+              messages: []
+            };
+            this.conversations.unshift(adminConversation);
+            this.selectConv(adminConversation);
+          }
           this.autoSelectConversationId = null;
         }
         this.cdr.markForCheck();
@@ -301,6 +402,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
     parentMessage: this.replyingTo ? { id: this.replyingTo.id } : null
   };
   this.wsService.sendTyping(this.currentUserId, this.selectedConv.participantId, false);
+  this.replySuggestions = [];
   this.messageService.sendMessage(message).subscribe({
   next: (saved) => {
     const uiMsg = this.mapToUIMessage(saved);

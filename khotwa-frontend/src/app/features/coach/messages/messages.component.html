@@ -29,6 +29,48 @@
             </p>
           </div>
         </div>
+        <button class="ai-recap-trigger" (click)="toggleRecapCard()" [attr.aria-pressed]="showRecapCard" title="AI Conversation Recap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l1.6 3.9L17.5 8.5l-3.9 1.6L12 14l-1.6-3.9L6.5 8.5l3.9-1.6L12 3z"/>
+            <path d="M19 13l.9 2.1L22 16l-2.1.9L19 19l-.9-2.1L16 16l2.1-.9L19 13z"/>
+            <path d="M5 14l.7 1.7L7.5 16l-1.8.7L5 18.5l-.7-1.8L2.5 16l1.8-.3L5 14z"/>
+          </svg>
+        </button>
+        <div class="ai-recap-card" *ngIf="showRecapCard">
+          <div class="ai-recap-card__header">
+            <h3>AI Conversation Recap</h3>
+          </div>
+
+          <div *ngIf="recapLoading" class="ai-recap-loading">
+            <div class="ai-recap-skeleton ai-recap-skeleton--title"></div>
+            <div class="ai-recap-skeleton"></div>
+            <div class="ai-recap-skeleton"></div>
+            <div class="ai-recap-skeleton ai-recap-skeleton--short"></div>
+            <p>Khotwa AI is analyzing...</p>
+          </div>
+
+          <div *ngIf="!recapLoading && recapError" class="ai-recap-error">
+            {{ recapError }}
+          </div>
+
+          <div *ngIf="!recapLoading && !recapError && recapData" class="ai-recap-content">
+            <p class="ai-recap-summary">{{ recapData.summary }}</p>
+
+            <div class="ai-recap-section" *ngIf="recapData.keyMilestones?.length">
+              <h4>Key Milestones</h4>
+              <ul>
+                <li *ngFor="let milestone of recapData.keyMilestones">{{ milestone }}</li>
+              </ul>
+            </div>
+
+            <div class="ai-recap-section" *ngIf="recapData.nextSteps?.length">
+              <h4>Next Steps</h4>
+              <ul>
+                <li *ngFor="let step of recapData.nextSteps">{{ step }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <div class="messages-body" #messagesBody>
           <div *ngFor="let m of selectedConv.messages" class="msg-wrap" [class.mine]="m.mine">
             <div class="msg-bubble-wrap">
@@ -111,6 +153,15 @@
             <span>File ready: {{ pendingFile?.name || 'Attachment' }}</span>
             <button (click)="cancelFile()">&times;</button>
           </div>
+        </div>
+        <div class="suggestions-row" *ngIf="replySuggestions.length > 0">
+          <button
+            type="button"
+            class="suggestion-chip"
+            *ngFor="let suggestion of replySuggestions"
+            (click)="applySuggestion(suggestion)">
+            {{ suggestion }}
+          </button>
         </div>
         <div class="chat-input">
           <input #fileInput type="file" style="display:none" (change)="onFileSelected($event)" />

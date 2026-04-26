@@ -51,7 +51,7 @@
               <div class="coach-notif-dot-item dot-info"></div>
               <div>
                 <p class="coach-notif-title">
-                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Update' }}
+                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback' : 'Update' }}
                 </p>
                 <p class="coach-notif-msg">{{ n.message }}</p>
               </div>

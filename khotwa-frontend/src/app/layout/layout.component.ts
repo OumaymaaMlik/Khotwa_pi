@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { MessageService } from '../core/services/message.service';
+import { FeedbackService } from '../core/services/feedback.service';
 import { WebSocketService } from '../core/services/websocket.service';
 import { OnlineStatusService } from '../core/services/online-status.service';
 import { UserRole } from '../core/models';
@@ -18,6 +19,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidebarMobile = false;
   notifOpen     = false;
   currentUrl    = '';
+  unreadFeedbackCount = 0;
 
   private readonly BACKEND_ORIGIN = 'http://localhost:8084';
   private safeIconCache: Record<string, SafeHtml> = {};
@@ -35,6 +37,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     // ADMIN ONLY
     { label: 'Users', icon: 'users', route: 'utilisateurs', roles: ['ADMIN'] },
     { label: 'Subscriptions', icon: 'card', route: 'subscriptions', roles: ['ADMIN'] },
+    { label: 'Feedbacks', icon: 'message', route: 'feedbacks', roles: ['ADMIN'] },
 
     // COACH ONLY
     { label: 'My Startups', icon: 'rocket', route: 'startups', roles: ['COACH'] },
@@ -70,6 +73,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     public notifService: NotificationService,
     private messageService: MessageService,
+    private feedbackService: FeedbackService,
     private wsService: WebSocketService,
     private onlineStatusService: OnlineStatusService,
     private router: Router,
@@ -88,6 +92,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
         ?? (this.auth.currentUser?.id != null ? Number(this.auth.currentUser.id) : 0);
       if (uid > 0) {
         this.notifService.reload();
+        this.loadUnreadFeedbackCount();
       }
     };
 
@@ -221,5 +226,20 @@ logout(): void {
     } else {
       this.router.navigate([`${this.rolePrefix}/messages`]);
     }
+  }
+
+  private loadUnreadFeedbackCount(): void {
+    if (!this.auth.isAdmin) {
+      this.unreadFeedbackCount = 0;
+      return;
+    }
+    this.feedbackService.getAdminFeedbacks().subscribe({
+      next: (feedbacks) => {
+        this.unreadFeedbackCount = (feedbacks ?? []).filter(f => !f.reviewed).length;
+      },
+      error: () => {
+        this.unreadFeedbackCount = 0;
+      }
+    });
   }
 }

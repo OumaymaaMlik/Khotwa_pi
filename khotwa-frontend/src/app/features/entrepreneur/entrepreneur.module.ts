@@ -36,6 +36,7 @@ const routes: Routes = [
       { path: 'notifications', component: EntrepreneurNotificationsComponent },
       { path: 'profile',      component: ProfileComponent                      },
       { path: 'account',      component: EntrepreneurAccountPageComponent  },
+      { path: 'contact',      loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
 
     ],
   },

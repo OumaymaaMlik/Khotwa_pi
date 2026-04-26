@@ -710,7 +710,9 @@ kbd {
   position: absolute;
   top: calc(100% + 10px); right: 0;
   width: 320px;
-  background: var(--bg-white);
+  background: #ffffff;
+  opacity: 1;
+  backdrop-filter: none;
   border-radius: 14px;
   box-shadow: var(--shadow-elevated);
   border: 1px solid var(--border);

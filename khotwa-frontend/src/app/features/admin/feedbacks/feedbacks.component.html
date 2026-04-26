@@ -1,0 +1,38 @@
+<div class="admin-feedbacks">
+  <div class="header">
+    <h2>Feedbacks</h2>
+    <p>Review user feedback submissions and mark them as read.</p>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading feedbacks...</div>
+
+  <div class="feedback-list" *ngIf="!loading">
+    <div class="feedback-item" *ngFor="let feedback of feedbacks" [class.read]="feedback.reviewed">
+      <div class="item-top">
+        <div>
+          <h3>{{ feedback.subject }}</h3>
+          <p class="meta">
+            From {{ feedback.userName || ('User ' + feedback.userId) }} •
+            {{ feedback.createdAt | date:'medium' }}
+          </p>
+        </div>
+        <span class="status" [class.unread]="!feedback.reviewed">
+          {{ feedback.reviewed ? 'Read' : 'Unread' }}
+        </span>
+      </div>
+
+      <p class="rating">Rating: {{ feedback.rating }}/5</p>
+      <p class="comment">{{ feedback.comment }}</p>
+
+      <a *ngIf="feedback.screenshotUrl" [href]="'http://localhost:8084' + feedback.screenshotUrl" target="_blank" rel="noopener">
+        View attachment
+      </a>
+
+      <div class="actions">
+        <button *ngIf="!feedback.reviewed" (click)="markReviewed(feedback)">Mark as reviewed</button>
+      </div>
+    </div>
+
+    <div class="empty" *ngIf="feedbacks.length === 0">No feedback submissions yet.</div>
+  </div>
+</div>

@@ -35,6 +35,7 @@ const routes: Routes = [
       { path: 'talent',       component: CoachTalentComponent       },
       { path: 'settings',     component: CoachSettingsComponent     },
       { path: 'account',      component: CoachAccountPageComponent  },
+      { path: 'contact',      loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
     ],
   },
 ];

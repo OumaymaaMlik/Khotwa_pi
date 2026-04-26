@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   { path: '',          loadChildren: () => import('./features/landing/landing.module').then(m => m.LandingModule) },
   { path: 'login',     loadChildren: () => import('./features/auth/auth.module').then(m => m.AuthModule) },
+  { path: 'contact',   loadChildren: () => import('./features/contact/contact.module').then(m => m.ContactModule) },
   { path: 'khotwaadmin', loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule) },
   { path: 'entrepreneur', loadChildren: () => import('./features/entrepreneur/entrepreneur.module').then(m => m.EntrepreneurModule) },
   { path: 'coach',     loadChildren: () => import('./features/coach/coach.module').then(m => m.CoachModule) },
@@ -12,7 +13,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
+  imports: [RouterModule.forRoot(routes, { useHash: true })],
   exports: [RouterModule],
 })
 export class AppRoutingModule {}

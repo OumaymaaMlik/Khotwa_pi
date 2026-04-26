@@ -15,6 +15,7 @@ import { AdminEvenementsComponent }    from './evenements/evenements.component';
 import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
 import { AdminTalentComponent }        from './talent/talent.component';
 import { AdminNotificationsComponent } from './notifications/notifications.component';
+import { AdminFeedbacksComponent } from './feedbacks/feedbacks.component';
 
 const routes: Routes = [
   {
@@ -33,6 +34,7 @@ const routes: Routes = [
       { path: 'subscriptions',  component: SubscriptionsComponent },
       { path: 'talent',       component: AdminTalentComponent },
       { path: 'notifications', component: AdminNotificationsComponent },
+      { path: 'feedbacks', component: AdminFeedbacksComponent },
     ],
   },
 ];
@@ -42,7 +44,7 @@ const routes: Routes = [
     AdminDashboardComponent, AdminProjetsComponent, AdminPlanningComponent,
     AdminMessagesComponent, AdminBibliothequeComponent, AdminUtilisateursComponent,
     AdminEvenementsComponent, SubscriptionsComponent,
-    AdminTalentComponent,AdminNotificationsComponent
+    AdminTalentComponent,AdminNotificationsComponent, AdminFeedbacksComponent
   ],
   imports: [CommonModule, FormsModule, LayoutModule, RouterModule.forChild(routes)],
 })
