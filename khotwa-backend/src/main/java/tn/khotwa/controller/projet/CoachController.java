@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tn.khotwa.dto.projet.*;
 import tn.khotwa.entity.projet.Document;
@@ -16,26 +15,24 @@ import tn.khotwa.service.projet.ProjetService;
 import tn.khotwa.service.projet.ProjetStateMachineService;
 import tn.khotwa.service.projet.ProjetCoachService;
 import tn.khotwa.service.projet.TacheService;
-import tn.khotwa.service.UserServices.CurrentUserService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/coach")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('COACH')")
 public class CoachController {
 
     private final TacheService tacheService;
     private final ProjetStateMachineService stateMachineService;
     private final ProjetCoachService projetCoachService;
     private final ProjetService projetService;
-    private final CurrentUserService currentUser;
 
     @PostMapping("/projets/{projetId}/taches")
     public ResponseEntity<Tache> createTache(@PathVariable Long projetId,
+                                             @RequestParam Long coachId,
                                              @Valid @RequestBody TacheCreateRequestDto dto) {
-        return ResponseEntity.ok(tacheService.createTache(projetId, currentUser.getCurrentUserId(), dto));
+        return ResponseEntity.ok(tacheService.createTache(projetId, coachId, dto));
     }
 
     @PostMapping("/taches/{tacheId}/sous-taches")
@@ -88,9 +85,8 @@ public class CoachController {
     }
 
     @GetMapping("/projets-affectes")
-    public ResponseEntity<List<ProjetResponseDto>> projetsAffectes() {
-        List<Long> projetIds = projetCoachService
-                .findAffectationsActivesCoach(currentUser.getCurrentUserId())
+    public ResponseEntity<List<ProjetResponseDto>> projetsAffectes(@RequestParam Long coachId) {
+        List<Long> projetIds = projetCoachService.findAffectationsActivesCoach(coachId)
                 .stream()
                 .map(ProjetCoachResponseDto::getProjetId)
                 .toList();
@@ -107,6 +103,11 @@ public class CoachController {
         return ResponseEntity.ok(tacheService.sousTachesTache(tacheId));
     }
 
+    @GetMapping("/sous-taches/{sousTacheId}/documents")
+    public ResponseEntity<List<Document>> documentsSousTache(@PathVariable Long sousTacheId) {
+        return ResponseEntity.ok(tacheService.documentsSousTache(sousTacheId));
+    }
+
     @GetMapping("/projets/{projetId}/documents")
     public ResponseEntity<List<Document>> documentsProjet(@PathVariable Long projetId) {
         return ResponseEntity.ok(tacheService.documentsProjet(projetId));
@@ -116,9 +117,14 @@ public class CoachController {
     public ResponseEntity<byte[]> telechargerDocument(@PathVariable Long documentId) {
         Document document = tacheService.documentById(documentId);
         byte[] content = tacheService.lireContenuDocument(documentId);
+
         MediaType contentType;
-        try { contentType = MediaType.parseMediaType(document.getTypeContenu()); }
-        catch (Exception ex) { contentType = MediaType.APPLICATION_OCTET_STREAM; }
+        try {
+            contentType = MediaType.parseMediaType(document.getTypeContenu());
+        } catch (Exception ex) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
         return ResponseEntity.ok()
                 .contentType(contentType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getNomOriginal() + "\"")

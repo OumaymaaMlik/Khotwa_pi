@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/fix-vite-client-line-endings.cjs",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development"
@@ -28,6 +29,7 @@
     "@angular-devkit/build-angular": "^18.2.0",
     "@angular/cli": "^18.2.0",
     "@angular/compiler-cli": "^18.2.0",
+    "@types/google.accounts": "^0.0.18",
     "@types/sockjs-client": "^1.5.4",
     "typescript": "~5.4.0"
   }

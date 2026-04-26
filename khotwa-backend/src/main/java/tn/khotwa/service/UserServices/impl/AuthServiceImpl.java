@@ -24,6 +24,9 @@ import tn.khotwa.security.JwtService;
 import tn.khotwa.service.SubscriptionServices.Interface.ISubscriptionService;
 import tn.khotwa.service.UserServices.AuthService;
 import tn.khotwa.service.UserServices.UserMapper;
+import tn.khotwa.service.GoogleAuthService;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService           jwtService;
     private final UserMapper           userMapper;
     private final ISubscriptionService subscriptionService; // ✅ injecté
+    private final GoogleAuthService googleAuthService;
 
     @Override
     public UserResponse register(RegisterRequest request) {
@@ -84,13 +88,52 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailAddress(normalizedEmail)
                 .orElseThrow(() -> new AuthenticationServiceException("Authenticated user not found."));
 
-        return new AuthResponse(
-                jwtService.generateToken(user),
-                user.getIdUser(),
-                user.getEmailAddress(),
-                user.getRole(),
-                user.isMustChangePassword()
-        );
+        return createAuthResponse(user);
+    }
+
+    @Override
+    public AuthResponse loginWithGoogle(String idToken, String rawRole, String mode) {
+        try {
+            var googlePayload = googleAuthService.verifyToken(idToken);
+            String email = normalizeEmail(googlePayload.getEmail());
+            boolean userExists = userRepository.existsByEmailAddress(email);
+
+            if (!StringUtils.hasText(mode)) {
+                throw new AuthenticationServiceException("Google auth mode is required (signin or signup).");
+            }
+            String normalizedMode = mode.trim().toLowerCase();
+            if (!"signin".equals(normalizedMode) && !"signup".equals(normalizedMode)) {
+                throw new AuthenticationServiceException("Invalid Google auth mode. Use signin or signup.");
+            }
+
+            if ("signin".equals(normalizedMode) && !userExists) {
+                throw new AuthenticationServiceException("No account found for this Google email. Please sign up first.");
+            }
+            if ("signup".equals(normalizedMode) && userExists) {
+                throw new EmailAlreadyUsedException("Account already exists. Please use Sign In.");
+            }
+
+            boolean isNewUser = !userExists;
+            User user = userRepository.findByEmailAddress(email).orElseGet(() -> {
+                Role role = resolvePublicRole(rawRole);
+                User newUser = User.builder()
+                        .emailAddress(email)
+                        .firstName((String) googlePayload.get("given_name"))
+                        .lastName((String) googlePayload.get("family_name"))
+                        .avatar((String) googlePayload.get("picture"))
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .role(role)
+                        .mustChangePassword(false)
+                        .build();
+                return userRepository.save(newUser);
+            });
+            if (isNewUser && user.getRole() == Role.ENTREPRENEUR) {
+                subscriptionService.createFreeSubscription(user);
+            }
+            return createAuthResponse(user);
+        } catch (Exception e) {
+            throw new AuthenticationServiceException("Google authentication failed: " + e.getMessage());
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -123,5 +166,15 @@ public class AuthServiceImpl implements AuthService {
             return null;
         }
         return value.trim();
+    }
+
+    private AuthResponse createAuthResponse(User user) {
+        return new AuthResponse(
+                jwtService.generateToken(user),
+                user.getIdUser(),
+                user.getEmailAddress(),
+                user.getRole(),
+                user.isMustChangePassword()
+        );
     }
 }

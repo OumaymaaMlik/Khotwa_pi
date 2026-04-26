@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.khotwa.entity.UserEntities.User;
-import tn.khotwa.enums.PrioriteTache;
-import tn.khotwa.enums.StatutTache;
-import tn.khotwa.enums.TypeTache;
+import tn.khotwa.enums.projectEnum.PrioriteTache;
+import tn.khotwa.enums.projectEnum.StatutTache;
+import tn.khotwa.enums.projectEnum.TypeTache;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

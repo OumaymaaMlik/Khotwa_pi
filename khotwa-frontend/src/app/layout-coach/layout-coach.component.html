@@ -12,7 +12,6 @@
       <!-- Logo -->
       <a routerLink="/coach/dashboard" class="coach-brand">
         <img src="assets/khotwa-logo.png" alt="KHOTWA" class="brand-logo-img" style="height:32px;width:auto;object-fit:contain;" />
-
         <span class="coach-brand__tag">Coach</span>
       </a>
 
@@ -31,10 +30,10 @@
       <!-- Right actions -->
       <div class="coach-nav__actions">
 
-        <!-- Validations badge rapide -->
+        <!-- Validations badge dynamique -->
         <a routerLink="/coach/validations" class="coach-quick-badge" title="Pending validations">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
-          <span>5</span>
+          <span>{{ pendingCount }}</span>
         </a>
 
         <!-- Notifs -->
@@ -72,6 +71,7 @@
           <span [innerHTML]="getIcon('home')"></span>
         </a>
 
+        <!-- Avatar -->
         <div class="coach-user" (click)="userMenuOpen=!userMenuOpen">
           <div class="coach-user__avatar">{{ userInitials }}</div>
           <div class="coach-user__info">
@@ -91,12 +91,14 @@
           </div>
         </div>
 
+        <!-- Burger -->
         <button class="coach-burger" (click)="mobileOpen=!mobileOpen" [class.open]="mobileOpen">
           <span></span><span></span><span></span>
         </button>
       </div>
     </div>
 
+    <!-- Mobile drawer -->
     <div class="coach-mobile-nav" [class.open]="mobileOpen">
       <a *ngFor="let item of navItems"
          class="coach-mobile-link"
@@ -109,9 +111,10 @@
     </div>
   </header>
 
+  <!-- ── Overlay mobile ─────────────────────────── -->
   <div class="coach-overlay" *ngIf="mobileOpen" (click)="mobileOpen=false"></div>
 
-  <!-- Logo -->
+  <!-- ── Barre décorative coach ────────────────── -->
   <div class="coach-accent-bar">
     <div class="coach-accent-bar__glow"></div>
   </div>

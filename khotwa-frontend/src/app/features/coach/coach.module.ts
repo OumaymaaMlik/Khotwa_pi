@@ -14,8 +14,8 @@ import { CoachPlanningComponent }      from './planning/planning.component';
 import { CoachMessagesComponent }      from './messages/messages.component';
 import { CoachProgressionsComponent }  from './progressions/progressions.component';
 import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
-import { CoachTalentComponent }         from './talent/talent.component';
-import { CoachNotificationsComponent } from './notifications/notifications.component';
+import { CoachTalentComponent }        from './talent/talent.component';
+import { CoachSettingsComponent }      from './settings/settings.component';
 import { CoachAccountPageComponent }   from './account-page/account-page.component';
 
 const routes: Routes = [
@@ -31,10 +31,10 @@ const routes: Routes = [
       { path: 'planning',     component: CoachPlanningComponent     },
       { path: 'messages',     component: CoachMessagesComponent     },
       { path: 'bibliotheque', component: CoachBibliothequeComponent },
-      { path: 'talent',       component: CoachTalentComponent },
-      { path: 'notifications', component: CoachNotificationsComponent },
       { path: 'progressions', component: CoachProgressionsComponent },
-      { path: 'account',      component: CoachAccountPageComponent  }, // ← new
+      { path: 'talent',       component: CoachTalentComponent       },
+      { path: 'settings',     component: CoachSettingsComponent     },
+      { path: 'account',      component: CoachAccountPageComponent  },
     ],
   },
 ];
@@ -44,7 +44,7 @@ const routes: Routes = [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
     CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
-    CoachAccountPageComponent,CoachNotificationsComponent,
+    CoachSettingsComponent, CoachAccountPageComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

@@ -9,7 +9,7 @@ import { FooterComponent } from './footer/footer.component';
   declarations: [SafeUrlPipe,AccountComponent, FooterComponent],
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   exports: [SafeUrlPipe,AccountComponent, FooterComponent, FormsModule, ReactiveFormsModule, CommonModule],
-  
-  
+
+
 })
 export class SharedModule {}

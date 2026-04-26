@@ -1,20 +1,25 @@
 <div class="page animate-1">
   <div class="page-header">
     <div><h1 class="kh-page-title">Project Management</h1><p class="page-sub">{{ filteredProjets.length }} project(s)</p></div>
-    <button class="kh-btn kh-btn--primary">+ New project</button>
+    <button class="kh-btn kh-btn--primary">Submitted projects workflow</button>
   </div>
+  <div class="assign-message" *ngIf="assignMessage">{{ assignMessage }}</div>
+  <div class="assign-message" *ngIf="projectsError">{{ projectsError }}</div>
   <div class="filters animate-2">
     <div class="search-box">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" placeholder="Search…" [(ngModel)]="search" />
     </div>
     <button class="tab" [class.active]="filtre==='all'" (click)="filtre='all'">All</button>
+    <button class="tab" [class.active]="filtre==='submitted'" (click)="filtre='submitted'">Submitted</button>
+    <button class="tab" [class.active]="filtre==='assigned'" (click)="filtre='assigned'">Assigned</button>
     <button class="tab" [class.active]="filtre==='in_progress'" (click)="filtre='in_progress'">In progress</button>
     <button class="tab" [class.active]="filtre==='suspended'" (click)="filtre='suspended'">Suspended</button>
     <button class="tab" [class.active]="filtre==='completed'" (click)="filtre='completed'">Completed</button>
   </div>
+  <div class="empty" *ngIf="loadingProjects">Loading projects from database...</div>
   <div class="grid animate-3">
-    <div *ngFor="let p of filteredProjets" class="card">
+    <div *ngFor="let p of filteredProjets" class="card" [style.opacity]="loadingProjects ? 0.6 : 1">
       <div class="card-top">
         <div class="card-icon" [style.background]="p.status==='in_progress'?'linear-gradient(135deg,#2ABFBF,#1a9999)':p.status==='completed'?'linear-gradient(135deg,#27AE7A,#1a8a5e)':'linear-gradient(135deg,#F5A623,#d4881e)'">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -22,19 +27,212 @@
         <span class="kh-badge" [class]="p.status==='in_progress'?'kh-badge--teal':p.status==='completed'?'kh-badge--green':'kh-badge--amber'">{{ p.status | uppercase }}</span>
       </div>
       <p class="card-name">{{ p.titre }}</p>
-      <p class="card-meta">{{ p.description }}</p>
+      <p class="assignment-line">{{ etatLabel(p) }}</p>
+      <p class="assignment-line">Entrepreneur: {{ p.entrepreneur }}</p>
       <div class="card-progress">
         <div class="kh-progress"><div class="kh-progress__fill" [style.width.%]="p.progression"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:5px"><span style="font-size:11px;color:var(--text-muted)">Progress</span><strong style="font-size:12px">{{ p.progression }}%</strong></div>
       </div>
       <div class="card-footer">
-        <span style="font-size:11px;color:var(--text-muted)">{{ p.etapes.length }} step(s)</span>
+        <span style="font-size:11px;color:var(--text-muted)">{{ p.etapesCount }} step(s)</span>
         <div class="actions">
-          <button class="kh-btn kh-btn--ghost kh-btn--sm kh-btn--icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          <button class="kh-btn kh-btn--danger kh-btn--sm kh-btn--icon" (click)="delete(p.id)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+          <button class="kh-btn kh-btn--primary kh-btn--sm" *ngIf="canAssignCoach(p)" (click)="openAssignCoach(p)">Assign coach</button>
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" *ngIf="canReassignCoach(p)" (click)="openReassignCoach(p)">Reassign</button>
+          <span class="assigned-chip" *ngIf="canReassignCoach(p)">Assigned</span>
+          <button class="kh-btn kh-btn--ghost kh-btn--sm kh-btn--icon" (click)="openProjectDetails(p)" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
         </div>
       </div>
     </div>
-    <div *ngIf="filteredProjets.length===0" class="empty" style="grid-column:1/-1">No projects found</div>
+    <div *ngIf="!loadingProjects && filteredProjets.length===0" class="empty" style="grid-column:1/-1">No submitted projects found in database</div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showAssignModal" (click)="closeAssignCoach()">
+    <div class="assign-modal assign-modal--wide" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Affecter des coachs</h3>
+        <button class="assign-modal-close" (click)="closeAssignCoach()">×</button>
+      </div>
+      <p class="assign-modal-sub" *ngIf="selectedProjet">Sélectionnez les coachs pour <strong>{{ selectedProjet.titre }}</strong>.</p>
+
+      <p class="assign-modal-sub" *ngIf="coachsLoading">Chargement des coachs...</p>
+      <p class="assign-modal-sub" *ngIf="recommendationLoading">Calcul des recommandations automatiques...</p>
+      <p class="assign-modal-sub" *ngIf="coachsError">{{ coachsError }}</p>
+      <div class="rec-panel-toggle" *ngIf="!recommendationLoading && topRecommendationCandidates.length > 0 && !showRecommendationPanel">
+        <button class="kh-btn kh-btn--ghost kh-btn--sm" type="button" (click)="toggleRecommendationPanel()">Voir Top 3 recommandés</button>
+      </div>
+
+      <div class="rec-panel" *ngIf="!recommendationLoading && topRecommendationCandidates.length > 0 && showRecommendationPanel">
+        <div class="rec-panel__header">
+          <p class="rec-panel__title">Top 3 recommandés</p>
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" type="button" (click)="toggleRecommendationPanel()">Masquer</button>
+        </div>
+        <p class="rec-panel__subtitle">Lecture rapide: vert = fort, orange = moyen, rouge = faible.</p>
+        <div class="rec-card" *ngFor="let rec of topRecommendationCandidates; let i = index">
+          <div class="rec-card__head">
+            <strong>#{{ i + 1 }} {{ rec.coachNomAffiche }}</strong>
+            <span class="rec-card__score">Score global {{ formatScore(rec.scoreGlobal) }}/100</span>
+          </div>
+          <div class="rec-card__bar"><span [style.width.%]="scoreWidth(rec.scoreGlobal)"></span></div>
+          <div class="rec-card__meta">
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreTemps, 40)">Temps {{ formatScore(rec.scoreTemps) }}/40</span>
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreMetier, 30)">Métier {{ formatScore(rec.scoreMetier) }}/30</span>
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreDisponibilite, 10)">Dispo {{ formatScore(rec.scoreDisponibilite) }}/10</span>
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreEquite, 20)">Équité {{ formatScore(rec.scoreEquite) }}/20</span>
+            <span class="metric-pill metric-pill--neutral">Charge {{ rec.chargeActuelle }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="assign-flow-step">1. Choisir le coach principal</p>
+      <label class="assign-label">Coach principal</label>
+      <select [(ngModel)]="selectedPrincipalCoachId" class="assign-select" (ngModelChange)="onPrincipalCoachChange()">
+        <option value="">Choisir un coach principal</option>
+        <option *ngFor="let coach of coachs" [value]="coach.id">{{ principalCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
+      </select>
+
+      <p class="assign-flow-step">2. Ajouter des coachs secondaires (optionnel)</p>
+      <label class="assign-label">Coachs secondaires (optionnel)</label>
+      <select [(ngModel)]="selectedSecondaryCoachId" class="assign-select">
+        <option value="">Aucun coach secondaire</option>
+        <option *ngFor="let coach of selectableSecondaryCoachs" [value]="coach.id">{{ secondaryCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
+      </select>
+
+      <p class="assign-flow-step">3. Ajouter des experts métier (optionnel)</p>
+      <label class="assign-label">Experts métier (optionnel)</label>
+      <select [(ngModel)]="selectedExpertCoachId" class="assign-select">
+        <option value="">Aucun expert métier</option>
+        <option *ngFor="let coach of selectableExpertCoachs" [value]="coach.id">{{ expertCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
+      </select>
+
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--ghost" (click)="closeAssignCoach()">Annuler</button>
+        <button class="kh-btn kh-btn--primary" [disabled]="!selectedPrincipalCoachId || coachsLoading || !!coachsError" (click)="confirmAssignCoach()">Confirmer l'affectation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showReassignModal" (click)="closeReassignCoach()">
+    <div class="assign-modal" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Reassign coach</h3>
+        <button class="assign-modal-close" (click)="closeReassignCoach()">×</button>
+      </div>
+      <p class="assign-modal-sub" *ngIf="selectedProjet">Réaffecter un coach pour <strong>{{ selectedProjet.titre }}</strong>.</p>
+
+      <p class="assign-modal-sub" *ngIf="affectationsLoading">Chargement des affectations actives...</p>
+      <p class="assign-modal-sub" *ngIf="reassignRecommendationLoading">Calcul des recommandations de réaffectation...</p>
+
+      <div class="rec-panel" *ngIf="!reassignRecommendationLoading && topReassignRecommendations.length > 0">
+        <div class="rec-panel__header">
+          <p class="rec-panel__title">Top 3 recommandés pour réaffectation</p>
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" type="button" (click)="applyBestReassignRecommendation()">Appliquer le meilleur</button>
+        </div>
+        <div class="rec-card" *ngFor="let rec of topReassignRecommendations; let i = index">
+          <div class="rec-card__head">
+            <strong>#{{ i + 1 }} {{ rec.coachNomAffiche }}</strong>
+            <span class="rec-card__score">Score global {{ formatScore(rec.scoreGlobal) }}/100</span>
+          </div>
+          <div class="rec-card__meta">
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreTemps, 40)">Temps {{ formatScore(rec.scoreTemps) }}/40</span>
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreMetier, 30)">Métier {{ formatScore(rec.scoreMetier) }}/30</span>
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreDisponibilite, 10)">Dispo {{ formatScore(rec.scoreDisponibilite) }}/10</span>
+            <span class="metric-pill" [class]="'metric-pill--' + scoreTone(rec.scoreEquite, 20)">Équité {{ formatScore(rec.scoreEquite) }}/20</span>
+            <span class="metric-pill metric-pill--neutral">Charge {{ rec.chargeActuelle }}</span>
+          </div>
+        </div>
+      </div>
+
+      <label class="assign-label">Coach actuel</label>
+      <input class="assign-select" [value]="currentCoachLabel" readonly />
+
+      <label class="assign-label">Nouveau coach</label>
+      <select [(ngModel)]="selectedNewCoachId" class="assign-select">
+        <option value="">Choisir un nouveau coach</option>
+        <option *ngFor="let coach of selectableReassignCoachs" [value]="coach.id">{{ expertCoachOptionLabel(coach) }}</option>
+      </select>
+
+      <label class="assign-label">Rôle</label>
+      <select [(ngModel)]="selectedReassignRole" class="assign-select">
+        <option value="COACH_PRINCIPAL">Coach principal</option>
+        <option value="COACH_SECONDAIRE">Coach secondaire</option>
+        <option value="EXPERT_METIER">Expert métier</option>
+      </select>
+
+      <label class="assign-label">Motif</label>
+      <textarea [(ngModel)]="motifReaffectation" class="assign-select" rows="3" placeholder="Ex: indisponibilité, surcharge, besoin d'expertise métier"></textarea>
+
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--ghost" (click)="closeReassignCoach()">Annuler</button>
+        <button class="kh-btn kh-btn--primary" [disabled]="!selectedOldCoachId || !selectedNewCoachId || !motifReaffectation.trim()" (click)="confirmReassignCoach()">Confirmer la réaffectation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showAssignSuccessModal" (click)="closeAssignSuccessModal()">
+    <div class="assign-modal assign-modal--success" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Affectation confirmée</h3>
+        <button class="assign-modal-close" (click)="closeAssignSuccessModal()">×</button>
+      </div>
+      <p class="assign-modal-sub">{{ successModalMessage }}</p>
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--primary" (click)="closeAssignSuccessModal()">OK et actualiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showReassignSuccessModal" (click)="closeReassignSuccessModal()">
+    <div class="assign-modal assign-modal--success" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Réaffectation confirmée</h3>
+        <button class="assign-modal-close" (click)="closeReassignSuccessModal()">×</button>
+      </div>
+      <p class="assign-modal-sub">{{ successModalMessage }}</p>
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--primary" (click)="closeReassignSuccessModal()">OK et actualiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assign-modal-overlay" *ngIf="showDetailsModal" (click)="closeProjectDetails()">
+    <div class="assign-modal project-details-modal" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header">
+        <h3>Project details</h3>
+        <button class="assign-modal-close" (click)="closeProjectDetails()">×</button>
+      </div>
+
+      <p class="assign-modal-sub" *ngIf="selectedProjectDetails">Full details for <strong>{{ selectedProjectDetails.titre }}</strong>.</p>
+
+      <div *ngIf="selectedProjectDetails" class="project-details-grid">
+        <div class="project-details-item"><span>Project</span><strong>{{ selectedProjectDetails.titre }}</strong></div>
+        <div class="project-details-item"><span>Status</span><strong>{{ selectedProjectDetails.status | uppercase }}</strong></div>
+        <div class="project-details-item"><span>Validation</span><strong>{{ etatLabel(selectedProjectDetails) }}</strong></div>
+        <div class="project-details-item"><span>Entrepreneur</span><strong>{{ selectedProjectDetails.entrepreneur }}</strong></div>
+        <div class="project-details-item"><span>Sector</span><strong>{{ formatSecteurLabel(selectedProjectDetails.secteur) }}</strong></div>
+        <div class="project-details-item"><span>Stage</span><strong>{{ formatStadeLabel(selectedProjectDetails.stadeProjet) }}</strong></div>
+        <div class="project-details-item"><span>Submitted</span><strong>{{ selectedProjectDetails.dateSoumission ? (selectedProjectDetails.dateSoumission | date:'short') : 'N/A' }}</strong></div>
+        <div class="project-details-item"><span>Progress</span><strong>{{ selectedProjectDetails.progression }}%</strong></div>
+      </div>
+
+      <div *ngIf="selectedProjectDetails" class="project-details-section">
+        <label class="assign-label">Description</label>
+        <p class="project-details-text">{{ selectedProjectDetails.description || 'N/A' }}</p>
+      </div>
+
+      <div *ngIf="selectedProjectDetails" class="project-details-section">
+        <label class="assign-label">Active coach assignment(s)</label>
+        <p class="project-details-text" *ngIf="!affectationsLoading && activeAffectations.length === 0">No active coach assignment.</p>
+        <p class="project-details-text" *ngIf="affectationsLoading">Loading assignments...</p>
+        <ul class="project-details-list" *ngIf="!affectationsLoading && activeAffectations.length > 0">
+          <li *ngFor="let affectation of activeAffectations">
+            {{ getCoachName(affectation.coachId) }} · {{ formatRoleLabel(affectation.roleCoachProjet) }}
+          </li>
+        </ul>
+      </div>
+
+      <div class="assign-actions">
+        <button class="kh-btn kh-btn--ghost" (click)="closeProjectDetails()">Close</button>
+      </div>
+    </div>
   </div>
 </div>

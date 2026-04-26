@@ -2,8 +2,8 @@ package tn.khotwa.dto.projet;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import tn.khotwa.enums.RoleCoachProjet;
 import jakarta.validation.constraints.NotBlank;
+import tn.khotwa.enums.projectEnum.RoleCoachProjet;
 
 @Data
 public class ReaffectationCoachRequestDto {

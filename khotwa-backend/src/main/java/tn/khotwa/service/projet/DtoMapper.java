@@ -6,6 +6,7 @@ import tn.khotwa.dto.projet.ProjetResponseDto;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.ProjetCoach;
 
+
 @Component
 public class DtoMapper {
 
@@ -22,6 +23,8 @@ public class DtoMapper {
                 .innovationDescription(projet.getInnovationDescription())
                 .scalabiliteDescription(projet.getScalabiliteDescription())
                 .pocDisponible(projet.isPocDisponible())
+                .dateDebutProjet(projet.getDateDebutProjet())
+                .dateFinProjet(projet.getDateFinProjet())
                 .dateCreation(projet.getDateCreation())
                 .dateSoumission(projet.getDateSoumission())
                 .dateDerniereMiseAJour(projet.getDateDerniereMiseAJour())
@@ -30,7 +33,7 @@ public class DtoMapper {
                 .etatValidation(projet.getEtatValidation())
                 .scoreDisciplineGlobal(projet.getScoreDisciplineGlobal())
                 .entrepreneurId(projet.getEntrepreneurId())
-                .entrepreneurNomAffiche(projet.getEntrepreneur() != null ? projet.getEntrepreneur().getFirstName() + " " + projet.getEntrepreneur().getLastName() : null)
+                .entrepreneurNomAffiche(projet.getEntrepreneur() != null ? projet.getEntrepreneur().getNomAffiche() : null)
                 .adminId(projet.getAdminId())
                 .build();
     }
@@ -40,7 +43,7 @@ public class DtoMapper {
                 .id(pc.getId())
                 .projetId(pc.getProjetId())
                 .coachId(pc.getCoachId())
-            .coachNomAffiche(pc.getCoach() != null ? pc.getCoach().getFirstName() + " " + pc.getCoach().getLastName() : null)
+            .coachNomAffiche(pc.getCoach() != null ? pc.getCoach().getNomAffiche() : null)
                 .dateAffectation(pc.getDateAffectation())
                 .affecteParAdminId(pc.getAffecteParAdminId())
                 .roleCoachProjet(pc.getRoleCoachProjet())

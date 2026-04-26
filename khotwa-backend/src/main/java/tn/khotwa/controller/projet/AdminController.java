@@ -2,22 +2,32 @@ package tn.khotwa.controller.projet;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.projet.*;
+import tn.khotwa.dto.projet.ProjetCoachResponseDto;
+import tn.khotwa.dto.projet.TransitionProjetRequestDto;
+import tn.khotwa.dto.projet.CoachDisponibiliteDto;
+import tn.khotwa.dto.projet.CoachDisponibilitePeriodeResponseDto;
+import tn.khotwa.dto.projet.CoachDisponibilitePeriodeRequestDto;
+import tn.khotwa.dto.projet.RecommandationAffectationResponseDto;
+import tn.khotwa.dto.projet.ProjetResponseDto;
+import tn.khotwa.dto.projet.AffectationCoachRequestDto;
+import tn.khotwa.dto.projet.AffectationCoachMultipleRequestDto;
+import tn.khotwa.dto.projet.ReaffectationCoachRequestDto;
 import tn.khotwa.entity.projet.Projet;
-import tn.khotwa.enums.EtatValidationProjet;
-import tn.khotwa.enums.StatutTache;
-import tn.khotwa.projection.user.UserView;
-import tn.khotwa.repository.UserRepo.UserRepository;
-import tn.khotwa.repository.projet.ProjetCoachRepository;
-import tn.khotwa.repository.projet.ProjetRepository;
-import tn.khotwa.repository.projet.SousTacheRepository;
-import tn.khotwa.repository.projet.TacheRepository;
+import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.enums.projectEnum.EtatValidationProjet;
+import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.projectEnum.StatutTache;
+import tn.khotwa.service.projet.CoachDisponibilitePeriodeService;
+import tn.khotwa.service.projet.CoachRecommendationService;
 import tn.khotwa.service.projet.ProjetCoachService;
 import tn.khotwa.service.projet.ProjetService;
 import tn.khotwa.service.projet.ProjetStateMachineService;
-import tn.khotwa.service.UserServices.CurrentUserService;
+import tn.khotwa.repository.projet.ProjetRepository;
+import tn.khotwa.repository.projet.ProjetCoachRepository;
+import tn.khotwa.repository.projet.SousTacheRepository;
+import tn.khotwa.repository.projet.TacheRepository;
+import tn.khotwa.repository.UserRepo.UserRepository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,9 +36,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
+    private final CoachDisponibilitePeriodeService coachDisponibilitePeriodeService;
+    private final CoachRecommendationService coachRecommendationService;
     private final ProjetCoachService projetCoachService;
     private final ProjetStateMachineService stateMachineService;
     private final ProjetService projetService;
@@ -37,46 +48,42 @@ public class AdminController {
     private final ProjetCoachRepository projetCoachRepository;
     private final TacheRepository tacheRepository;
     private final SousTacheRepository sousTacheRepository;
-    private final CurrentUserService currentUser;
 
     @GetMapping("/projets/soumis")
     public ResponseEntity<List<ProjetResponseDto>> projetsSoumis() {
-        return ResponseEntity.ok(
-            projetRepository.findByEtatValidation(EtatValidationProjet.SOUMIS_ADMIN)
-                .stream().map(p -> projetService.byId(p.getId())).toList()
-        );
+        List<ProjetResponseDto> projets = projetRepository.findByEtatValidation(EtatValidationProjet.SOUMIS_ADMIN).stream()
+                .map(p -> projetService.byId(p.getId()))
+                .toList();
+        return ResponseEntity.ok(projets);
     }
 
     @GetMapping("/projets/affectes")
     public ResponseEntity<List<ProjetResponseDto>> projetsAffectes() {
-        return ResponseEntity.ok(
-            projetRepository.findByEtatValidation(EtatValidationProjet.AFFECTE_COACH)
-                .stream().map(p -> projetService.byId(p.getId())).toList()
-        );
+        List<ProjetResponseDto> projets = projetRepository.findByEtatValidation(EtatValidationProjet.AFFECTE_COACH).stream()
+                .map(p -> projetService.byId(p.getId()))
+                .toList();
+        return ResponseEntity.ok(projets);
     }
 
     @PostMapping("/projets/{projetId}/affectations")
     public ResponseEntity<ProjetCoachResponseDto> affecterCoach(@PathVariable Long projetId,
                                                                 @RequestBody AffectationCoachRequestDto dto) {
-        // Inject adminId from JWT
-        dto.setAdminId(currentUser.getCurrentUserId());
         ProjetCoachResponseDto affectation = projetCoachService.affecterCoach(projetId, dto);
-        stateMachineService.affecterCoach(projetId, currentUser.getCurrentUserId());
+        stateMachineService.affecterCoach(projetId, dto.getAdminId());
         return ResponseEntity.ok(affectation);
     }
 
     @PostMapping("/projets/{projetId}/affectations/multiple")
     public ResponseEntity<List<ProjetCoachResponseDto>> affecterCoachs(@PathVariable Long projetId,
-                                                                        @RequestBody AffectationCoachMultipleRequestDto dto) {
-        dto.setAdminId(currentUser.getCurrentUserId());
+                                                                       @RequestBody AffectationCoachMultipleRequestDto dto) {
         List<ProjetCoachResponseDto> affectations = projetCoachService.affecterCoachs(projetId, dto);
-        stateMachineService.affecterCoach(projetId, currentUser.getCurrentUserId());
+        stateMachineService.affecterCoach(projetId, dto.getAdminId());
         return ResponseEntity.ok(affectations);
     }
 
     @PostMapping("/projets/{projetId}/reaffectations")
     public ResponseEntity<ProjetCoachResponseDto> reaffecterCoach(@PathVariable Long projetId,
-                                                                   @RequestBody ReaffectationCoachRequestDto dto) {
+                                                                  @RequestBody ReaffectationCoachRequestDto dto) {
         return ResponseEntity.ok(projetCoachService.reaffecterCoach(projetId, dto));
     }
 
@@ -114,35 +121,63 @@ public class AdminController {
 
     @GetMapping("/coachs/disponibles")
     public ResponseEntity<List<CoachDisponibiliteDto>> coachsDisponibles() {
-        List<CoachDisponibiliteDto> coachs = userRepository.findAllProjectedBy()
+        List<CoachDisponibiliteDto> coachs = userRepository.findByRoleAsEntity(Role.COACH)
                 .stream()
-                .filter(u -> u.getRole() != null && u.getRole().name().equals("COACH"))
                 .map(this::toCoachDisponibilite)
                 .toList();
         return ResponseEntity.ok(coachs);
     }
 
+    @GetMapping("/coachs/{coachId}/disponibilites")
+    public ResponseEntity<List<CoachDisponibilitePeriodeResponseDto>> disponibilitesCoach(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachDisponibilitePeriodeService.listByCoachId(coachId));
+    }
+
+    @PostMapping("/coachs/{coachId}/disponibilites")
+    public ResponseEntity<CoachDisponibilitePeriodeResponseDto> ajouterDisponibiliteCoach(
+            @PathVariable Long coachId,
+            @RequestBody CoachDisponibilitePeriodeRequestDto dto) {
+        return ResponseEntity.ok(coachDisponibilitePeriodeService.create(coachId, dto));
+    }
+
+    @DeleteMapping("/coachs/disponibilites/{disponibiliteId}")
+    public ResponseEntity<Void> desactiverDisponibiliteCoach(@PathVariable Long disponibiliteId) {
+        coachDisponibilitePeriodeService.deactivate(disponibiliteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/projets/{projetId}/recommandations-coachs")
+    public ResponseEntity<RecommandationAffectationResponseDto> recommanderCoachs(@PathVariable Long projetId) {
+        return ResponseEntity.ok(coachRecommendationService.recommendForProject(projetId));
+    }
+
     @GetMapping("/reporting")
     public ResponseEntity<Map<String, Object>> reporting() {
         Map<String, Object> report = new HashMap<>();
-        report.put("projetsSoumis",       projetRepository.findByEtatValidation(EtatValidationProjet.SOUMIS_ADMIN).size());
-        report.put("projetsValides",       projetRepository.findByEtatValidation(EtatValidationProjet.VALIDE).size());
-        report.put("projetsRefuses",       projetRepository.findByEtatValidation(EtatValidationProjet.REFUSE).size());
-        report.put("retardsTachesActifs",  tacheRepository.findByStatutTache(StatutTache.EN_RETARD).size());
+        report.put("projetsSoumis", projetRepository.findByEtatValidation(EtatValidationProjet.SOUMIS_ADMIN).size());
+        report.put("projetsValides", projetRepository.findByEtatValidation(EtatValidationProjet.VALIDE).size());
+        report.put("projetsRefuses", projetRepository.findByEtatValidation(EtatValidationProjet.REFUSE).size());
+        report.put("retardsTachesActifs", tacheRepository.findByStatutTache(StatutTache.EN_RETARD).size());
         report.put("retardsSousTachesActifs", sousTacheRepository.findByStatutSousTache(StatutTache.EN_RETARD).size());
-        report.put("scoreMoyenDiscipline", projetRepository.findAll().stream()
-                .mapToInt(Projet::getScoreDisciplineGlobal).average().orElse(0.0));
+        report.put("scoreMoyenDiscipline", projetRepository.findAll().stream().mapToInt(Projet::getScoreDisciplineGlobal).average().orElse(0.0));
         return ResponseEntity.ok(report);
     }
 
-    private CoachDisponibiliteDto toCoachDisponibilite(UserView coach) {
+    private CoachDisponibiliteDto toCoachDisponibilite(User coach) {
         long chargeActive = projetCoachRepository.countByCoachIdAndActifTrue(coach.getIdUser());
+
+        // Fallback sur firstName + lastName si nomAffiche n'est pas renseigné
+        String nomAffiche = coach.getNomAffiche();
+        if (nomAffiche == null || nomAffiche.isBlank()) {
+            nomAffiche = (coach.getFirstName() + " " + coach.getLastName()).trim();
+        }
+
         return CoachDisponibiliteDto.builder()
                 .coachId(coach.getIdUser())
-                .nomAffiche(coach.getFirstName() + " " + coach.getLastName())
-                .specialite(null)
-                .secteur(null)
-                .disponibilite(null)
+                .nomAffiche(nomAffiche)
+                .specialite(coach.getSpecialite())
+                .secteur(coach.getRegion())
+                .disponibilite(coach.getDisponibilite())
                 .chargeActuelle(chargeActive)
                 .nombreProjetsActifs(chargeActive)
                 .build();

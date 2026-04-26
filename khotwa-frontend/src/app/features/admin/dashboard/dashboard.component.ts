@@ -1,49 +1,45 @@
 import { Component, OnInit } from '@angular/core';
-import { ProjetService, ProjetResponseDto } from '../../../core/services/projet.service';
+import { AdminReportingResponse, ProjetService } from '../../../core/services/projet.service';
 
 @Component({ selector:'app-admin-dashboard', templateUrl:'./dashboard.component.html', styleUrls:['./dashboard.component.css'] })
 export class AdminDashboardComponent implements OnInit {
+  reporting: AdminReportingResponse | null = null;
 
-  projets:   ProjetResponseDto[] = [];
-  reporting: any = {};
-  loading = false;
+  constructor(public projetService: ProjetService) {}
 
-  constructor(private projetService: ProjetService) {}
+  ngOnInit(): void {
+    this.projetService.loadAdminSubmittedProjects().subscribe({
+      error: () => {
+        // Keep current UI state if backend data cannot be fetched.
+      }
+    });
 
-  ngOnInit() { this.loadReporting(); this.loadProjets(); }
-
-  loadProjets() {
-    this.loading = true;
-    this.projetService.getProjetsSoumis().subscribe({
-      next: soumis => {
-        this.projetService.getProjetsAffectes().subscribe({
-          next: affectes => { this.projets = [...soumis, ...affectes]; this.loading = false; },
-          error: () => { this.projets = soumis; this.loading = false; }
-        });
+    this.projetService.loadAdminReporting().subscribe({
+      next: (report) => {
+        this.reporting = report;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.reporting = null;
+      }
     });
   }
 
-  loadReporting() {
-    this.projetService.getReporting().subscribe({
-      next: r => this.reporting = r,
-      error: () => {}
-    });
-  }
-
+  get projets() { return this.projetService.projets; }
   get stats() {
+    const activeDelays = (this.reporting?.retardsTachesActifs ?? 0) + (this.reporting?.retardsSousTachesActifs ?? 0);
     return {
       totalProjets: this.projets.length,
-      enCours:      this.reporting.projetsSoumis      ?? this.projets.length,
-      valides:      this.reporting.projetsValides      ?? 0,
-      retardsTaches:this.reporting.retardsTachesActifs ?? 0,
-      scoreMoyen:   this.reporting.scoreMoyenDiscipline?? 0,
-      // Valeurs statiques pour les KPIs sans endpoint backend
-      utilisateurs: 24,
-      abonnements:  18,
-      events:       3,
-      talents:      12,
+      enCours: this.projets.filter(p=>p.status==='in_progress').length,
+      projetsSoumis: this.reporting?.projetsSoumis ?? 0,
+      projetsValides: this.reporting?.projetsValides ?? 0,
+      projetsRefuses: this.reporting?.projetsRefuses ?? 0,
+      scoreMoyenDiscipline: this.reporting?.scoreMoyenDiscipline ?? 0,
+      activeDelays,
+      utilisateurs: 24, events: 3, abonnements: 18, talents: 12,
     };
+  }
+
+  get disciplineTrendClass(): 'up' | 'down' {
+    return this.stats.scoreMoyenDiscipline >= 30 ? 'up' : 'down';
   }
 }

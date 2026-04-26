@@ -2,7 +2,8 @@ package tn.khotwa.dto.projet;
 
 import lombok.Builder;
 import lombok.Data;
-import tn.khotwa.enums.RoleCoachProjet;
+import tn.khotwa.enums.projectEnum.RoleCoachProjet;
+
 
 import java.time.LocalDateTime;
 

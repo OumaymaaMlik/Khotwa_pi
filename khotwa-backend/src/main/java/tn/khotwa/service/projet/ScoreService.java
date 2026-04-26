@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.SousTache;
 import tn.khotwa.entity.projet.Tache;
-import tn.khotwa.enums.StatutTache;
+import tn.khotwa.enums.projectEnum.StatutTache;
 import tn.khotwa.exception.BusinessException;
 import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.projet.SousTacheRepository;

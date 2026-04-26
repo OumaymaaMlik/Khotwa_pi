@@ -52,6 +52,16 @@ export class AuthService {
     );
   }
 
+  loginWithGoogle(idToken: string, mode: 'signin' | 'signup', role?: string): Observable<any> {
+    const body: any = { idToken, mode };
+    if (role) {
+      body.role = role;
+    }
+    return this.http.post<any>(`${this.AUTH_API}/google`, body).pipe(
+      tap(res => this._saveLoginResponse(res))
+    );
+  }
+
     refreshProfile(): Observable<UserResponse> {
       const token = localStorage.getItem(TOKEN_KEY);
     const headers = token
@@ -62,6 +72,7 @@ export class AuthService {
       tap(profile => {
         this._currentUser = {
           idUser:             profile.idUser,
+          id:                 String(profile.idUser ?? ''),
           firstName:          profile.firstName,
           lastName:           profile.lastName,
           emailAddress:       profile.emailAddress,
@@ -73,6 +84,7 @@ export class AuthService {
           phoneNumber:        profile.phoneNumber,
           mustChangePassword: profile.mustChangePassword,
         };
+        this.currentUserSubject.next(this._currentUser);
         localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
       }),
       catchError(err => throwError(() => this.extractError(err)))
@@ -120,6 +132,7 @@ export class AuthService {
       emailAddress: '', role: 'VISITOR',
     };
     this._currentUser = visitor;
+    this.currentUserSubject.next(this._currentUser);
     localStorage.setItem(TOKEN_KEY, 'VISITOR');
     localStorage.setItem(ROLE_KEY,  'VISITOR');
     localStorage.setItem(USER_KEY,  JSON.stringify(visitor));
@@ -128,6 +141,7 @@ export class AuthService {
   // ── Logout ────────────────────────────────────────────────────────
   logout(): void {
     this._currentUser = null;
+    this.currentUserSubject.next(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ROLE_KEY);
@@ -160,7 +174,7 @@ export class AuthService {
     this._currentUser = {
       idUser:       res.idUser,
       id:           String(res.idUser ?? ''),
-      emailAddress: res.emailAddress,
+      emailAddress: res.emailAddress ?? res.email,
       role:         res.role as UserRole,
       firstName:    res.firstName  ?? '',
       lastName:     res.lastName   ?? '',
@@ -170,6 +184,7 @@ export class AuthService {
       startup:      res.startup,
       phoneNumber:  res.phoneNumber,
     };
+    this.currentUserSubject.next(this._currentUser);
     localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
   }
 
@@ -188,6 +203,7 @@ export class AuthService {
       startup:      profile.startup,
       phoneNumber:  profile.phoneNumber,
     };
+    this.currentUserSubject.next(this._currentUser);
     localStorage.setItem(ROLE_KEY, profile.role ?? '');
     localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
   }
@@ -208,6 +224,7 @@ export class AuthService {
       const saved = localStorage.getItem(USER_KEY)
                  ?? localStorage.getItem('user_profile'); // legacy key
       if (saved) this._currentUser = JSON.parse(saved);
+      this.currentUserSubject.next(this._currentUser);
     } catch {
       this.logout();
     }

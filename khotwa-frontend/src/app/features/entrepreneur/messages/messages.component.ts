@@ -52,7 +52,15 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['conversationId']) {
-        this.autoSelectConversationId = Number(params['conversationId']);
+        const conversationId = Number(params['conversationId']);
+        // If conversations are already loaded, select immediately
+        if (this.conversations.length > 0) {
+          const conv = this.conversations.find(c => c.participantId === conversationId);
+          if (conv) this.selectConv(conv);
+        } else {
+          // Otherwise mark it for auto-selection after loading
+          this.autoSelectConversationId = conversationId;
+        }
       }
     });
 
@@ -90,6 +98,12 @@ export class EntrepreneurMessagesComponent implements OnInit, OnDestroy, AfterVi
     return this.onlineStatusService.isOnline(userId);
   }
 
+  private getConversationDisplayName(msg: Message, otherId: number): string {
+    if (msg.senderId === otherId && msg.senderName) return msg.senderName;
+    if (msg.receiverId === otherId && msg.receiverName) return msg.receiverName;
+    return `User ${otherId}`;
+  }
+
   handleNewMessage(msg: Message) {
     const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
     const conv = this.conversations.find(c => c.participantId === otherId);
@@ -118,7 +132,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
       );
       }
     } else {
-      const senderName = msg.senderName || `User ${otherId}`;
+      const senderName = this.getConversationDisplayName(msg, otherId);
       this.conversations.unshift({
         id: `conv-${otherId}`,
         participantId: otherId,
@@ -197,7 +211,7 @@ console.log('Tri en cours...', this.conversations.map(c => ({ name: c.nom, date:
     messages.forEach(msg => {
       const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId;
       if (!groups[otherId]) {
-        const senderName = msg.senderName || `User ${otherId}`;
+        const senderName = this.getConversationDisplayName(msg, otherId);
         groups[otherId] = {
           id: `conv-${otherId}`,
           participantId: otherId,

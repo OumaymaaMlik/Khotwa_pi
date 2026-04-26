@@ -3,11 +3,14 @@ package tn.khotwa.entity.projet;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import tn.khotwa.config.projectConfig.SecteurProjetConverter;
 import tn.khotwa.entity.UserEntities.User;
-import tn.khotwa.enums.EtatValidationProjet;
-import tn.khotwa.enums.StadeProjet;
-import tn.khotwa.enums.StatutProjet;
+import tn.khotwa.enums.projectEnum.EtatValidationProjet;
+import tn.khotwa.enums.projectEnum.SecteurProjet;
+import tn.khotwa.enums.projectEnum.StadeProjet;
+import tn.khotwa.enums.projectEnum.StatutProjet;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +34,9 @@ public class Projet {
     @Column(length = 2000)
     private String description;
 
-    private String secteur;
+    @Convert(converter = SecteurProjetConverter.class)
+    @Column(nullable = false, length = 64)
+    private SecteurProjet secteur;
 
     @Column(length = 2000)
     private String problemeAdresse;
@@ -53,6 +58,10 @@ public class Projet {
     private String scalabiliteDescription;
 
     private boolean pocDisponible;
+
+    private LocalDate dateDebutProjet;
+
+    private LocalDate dateFinProjet;
 
     @Column(nullable = false)
     private LocalDateTime dateCreation;

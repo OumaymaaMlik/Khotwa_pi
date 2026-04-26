@@ -5,8 +5,16 @@
   </div>
   <div class="kpi-grid animate-2">
     <div class="kpi-card">
+      <div class="kpi-icon" style="background:linear-gradient(135deg,#0F766E,#14B8A6)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 3v18h18"/><path d="M8 14l3-3 3 2 4-5"/></svg></div>
+      <div><p class="kpi-value">{{ stats.scoreMoyenDiscipline | number:'1.0-1' }}</p><p class="kpi-label">Average discipline score</p></div><span class="kpi-trend" [class]="disciplineTrendClass">{{ stats.scoreMoyenDiscipline >= 30 ? 'Healthy portfolio' : 'Needs attention' }}</span>
+    </div>
+    <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#E8622A,#FF9A5C)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
       <div><p class="kpi-value">{{ stats.totalProjets }}</p><p class="kpi-label">Total projects</p></div><span class="kpi-trend up">+2 this month</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:linear-gradient(135deg,#F97316,#EA580C)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3l-8.47-14.14a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div><p class="kpi-value">{{ stats.activeDelays }}</p><p class="kpi-label">Active delays</p></div><span class="kpi-trend" [class]="stats.activeDelays > 0 ? 'down' : 'up'">{{ stats.activeDelays > 0 ? 'Tasks/subtasks delayed' : 'On track' }}</span>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#2ABFBF,#1a9999)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
@@ -26,7 +34,7 @@
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#E84A4A,#c73232)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-      <div><p class="kpi-value">{{ stats.enCours }}</p><p class="kpi-label">Active projects</p></div>
+      <div><p class="kpi-value">{{ stats.enCours }}</p><p class="kpi-label">Active projects</p></div><span class="kpi-trend up">{{ stats.projetsValides }} validated</span>
     </div>
   </div>
   <div class="bottom-grid animate-3">

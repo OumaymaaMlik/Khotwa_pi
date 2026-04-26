@@ -8,6 +8,7 @@ export interface Message {
   senderId: number;
   receiverId: number;
   senderName: string;
+  receiverName: string;
   type: MessageType;
   status: MessageStatus;
   createdAt: Date;

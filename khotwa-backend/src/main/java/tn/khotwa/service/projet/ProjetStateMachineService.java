@@ -4,16 +4,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tn.khotwa.entity.projet.Projet;
+
+import tn.khotwa.entity.projet.ProjetCorrection;
 import tn.khotwa.entity.projet.SousTache;
 import tn.khotwa.entity.projet.Tache;
-import tn.khotwa.enums.EtatValidationProjet;
-import tn.khotwa.enums.StatutProjet;
-import tn.khotwa.enums.StatutTache;
+import tn.khotwa.enums.projectEnum.EtatValidationProjet;
+import tn.khotwa.enums.projectEnum.ProjetCorrectionStatut;
+import tn.khotwa.enums.projectEnum.StatutProjet;
+import tn.khotwa.enums.projectEnum.StatutTache;
 import tn.khotwa.exception.BusinessException;
-import tn.khotwa.repository.projet.ProjetCoachRepository;
-import tn.khotwa.repository.projet.ProjetRepository;
-import tn.khotwa.repository.projet.SousTacheRepository;
-import tn.khotwa.repository.projet.TacheRepository;
+import tn.khotwa.repository.projet.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +24,7 @@ public class ProjetStateMachineService {
 
     private final ProjetRepository projetRepository;
     private final ProjetCoachRepository projetCoachRepository;
+    private final ProjetCorrectionRepository projetCorrectionRepository;
     private final TacheRepository tacheRepository;
     private final SousTacheRepository sousTacheRepository;
 
@@ -77,8 +78,13 @@ public class ProjetStateMachineService {
     public Projet validerProjet(Long projetId) {
         Projet projet = getProjet(projetId);
         ensureState(projet, EtatValidationProjet.EN_REVUE);
-        projet.setEtatValidation(EtatValidationProjet.VALIDE);
-        projet.setStatutProjet(StatutProjet.TERMINE);
+        projet.setEtatValidation(EtatValidationProjet.AFFECTE_COACH);
+        projet.setStatutProjet(StatutProjet.EN_COURS);
+        projetCorrectionRepository.findTopByProjetIdOrderByDateDemandeCorrectionDesc(projetId)
+                .ifPresent(correction -> {
+                    correction.setStatutCorrection(ProjetCorrectionStatut.APPROUVEE_PAR_COACH);
+                    projetCorrectionRepository.save(correction);
+                });
         projet.setDateDerniereMiseAJour(LocalDateTime.now());
         return projetRepository.save(projet);
     }
@@ -96,7 +102,19 @@ public class ProjetStateMachineService {
             throw new BusinessException("Demande de correction non autorisee sur un projet finalise");
         }
 
+        ProjetCorrectionStatut statutCorrection = projetCorrectionRepository.findTopByProjetIdOrderByDateDemandeCorrectionDesc(projetId)
+            .map(existing -> existing.getStatutCorrection() == ProjetCorrectionStatut.RESOUMISE_PAR_ENTREPRENEUR
+                ? ProjetCorrectionStatut.RECORRECTION_DEMANDEE
+                : ProjetCorrectionStatut.DEMANDEE)
+            .orElse(ProjetCorrectionStatut.DEMANDEE);
+
         projet.setEtatValidation(EtatValidationProjet.A_CORRIGER);
+        projetCorrectionRepository.save(ProjetCorrection.builder()
+            .projetId(projetId)
+            .commentaire(commentaire.trim())
+            .dateDemandeCorrection(LocalDateTime.now())
+            .statutCorrection(statutCorrection)
+            .build());
         projet.setDateDerniereMiseAJour(LocalDateTime.now());
         return projetRepository.save(projet);
     }
@@ -107,6 +125,11 @@ public class ProjetStateMachineService {
         ensureState(projet, EtatValidationProjet.A_CORRIGER);
 
         markCorrectedWorkAsResubmitted(projetId);
+        projetCorrectionRepository.findTopByProjetIdOrderByDateDemandeCorrectionDesc(projetId)
+            .ifPresent(correction -> {
+                correction.setStatutCorrection(ProjetCorrectionStatut.RESOUMISE_PAR_ENTREPRENEUR);
+                projetCorrectionRepository.save(correction);
+            });
 
         projet.setEtatValidation(EtatValidationProjet.EN_REVUE);
         projet.setDateDerniereMiseAJour(LocalDateTime.now());

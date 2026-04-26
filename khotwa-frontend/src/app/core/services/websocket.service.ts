@@ -1,10 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { Subject } from 'rxjs';
 import { Message, Notification } from '../models/message.model';
-
-// Dynamic import of SockJS - loaded only when needed
-let SockJS: any = null;
 
 export interface TypingEvent {
   userId: number;
@@ -18,7 +16,7 @@ export interface StatusEvent {
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
-  private client: Client | null = null;
+  private client: Client;
   private subscriptions: StompSubscription[] = [];
   private isConnected = false;
   private isConnecting = false; 
@@ -30,21 +28,19 @@ export class WebSocketService {
   status$ = new Subject<StatusEvent>();
 
   constructor() {
-    // WebSocket disabled to prevent sockjs-client bundling issues
-    // Use HTTP polling for notifications instead
-  }
-
-  private initializeWebSocket() {
-    // WebSocket initialization disabled
-    // Use HTTP polling for notifications instead
-    this.client = null;
+    this.client = new Client({
+      webSocketFactory: () => new SockJS('/khotwa/ws'),
+      reconnectDelay: 5000,
+      onDisconnect: () => {
+        console.log('WebSocket disconnected');
+        this.isConnected = false;
+        this.isConnecting = false;
+      },
+      onStompError: (frame) => console.error('WebSocket error:', frame)
+    });
   }
 
   connect(userId: number) {
-    if (!this.client) {
-      console.warn('WebSocket client not available');
-      return;
-    }
     if (this.isConnected || this.isConnecting) return;
     this.isConnecting = true;
 
@@ -54,11 +50,8 @@ export class WebSocketService {
       
       this.unsubscribeAll();
 
-      const stomp = this.client;
-      if (!stomp) return;
-
       this.subscriptions.push(
-        stomp.subscribe(`/topic/messages/${userId}`, (msg: { body: string }) => {
+        this.client.subscribe(`/topic/messages/${userId}`, (msg) => {
           const message = JSON.parse(msg.body);
           if (message.deletedForAll || message.deletedForUsers || message.status !== 'PENDING') {
             this.messageUpdate$.next(message);
@@ -67,15 +60,15 @@ export class WebSocketService {
           }
         }),
 
-        stomp.subscribe(`/topic/notifications/${userId}`, (msg: { body: string }) => {
+        this.client.subscribe(`/topic/notifications/${userId}`, (msg) => {
           this.newNotification$.next(JSON.parse(msg.body));
         }),
 
-        stomp.subscribe(`/topic/typing/${userId}`, (msg: { body: string }) => {
+        this.client.subscribe(`/topic/typing/${userId}`, (msg) => {
           this.typing$.next(JSON.parse(msg.body));
         }),
 
-        stomp.subscribe(`/topic/status`, (msg: { body: string }) => {
+        this.client.subscribe(`/topic/status`, (msg) => {
           this.status$.next(JSON.parse(msg.body));
         })
       );
@@ -90,7 +83,6 @@ export class WebSocketService {
   }
 
   disconnect() {
-    if (!this.client) return;
     this.unsubscribeAll();
     this.client.deactivate();
     this.isConnected = false;
@@ -98,11 +90,12 @@ export class WebSocketService {
   }
 
   sendTyping(senderId: number, receiverId: number, isTyping: boolean) {
-    if (!this.client || !this.client.connected) return;
-    this.client.publish({
-      destination: '/app/typing',
-      body: JSON.stringify({ senderId, receiverId, typing: isTyping })
-    });
+    if (this.client && this.client.connected) {
+      this.client.publish({
+        destination: '/app/typing',
+        body: JSON.stringify({ senderId, receiverId, typing: isTyping })
+      });
+    }
   }
 
   sendOnlineStatus(userId: number, isOnline: boolean) {

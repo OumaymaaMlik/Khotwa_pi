@@ -1,433 +1,319 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map, tap, switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
+import { Projet, ProjetStatut, SecteurProjet } from '../models';
 
-// ── Types alignés sur le backend ──────────────────────────────────────────────
-export type StatutProjet    = 'EN_COURS' | 'SUSPENDU' | 'TERMINE' | 'ARCHIVE';
-export type EtatValidation  = 'BROUILLON' | 'SOUMIS_ADMIN' | 'AFFECTE_COACH' | 'EN_REVUE' | 'VALIDE' | 'REFUSE' | 'A_CORRIGER';
-export type StadeProjet     = 'IDEATION' | 'PRE_SEED' | 'SEED' | 'EARLY_STAGE' | 'GROWTH';
-export type StatutTache     = 'A_FAIRE' | 'EN_COURS' | 'TERMINEE' | 'A_CORRIGER' | 'EN_CORRECTION' | 'EN_RETARD' | 'BLOQUEE';
-export type PrioriteTache   = 'FAIBLE' | 'NORMALE' | 'HAUTE' | 'CRITIQUE';
-export type TypeTache       = 'LIVRABLE' | 'REUNION' | 'FORMATION' | 'AUTRE';
-export type RoleCoachProjet = 'PRINCIPAL' | 'OBSERVATEUR';
+type SecteurProjetInput = SecteurProjet | '';
 
-// Compatibilité ascendante avec ancien mock
-export type ProjetStatut = 'in_progress' | 'suspended' | 'completed';
-
-export interface ProjetResponseDto {
-  id: number;
+export interface ProjetDraftInput {
   nomStartup: string;
   description: string;
-  secteur: string;
+  secteur: SecteurProjetInput;
   problemeAdresse: string;
   solutionProposee: string;
   businessModel: string;
-  stadeProjet: StadeProjet;
+  stadeProjet: 'IDEE' | 'POC' | 'MVP' | 'PROTOTYPE' | 'COMMERCIALISATION' | 'SCALING';
   innovationDescription: string;
   scalabiliteDescription: string;
   pocDisponible: boolean;
+  dateDebutProjet: string;
+  dateFinProjet: string;
+}
+
+interface BackendProjetResponse {
+  id: number;
+  nomStartup: string;
+  description: string;
+  secteur: SecteurProjet;
+  problemeAdresse: string;
+  solutionProposee: string;
+  businessModel: string;
+  stadeProjet: 'IDEE' | 'POC' | 'MVP' | 'PROTOTYPE' | 'COMMERCIALISATION' | 'SCALING';
+  innovationDescription: string;
+  scalabiliteDescription: string;
+  pocDisponible: boolean;
+  dateDebutProjet: string;
+  dateFinProjet: string;
   dateCreation: string;
-  dateSoumission: string;
   dateDerniereMiseAJour: string;
-  dateArchivage: string;
-  statutProjet: StatutProjet;
-  etatValidation: EtatValidation;
+  statutProjet: 'EN_COURS' | 'SUSPENDU' | 'TERMINE' | 'ARCHIVE';
+  etatValidation: 'BROUILLON' | 'SOUMIS_ADMIN' | 'AFFECTE_COACH' | 'EN_REVUE' | 'A_CORRIGER' | 'VALIDE' | 'REFUSE';
+  commentaireCorrectionCoach?: string;
+  dateDemandeCorrection?: string;
+  statutCorrectionProjet?: 'DEMANDEE' | 'RESOUMISE_PAR_ENTREPRENEUR' | 'APPROUVEE_PAR_COACH' | 'RECORRECTION_DEMANDEE';
+  correctionResoumiseEnAttenteCoach?: boolean;
   scoreDisciplineGlobal: number;
   entrepreneurId: number;
-  entrepreneurNomAffiche: string;
-  adminId: number;
 }
 
-export interface ProjetCreateRequestDto {
-  nomStartup: string;
-  description?: string;
-  secteur?: string;
-  problemeAdresse?: string;
-  solutionProposee?: string;
-  businessModel?: string;
-  stadeProjet: StadeProjet;
-  innovationDescription?: string;
-  scalabiliteDescription?: string;
-  pocDisponible?: boolean;
-}
+/** Alias for UI components that expect a “DTO” name; maps to the canonical `Projet` model. */
+export type ProjetResponseDto = Projet;
 
-export interface ProjetUpdateRequestDto {
-  nomStartup?: string;
-  description?: string;
-  secteur?: string;
-  problemeAdresse?: string;
-  solutionProposee?: string;
-  businessModel?: string;
-  stadeProjet?: StadeProjet;
-  innovationDescription?: string;
-  scalabiliteDescription?: string;
-  pocDisponible?: boolean;
-}
-
-export interface TacheDto {
-  id: number;
-  titre: string;
-  description: string;
-  typeTache: TypeTache;
-  priorite: PrioriteTache;
-  statutTache: StatutTache;
-  dateDebut: string;
-  dateFin: string;
-  retardJours: number;
-  commentaireCoach: string;
-  justificationEntrepreneur: string;
-  scoreImpact: number;
-  projetId: number;
-  coachCreateurId: number;
-}
-
-export interface TacheCreateRequestDto {
-  titre: string;
-  description?: string;
-  typeTache: TypeTache;
-  priorite: PrioriteTache;
-  dateDebut?: string;
-  dateFin?: string;
-  commentaireCoach?: string;
-}
-
-export interface SousTacheDto {
-  id: number;
-  titre: string;
-  description: string;
-  priorite: PrioriteTache;
-  statutSousTache: StatutTache;
-  dateDebut: string;
-  dateFin: string;
-  retardJours: number;
-  commentaireCoach: string;
-  justificationEntrepreneur: string;
-  scoreImpact: number;
-  tacheId: number;
-}
-
-export interface SousTacheCreateRequestDto {
-  titre: string;
-  description?: string;
-  priorite: PrioriteTache;
-  dateDebut?: string;
-  dateFin?: string;
-  commentaireCoach?: string;
-}
-
-export interface TacheStatutUpdateRequestDto {
-  statutTache: StatutTache;
-  commentaireCoach?: string;
-  justificationEntrepreneur?: string;
-}
-
-export interface SousTacheStatutUpdateRequestDto {
-  statutSousTache: StatutTache;
-  commentaireCoach?: string;
-  justificationEntrepreneur?: string;
-}
-
-export interface ProlongationRequestDto {
-  nouvelleDateFin: string;
-  justificationEntrepreneur: string;
-}
-
-export interface ProjetCoachResponseDto {
-  id: number;
-  projetId: number;
-  coachId: number;
-  coachNomAffiche: string;
-  dateAffectation: string;
-  affecteParAdminId: number;
-  roleCoachProjet: RoleCoachProjet;
-  motifReaffectation: string;
-  actif: boolean;
-}
-
-export interface AffectationCoachRequestDto {
-  coachId: number;
-  adminId: number;
-  roleCoachProjet: RoleCoachProjet;
-}
-
-export interface CoachDisponibiliteDto {
-  coachId: number;
-  nomAffiche: string;
-  specialite: string;
-  secteur: string;
-  disponibilite: string;
-  chargeActuelle: number;
-  nombreProjetsActifs: number;
-}
-
-export interface DocumentDto {
-  id: number;
-  nomFichier: string;
-  nomOriginal: string;
-  typeContenu: string;
-  tailleFichier: number;
-  dateUpload: string;
-  sousTacheId: number;
+export interface AdminReportingResponse {
+  projetsSoumis: number;
+  projetsValides: number;
+  projetsRefuses: number;
+  retardsTachesActifs: number;
+  retardsSousTachesActifs: number;
+  scoreMoyenDiscipline: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ProjetService {
+  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private _projets: Projet[] = [];
 
-  private readonly BASE = 'http://localhost:8084/khotwa';
+  constructor(
+    private auth: AuthService,
+    private http: HttpClient,
+  ) {}
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  private userId(): number {
-    return this.auth.currentUser?.idUser ?? 0;
+  /** Prefer `idUser` (set by login / refresh); `id` string may be absent after older profile payloads. */
+  private currentUserNumericId(): number {
+    const u = this.auth.currentUser;
+    if (u?.idUser != null && Number.isFinite(u.idUser) && u.idUser > 0) {
+      return u.idUser;
+    }
+    const parsed = Number(u?.id ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
-  private p(key: string, value: string | number): HttpParams {
-    return new HttpParams().set(key, String(value));
+  get projets(): Projet[] { return this._projets; }
+  get projetsActifs(): Projet[] { return this._projets.filter(p => p.status === 'in_progress'); }
+  get projetsEntrepreneur(): Projet[] {
+    const n = this.currentUserNumericId();
+    const entrepreneurId = n > 0 ? String(n) : String(this.auth.currentUser?.id ?? 'u2');
+    return this._projets.filter(p => p.entrepreneurId === entrepreneurId);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // ENTREPRENEUR  →  /khotwa/entrepreneur/...
-  // ═══════════════════════════════════════════════════════════════════════
+  getById(id: string): Projet | undefined { return this._projets.find(p => p.id === id); }
 
-  getProjetsEntrepreneur(entrepreneurId?: number): Observable<ProjetResponseDto[]> {
-    const id = entrepreneurId ?? this.userId();
-    return this.http.get<ProjetResponseDto[]>(
-      `${this.BASE}/entrepreneur/projets`,
-      { params: this.p('entrepreneurId', id) }
+  loadEntrepreneurProjects(): Observable<Projet[]> {
+    const entrepreneurId = this.currentUserNumericId();
+    if (!entrepreneurId || isNaN(entrepreneurId) || entrepreneurId <= 0) {
+      return new Observable(observer => {
+        observer.error(new Error('Session expirée ou invalide. Veuillez vous reconnecter.'));
+      });
+    }
+    return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/entrepreneur/projets`, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((rows) => rows.map((row) => this.toProjetModel(row))),
+      tap((rows) => {
+        this._projets = this.sortProjects(rows);
+      })
     );
   }
 
-  createProjet(dto: ProjetCreateRequestDto, entrepreneurId?: number): Observable<ProjetResponseDto> {
-    const id = entrepreneurId ?? this.userId();
-    return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/entrepreneur/projets`, dto,
-      { params: this.p('entrepreneurId', id) }
+  loadAdminSubmittedProjects(): Observable<Projet[]> {
+    return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/admin/projets/soumis`).pipe(
+      map((rows) => rows.map((row) => this.toProjetModel(row))),
+      tap((rows) => {
+        this._projets = this.sortProjects(rows);
+      })
     );
   }
 
-  updateProjet(projetId: number, dto: ProjetUpdateRequestDto, entrepreneurId?: number): Observable<ProjetResponseDto> {
-    const id = entrepreneurId ?? this.userId();
-    return this.http.put<ProjetResponseDto>(
-      `${this.BASE}/entrepreneur/projets/${projetId}`, dto,
-      { params: this.p('entrepreneurId', id) }
+  loadCoachAssignedProjects(): Observable<Projet[]> {
+    const coachId = this.currentUserNumericId();
+    return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/coach/projets-affectes`, {
+      params: { coachId: String(coachId) }
+    }).pipe(
+      map((rows) => rows.map((row) => this.toProjetModel(row))),
+      tap((rows) => {
+        this._projets = this.sortProjects(rows);
+      })
     );
   }
 
-  soumettreProjet(projetId: number, entrepreneurId?: number): Observable<ProjetResponseDto> {
-    const id = entrepreneurId ?? this.userId();
-    return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/soumettre`, {},
-      { params: this.p('entrepreneurId', id) }
+  /** Loads projects assigned to the current coach (`coachId` is ignored; session defines the coach). */
+  getProjetsCoach(_coachId?: number | string | null): Observable<Projet[]> {
+    return this.loadCoachAssignedProjects();
+  }
+
+  /** Loads projects for the logged-in entrepreneur (`userId` is ignored; session defines the user). */
+  getProjetsEntrepreneur(_userId?: number | string | null): Observable<Projet[]> {
+    return this.loadEntrepreneurProjects();
+  }
+
+  validerProjet(projectId: number | string): Observable<Projet[]> {
+    const id = String(projectId);
+    return this.http.post<unknown>(`${this.apiUrl}/coach/projets/${id}/valider`, {}).pipe(
+      switchMap(() => this.loadCoachAssignedProjects()),
     );
   }
 
-  resoumettreCorrection(projetId: number, entrepreneurId?: number): Observable<ProjetResponseDto> {
-    const id = entrepreneurId ?? this.userId();
-    return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/resoumettre-correction`, {},
-      { params: this.p('entrepreneurId', id) }
+  demanderCorrectionProjet(projectId: number | string, commentaire: string): Observable<Projet[]> {
+    const id = String(projectId);
+    return this.http.post<unknown>(`${this.apiUrl}/coach/projets/${id}/demander-correction`, { commentaire }).pipe(
+      switchMap(() => this.loadCoachAssignedProjects()),
     );
   }
 
-  deleteProjetBrouillon(projetId: number, entrepreneurId?: number): Observable<void> {
-    const id = entrepreneurId ?? this.userId();
-    return this.http.delete<void>(
-      `${this.BASE}/entrepreneur/projets/${projetId}`,
-      { params: this.p('entrepreneurId', id) }
+  loadAdminReporting(): Observable<AdminReportingResponse> {
+    return this.http.get<AdminReportingResponse>(`${this.apiUrl}/admin/reporting`);
+  }
+
+  createProjet(form: ProjetDraftInput): Observable<Projet> {
+    const entrepreneurId = this.currentUserNumericId();
+    
+    // Defensive check: prevent invalid FK constraint violation
+    if (entrepreneurId <= 0) {
+      return new Observable(observer => {
+        observer.error(new Error('Invalid entrepreneur authentication. Please log in and try again.'));
+      });
+    }
+
+    const payload = {
+      nomStartup: form.nomStartup,
+      description: form.description,
+      secteur: form.secteur,
+      problemeAdresse: form.problemeAdresse,
+      solutionProposee: form.solutionProposee,
+      businessModel: form.businessModel,
+      stadeProjet: form.stadeProjet,
+      innovationDescription: form.innovationDescription,
+      scalabiliteDescription: form.scalabiliteDescription,
+      pocDisponible: form.pocDisponible,
+      dateDebutProjet: form.dateDebutProjet,
+      dateFinProjet: form.dateFinProjet,
+    };
+
+    return this.http.post<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets`, payload, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((row) => this.toProjetModel(row)),
+      tap((projet) => {
+        this._projets = this.mergeProjects([projet]);
+      })
     );
   }
 
-  getTachesProjet(projetId: number): Observable<TacheDto[]> {
-    return this.http.get<TacheDto[]>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/taches`
+  updateProjet(id: string, form: ProjetDraftInput): Observable<Projet> {
+    const entrepreneurId = this.currentUserNumericId();
+    const payload = {
+      nomStartup: form.nomStartup,
+      description: form.description,
+      secteur: form.secteur,
+      problemeAdresse: form.problemeAdresse,
+      solutionProposee: form.solutionProposee,
+      businessModel: form.businessModel,
+      stadeProjet: form.stadeProjet,
+      innovationDescription: form.innovationDescription,
+      scalabiliteDescription: form.scalabiliteDescription,
+      pocDisponible: form.pocDisponible,
+      dateDebutProjet: form.dateDebutProjet,
+      dateFinProjet: form.dateFinProjet,
+    };
+
+    return this.http.put<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets/${id}`, payload, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((row) => this.toProjetModel(row)),
+      tap((projet) => {
+        this._projets = this.mergeProjects([projet]);
+      })
     );
   }
 
-  updateStatutTacheEntrepreneur(tacheId: number, dto: TacheStatutUpdateRequestDto): Observable<TacheDto> {
-    return this.http.patch<TacheDto>(
-      `${this.BASE}/entrepreneur/taches/${tacheId}/statut`, dto
+  submitProjet(id: string): Observable<Projet> {
+    const entrepreneurId = this.currentUserNumericId();
+    return this.http.post<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets/${id}/soumettre`, null, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((row) => this.toProjetModel(row)),
+      tap((projet) => {
+        this._projets = this.mergeProjects([projet]);
+      })
     );
   }
 
-  updateStatutSousTacheEntrepreneur(sousTacheId: number, dto: SousTacheStatutUpdateRequestDto): Observable<SousTacheDto> {
-    return this.http.patch<SousTacheDto>(
-      `${this.BASE}/entrepreneur/sous-taches/${sousTacheId}/statut`, dto
+  deleteProjet(id: string): Observable<void> {
+    const entrepreneurId = this.currentUserNumericId();
+    return this.http.delete<void>(`${this.apiUrl}/entrepreneur/projets/${id}`, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      tap(() => {
+        this._projets = this._projets.filter((p) => p.id !== id);
+      })
     );
   }
 
-  demanderProlongationTache(tacheId: number, dto: ProlongationRequestDto): Observable<TacheDto> {
-    return this.http.post<TacheDto>(
-      `${this.BASE}/entrepreneur/taches/${tacheId}/demander-prolongation`, dto
-    );
+  assignCoach(projetId: string, coachId: string): Projet | undefined {
+    const projet = this._projets.find(p => p.id === projetId);
+    if (!projet || !projet.submitted) {
+      return projet;
+    }
+
+    projet.coachId = coachId;
+    projet.updatedAt = new Date();
+    return projet;
   }
 
-  getCoachsProjet(projetId: number): Observable<ProjetCoachResponseDto[]> {
-    return this.http.get<ProjetCoachResponseDto[]>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/coachs`
-    );
+  updateStatut(id: string, status: ProjetStatut): void {
+    const p = this._projets.find(p => p.id === id);
+    if (p) { p.status = status; p.updatedAt = new Date(); }
+  }
+  delete(id: string): void { this._projets = this._projets.filter(p => p.id !== id); }
+
+  private toProjetModel(row: BackendProjetResponse & { projectCorrectionRequired?: boolean }): Projet {
+    const disciplineScore = row.scoreDisciplineGlobal ?? 0;
+    return {
+      id: String(row.id),
+      titre: row.nomStartup,
+      description: row.description,
+      status: this.toUiStatus(row.statutProjet),
+      submitted: row.etatValidation !== 'BROUILLON',
+      etatValidation: row.etatValidation,
+      commentaireCorrectionCoach: row.commentaireCorrectionCoach?.trim() || undefined,
+      dateDemandeCorrection: row.dateDemandeCorrection ? new Date(row.dateDemandeCorrection) : undefined,
+      statutCorrectionProjet: row.statutCorrectionProjet,
+      correctionResoumiseEnAttenteCoach: row.correctionResoumiseEnAttenteCoach === true,
+      stadeProjet: row.stadeProjet,
+      secteur: row.secteur,
+      problemeAdresse: row.problemeAdresse,
+      solutionProposee: row.solutionProposee,
+      businessModel: row.businessModel,
+      innovationDescription: row.innovationDescription,
+      scalabiliteDescription: row.scalabiliteDescription,
+      pocDisponible: row.pocDisponible,
+      dateDebutProjet: row.dateDebutProjet ? new Date(row.dateDebutProjet) : undefined,
+      dateFinProjet: row.dateFinProjet ? new Date(row.dateFinProjet) : undefined,
+      disciplineScore,
+      progression: Math.max(0, Math.min(100, disciplineScore)),
+      entrepreneurId: String(row.entrepreneurId),
+      etapes: [],
+      createdAt: new Date(row.dateCreation),
+      updatedAt: new Date(row.dateDerniereMiseAJour),
+      projectCorrectionRequired: row.statutCorrectionProjet === 'DEMANDEE' || row.statutCorrectionProjet === 'RECORRECTION_DEMANDEE',
+    };
   }
 
-  getDocumentsProjet(projetId: number): Observable<DocumentDto[]> {
-    return this.http.get<DocumentDto[]>(
-      `${this.BASE}/entrepreneur/projets/${projetId}/documents`
-    );
+  private mergeProjects(incoming: Projet[]): Projet[] {
+    const mapById = new Map<string, Projet>();
+
+    for (const p of this._projets) {
+      mapById.set(p.id, p);
+    }
+    for (const p of incoming) {
+      mapById.set(p.id, p);
+    }
+
+    return this.sortProjects(Array.from(mapById.values()));
   }
 
-  uploadDocument(sousTacheId: number, file: File): Observable<DocumentDto> {
-    const fd = new FormData();
-    fd.append('file', file, file.name);
-    return this.http.post<DocumentDto>(
-      `${this.BASE}/entrepreneur/sous-taches/${sousTacheId}/documents/upload`, fd
-    );
+  private sortProjects(projects: Projet[]): Projet[] {
+    return [...projects].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // COACH  →  /khotwa/coach/...
-  // ═══════════════════════════════════════════════════════════════════════
-
-  getProjetsCoach(coachId?: number): Observable<ProjetResponseDto[]> {
-    const id = coachId ?? this.userId();
-    return this.http.get<ProjetResponseDto[]>(
-      `${this.BASE}/coach/projets-affectes`,
-      { params: this.p('coachId', id) }
-    );
-  }
-
-  createTache(projetId: number, dto: TacheCreateRequestDto, coachId?: number): Observable<TacheDto> {
-    const id = coachId ?? this.userId();
-    return this.http.post<TacheDto>(
-      `${this.BASE}/coach/projets/${projetId}/taches`, dto,
-      { params: this.p('coachId', id) }
-    );
-  }
-
-  createSousTache(tacheId: number, dto: SousTacheCreateRequestDto): Observable<SousTacheDto> {
-    return this.http.post<SousTacheDto>(
-      `${this.BASE}/coach/taches/${tacheId}/sous-taches`, dto
-    );
-  }
-
-  updateStatutTacheCoach(tacheId: number, dto: TacheStatutUpdateRequestDto): Observable<TacheDto> {
-    return this.http.patch<TacheDto>(
-      `${this.BASE}/coach/taches/${tacheId}/statut`, dto
-    );
-  }
-
-  updateStatutSousTacheCoach(sousTacheId: number, dto: SousTacheStatutUpdateRequestDto): Observable<SousTacheDto> {
-    return this.http.patch<SousTacheDto>(
-      `${this.BASE}/coach/sous-taches/${sousTacheId}/statut`, dto
-    );
-  }
-
-  passerEnRevue(projetId: number): Observable<ProjetResponseDto> {
-    return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/coach/projets/${projetId}/passer-en-revue`, {}
-    );
-  }
-
-  validerProjet(projetId: number): Observable<ProjetResponseDto> {
-    return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/coach/projets/${projetId}/valider`, {}
-    );
-  }
-
-  demanderCorrectionProjet(projetId: number, commentaire: string): Observable<ProjetResponseDto> {
-    return this.http.post<ProjetResponseDto>(
-      `${this.BASE}/coach/projets/${projetId}/demander-correction`,
-      { commentaire }
-    );
-  }
-
-  demanderCorrectionTache(tacheId: number, commentaire: string): Observable<TacheDto> {
-    return this.http.post<TacheDto>(
-      `${this.BASE}/coach/taches/${tacheId}/demander-correction`,
-      { commentaire }
-    );
-  }
-
-  getTachesProjetCoach(projetId: number): Observable<TacheDto[]> {
-    return this.http.get<TacheDto[]>(
-      `${this.BASE}/coach/projets/${projetId}/taches`
-    );
-  }
-
-  getSousTaches(tacheId: number): Observable<SousTacheDto[]> {
-    return this.http.get<SousTacheDto[]>(
-      `${this.BASE}/coach/taches/${tacheId}/sous-taches`
-    );
-  }
-
-  getDocumentsTacheCoach(projetId: number): Observable<DocumentDto[]> {
-    return this.http.get<DocumentDto[]>(
-      `${this.BASE}/coach/projets/${projetId}/documents`
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // ADMIN  →  /khotwa/admin/...
-  // ═══════════════════════════════════════════════════════════════════════
-
-  getProjetsSoumis(): Observable<ProjetResponseDto[]> {
-    return this.http.get<ProjetResponseDto[]>(
-      `${this.BASE}/admin/projets/soumis`
-    );
-  }
-
-  getProjetsAffectes(): Observable<ProjetResponseDto[]> {
-    return this.http.get<ProjetResponseDto[]>(
-      `${this.BASE}/admin/projets/affectes`
-    );
-  }
-
-  affecterCoach(projetId: number, dto: AffectationCoachRequestDto): Observable<ProjetCoachResponseDto> {
-    return this.http.post<ProjetCoachResponseDto>(
-      `${this.BASE}/admin/projets/${projetId}/affectations`, dto
-    );
-  }
-
-  getCoachsDisponibles(): Observable<CoachDisponibiliteDto[]> {
-    return this.http.get<CoachDisponibiliteDto[]>(
-      `${this.BASE}/admin/coachs/disponibles`
-    );
-  }
-
-  refuserProjet(projetId: number, justification: string): Observable<any> {
-    return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/refuser`,
-      { justification }
-    );
-  }
-
-  suspendreProjet(projetId: number): Observable<any> {
-    return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/suspendre`, {}
-    );
-  }
-
-  reprendreProjet(projetId: number): Observable<any> {
-    return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/reprendre`, {}
-    );
-  }
-
-  archiverProjet(projetId: number): Observable<any> {
-    return this.http.post(
-      `${this.BASE}/admin/projets/${projetId}/archiver`, {}
-    );
-  }
-
-  getReporting(): Observable<any> {
-    return this.http.get(
-      `${this.BASE}/admin/reporting`
-    );
-  }
-
-  getHistoriqueAffectations(projetId: number): Observable<ProjetCoachResponseDto[]> {
-    return this.http.get<ProjetCoachResponseDto[]>(
-      `${this.BASE}/admin/projets/${projetId}/affectations`
-    );
+  private toUiStatus(statut: BackendProjetResponse['statutProjet']): ProjetStatut {
+    if (statut === 'SUSPENDU') {
+      return 'suspended';
+    }
+    if (statut === 'TERMINE' || statut === 'ARCHIVE') {
+      return 'completed';
+    }
+    return 'in_progress';
   }
 }
