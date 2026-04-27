@@ -51,13 +51,21 @@
               <div class="coach-notif-dot-item dot-info"></div>
               <div>
                 <p class="coach-notif-title">
-                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback' : 'Update' }}
+                  {{
+                    ((n.message || '').toLowerCase().includes('assigned to project') || (n.message || '').toLowerCase().includes('assigned to your project') || (n.message || '').toLowerCase().includes('unassigned from project')) ? 'Project Assignment'
+                    : n.type === 'NEW_MESSAGE' ? 'New Message'
+                    : n.type === 'STATUS_UPDATED' ? 'Message Read'
+                    : n.type === 'PROJECT_ASSIGNMENT' ? 'Project Assignment'
+                    : n.type === 'PROJECT_UNASSIGNED' ? 'Project Assignment'
+                    : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback'
+                    : 'Update'
+                  }}
                 </p>
                 <p class="coach-notif-msg">{{ n.message }}</p>
               </div>
             </div>
             <div style="padding:12px 16px;text-align:center;border-top:1px solid var(--border);">
-              <a [routerLink]="rolePrefix + '/notifications'"
+              <a [routerLink]="'/coach/notifications'"
                  (click)="notifOpen=false"
                  style="font-size:12px;font-weight:600;color:var(--orange);text-decoration:none;">
                 Show all notifications

@@ -37,6 +37,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
     { label: 'Talent Market', icon: 'people', route: 'talent', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
     { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['ADMIN','ENTREPRENEUR','COACH', 'VISITOR'] },
+    { label: 'Messages',    icon: 'message',   route: 'messages',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
 
 
     // ADMIN ONLY
@@ -228,12 +229,25 @@ logout(): void {
   onNotificationClick(n: any): void {
     this.notifService.markRead(n.id);
     this.notifOpen = false;
+    const msg = (n.message || '').toLowerCase();
+    const isProjectNotification = n.type === 'PROJECT_ASSIGNMENT'
+      || n.type === 'PROJECT_UNASSIGNED'
+      || msg.includes('assigned to project')
+      || msg.includes('assigned to your project')
+      || msg.includes('unassigned from project');
     if (n.link) {
       this.router.navigateByUrl(n.link);
       return;
     }
-    if (n.senderId) {
-      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: n.senderId } });
+    if (n.conversationId) {
+      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: n.conversationId } });
+      return;
+    }
+    if (isProjectNotification) {
+      return;
+    }
+    if (n.type === 'NEW_MESSAGE' && n.senderId) {
+      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { participantId: n.senderId } });
     } else {
       this.router.navigate([`${this.rolePrefix}/messages`]);
     }

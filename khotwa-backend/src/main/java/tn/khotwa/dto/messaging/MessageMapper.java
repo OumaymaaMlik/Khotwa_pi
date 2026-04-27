@@ -10,6 +10,7 @@ public class MessageMapper {
         dto.setSenderName(senderName);
         dto.setReceiverName(receiverName);
         dto.setId(message.getId());
+        dto.setConversationId(message.getConversation() != null ? message.getConversation().getId() : null);
         dto.setSubject(message.getSubject());
         dto.setBody(message.getBody());
         dto.setSenderId(message.getSenderId());
@@ -31,6 +32,7 @@ public class MessageMapper {
         dto.setId(notification.getId());
         dto.setRecipientId(notification.getRecipientId());
         dto.setSenderId(notification.getSenderId());
+        dto.setConversationId(notification.getConversationId());
         dto.setMessage(notification.getMessage());
         dto.setRead(notification.isRead());
         dto.setType(notification.getType());

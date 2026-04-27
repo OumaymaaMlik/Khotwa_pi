@@ -34,4 +34,17 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT m FROM Message m WHERE (m.senderId = :u1 AND m.receiverId = :u2) OR (m.senderId = :u2 AND m.receiverId = :u1) ORDER BY m.createdAt DESC")
     List<Message> findRecentConversationDesc(@Param("u1") Long user1, @Param("u2") Long user2, Pageable pageable);
+
+    Page<Message> findByConversationIdOrderByCreatedAtAsc(Long conversationId, Pageable pageable);
+    Page<Message> findByConversationIdOrderByCreatedAtDesc(Long conversationId, Pageable pageable);
+
+    @Query("""
+            SELECT m
+            FROM Message m
+            JOIN ConversationParticipant p ON p.conversation.id = m.conversation.id
+            WHERE p.userId = :userId
+              AND p.active = true
+            ORDER BY m.createdAt DESC
+            """)
+    Page<Message> findRecentMessagesForUser(@Param("userId") Long userId, Pageable pageable);
 }

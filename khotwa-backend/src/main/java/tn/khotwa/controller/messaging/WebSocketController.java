@@ -13,7 +13,11 @@ public class WebSocketController {
 
     @MessageMapping("/typing")
     public void handleTyping(TypingPayload payload) {
-        eventPublisher.publishTyping(payload.senderId(), payload.receiverId(), payload.typing());
+        if (payload.conversationId() != null) {
+            eventPublisher.publishConversationTyping(payload.conversationId(), payload.senderId(), payload.typing());
+        } else {
+            eventPublisher.publishTyping(payload.senderId(), payload.receiverId(), payload.typing());
+        }
     }
 
     @MessageMapping("/status")
@@ -22,6 +26,6 @@ public class WebSocketController {
         eventPublisher.publishOnlineStatus(payload.userId(), payload.online());
     }
 
-    public record TypingPayload(Long senderId, Long receiverId, boolean typing) {}
+    public record TypingPayload(Long senderId, Long receiverId, Long conversationId, boolean typing) {}
     public record StatusPayload(Long userId, boolean online) {}
 }

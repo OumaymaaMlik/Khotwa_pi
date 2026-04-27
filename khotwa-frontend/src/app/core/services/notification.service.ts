@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MessageService } from './message.service';
 import { AuthService } from './auth.service';
+import { WebSocketService } from './websocket.service';
 import { Notification } from '../models/message.model';
 import { BehaviorSubject } from 'rxjs';
 
@@ -11,9 +12,16 @@ export class NotificationService {
 
   constructor(
     private messageService: MessageService,
-    private authService: AuthService
+    private authService: AuthService,
+    private wsService: WebSocketService
   ) {
     this.loadNotifications();
+    this.wsService.newNotification$.subscribe((raw) => {
+      const notif = this.normalizeNotification(raw);
+      const userId = this.currentUserId;
+      if (userId <= 0 || notif.recipientId !== userId) return;
+      this.addNotification(notif);
+    });
   }
 
   get currentUserId(): number {
@@ -37,6 +45,7 @@ export class NotificationService {
       id: raw.id,
       recipientId: raw.recipientId,
       senderId: raw.senderId,
+      conversationId: raw.conversationId ?? null,
       message: raw.message ?? '',
       type: raw.type,
       createdAt: raw.createdAt,
@@ -71,7 +80,8 @@ export class NotificationService {
   addNotification(notification: Notification | any) {
     const normalized = this.normalizeNotification(notification);
     const current = this._notifs$.getValue();
-    this._notifs$.next([normalized, ...current]);
+    const withoutDuplicate = current.filter(n => n.id !== normalized.id);
+    this._notifs$.next([normalized, ...withoutDuplicate]);
   }
 
   markAllRead() {

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { FeedbackService } from '../../core/services/feedback.service';
+import { MessageService } from '../../core/services/message.service';
 
 @Component({
   selector: 'app-contact-page',
@@ -9,6 +10,7 @@ import { FeedbackService } from '../../core/services/feedback.service';
   styleUrls: ['./contact-page.component.css']
 })
 export class ContactPageComponent {
+  private readonly ADMIN_ID = 1;
   showFeedbackForm = false;
   submitting = false;
   successMessage = '';
@@ -32,7 +34,8 @@ export class ContactPageComponent {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private feedbackService: FeedbackService
+    private feedbackService: FeedbackService,
+    private messageService: MessageService
   ) {}
 
   setRating(stars: number): void {
@@ -40,11 +43,24 @@ export class ContactPageComponent {
   }
 
   goToAdminChat(): void {
+    const currentUserId = this.authService.currentUser?.idUser;
     const role = this.authService.currentUser?.role;
     const prefix = role === 'ADMIN' ? '/khotwaadmin'
       : role === 'COACH' ? '/coach'
       : '/entrepreneur';
-    this.router.navigate([`${prefix}/messages`], { queryParams: { contactAdmin: true } });
+    if (!currentUserId || role === 'ADMIN') {
+      this.router.navigate([`${prefix}/messages`], { queryParams: { contactAdmin: true } });
+      return;
+    }
+    this.messageService.ensureDirectConversation(currentUserId, this.ADMIN_ID).subscribe({
+      next: (conversation: any) => {
+        const conversationId = conversation?.id ?? conversation?.conversationId ?? this.ADMIN_ID;
+        this.router.navigate([`${prefix}/messages`], { queryParams: { conversationId } });
+      },
+      error: () => {
+        this.router.navigate([`${prefix}/messages`], { queryParams: { contactAdmin: true } });
+      }
+    });
   }
 
   onFileSelected(event: Event): void {

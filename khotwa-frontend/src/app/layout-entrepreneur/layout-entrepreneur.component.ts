@@ -142,18 +142,30 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
   onNotifClick(notif: any): void {
     this.notifService.markRead(notif.id);
     this.notifOpen = false;
+    const msg = (notif.message || '').toLowerCase();
+    const isProjectNotification = notif.type === 'PROJECT_ASSIGNMENT'
+      || notif.type === 'PROJECT_UNASSIGNED'
+      || msg.includes('assigned to project')
+      || msg.includes('assigned to your project')
+      || msg.includes('unassigned from project');
 
     if (notif.link) {
       this.router.navigateByUrl(notif.link);
       return;
     }
 
-    // Redirection : vers la conversation si senderId présent
-    if (notif.senderId) {
-      this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId: notif.senderId } });
-    } else {
-      this.router.navigate(['/entrepreneur/messages']);
+    if (notif.conversationId) {
+      this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId: notif.conversationId } });
+      return;
     }
+    if (isProjectNotification) {
+      return;
+    }
+    if (notif.type === 'NEW_MESSAGE' && notif.senderId) {
+      this.router.navigate(['/entrepreneur/messages'], { queryParams: { participantId: notif.senderId } });
+      return;
+    }
+    this.router.navigate(['/entrepreneur/messages']);
   }
 
   // ── Avatar & initiales ──────────────────────────────────────────────────

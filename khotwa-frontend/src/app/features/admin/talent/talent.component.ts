@@ -35,7 +35,8 @@ export class AdminTalentComponent {
     this.messageService.initiateContact(currentUserId, targetId).subscribe({
       next: (response) => {
         console.log('Conversation started!', response);
-        this.router.navigateByUrl(`/khotwaadmin/messages?conversationId=${targetId}`);
+        const conversationId = response?.conversationId ?? targetId;
+        this.router.navigateByUrl(`/khotwaadmin/messages?conversationId=${conversationId}`);
       },
       error: (err) => console.error('Failed to initiate contact', err)
     });
