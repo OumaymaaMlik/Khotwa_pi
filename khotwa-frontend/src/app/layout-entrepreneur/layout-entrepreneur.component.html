@@ -47,7 +47,7 @@
               <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
               <div>
                 <p class="ent-notif-item__title">
-                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Update' }}
+                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback' : 'Update' }}
                 </p>
                 <p class="ent-notif-item__msg">{{ n.message }}</p>
               </div>

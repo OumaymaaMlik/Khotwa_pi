@@ -3,6 +3,16 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Message, Notification, Page } from '../models/message.model';
 
+export interface ConversationRecap {
+  summary: string;
+  keyMilestones: string[];
+  nextSteps: string[];
+}
+
+export interface ReplySuggestions {
+  suggestions: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class MessageService {
   private apiUrl = 'http://localhost:8084/khotwa/api';
@@ -96,5 +106,22 @@ export class MessageService {
 
   initiateContact(senderId: number, receiverId: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/messages/initiate?senderId=${senderId}&receiverId=${receiverId}`, {});
+  }
+
+  getConversationRecap(user1: number, user2: number): Observable<ConversationRecap> {
+    const params = new HttpParams()
+      .set('user1', user1)
+      .set('user2', user2);
+    return this.http.get<ConversationRecap>(`${this.apiUrl}/messages/recap`, { params });
+  }
+
+  getReplySuggestions(currentUserId: number, otherUserId: number): Observable<ReplySuggestions> {
+    const params = new HttpParams()
+      .set('currentUserId', currentUserId)
+      .set('otherUserId', otherUserId)
+      // Backward-compatibility: support older backend query param names.
+      .set('user1', currentUserId)
+      .set('user2', otherUserId);
+    return this.http.get<ReplySuggestions>(`${this.apiUrl}/messages/suggestions`, { params });
   }
 }

@@ -38,6 +38,8 @@ const routes: Routes = [
       { path: 'profile',      component: ProfileComponent                      },
       { path: 'account',      component: EntrepreneurAccountPageComponent  },
       { path: 'evenements',   component: EntrepreneurEvenementsComponent  },
+      { path: 'contact',      loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
+
     ],
   },
 ];

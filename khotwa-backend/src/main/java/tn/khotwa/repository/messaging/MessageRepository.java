@@ -29,4 +29,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+    @Query("SELECT m FROM Message m WHERE (m.senderId = :u1 AND m.receiverId = :u2) OR (m.senderId = :u2 AND m.receiverId = :u1) ORDER BY m.createdAt ASC")
+    List<Message> findRecentConversation(@Param("u1") Long user1, @Param("u2") Long user2, Pageable pageable);
+
+    @Query("SELECT m FROM Message m WHERE (m.senderId = :u1 AND m.receiverId = :u2) OR (m.senderId = :u2 AND m.receiverId = :u1) ORDER BY m.createdAt DESC")
+    List<Message> findRecentConversationDesc(@Param("u1") Long user1, @Param("u2") Long user2, Pageable pageable);
 }

@@ -65,6 +65,9 @@
           <span class="nav-item__pill" *ngIf="item.route === 'messages' && nonLus > 0">
             {{ nonLus }}
           </span>
+          <span class="nav-item__pill" *ngIf="item.route === 'feedbacks' && unreadFeedbackCount > 0">
+            {{ unreadFeedbackCount > 99 ? '99+' : unreadFeedbackCount }}
+          </span>
         </a>
 
       </ng-container>
@@ -140,7 +143,7 @@
             <div *ngFor="let n of notifs" class="notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
               <div class="notif-item__dot dot-info"></div>
               <div>
-                <p class="notif-item__titre">{{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Ticket Resolved' }}</p>
+                <p class="notif-item__titre">{{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback' : 'Ticket Resolved' }}</p>
                 <p class="notif-item__msg">{{ n.message }}</p>
               </div>
             </div>
