@@ -12,16 +12,9 @@
   </div>
 
   <div class="filters animate-2">
-    <div class="ai-search-row">
-      <app-ai-search
-        (resultsFound)="onAiResults($event)"
-        (searchCleared)="onAiSearchCleared()"
-      ></app-ai-search>
-      <span class="ai-search-tip" *ngIf="!aiSearchActive">✦ Recherche sémantique IA</span>
-      <span class="ai-search-tip ai-search-tip--active" *ngIf="aiSearchActive">
-        ✦ {{ aiSearchResults.length }} résultat(s) —
-        <button class="ai-tip-clear" (click)="onAiSearchCleared()">Voir tout</button>
-      </span>
+    <div class="search-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search resources…"[(ngModel)]="search" (input)="onSearch()" />
     </div>
     <div class="filter-group">
       <span class="filter-label">Type</span>
@@ -103,10 +96,6 @@
                 (click)="$event.stopPropagation(); downloadRessource(r)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download
-        </button>
-        <button class="ai-resume-btn" title="Résumé IA" (click)="openResumeModal(r, $event)">
-          <span class="ai-resume-btn-spark">✦</span>
-          Résumé IA
         </button>
       </div>
     </div>
@@ -313,16 +302,3 @@
 
   </div>
 </div>
-
-<!-- ══ MODAL RÉSUMÉ IA ══ -->
-<app-ai-resume
-  *ngIf="showResumeModal && resumeRessource"
-  [ressourceId]="resumeRessource.id"
-  [titre]="resumeRessource.titre"
-  [type]="resumeRessource.type"
-  [description]="resumeRessource.description"
-  (closed)="closeResumeModal()"
-></app-ai-resume>
-
-<!-- ══ CHATBOT IA FLOTTANT ══ -->
-<app-ai-chatbot></app-ai-chatbot>

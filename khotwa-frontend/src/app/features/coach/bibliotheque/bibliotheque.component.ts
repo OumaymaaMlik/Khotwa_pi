@@ -1,8 +1,6 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, NgZone } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RessourceService, Ressource, Categorie, ProgressStatus, PlanType } from '../../../core/services/ressource.service';
-import { AiService,AiRessource } from '../../../core/services/ai.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { forkJoin } from 'rxjs';
 
@@ -66,56 +64,14 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
 
   private apiBase = this.svc.getApiOrigin();
 
-  // ── IA ──────────────────────────────────────────────
-  showResumeModal  = false;
-  resumeRessource: Ressource | null = null;
-  aiSearchActive   = false;
-  aiSearchResults: AiRessource[] = [];
-  private allRessources: Ressource[] = [];
-
   constructor(
     private svc: RessourceService,
-    private aiService: AiService,
     private auth: AuthService,
     private sanitizer: DomSanitizer,
-    private zone: NgZone,
-    private route: ActivatedRoute
+    private zone: NgZone
   ) {}
 
-  ngOnInit() {
-    this.route?.queryParams?.subscribe((params: any) => {
-      const openId = params['openId'];
-      if (openId) {
-        setTimeout(() => {
-          const r = (this as any).ressources?.find((res: any) => String(res.id) === String(openId));
-          if (r) (this as any).openViewer(r);
-        }, 800);
-      }
-    }); this.loadCategories(); this.loadStats(); this.load(); }
-
-  openResumeModal(r: Ressource, event: Event) {
-    event.stopPropagation();
-    this.resumeRessource = r;
-    this.showResumeModal = true;
-  }
-  closeResumeModal() { this.showResumeModal = false; this.resumeRessource = null; }
-
-  onAiResults(results: AiRessource[]) {
-    this.aiSearchActive  = true;
-    this.aiSearchResults = results || [];
-    if (results && results.length > 0) {
-      const ids = new Set(results.map(r => Number(r.id)).filter(id => !isNaN(id)));
-      this.ressources = this.allRessources.filter(r => ids.has(r.id));
-    } else {
-      this.ressources = [];
-    }
-  }
-
-  onAiSearchCleared() {
-    this.aiSearchActive  = false;
-    this.aiSearchResults = [];
-    this.ressources = [...this.allRessources];
-  }
+  ngOnInit() { this.loadCategories(); this.loadStats(); this.load(); }
   ngOnDestroy() { this.stopSaveInterval(); this.revokeBlobUrl(); }
 
   // ── LOGIQUE D'URL UNIQUE ET NETTOYÉE ──────────────────────────────
@@ -163,7 +119,6 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
           if (rid) pm.set(rid, p);
         });
         this.ressources = list.map(r => ({
-
           ...r,
           maProgress: pm.has(r.id)
             ? { 
@@ -174,7 +129,6 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
               }
             : r.maProgress
         }));
-        this.allRessources = [...this.ressources];
         this.buildFolders();
         this.loading = false;
       },

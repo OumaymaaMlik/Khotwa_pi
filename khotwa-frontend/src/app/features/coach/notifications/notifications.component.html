@@ -5,10 +5,10 @@
 
   <!-- Filter tabs -->
   <div class="filter-tabs animate-2">
-    <button class="filter-tab" [class.active]="activeFilter==='all'" (click)="setActiveFilter('all')">All</button>
-    <button class="filter-tab" [class.active]="activeFilter==='unread'" (click)="setActiveFilter('unread')">Unread</button>
-    <button class="filter-tab" [class.active]="activeFilter==='messages'" (click)="setActiveFilter('messages')">Messages</button>
-    <button class="filter-tab" [class.active]="activeFilter==='resolved'" (click)="setActiveFilter('resolved')">Resolved</button>
+    <button class="filter-tab" [class.active]="activeFilter==='all'" (click)="activeFilter='all'">All</button>
+    <button class="filter-tab" [class.active]="activeFilter==='unread'" (click)="activeFilter='unread'">Unread</button>
+    <button class="filter-tab" [class.active]="activeFilter==='messages'" (click)="activeFilter='messages'">Messages</button>
+    <button class="filter-tab" [class.active]="activeFilter==='resolved'" (click)="activeFilter='resolved'">Resolved</button>
   </div>
 
   <!-- Action bar -->
@@ -50,29 +50,10 @@
         <div class="notif-dot" [class.dot-unread]="!n.read"></div>
         <div class="notif-content">
           <p class="notif-title">
-            {{ ((n.message || '').toLowerCase().includes('assigned to project') || (n.message || '').toLowerCase().includes('assigned to your project') || (n.message || '').toLowerCase().includes('unassigned from project'))
-                ? 'Project Assignment'
-                : n.type === 'NEW_MESSAGE'
-                ? 'New Message'
-                : n.type === 'STATUS_UPDATED'
-                  ? 'Message Read'
-                  : n.type === 'PROJECT_ASSIGNMENT'
-                    ? 'Project Assignment'
-                    : n.type === 'PROJECT_UNASSIGNED'
-                      ? 'Project Assignment'
-                  : n.type === 'FEEDBACK_SUBMITTED'
-                    ? 'New Feedback'
-                    : 'Ticket Resolved' }}
+            {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Ticket Resolved' }}
           </p>
           <p class="notif-msg">{{ n.message }}</p>
         </div>
-        <button
-          *ngIf="n.type === 'NEW_MESSAGE' || (n.type === 'PROJECT_ASSIGNMENT' && !!n.conversationId)"
-          class="action-btn"
-          (click)="openNotification(n, $event)"
-          title="Open conversation">
-          Open
-        </button>
         <span class="notif-time">{{ relativeTime(n.createdAt) }}</span>
       </div>
     </div>

@@ -1,24 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Message, Notification, Page, Conversation, ConversationType } from '../models/message.model';
-
-export interface ConversationRecap {
-  summary: string;
-  keyMilestones: string[];
-  nextSteps: string[];
-}
-
-export interface ReplySuggestions {
-  suggestions: string[];
-}
-
-export interface ConversationPresence {
-  conversationId: number;
-  onlineCount: number;
-  totalCount: number;
-  onlineUserIds: number[];
-}
+import { Message, Notification, Page } from '../models/message.model';
 
 @Injectable({ providedIn: 'root' })
 export class MessageService {
@@ -28,6 +11,33 @@ export class MessageService {
 
   sendMessage(message: Partial<Message>): Observable<Message> {
     return this.http.post<Message>(`${this.apiUrl}/messages`, message);
+  }
+
+  getInbox(receiverId: number, page = 0, size = 10): Observable<Page<Message>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<Message>>(`${this.apiUrl}/messages/inbox/${receiverId}`, { params });
+  }
+
+  getSent(senderId: number, page = 0, size = 10): Observable<Page<Message>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<Message>>(`${this.apiUrl}/messages/sent/${senderId}`, { params });
+  }
+
+  getActiveInbox(receiverId: number, page = 0, size = 10): Observable<Page<Message>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<Message>>(`${this.apiUrl}/messages/inbox/${receiverId}/active`, { params });
+  }
+
+  getInboxByType(receiverId: number, type: string): Observable<Message[]> {
+    return this.http.get<Message[]>(`${this.apiUrl}/messages/inbox/${receiverId}/filter`, { params: { type } });
+  }
+
+  updateStatus(id: number, status: string): Observable<Message> {
+    return this.http.patch<Message>(`${this.apiUrl}/messages/${id}/status`, null, { params: { status } });
+  }
+
+  archiveMessage(id: number): Observable<Message> {
+    return this.http.patch<Message>(`${this.apiUrl}/messages/${id}/archive`, null);
   }
 
   deleteMessage(id: number): Observable<void> {
@@ -85,75 +95,6 @@ export class MessageService {
   }
 
   initiateContact(senderId: number, receiverId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/conversations/direct/initiate?senderId=${senderId}&receiverId=${receiverId}`, {});
-  }
-
-  ensureDirectConversation(senderId: number, receiverId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/conversations/direct/ensure?senderId=${senderId}&receiverId=${receiverId}`, {});
-  }
-
-  getConversationRecap(user1: number, user2: number): Observable<ConversationRecap> {
-    const params = new HttpParams()
-      .set('user1', user1)
-      .set('user2', user2);
-    return this.http.get<ConversationRecap>(`${this.apiUrl}/messages/recap`, { params });
-  }
-
-  getReplySuggestions(currentUserId: number, otherUserId: number): Observable<ReplySuggestions> {
-    const params = new HttpParams()
-      .set('currentUserId', currentUserId)
-      .set('otherUserId', otherUserId)
-      // Backward-compatibility: support older backend query param names.
-      .set('user1', currentUserId)
-      .set('user2', otherUserId);
-    return this.http.get<ReplySuggestions>(`${this.apiUrl}/messages/suggestions`, { params });
-  }
-
-  getMyConversations(userId: number): Observable<Conversation[]> {
-    return this.http.get<Conversation[]>(`${this.apiUrl}/conversations/me`, { params: { userId } });
-  }
-
-  createConversation(actorId: number, payload: {
-    type: ConversationType;
-    title?: string;
-    projectId?: number;
-    participantIds: number[];
-  }): Observable<Conversation> {
-    return this.http.post<Conversation>(`${this.apiUrl}/conversations`, payload, { params: { actorId } });
-  }
-
-  getConversationMessages(conversationId: number, userId: number, page = 0, size = 100): Observable<Page<Message>> {
-    const params = new HttpParams()
-      .set('userId', userId)
-      .set('page', page)
-      .set('size', size);
-    return this.http.get<Page<Message>>(`${this.apiUrl}/conversations/${conversationId}/messages`, { params });
-  }
-
-  sendConversationMessage(conversationId: number, payload: {
-    senderId: number;
-    subject?: string;
-    body: string;
-    type?: string;
-    fileUrl?: string | null;
-    parentMessageId?: number | null;
-  }): Observable<Message> {
-    return this.http.post<Message>(`${this.apiUrl}/conversations/${conversationId}/messages`, payload);
-  }
-
-  markConversationRead(conversationId: number, userId: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/conversations/${conversationId}/read`, null, { params: { userId } });
-  }
-
-  getConversationPresence(conversationId: number, userId: number): Observable<ConversationPresence> {
-    return this.http.get<ConversationPresence>(`${this.apiUrl}/conversations/${conversationId}/presence`, { params: { userId } });
-  }
-
-  sendConversationTyping(conversationId: number, userId: number, typing: boolean): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/conversations/${conversationId}/typing`, {
-      conversationId,
-      userId,
-      typing
-    });
+    return this.http.post(`${this.apiUrl}/messages/initiate?senderId=${senderId}&receiverId=${receiverId}`, {});
   }
 }

@@ -60,8 +60,7 @@ export class EntrepreneurTalentComponent {
     this.messageService.initiateContact(currentUserId, targetId).subscribe({
       next: (response) => {
         console.log('Conversation started!', response);
-        const conversationId = response?.conversationId ?? targetId;
-        this.router.navigateByUrl(`/entrepreneur/messages?conversationId=${conversationId}`);
+        this.router.navigateByUrl(`/entrepreneur/messages?conversationId=${targetId}`);
       },
       error: (err) => console.error('Failed to initiate contact', err)
     });

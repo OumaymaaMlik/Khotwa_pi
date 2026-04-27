@@ -3,13 +3,11 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { MessageService } from '../core/services/message.service';
-import { FeedbackService } from '../core/services/feedback.service';
 import { WebSocketService } from '../core/services/websocket.service';
 import { OnlineStatusService } from '../core/services/online-status.service';
 import { UserRole } from '../core/models';
 import { filter } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
 
 interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
 
@@ -20,13 +18,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidebarMobile = false;
   notifOpen     = false;
   currentUrl    = '';
-  unreadFeedbackCount = 0;
 
   private readonly BACKEND_ORIGIN = 'http://localhost:8084';
-  private readonly FEEDBACK_REFRESH_MS = 15000;
   private safeIconCache: Record<string, SafeHtml> = {};
-  private feedbackUpdateSub?: Subscription;
-  private feedbackPollTimer?: ReturnType<typeof setInterval>;
 
   navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: 'dashboard', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
@@ -36,14 +30,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { label: 'Library', icon: 'book', route: 'bibliotheque', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
 
     { label: 'Talent Market', icon: 'people', route: 'talent', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
-    { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['ADMIN','ENTREPRENEUR','COACH', 'VISITOR'] },
-    { label: 'Messages',    icon: 'message',   route: 'messages',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
 
 
     // ADMIN ONLY
     { label: 'Users', icon: 'users', route: 'utilisateurs', roles: ['ADMIN'] },
     { label: 'Subscriptions', icon: 'card', route: 'subscriptions', roles: ['ADMIN'] },
-    { label: 'Feedbacks', icon: 'message', route: 'feedbacks', roles: ['ADMIN'] },
 
     // COACH ONLY
     { label: 'My Startups', icon: 'rocket', route: 'startups', roles: ['COACH'] },
@@ -79,7 +70,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     public notifService: NotificationService,
     private messageService: MessageService,
-    private feedbackService: FeedbackService,
     private wsService: WebSocketService,
     private onlineStatusService: OnlineStatusService,
     private router: Router,
@@ -98,8 +88,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
         ?? (this.auth.currentUser?.id != null ? Number(this.auth.currentUser.id) : 0);
       if (uid > 0) {
         this.notifService.reload();
-        this.loadUnreadFeedbackCount();
-        this.startFeedbackAutoRefresh();
       }
     };
 
@@ -115,11 +103,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // WebSocket disabled
-    this.feedbackUpdateSub?.unsubscribe();
-    if (this.feedbackPollTimer) {
-      clearInterval(this.feedbackPollTimer);
-      this.feedbackPollTimer = undefined;
-    }
   }
 
   @HostListener('window:resize')
@@ -229,58 +212,14 @@ logout(): void {
   onNotificationClick(n: any): void {
     this.notifService.markRead(n.id);
     this.notifOpen = false;
-    const msg = (n.message || '').toLowerCase();
-    const isProjectNotification = n.type === 'PROJECT_ASSIGNMENT'
-      || n.type === 'PROJECT_UNASSIGNED'
-      || msg.includes('assigned to project')
-      || msg.includes('assigned to your project')
-      || msg.includes('unassigned from project');
     if (n.link) {
       this.router.navigateByUrl(n.link);
       return;
     }
-    if (n.conversationId) {
-      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: n.conversationId } });
-      return;
-    }
-    if (isProjectNotification) {
-      return;
-    }
-    if (n.type === 'NEW_MESSAGE' && n.senderId) {
-      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { participantId: n.senderId } });
+    if (n.senderId) {
+      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: n.senderId } });
     } else {
       this.router.navigate([`${this.rolePrefix}/messages`]);
     }
-  }
-
-  private loadUnreadFeedbackCount(): void {
-    if (!this.auth.isAdmin) {
-      this.unreadFeedbackCount = 0;
-      return;
-    }
-    this.feedbackService.getAdminFeedbacks().subscribe({
-      next: (feedbacks) => {
-        this.unreadFeedbackCount = (feedbacks ?? []).filter(f => !f.reviewed).length;
-      },
-      error: () => {
-        this.unreadFeedbackCount = 0;
-      }
-    });
-  }
-
-  private startFeedbackAutoRefresh(): void {
-    if (!this.auth.isAdmin) return;
-
-    this.feedbackUpdateSub?.unsubscribe();
-    this.feedbackUpdateSub = this.feedbackService.feedbackUpdated$.subscribe(() => {
-      this.loadUnreadFeedbackCount();
-    });
-
-    if (this.feedbackPollTimer) {
-      clearInterval(this.feedbackPollTimer);
-    }
-    this.feedbackPollTimer = setInterval(() => {
-      this.loadUnreadFeedbackCount();
-    }, this.FEEDBACK_REFRESH_MS);
   }
 }

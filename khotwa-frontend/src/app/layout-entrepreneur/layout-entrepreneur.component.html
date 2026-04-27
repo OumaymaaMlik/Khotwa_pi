@@ -47,15 +47,7 @@
               <div class="ent-notif-item__dot" [class]="'dot-'+n.type"></div>
               <div>
                 <p class="ent-notif-item__title">
-                  {{
-                    ((n.message || '').toLowerCase().includes('assigned to project') || (n.message || '').toLowerCase().includes('assigned to your project') || (n.message || '').toLowerCase().includes('unassigned from project')) ? 'Project Assignment'
-                    : n.type === 'NEW_MESSAGE' ? 'New Message'
-                    : n.type === 'STATUS_UPDATED' ? 'Message Read'
-                    : n.type === 'PROJECT_ASSIGNMENT' ? 'Project Assignment'
-                    : n.type === 'PROJECT_UNASSIGNED' ? 'Project Assignment'
-                    : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback'
-                    : 'Update'
-                  }}
+                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Update' }}
                 </p>
                 <p class="ent-notif-item__msg">{{ n.message }}</p>
               </div>

@@ -1,8 +1,5 @@
-import { HttpEventType } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { RessourceService, Ressource, PlanType, ResourceType, Categorie } from '../../../core/services/ressource.service';
-import { AiService ,AiRessource} from '../../../core/services/ai.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 export interface CourseFolder {
@@ -33,8 +30,6 @@ export class AdminBibliothequeComponent implements OnInit {
 
   form: any = this.emptyForm();
   selectedFiles: File[] = [];
-  uploadProgress = 0;
-  isUploading = false;
   courseName = '';
 
   // ── Validation ────────────────────────────────────────────────────
@@ -44,10 +39,7 @@ export class AdminBibliothequeComponent implements OnInit {
   submitSuccess = '';
 
   showCatPanel   = false;
-  catForm: any   = { nom: '', description: '', couleur: '#E8622A', icone: '📁', secteur: '' };
-  showIconPicker = false;
-  pickerTop = "0px";
-  pickerLeft = "0px";
+  catForm: any   = { nom: '', description: '', couleur: '#E8622A', icone: '📁' };
   editingCatId: number | null = null;
 
   typeIcons: Record<string,string> = { PDF:'📄', VIDEO:'🎥', EXCEL:'📊', WORD:'📝', IMAGE:'🖼️', LINK:'🔗' };
@@ -55,51 +47,9 @@ export class AdminBibliothequeComponent implements OnInit {
   planTypes: PlanType[] = ['FREE','PREMIUM','INSTITUTIONAL'];
   statsData: any = {};
 
-  // ── IA ──────────────────────────────────────────────
-  showResumeModal  = false;
-  resumeRessource: Ressource | null = null;
-  aiSearchActive   = false;
-  aiSearchResults: AiRessource[] = [];
-  private allRessources: Ressource[] = [];
-
-  constructor(
-    public ressourceService: RessourceService,
-    private aiService: AiService,
-    private auth: AuthService
-  ) {}
+  constructor(public ressourceService: RessourceService, private auth: AuthService) {}
 
   ngOnInit() { this.loadCategories(); this.loadStats(); this.load(); }
-
-  openResumeModal(r: Ressource, event: Event) {
-    event.stopPropagation();
-    this.resumeRessource = r;
-    this.showResumeModal = true;
-  }
-  closeResumeModal() { this.showResumeModal = false; this.resumeRessource = null; }
-
-  onAiResults(results: AiRessource[]) {
-    this.aiSearchActive  = true;
-    this.aiSearchResults = results || [];
-    if (results && results.length > 0) {
-      const ids = new Set(results.map(r => Number(r.id)).filter(id => !isNaN(id)));
-      this.ressources = this.allRessources.filter(r => ids.has(r.id));
-    } else {
-      this.ressources = [];
-    }
-  }
-
-  onAiSearchCleared() {
-    this.aiSearchActive  = false;
-    this.aiSearchResults = [];
-    this.ressources = [...this.allRessources];
-  }
-
-  reindexer() {
-    this.aiService.reindexer().subscribe({
-      next: () => alert('✅ Indexation IA terminée !'),
-      error: () => alert('❌ Erreur lors de l\'indexation')
-    });
-  }
 
   emptyForm() {
     return { titre:'', description:'', type:'PDF' as ResourceType,
@@ -141,7 +91,6 @@ export class AdminBibliothequeComponent implements OnInit {
     this.ressourceService.getRessourcesHttp(filters).subscribe({
       next: res => {
         this.ressources = res.data ?? res;
-        this.allRessources = [...this.ressources];
         this.buildFolders();
         this.loading = false;
       },
@@ -239,8 +188,6 @@ export class AdminBibliothequeComponent implements OnInit {
     const isMulti    = this.selectedFiles.length > 1;
     const courseTitle = isMulti && this.courseName.trim() ? this.courseName.trim() : this.form.titre;
     let completed = 0; const total = files.length;
-    this.isUploading = true;
-    this.uploadProgress = 0;
 
     for (const file of files) {
       const fd = this.ressourceService.buildFormData(this.form, file);
@@ -250,21 +197,8 @@ export class AdminBibliothequeComponent implements OnInit {
         fd.set('description', this.form.description || ('Part of: ' + courseTitle));
       }
       this.ressourceService.createRessourceHttp(fd, 1).subscribe({
-        next: (event: any) => {
-          if (event.type === HttpEventType.UploadProgress && event.total) {
-            this.uploadProgress = Math.round(100 * event.loaded / event.total);
-          } else if (event.type === HttpEventType.Response) {
-            completed++;
-            this.uploadProgress = Math.round((completed / total) * 100);
-            if (completed === total) {
-              this.isUploading = false;
-              const msg = total > 1 ? total + ' resources created!' : 'Resource created successfully!';
-              this.submitSuccess = msg;
-              setTimeout(() => { this.showForm = false; this.courseName = ''; this.load(); this.loadStats(); }, 900);
-            }
-          }
-        },
-        error: (err: any) => { this.isUploading = false; this.uploadProgress = 0; this.submitError = this.parseBackendError(err); }
+        next: () => { completed++; if (completed === total) { this.submitSuccess = total > 1 ? `${total} resources created!` : 'Resource created successfully!'; setTimeout(() => { this.showForm = false; this.courseName = ''; this.load(); this.loadStats(); }, 900); } },
+        error: err => { this.submitError = this.parseBackendError(err); }
       });
     }
   }
@@ -328,35 +262,24 @@ export class AdminBibliothequeComponent implements OnInit {
     });
   }
 
-  openCatPanel() { this.showCatPanel = true; this.catForm = { nom:'', description:'', couleur:'#E8622A', icone:'📁', secteur:'' }; this.editingCatId = null; this.showIconPicker = false; }
+  openCatPanel() { this.showCatPanel = true; this.catForm = { nom:'', description:'', couleur:'#E8622A', icone:'📁' }; this.editingCatId = null; }
   closeCatPanel() { this.showCatPanel = false; }
 
   editCategorie(c: Categorie) {
     this.editingCatId = c.id;
-    // Match secteur value exactly to dropdown option values
-    const secteurMatch = this.secteurs.find(s => s.value === c.secteur || s.label.includes(c.secteur || ''));
-    this.catForm = {
-      nom: c.nom,
-      description: c.description || '',
-      couleur: c.couleur || '#E8622A',
-      icone: c.icone || '📁',
-      secteur: secteurMatch ? secteurMatch.value : (c.secteur || '')
-    };
-    this.showIconPicker = false;
-    // Scroll form into view
-    setTimeout(() => document.querySelector('.cat-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    this.catForm = { nom: c.nom, description: c.description || '', couleur: c.couleur || '#E8622A', icone: c.icone || '📁' };
   }
 
   submitCategorie() {
     if (!this.catForm.nom) return;
     if (this.editingCatId) {
       this.ressourceService.updateCategorieHttp(this.editingCatId, this.catForm).subscribe({
-        next: () => { this.editingCatId = null; this.catForm = { nom:'', description:'', couleur:'#E8622A', icone:'📁', secteur:'' }; this.showIconPicker = false; this.loadCategories(); },
+        next: () => { this.editingCatId = null; this.catForm = { nom:'', description:'', couleur:'#E8622A', icone:'📁' }; this.loadCategories(); },
         error: () => this.loadCategories()
       });
     } else {
       this.ressourceService.createCategorieHttp(this.catForm).subscribe({
-        next: () => { this.catForm = { nom:'', description:'', couleur:'#E8622A', icone:'📁', secteur:'' }; this.showIconPicker = false; this.loadCategories(); },
+        next: () => { this.catForm = { nom:'', description:'', couleur:'#E8622A', icone:'📁' }; this.loadCategories(); },
         error: () => this.loadCategories()
       });
     }
@@ -373,44 +296,4 @@ export class AdminBibliothequeComponent implements OnInit {
   getProgressColor(s: string): string {
     return s === 'COMPLETED' ? 'var(--green)' : s === 'IN_PROGRESS' ? 'var(--teal)' : 'var(--text-muted)';
   }
-
-  secteurs = [
-    { value: 'TECHNOLOGIE_LOGICIEL',   label: '💻 Technologie & Logiciel' },
-    { value: 'FINTECH',                label: '💳 Fintech' },
-    { value: 'ECOMMERCE_RETAIL',       label: '🛒 E-commerce & Retail' },
-    { value: 'SANTE_MEDTECH',          label: '🏥 Santé & Medtech' },
-    { value: 'EDUCATION_EDTECH',       label: '📚 Éducation & Edtech' },
-    { value: 'AGRICULTURE_AGRITECH',   label: '🌾 Agriculture & Agritech' },
-    { value: 'ENERGIE_CLEANTECH',      label: '⚡ Énergie & Cleantech' },
-    { value: 'MOBILITE_LOGISTIQUE',    label: '🚚 Mobilité & Logistique' },
-    { value: 'INDUSTRIE_MANUFACTURING',label: '🏭 Industrie & Manufacturing' },
-    { value: 'IMMOBILIER_PROPTECH',    label: '🏠 Immobilier & Proptech' },
-    { value: 'TOURISME_HOSPITALITE',   label: '✈️ Tourisme & Hôtellerie' },
-    { value: 'MEDIA_COMMUNICATION',    label: '📡 Média & Communication' },
-    { value: 'IA_DATA',                label: '🤖 IA & Data' },
-    { value: 'CYBERSECURITE',          label: '🔐 Cybersécurité' },
-    { value: 'SERVICES_B2B',           label: '🤝 Services B2B' },
-  ];
-
-  iconList = [
-    '📁','📂','📊','📈','📉','💡','🚀','🏆','🎯','💼',
-    '🔧','⚙️','🌐','🤝','💳','🏥','📚','🌾','⚡','🚚',
-    '🏭','🏠','✈️','📡','🤖','🔐','🛒','💻','🎨','📝',
-    '🔑','💎','🌟','🔥','💰','📌','🧩','🏗️','🎓','📋',
-    '🛡️','🌍','🧠','📣','🔬','🎪','🏋️','🌱','💊','🎬',
-  ];
-
-  toggleIconPicker(btn: HTMLElement) {
-    if (this.showIconPicker) { this.showIconPicker = false; return; }
-    const rect = btn.getBoundingClientRect();
-    this.pickerTop  = (rect.bottom + 6) + 'px';
-    this.pickerLeft = rect.left + 'px';
-    this.showIconPicker = true;
-  }
-
-  selectIcon(icon: string) {
-    this.catForm.icone = icon;
-    this.showIconPicker = false;
-  }
-
 }

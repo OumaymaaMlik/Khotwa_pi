@@ -59,8 +59,7 @@ export class CoachTalentComponent {
     this.messageService.initiateContact(currentUserId, targetId).subscribe({
       next: (response) => {
         console.log('Conversation started!', response);
-        const conversationId = response?.conversationId ?? targetId;
-        this.router.navigateByUrl(`/coach/messages?conversationId=${conversationId}`);
+        this.router.navigateByUrl(`/coach/messages?conversationId=${targetId}`);
       },
       error: (err) => console.error('Failed to initiate contact', err)
     });
