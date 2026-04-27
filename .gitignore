@@ -1,8 +1,24 @@
 /khotwa-backend/target/
 /khotwa-backend/*.jar
+/khotwa-backend/.env
+
 /khotwa-frontend/node_modules/
 /khotwa-frontend/dist/
 /khotwa-frontend/.angular/
+
+# Angular
+khotwa-frontend/.angular/
+khotwa-frontend/dist/
+khotwa-frontend/node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Archives
 *.zip
 node_modules/
 /khotwa-backend/uploads/

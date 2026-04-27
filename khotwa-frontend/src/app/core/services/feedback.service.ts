@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 
 export interface FeedbackItem {
   id: number;
@@ -18,11 +18,15 @@ export interface FeedbackItem {
 @Injectable({ providedIn: 'root' })
 export class FeedbackService {
   private readonly apiUrl = 'http://localhost:8084/khotwa/api/feedback';
+  private readonly feedbackUpdatedSubject = new Subject<void>();
+  readonly feedbackUpdated$ = this.feedbackUpdatedSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
   submitFeedback(payload: FormData): Observable<FeedbackItem> {
-    return this.http.post<FeedbackItem>(this.apiUrl, payload);
+    return this.http.post<FeedbackItem>(this.apiUrl, payload).pipe(
+      tap(() => this.feedbackUpdatedSubject.next())
+    );
   }
 
   getAdminFeedbacks(): Observable<FeedbackItem[]> {
@@ -30,6 +34,8 @@ export class FeedbackService {
   }
 
   markReviewed(feedbackId: number): Observable<FeedbackItem> {
-    return this.http.put<FeedbackItem>(`${this.apiUrl}/${feedbackId}/review`, {});
+    return this.http.put<FeedbackItem>(`${this.apiUrl}/${feedbackId}/review`, {}).pipe(
+      tap(() => this.feedbackUpdatedSubject.next())
+    );
   }
 }

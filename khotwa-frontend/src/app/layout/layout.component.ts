@@ -9,6 +9,7 @@ import { OnlineStatusService } from '../core/services/online-status.service';
 import { UserRole } from '../core/models';
 import { filter } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Subscription } from 'rxjs';
 
 interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
 
@@ -22,7 +23,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
   unreadFeedbackCount = 0;
 
   private readonly BACKEND_ORIGIN = 'http://localhost:8084';
+  private readonly FEEDBACK_REFRESH_MS = 15000;
   private safeIconCache: Record<string, SafeHtml> = {};
+  private feedbackUpdateSub?: Subscription;
+  private feedbackPollTimer?: ReturnType<typeof setInterval>;
 
   navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: 'dashboard', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
@@ -93,6 +97,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
       if (uid > 0) {
         this.notifService.reload();
         this.loadUnreadFeedbackCount();
+        this.startFeedbackAutoRefresh();
       }
     };
 
@@ -108,6 +113,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // WebSocket disabled
+    this.feedbackUpdateSub?.unsubscribe();
+    if (this.feedbackPollTimer) {
+      clearInterval(this.feedbackPollTimer);
+      this.feedbackPollTimer = undefined;
+    }
   }
 
   @HostListener('window:resize')
@@ -241,5 +251,21 @@ logout(): void {
         this.unreadFeedbackCount = 0;
       }
     });
+  }
+
+  private startFeedbackAutoRefresh(): void {
+    if (!this.auth.isAdmin) return;
+
+    this.feedbackUpdateSub?.unsubscribe();
+    this.feedbackUpdateSub = this.feedbackService.feedbackUpdated$.subscribe(() => {
+      this.loadUnreadFeedbackCount();
+    });
+
+    if (this.feedbackPollTimer) {
+      clearInterval(this.feedbackPollTimer);
+    }
+    this.feedbackPollTimer = setInterval(() => {
+      this.loadUnreadFeedbackCount();
+    }, this.FEEDBACK_REFRESH_MS);
   }
 }
