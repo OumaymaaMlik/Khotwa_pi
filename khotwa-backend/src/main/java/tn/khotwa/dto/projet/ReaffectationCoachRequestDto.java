@@ -2,7 +2,7 @@ package tn.khotwa.dto.projet;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import tn.khotwa.enums.RoleCoachProjet;
+import tn.khotwa.enums.projectEnum.RoleCoachProjet;
 import jakarta.validation.constraints.NotBlank;
 
 @Data

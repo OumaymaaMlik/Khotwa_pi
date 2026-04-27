@@ -2,7 +2,7 @@ package tn.khotwa.repository.projet;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import tn.khotwa.entity.projet.ProjetCoach;
-import tn.khotwa.enums.RoleCoachProjet;
+import tn.khotwa.enums.projectEnum.RoleCoachProjet;
 
 import java.util.List;
 import java.util.Optional;
