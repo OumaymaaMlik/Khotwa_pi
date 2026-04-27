@@ -1,0 +1,132 @@
+<!-- ═══════════════════════════════════════════
+     KHOTWA — Layout COACH
+     Navbar top dark/violet premium + glass
+════════════════════════════════════════════ -->
+
+<div class="coach-shell">
+
+  <!-- ── TOP NAVBAR ───────────────────────────────── -->
+  <header class="coach-nav" [class.coach-nav--scrolled]="scrolled">
+    <div class="coach-nav__inner">
+
+      <!-- Logo -->
+      <a routerLink="/coach/dashboard" class="coach-brand">
+        <img src="assets/khotwa-logo.png" alt="KHOTWA" class="brand-logo-img" style="height:32px;width:auto;object-fit:contain;" />
+        <span class="coach-brand__tag">Coach</span>
+      </a>
+
+      <!-- Nav links (desktop) -->
+      <nav class="coach-nav__links">
+        <a *ngFor="let item of navItems"
+           class="coach-link"
+           [class.coach-link--active]="isActive(item)"
+           [routerLink]="getRoute(item)">
+          <span class="coach-link__icon" [innerHTML]="getIcon(item.icon)"></span>
+          <span>{{ item.label }}</span>
+          <span class="coach-link__indicator" *ngIf="isActive(item)"></span>
+        </a>
+      </nav>
+
+      <!-- Right actions -->
+      <div class="coach-nav__actions">
+
+        <!-- Validations badge dynamique -->
+        <a routerLink="/coach/validations" class="coach-quick-badge" title="Pending validations">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
+          <span>{{ pendingCount }}</span>
+        </a>
+
+        <!-- Notifs -->
+        <div class="notif-wrapper">
+          <button class="coach-icon-btn" (click)="notifOpen=!notifOpen" [class.active]="notifOpen">
+            <span [innerHTML]="getIcon('bell')"></span>
+            <span class="coach-notif-dot" *ngIf="nonLus > 0">{{ nonLus < 99 ? nonLus : '99+' }}</span>
+          </button>
+          <div class="coach-notif-panel" *ngIf="notifOpen">
+            <div class="coach-notif-panel__head">
+              <span>Notifications</span>
+              <button (click)="notifService.markAllRead(); notifOpen=false">Mark all read</button>
+            </div>
+            <div *ngFor="let n of notifs" class="coach-notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+              <div class="coach-notif-dot-item dot-info"></div>
+              <div>
+                <p class="coach-notif-title">
+                  {{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Update' }}
+                </p>
+                <p class="coach-notif-msg">{{ n.message }}</p>
+              </div>
+            </div>
+            <div style="padding:12px 16px;text-align:center;border-top:1px solid var(--border);">
+              <a [routerLink]="rolePrefix + '/notifications'"
+                 (click)="notifOpen=false"
+                 style="font-size:12px;font-weight:600;color:var(--orange);text-decoration:none;">
+                Show all notifications
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Home -->
+        <a routerLink="/" class="coach-icon-btn" title="Home">
+          <span [innerHTML]="getIcon('home')"></span>
+        </a>
+
+        <!-- Avatar -->
+        <div class="coach-user" (click)="userMenuOpen=!userMenuOpen">
+          <div class="coach-user__avatar">{{ userInitials }}</div>
+          <div class="coach-user__info">
+            <span class="coach-user__name">{{ auth.currentUser?.firstName }}</span>
+            <span class="coach-user__role">Coach Expert</span>
+          </div>
+          <svg class="coach-user__caret" [class.flipped]="userMenuOpen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+
+          <div class="coach-user__menu" *ngIf="userMenuOpen">
+            <div class="coach-user__menu-header">
+              <p class="cmenu-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
+              <p class="cmenu-email">{{ auth.currentUser?.email }}</p>
+            </div>
+            <button class="cmenu-item cmenu-item--logout" (click)="logout()">
+              <span [innerHTML]="getIcon('logout')"></span>Sign out
+            </button>
+          </div>
+        </div>
+
+        <!-- Burger -->
+        <button class="coach-burger" (click)="mobileOpen=!mobileOpen" [class.open]="mobileOpen">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile drawer -->
+    <div class="coach-mobile-nav" [class.open]="mobileOpen">
+      <a *ngFor="let item of navItems"
+         class="coach-mobile-link"
+         [class.active]="isActive(item)"
+         [routerLink]="getRoute(item)"
+         (click)="mobileOpen=false">
+        <span [innerHTML]="getIcon(item.icon)"></span>
+        {{ item.label }}
+      </a>
+    </div>
+  </header>
+
+  <!-- ── Overlay mobile ─────────────────────────── -->
+  <div class="coach-overlay" *ngIf="mobileOpen" (click)="mobileOpen=false"></div>
+
+  <!-- ── Barre décorative coach ────────────────── -->
+  <div class="coach-accent-bar">
+    <div class="coach-accent-bar__glow"></div>
+  </div>
+
+  <!-- ── Contenu ────────────────────────────────── -->
+  <main class="coach-main">
+    <div class="coach-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <!-- ── Footer ───────────────────────────────────── -->
+  <app-footer></app-footer>
+
+</div>

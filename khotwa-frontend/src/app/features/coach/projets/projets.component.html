@@ -1,0 +1,788 @@
+<div class="coach-page animate-1">
+  <div class="coach-page__header">
+    <div>
+      <h1 class="kh-page-title">Coach Triage Workspace</h1>
+      <p class="coach-page__sub">Prioritize interventions, close correction loops, and keep project flow stable.</p>
+    </div>
+  </div>
+
+  @if (message) {
+    <div class="inline-message">{{ message }}</div>
+  }
+
+  <div class="coach-workspace-toolbar animate-2">
+    <div>
+      <span class="coach-pill">Project workspace</span>
+      <h2>{{ selectedProjet?.titre || 'Select assigned project' }}</h2>
+      <p>{{ getKanbanHealthHint() }}</p>
+    </div>
+    <div class="coach-workspace-toolbar__stats" *ngIf="selectedProjet as p">
+      <div class="coach-stat">
+        <span>Discipline score</span>
+        <strong>{{ p.disciplineScore }}</strong>
+      </div>
+      <div class="coach-stat">
+        <span>Progress</span>
+        <strong>{{ p.progression }}%</strong>
+      </div>
+      <div class="coach-stat">
+        <span>Open corrections</span>
+        <strong>{{ getCorrectionQueueCount() }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="coach-shell animate-3">
+    <aside class="coach-rail kh-card">
+      <div class="coach-rail__section">
+        <span class="coach-pill coach-pill--amber">Assigned projects</span>
+        <div class="project-quick-list">
+          @for (p of projets; track p.id) {
+            <button class="project-quick-item" [class.project-quick-item--active]="p.id === selectedProjetId" (click)="selectProjectFromList(p.id)">
+              <div>
+                <strong>{{ p.titre }}</strong>
+                <small>{{ p.stadeProjet || 'IDEE' }} - {{ p.secteur || 'N/A' }}</small>
+              </div>
+              <span class="score-pill" [class]="'score-pill--' + disciplineLevel(p.disciplineScore)">{{ getProjectQuickCount(p.id) }}</span>
+            </button>
+          } @empty {
+            <div class="empty">No assigned projects found.</div>
+          }
+        </div>
+      </div>
+
+      <div class="coach-rail__actions" *ngIf="selectedProjetId">
+        <button 
+          class="kh-btn kh-btn--ghost kh-btn--sm" 
+          [disabled]="!canAskProjectCorrection()" 
+          [title]="getProjectCorrectionHint()"
+          (click)="demanderCorrectionProjet()">Ask project correction</button>
+        <button class="kh-btn kh-btn--ghost kh-btn--sm" [disabled]="!canPassProjectToReview()" (click)="passerProjetEnRevue()">Move to review</button>
+        <button class="kh-btn kh-btn--primary kh-btn--sm" [disabled]="!canValidateProject()" (click)="validerProjet()">Validate project</button>
+      </div>
+      
+      @if (selectedProjetId && !canAskProjectCorrection()) {
+        <div class="correction-hint-box">
+          <span class="correction-hint-icon">ⓘ</span>
+          <span>{{ getProjectCorrectionHint() }}</span>
+        </div>
+      }
+
+      @if (selectedProjetId && selectedProjet?.etatValidation === 'EN_REVUE' && hasReceivedProjectCorrectionSubmission()) {
+        <div class="correction-hint-box correction-hint-box--review">
+          <span class="correction-hint-icon">✓</span>
+          <div class="correction-hint-box__content">
+            <span>Correction received from entrepreneur. Choose an action below.</span>
+            <div class="correction-hint-box__actions">
+              <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="reviewReceivedCorrections()">Open received corrections</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="coach-rail__actions" *ngIf="selectedProjetId">
+        <button class="kh-btn kh-btn--primary" (click)="openCreateTaskModal()">+ Create task</button>
+      </div>
+    </aside>
+
+    <section class="coach-board kh-card">
+      <div class="coach-board__topbar">
+        <div class="coach-tabs">
+          <button class="tab" [class.active]="activeWorkspaceView === 'TRIAGE'" (click)="switchWorkspaceView('TRIAGE')">Priority queue</button>
+          <button class="tab" [class.active]="activeWorkspaceView === 'KANBAN'" (click)="switchWorkspaceView('KANBAN')">Kanban</button>
+          <button class="tab" [class.active]="activeWorkspaceView === 'CORRECTIONS'" (click)="switchWorkspaceView('CORRECTIONS')">Corrections</button>
+          <button class="tab" [class.active]="activeWorkspaceView === 'DELIVERABLES'" (click)="switchWorkspaceView('DELIVERABLES')">Deliverables</button>
+        </div>
+        @if (activeWorkspaceView === 'TRIAGE') {
+          <div class="decision-filters">
+            @for (f of triageFilters; track f.key) {
+              <button class="decision-chip" [class.decision-chip--active]="activeTriageFilter === f.key" (click)="setTriageFilter(f.key)">{{ f.label }}</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (loadingTaches) {
+        <div class="empty">Loading tasks...</div>
+      }
+
+      @if (!loadingTaches && activeWorkspaceView === 'TRIAGE') {
+        <div class="triage-grid">
+          <div class="triage-column triage-column--now">
+            <div class="triage-column__head">
+              <h4>Needs coach action now</h4>
+              <span>{{ getTriageSectionTasks('NOW').length }}</span>
+            </div>
+            <div class="triage-column__list">
+              @for (t of getTriageSectionTasks('NOW'); track t.id) {
+                <article class="coach-row-card coach-row-card--correction" (click)="openTaskWorkspace(t)">
+                  <div>
+                    <h4>{{ t.titre }}</h4>
+                    <p>{{ t.description || 'No description' }}</p>
+                  </div>
+                  <div class="coach-row-card__meta">
+                    <span class="kh-badge kh-badge--red">{{ t.statutTache }}</span>
+                    <span>{{ t.priorite }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">No urgent items.</div>
+              }
+            </div>
+          </div>
+
+          <div class="triage-column triage-column--waiting">
+            <div class="triage-column__head">
+              <h4>Waiting entrepreneur response</h4>
+              <span>{{ getTriageSectionTasks('WAITING').length }}</span>
+            </div>
+            <div class="triage-column__list">
+              @for (t of getTriageSectionTasks('WAITING'); track t.id) {
+                <article class="coach-row-card" (click)="openTaskWorkspace(t)">
+                  <div>
+                    <h4>{{ t.titre }}</h4>
+                    <p>{{ t.description || 'No description' }}</p>
+                  </div>
+                  <div class="coach-row-card__meta">
+                    <span class="kh-badge" [class]="t.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--teal'">{{ t.statutTache }}</span>
+                    <span>{{ t.priorite }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">No waiting items.</div>
+              }
+            </div>
+          </div>
+
+          <div class="triage-column triage-column--stable">
+            <div class="triage-column__head">
+              <h4>Stable workflow items</h4>
+              <span>{{ getTriageSectionTasks('STABLE').length }}</span>
+            </div>
+            <div class="triage-column__list">
+              @for (t of getTriageSectionTasks('STABLE'); track t.id) {
+                <article class="coach-row-card" (click)="openTaskWorkspace(t)">
+                  <div>
+                    <h4>{{ t.titre }}</h4>
+                    <p>{{ t.description || 'No description' }}</p>
+                  </div>
+                  <div class="coach-row-card__meta">
+                    <span class="kh-badge kh-badge--teal">{{ t.statutTache }}</span>
+                    <span>{{ t.priorite }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">No stable items yet.</div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (!loadingTaches && activeWorkspaceView === 'KANBAN') {
+        <div class="coach-board-columns">
+          @for (column of boardColumns; track column.key) {
+            <div class="coach-column" [class]="'coach-column coach-column--' + column.tone">
+              <div class="coach-column__header">
+                <div>
+                  <h4>{{ column.title }}</h4>
+                  <p>{{ column.subtitle }}</p>
+                </div>
+                <span class="coach-column__count">{{ getWorkflowTasksByStatus(column.key).length }}</span>
+              </div>
+
+              <div class="coach-column__cards">
+                @for (t of getWorkflowTasksByStatus(column.key); track t.id) {
+                  <article class="coach-task-card" [class.coach-task-card--risk]="isBlockedOrLate(t.statutTache)">
+                    <div class="coach-task-card__top coach-task-card__top--compact">
+                      <div>
+                        <p class="coach-task-card__title">{{ t.titre }}</p>
+                        <p class="coach-task-card__subtitle">{{ getSubTaskCount(t.id) }} sous-tâche{{ getSubTaskCount(t.id) !== 1 ? 's' : '' }}</p>
+                      </div>
+                      <button class="icon-action-btn icon-action-btn--ghost" type="button" title="View task details" aria-label="View task details" (click)="openTaskWorkspace(t)">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 5C6.5 5 2.1 8.3 1 12c1.1 3.7 5.5 7 11 7s9.9-3.3 11-7c-1.1-3.7-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"></path>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div class="coach-task-card__meta coach-task-card__meta--compact">
+                      <span>{{ t.priorite }}</span>
+                      <span class="kh-badge" [class]="t.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : (isBlockedOrLate(t.statutTache) ? 'kh-badge--red' : 'kh-badge--teal')">{{ t.statutTache }}</span>
+                    </div>
+                  </article>
+                } @empty {
+                  <div class="empty">No tasks in this lane.</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (!loadingTaches && activeWorkspaceView === 'CORRECTIONS') {
+        <div class="coach-stack">
+          @if (getCorrectionTasks().length === 0 && selectedProjet && selectedProjet.correctionResoumiseEnAttenteCoach) {
+            <article class="coach-row-card coach-row-card--correction" (click)="openReceivedCorrectionDetails()">
+              <div>
+                <h4>Project-level correction resubmitted</h4>
+                <p>
+                  Entrepreneur has sent project corrections.
+                  @if (selectedProjet.dateDemandeCorrection) {
+                    Last correction request: {{ selectedProjet.dateDemandeCorrection | date:'short' }}.
+                  }
+                </p>
+              </div>
+              <div class="coach-row-card__meta coach-row-card__meta--actions">
+                <span class="kh-badge kh-badge--amber">EN_REVUE</span>
+                <div class="coach-row-card__icon-actions">
+                  <button
+                    class="icon-action-btn icon-action-btn--ghost"
+                    title="View corrections"
+                    aria-label="View corrections"
+                    (click)="$event.stopPropagation(); openReceivedCorrectionDetails()"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 5C6.5 5 2.1 8.3 1 12c1.1 3.7 5.5 7 11 7s9.9-3.3 11-7c-1.1-3.7-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"></path>
+                    </svg>
+                  </button>
+
+                  <button
+                    class="icon-action-btn icon-action-btn--primary"
+                    title="Approve"
+                    aria-label="Approve"
+                    [disabled]="!canValidateProject()"
+                    (click)="$event.stopPropagation(); approveResubmittedProjectCorrection()"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9.2 16.2 4.8 11.8l1.4-1.4 3 3 8.6-8.6 1.4 1.4z"></path>
+                    </svg>
+                  </button>
+
+                  <button
+                    class="icon-action-btn icon-action-btn--danger"
+                    title="Ask re-correction"
+                    aria-label="Ask re-correction"
+                    (click)="$event.stopPropagation(); askReCorrectionForProject()"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-2.3-5.7L14 10h8V2l-2.8 2.8A9.9 9.9 0 0 0 12 2z"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              @if (showReceivedCorrectionDetailsInline && selectedProjet) {
+                <div class="inline-correction-details" (click)="$event.stopPropagation()">
+                  <div class="inline-correction-details__head">
+                    <div>
+                      <strong>Correction request details</strong>
+                      <p class="inline-correction-details__subtitle">Review what was asked, what changed, and decide the next action.</p>
+                    </div>
+                  </div>
+
+                  <div class="inline-correction-details__chips">
+                    @if (selectedProjet.etatValidation) {
+                      <span class="kh-badge kh-badge--amber">{{ selectedProjet.etatValidation }}</span>
+                    }
+                    @if (selectedProjet.dateDemandeCorrection) {
+                      <span class="kh-badge kh-badge--teal">Requested {{ selectedProjet.dateDemandeCorrection | date:'short' }}</span>
+                    }
+                    <span class="kh-badge kh-badge--teal">{{ getProjectCorrectionSummarySections().length }} item{{ getProjectCorrectionSummarySections().length !== 1 ? 's' : '' }}</span>
+                  </div>
+
+                  @if (getProjectCorrectionSummarySections().length > 0) {
+                    <div class="correction-summary-grid">
+                      @for (section of getProjectCorrectionSummarySections(); track section.label + '-' + $index) {
+                        <article class="correction-summary-card">
+                          <div class="correction-summary-card__head">
+                            <h4>{{ section.label }}</h4>
+                          </div>
+
+                          <div class="correction-summary-card__section">
+                            <span>Current value</span>
+                            <p>{{ section.currentValue }}</p>
+                          </div>
+
+                          <div class="correction-summary-card__section">
+                            <span>Requested change</span>
+                            <p>{{ section.requestedCorrection }}</p>
+                          </div>
+                        </article>
+                      }
+                    </div>
+                  } @else if (getReceivedCorrectionEvidence().length > 0) {
+                    <p class="inline-correction-details__text">No project-level correction text was stored. Showing received task/sub-task correction evidence instead:</p>
+                    <div class="received-correction-evidence-list">
+                      @for (item of getReceivedCorrectionEvidence(); track item.level + '-' + item.itemId) {
+                        <article class="received-correction-evidence-item">
+                          <h4>{{ item.level === 'TASK' ? 'Task' : 'Sub-task' }}: {{ item.title }}</h4>
+                          <p><strong>Status:</strong> {{ item.status }}</p>
+                          @if (item.coachComment) {
+                            <p><strong>Coach correction request:</strong> {{ item.coachComment }}</p>
+                          }
+                          @if (item.entrepreneurJustification) {
+                            <p><strong>Entrepreneur response:</strong> {{ item.entrepreneurJustification }}</p>
+                          }
+                        </article>
+                      }
+                    </div>
+                  } @else {
+                    <p class="inline-correction-details__text">No correction request text available yet.</p>
+                  }
+                </div>
+              }
+            </article>
+          }
+
+          @for (t of getCorrectionTasks(); track t.id) {
+            <article class="coach-row-card" [class.coach-row-card--correction]="t.statutTache === 'A_CORRIGER'" (click)="openTaskWorkspace(t)">
+              <div>
+                <h4>{{ t.titre }}</h4>
+                <p>{{ t.description || 'No description' }}</p>
+              </div>
+              <div class="coach-row-card__meta">
+                <span class="kh-badge" [class]="t.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--red'">{{ t.statutTache }}</span>
+                <span>{{ t.priorite }}</span>
+              </div>
+            </article>
+          } @empty {
+            <div class="empty">No corrections in queue.</div>
+          }
+        </div>
+      }
+
+      @if (!loadingTaches && activeWorkspaceView === 'DELIVERABLES') {
+        <div class="coach-stack">
+          @for (doc of getProjectDeliverables(); track doc.id) {
+            <article class="coach-row-card">
+              <div>
+                <h4>{{ doc.nomOriginal }}</h4>
+                <p>{{ doc.typeContenu }}</p>
+              </div>
+              <div class="coach-row-card__meta">
+                <span>{{ doc.dateUpload | date:'short' }}</span>
+                <span>{{ doc.tailleFichier }} bytes</span>
+                @if (canPreviewDocument(doc)) {
+                  <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openDocumentPreview(doc)">Preview</button>
+                }
+                <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="downloadDocument(doc)">Download</button>
+              </div>
+            </article>
+          } @empty {
+            <div class="empty">No deliverables loaded yet. Open a task workspace to fetch sub-task documents.</div>
+          }
+        </div>
+      }
+    </section>
+
+    <aside class="coach-inspector kh-card">
+      @if (selectedProjet) {
+        <div class="coach-inspector__hero">
+          <span class="coach-pill coach-pill--amber">Startup snapshot</span>
+          <h3>{{ selectedProjet?.titre }}</h3>
+          <p>{{ selectedProjet?.description || 'No description' }}</p>
+        </div>
+
+        <div class="coach-inspector__metric">
+          <span>Business model</span>
+          <strong>{{ selectedProjet?.businessModel || 'N/A' }}</strong>
+        </div>
+
+        <div class="coach-inspector__metric">
+          <span>Innovation</span>
+          <strong>{{ selectedProjet?.innovationDescription || 'N/A' }}</strong>
+        </div>
+
+        <div class="coach-inspector__metric">
+          <span>Scalability</span>
+          <strong>{{ selectedProjet?.scalabiliteDescription || 'N/A' }}</strong>
+        </div>
+
+        <div class="coach-inspector__metric">
+          <span>POC</span>
+          <strong>{{ selectedProjet?.pocDisponible ? 'Available' : 'Not available' }}</strong>
+        </div>
+      } @else {
+        <div class="empty">Select a project to display details.</div>
+      }
+    </aside>
+  </div>
+
+  @if (projectCorrectionPanelOpen && selectedProjet) {
+    <div class="project-modal-backdrop" (click)="closeProjectCorrectionPanel()">
+      <div class="project-modal coach-project-correction-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Correction request</span>
+            <h2>Project field corrections</h2>
+            <p class="project-modal__sub">Review each field, write expected fixes, then send one structured correction request.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeProjectCorrectionPanel()">x</button>
+        </div>
+
+        <div class="coach-correction-fields">
+          @for (field of getProjectCorrectionFields(); track field.key) {
+            <article class="coach-inspector__metric coach-inspector__metric--editable">
+              <span>{{ field.label }}</span>
+              <strong>{{ field.currentValue }}</strong>
+              <textarea
+                class="wf-input coach-field-correction"
+                rows="3"
+                [ngModel]="getProjectFieldCorrectionComment(field.key)"
+                (ngModelChange)="setProjectFieldCorrectionComment(field.key, $event)"
+                placeholder="Write correction required for this field"
+              ></textarea>
+            </article>
+          }
+        </div>
+
+        <div class="coach-correction-fields__actions">
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="closeProjectCorrectionPanel()">Cancel</button>
+          <button class="kh-btn kh-btn--primary kh-btn--sm" [disabled]="!canSubmitProjectFieldCorrections()" (click)="submitProjectFieldCorrections()">Submit project correction</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showProjectCorrectionSuccessPopup) {
+    <div class="project-modal-backdrop" (click)="closeProjectCorrectionSuccessPopup()">
+      <div class="project-modal coach-success-popup" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow project-modal__eyebrow--success">Correction sent</span>
+            <h2>Update delivered</h2>
+            <p class="project-modal__sub">{{ projectCorrectionSuccessMessage }}</p>
+          </div>
+          <button class="project-modal__close" (click)="closeProjectCorrectionSuccessPopup()">x</button>
+        </div>
+
+        <div class="coach-success-popup__body">
+          <p>The workspace can now be refreshed to pull the latest project state and task statuses.</p>
+          @if (refreshingWorkspace) {
+            <p class="coach-success-popup__status">Refreshing workspace...</p>
+          }
+        </div>
+
+        <div class="coach-correction-fields__actions">
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="closeProjectCorrectionSuccessPopup()">Close</button>
+          <button class="kh-btn kh-btn--primary kh-btn--sm" [disabled]="refreshingWorkspace" (click)="closeProjectCorrectionSuccessPopup(true)">Refresh now</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showCreateTaskModal) {
+    <div class="project-modal-backdrop" (click)="closeCreateTaskModal()">
+      <div class="project-modal" [class.coach-create-modal]="!createdParentTaskId" [class.coach-create-modal--expanded]="!!createdParentTaskId" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Create task</span>
+            <h2>{{ createdParentTaskId ? 'Task created: add sub-tasks' : 'New coach task' }}</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeCreateTaskModal()">x</button>
+        </div>
+
+        @if (!createdParentTaskId) {
+          <div class="coach-form-grid">
+            <div>
+              <input class="wf-input" [(ngModel)]="tacheForm.titre" placeholder="Titre de la tâche" />
+              <div class="form-error" *ngIf="getTacheFormError('titre')">{{ getTacheFormError('titre') }}</div>
+            </div>
+            <div>
+              <textarea class="wf-input" [(ngModel)]="tacheForm.description" rows="2" placeholder="Description de la tâche"></textarea>
+              <div class="form-error" *ngIf="getTacheFormError('description')">{{ getTacheFormError('description') }}</div>
+            </div>
+            <div>
+              <select class="wf-select" [(ngModel)]="tacheForm.typeTache">
+                <option value="">Sélectionner un type</option>
+                <option *ngFor="let type of typeTacheOptions" [value]="type">{{ type }}</option>
+              </select>
+              <div class="form-error" *ngIf="getTacheFormError('typeTache')">{{ getTacheFormError('typeTache') }}</div>
+            </div>
+            <div>
+              <select class="wf-select" [(ngModel)]="tacheForm.priorite">
+                <option value="">Sélectionner une priorité</option>
+                <option *ngFor="let p of prioriteOptions" [value]="p">{{ p }}</option>
+              </select>
+              <div class="form-error" *ngIf="getTacheFormError('priorite')">{{ getTacheFormError('priorite') }}</div>
+            </div>
+            <div>
+              <input class="wf-input" type="date" [(ngModel)]="tacheForm.dateDebut" />
+              <div class="form-error" *ngIf="getTacheFormError('dateDebut')">{{ getTacheFormError('dateDebut') }}</div>
+            </div>
+            <div>
+              <input class="wf-input" type="date" [(ngModel)]="tacheForm.dateFin" />
+              <div class="form-error" *ngIf="getTacheFormError('dateFin')">{{ getTacheFormError('dateFin') }}</div>
+            </div>
+            <textarea class="wf-input" [(ngModel)]="tacheForm.commentaireCoach" rows="2" placeholder="Commentaire coach (optionnel)"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button class="kh-btn kh-btn--ghost" (click)="closeCreateTaskModal()">Annuler</button>
+            <button class="kh-btn kh-btn--primary" [disabled]="!validateTacheForm()" (click)="createTache()">Valider la tâche</button>
+          </div>
+        } @else {
+          <div class="coach-form-grid coach-form-grid--quick-subtask">
+            <input class="wf-input" [(ngModel)]="quickSousTacheTitre" (keydown.enter)="addQuickSousTacheFromCreateModal($event)" placeholder="Sub-task title (press Enter)" />
+            <select class="wf-select" [(ngModel)]="quickSousTacheImpact" (keydown.enter)="addQuickSousTacheFromCreateModal($event)">
+              <option *ngFor="let p of prioriteOptions" [value]="p">Impact: {{ p }}</option>
+            </select>
+            <input class="wf-input" type="date" [(ngModel)]="quickSousTacheDateDebut" (keydown.enter)="addQuickSousTacheFromCreateModal($event)" placeholder="Start date" style="min-width: 140px;" />
+            <input class="wf-input" type="date" [(ngModel)]="quickSousTacheDateFin" (keydown.enter)="addQuickSousTacheFromCreateModal($event)" placeholder="End date" style="min-width: 140px;" />
+            <button class="kh-btn kh-btn--sm" style="margin-left:8px;" (click)="addQuickSousTacheFromCreateModal()">Ajouter</button>
+          </div>
+          <div *ngIf="getSubTaskCount(createdParentTaskId) > 0" class="quick-subtask-list">
+            <p><strong>Sous-tâches ajoutées :</strong></p>
+            <ul>
+              <li *ngFor="let st of getSubTasksForTask(createdParentTaskId)">
+                {{ st.titre }} <span class="kh-badge">{{ st.priorite }}</span>
+              </li>
+            </ul>
+          </div>
+          <p class="project-modal__sub">Entrer le titre + impact, puis appuyer sur Entrée pour ajouter chaque sous-tâche automatiquement.</p>
+          <p class="form-error" *ngIf="getSubTaskCount(createdParentTaskId) === 0">
+            Vous devez ajouter au moins une sous-tâche pour valider la tâche parent.
+          </p>
+          <div class="modal-actions">
+            <button class="kh-btn kh-btn--primary" [disabled]="getSubTaskCount(createdParentTaskId) === 0" (click)="finishTaskCreationFlow()">Finish</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (showCorrectionModal && correctionTarget) {
+    <div class="project-modal-backdrop" (click)="closeCorrectionModal()">
+      <div class="project-modal coach-create-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Correction request</span>
+            <h2>Request correction</h2>
+            <p class="project-modal__sub">Provide a clear coach comment for the correction cycle.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeCorrectionModal()">x</button>
+        </div>
+
+        <textarea
+          class="wf-input"
+          rows="5"
+          [(ngModel)]="correctionComment"
+          placeholder="Explain what must be corrected and expected outcome"
+        ></textarea>
+
+        <div class="modal-actions">
+          <button class="kh-btn kh-btn--ghost" (click)="closeCorrectionModal()">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="submitCorrectionRequest()">Submit correction</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showCreateSubTaskModal && selectedTaskForSubTaskCreation) {
+    <div class="project-modal-backdrop" (click)="closeCreateSubTaskModal()">
+      <div class="project-modal coach-create-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Create sub-task</span>
+            <h2>Create sub-task for "{{ selectedTaskForSubTaskCreation.titre }}"</h2>
+            <p class="project-modal__sub">Add all sub-task details and planning information.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeCreateSubTaskModal()">x</button>
+        </div>
+
+        <div class="coach-form-grid">
+          <input class="wf-input" [(ngModel)]="sousTacheForm.titre" placeholder="Sub-task title" />
+          <textarea class="wf-input" [(ngModel)]="sousTacheForm.description" rows="2" placeholder="Sub-task description"></textarea>
+          <select class="wf-select" [(ngModel)]="sousTacheForm.priorite">
+            <option *ngFor="let p of prioriteOptions" [value]="p">Priority: {{ p }}</option>
+          </select>
+          <input class="wf-input" type="date" [(ngModel)]="sousTacheForm.dateDebut" />
+          <input class="wf-input" type="date" [(ngModel)]="sousTacheForm.dateFin" />
+          <textarea class="wf-input" [(ngModel)]="sousTacheForm.commentaireCoach" rows="2" placeholder="Coach comment"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="kh-btn kh-btn--ghost" (click)="closeCreateSubTaskModal()">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="createSousTacheFromModal()">Create sub-task</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDocumentPreviewModal && selectedDocumentForPreview) {
+    <div class="project-modal-backdrop project-modal-backdrop--top" (click)="closeDocumentPreviewModal()">
+      <div class="project-modal project-modal--large" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Document preview</span>
+            <h2>{{ selectedDocumentForPreview.nomOriginal }}</h2>
+            <p class="project-modal__sub">{{ selectedDocumentForPreview.typeContenu }}</p>
+          </div>
+          <button class="project-modal__close" (click)="closeDocumentPreviewModal()">×</button>
+        </div>
+
+        <div class="deliverable-preview-body">
+          @if (selectedDocumentPreviewMimeType.startsWith('image/')) {
+            <img class="deliverable-preview-image" [src]="selectedDocumentPreviewUrl" [alt]="selectedDocumentForPreview.nomOriginal" />
+          } @else {
+            <iframe class="deliverable-preview-frame" [src]="selectedDocumentPreviewUrl | safeUrl"></iframe>
+          }
+        </div>
+
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="downloadDocument(selectedDocumentForPreview)">Download</button>
+          <button class="kh-btn kh-btn--primary" (click)="closeDocumentPreviewModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showTaskDetailsModal && selectedTaskForDetails) {
+    <div class="project-modal-backdrop" (click)="closeTaskWorkspace()">
+      <div class="project-modal coach-task-details-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Task details</span>
+            <h2>{{ selectedTaskForDetails.titre }}</h2>
+            <p class="project-modal__sub">Focus on the parent task first, then inspect and manage its sub-tasks.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeTaskWorkspace()">x</button>
+        </div>
+
+        <div class="task-details-summary">
+          <div class="task-details-summary__main">
+            <p>{{ selectedTaskForDetails.description || 'No description' }}</p>
+          </div>
+          <div class="task-details-summary__chips">
+            <span class="kh-badge" [class]="getTaskPriorityBadgeClass(selectedTaskForDetails.priorite)">{{ selectedTaskForDetails.priorite }}</span>
+            <span class="kh-badge" [class]="selectedTaskForDetails.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : (isBlockedOrLate(selectedTaskForDetails.statutTache) ? 'kh-badge--red' : 'kh-badge--teal')">{{ selectedTaskForDetails.statutTache }}</span>
+            <span class="kh-badge kh-badge--teal">{{ selectedTaskForDetails.typeTache }}</span>
+            <span class="kh-badge kh-badge--teal">{{ getTaskDelayLabel(selectedTaskForDetails) }}</span>
+            <span class="kh-badge kh-badge--teal">Score {{ selectedTaskForDetails.scoreImpact }}</span>
+          </div>
+        </div>
+
+        <div class="task-details-actions">
+          <button class="icon-action-btn icon-action-btn--primary" type="button" title="Add sub-task" aria-label="Add sub-task" (click)="openCreateSubTaskModalForTask(selectedTaskForDetails)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="task-details-table-wrap">
+          <table class="task-details-table">
+            <thead>
+              <tr>
+                <th>Sub-task</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Delay</th>
+                <th>Score</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loadingSousTaches[selectedTaskForDetails.id]) {
+                <tr>
+                  <td colspan="6"><div class="empty">Loading sub-tasks...</div></td>
+                </tr>
+              } @else {
+                @for (st of getSelectedTaskSubTasks(); track st.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ st.titre }}</strong>
+                      <p>{{ st.description || 'No description' }}</p>
+                    </td>
+                    <td><span class="kh-badge" [class]="st.statutSousTache === 'EN_CORRECTION' ? 'kh-badge--amber' : (isBlockedOrLate(st.statutSousTache) ? 'kh-badge--red' : 'kh-badge--teal')">{{ st.statutSousTache }}</span></td>
+                    <td>{{ st.priorite }}</td>
+                    <td>{{ getSubTaskDelayLabel(st) }}</td>
+                    <td>{{ st.scoreImpact }}</td>
+                    <td>
+                      <div class="task-row-actions">
+                        @if (st.statutSousTache === 'TERMINEE') {
+                          <button
+                            class="icon-action-btn icon-action-btn--ghost"
+                            type="button"
+                            title="View or load documents"
+                            aria-label="View or load documents"
+                            [disabled]="loadingDocuments[st.id]"
+                            (click)="openOrLoadSubTaskDocuments(st)"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M10 4H4v16h16V8h-6V4zm2 0v4h4"></path>
+                            </svg>
+                          </button>
+                          <button
+                            class="icon-action-btn icon-action-btn--danger"
+                            type="button"
+                            title="Request correction"
+                            aria-label="Request correction"
+                            (click)="toggleReCorrectionCommentInput(st)"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-2h2zm0-4h-2V7h2z"></path>
+                            </svg>
+                          </button>
+                        }
+                        @if (st.statutSousTache === 'EN_CORRECTION') {
+                          <button
+                            class="icon-action-btn icon-action-btn--primary"
+                            type="button"
+                            title="Validate sub-task"
+                            aria-label="Validate sub-task"
+                            (click)="approuverCorrectionSousTache(st)"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M9.2 16.2 4.8 11.8l1.4-1.4 3 3 8.6-8.6 1.4 1.4z"></path>
+                            </svg>
+                          </button>
+                          <button
+                            class="icon-action-btn icon-action-btn--danger"
+                            type="button"
+                            title="Ask for recorrection"
+                            aria-label="Ask for recorrection"
+                            (click)="toggleReCorrectionCommentInput(st)"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+                            </svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+
+                  @if (correctionInputOpenBySubTaskId[st.id]) {
+                    <tr>
+                      <td colspan="6">
+                        <div class="coach-subtask-card__rework-box coach-subtask-card__rework-box--table">
+                          <textarea
+                            class="wf-input"
+                            rows="3"
+                            [ngModel]="correctionCommentBySubTaskId[st.id]"
+                            (ngModelChange)="correctionCommentBySubTaskId[st.id] = $event"
+                            placeholder="Commentaire rapide de re-correction"
+                          ></textarea>
+                          <div class="coach-subtask-card__rework-actions">
+                            <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="toggleReCorrectionCommentInput(st)">Annuler</button>
+                            <button class="kh-btn kh-btn--danger kh-btn--sm" (click)="demanderReCorrectionSousTacheAvecCommentaire(st)">Envoyer re-correction</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                } @empty {
+                  <tr>
+                    <td colspan="6"><div class="empty">No sub-tasks for this task.</div></td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+</div>

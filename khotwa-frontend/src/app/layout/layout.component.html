@@ -1,0 +1,176 @@
+<div class="app-shell" [class.sidebar-open]="sidebarOpen">
+
+  <!-- ══ Mobile overlay ══ -->
+  <div class="overlay" *ngIf="sidebarOpen && sidebarMobile" (click)="closeOnMobile()"></div>
+
+  <aside class="sidebar" [class.open]="sidebarOpen">
+    <!-- Brand -->
+    <div class="sidebar__brand">
+      <img src="assets/khotwa-logo.png" alt="KHOTWA" style="height:36px;width:auto;object-fit:contain;" />
+      <div class="brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ', #FF9A5C)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">KHOTWA</span>
+        <span class="brand-role" [style.color]="roleColor">{{ roleLabel }}</span>
+      </div>
+
+      <!-- Collapse button (desktop only) -->
+      <button class="sidebar__toggle sidebar__toggle--collapse" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'">
+        <span [innerHTML]="getIcon(sidebarOpen ? 'chevLeft' : 'chevRight')"></span>
+      </button>
+    </div>
+
+    <!-- Current account badge (replaces multi-role switcher) -->
+    <div class="account-badge">
+      <div class="account-badge__avatar"
+           [style.background]="avatarUrl ? 'transparent' : 'linear-gradient(135deg,' + roleColor + ',#888)'">
+        <img *ngIf="avatarUrl"
+             [src]="avatarUrl"
+             alt="avatar"
+             class="avatar-img"
+             (error)="onAvatarError($event)" />
+        <span *ngIf="!avatarUrl">{{ userInitials }}</span>
+      </div>
+      <div class="account-badge__info">
+        <span class="account-badge__name">
+          {{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}
+        </span>
+        <span class="account-badge__role" [style.color]="roleColor">{{ roleLabel }}</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar__nav" role="navigation">
+      <ng-container *ngFor="let item of visibleNav; let i = index">
+
+        <!-- Section separator -->
+        <span class="nav-section"
+              *ngIf="item.section"
+              [class.nav-section--first]="i === 0">
+          <span class="nav-section__icon" [innerHTML]="getSectionIcon(item.section)"></span>
+          {{ item.section }}
+        </span>
+
+        <a class="nav-item"
+           [class.nav-item--active]="isActive(item)"
+           [routerLink]="getRoute(item)"
+           (click)="closeOnMobile()"
+           [title]="item.label">
+          <span class="nav-item__icon" [innerHTML]="getIcon(item.icon)"></span>
+          <span class="nav-item__label">{{ item.label }}</span>
+          <!-- Notification pill for Messages -->
+          <span class="nav-item__pill" *ngIf="item.route === 'messages' && nonLus > 0">
+            {{ nonLus }}
+          </span>
+        </a>
+
+      </ng-container>
+    </nav>
+
+    <!-- Footer user tile -->
+    <div class="sidebar__footer">
+      <div class="user-tile">
+        <div class="user-avatar"
+             [style.background]="avatarUrl ? 'transparent' : 'linear-gradient(135deg,' + roleColor + ',#888)'">
+          <img *ngIf="avatarUrl"
+               [src]="avatarUrl"
+               alt="avatar"
+               class="avatar-img"
+               (error)="onAvatarError($event)" />
+          <span *ngIf="!avatarUrl">{{ userInitials }}</span>
+        </div>
+        <div class="user-info">
+          <p class="user-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
+          <p class="user-email">{{ auth.currentUser?.emailAddress || '' }}</p>
+        </div>
+        <button class="logout-btn" (click)="logout()" title="Sign out">
+          <span [innerHTML]="getIcon('logout')"></span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <!-- Topbar -->
+    <header class="topbar">
+
+      <!-- Hamburger / expand button -->
+      <button class="topbar__menu-btn" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'">
+        <span [innerHTML]="getIcon(sidebarMobile ? 'menu' : (sidebarOpen ? 'chevLeft' : 'chevRight'))"></span>
+      </button>
+
+      <!-- Expand hint shown when collapsed on desktop -->
+      <button class="topbar__expand-brand" *ngIf="!sidebarOpen && !sidebarMobile" (click)="toggleSidebar()">
+        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#FF9A5C)'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+      </button>
+
+      <!-- Breadcrumb -->
+      <div class="topbar__breadcrumb">
+        <span class="bc-root">{{ roleLabel }}</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-current">{{ currentPageLabel }}</span>
+      </div>
+
+      <!-- Search -->
+      <div class="topbar__search">
+        <span class="topbar__search-icon" [innerHTML]="getIcon('search')"></span>
+        <input type="text" placeholder="Search…" />
+        <kbd>⌘K</kbd>
+      </div>
+      <div class="topbar__actions">
+
+        <!-- Notification bell -->
+        <div class="notif-wrapper">
+          <button class="topbar__icon-btn" (click)="notifOpen = !notifOpen" [class.active]="notifOpen">
+            <span [innerHTML]="getIcon('bell')"></span>
+            <span class="notif-badge" *ngIf="nonLus > 0">{{ nonLus }}</span>
+          </button>
+          <div class="notif-panel" *ngIf="notifOpen">
+            <div class="notif-panel__header">
+              <span>Notifications</span>
+              <button (click)="notifService.markAllRead(); notifOpen = false">Mark all read</button>
+            </div>
+            <div *ngFor="let n of notifs" class="notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+              <div class="notif-item__dot dot-info"></div>
+              <div>
+                <p class="notif-item__titre">{{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Ticket Resolved' }}</p>
+                <p class="notif-item__msg">{{ n.message }}</p>
+              </div>
+            </div>
+            <div style="padding:12px 16px;text-align:center;border-top:1px solid var(--border);">
+              <a [routerLink]="rolePrefix + '/notifications'"
+                (click)="notifOpen=false"
+                style="font-size:12px;font-weight:600;color:var(--orange);text-decoration:none;">
+                Show all notifications
+              </a>
+            </div>
+          </div>
+        </div>
+        <a routerLink="/" class="topbar__icon-btn" title="Home">
+          <span [innerHTML]="getIcon('home')"></span>
+        </a>
+
+        <!-- Avatar -->
+        <div class="topbar__avatar"
+             [style.background]="avatarUrl ? 'transparent' : 'linear-gradient(135deg,' + roleColor + ',#888)'">
+          <img *ngIf="avatarUrl"
+               [src]="avatarUrl"
+               alt="avatar"
+               class="avatar-img avatar-img--topbar"
+               (error)="onAvatarError($event)" />
+          <span *ngIf="!avatarUrl">{{ userInitials.charAt(0) }}</span>
+        </div>
+      </div>
+    </header>
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

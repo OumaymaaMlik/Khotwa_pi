@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9cea7d6a-7d57-4f1b-8b98-94094c4df2c4" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/Khotwa_pi.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/enums/PlanType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/enums/Role.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/config/OnlineUserStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/config/SwaggerConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/config/WebSocketConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/config/WebSocketEventPublisher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/controller/FileUploadController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/controller/MessageController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/controller/NotificationController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/controller/WebSocketController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/dto/MessageDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/dto/MessageMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/dto/NotificationDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/entity/Message.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/entity/MessageStatus.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/entity/MessageType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/entity/Notification.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/entity/NotificationType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/exception/MessagingExceptionHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/repository/MessageRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/repository/NotificationRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/service/DailyDigestService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/service/MessageService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/service/NotificationService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/service/ProfanityFilterService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/service/RealUserEmailResolver.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/messaging/service/UserEmailResolver.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/main/resources/bad-words.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-backend/src/test/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/message.service.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/online-status.service.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/websocket-initializer.service.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/websocket.service.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/notifications/notifications.component.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/notifications/notifications.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/notifications/notifications.component.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/notifications/notifications.component.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/notifications/notifications.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/notifications/notifications.component.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/notifications/notifications.component.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/notifications/notifications.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/notifications/notifications.component.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/khotwa-frontend/src/polyfills.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/config/CorsConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/config/CorsConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/exception/ResourceNotFoundException.java" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/exception/ResourceNotFoundException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/security/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/security/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/service/SubscriptionServices/Notification/EmailService.java" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/src/main/java/tn/khotwa/service/SubscriptionServices/Notification/EmailService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-backend/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-backend/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/18.2.21/khotwa-ng/.tsbuildinfo" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/18.2.21/khotwa-ng/.tsbuildinfo" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/18.2.21/khotwa-ng/vite/deps/_metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/.angular/cache/18.2.21/khotwa-ng/vite/deps/_metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/angular.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/angular.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/proxy.conf.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/proxy.conf.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/app.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/app.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/interceptors/jwt.interceptor.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/interceptors/jwt.interceptor.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/models/message.model.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/models/message.model.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/auth.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/auth.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/notification.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/core/services/notification.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/admin.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/admin.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/admin/messages/messages.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/coach.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/coach.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/coach/messages/messages.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/entrepreneur.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/entrepreneur.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/features/entrepreneur/messages/messages.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-coach/layout-coach.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-entrepreneur/layout-entrepreneur.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-entrepreneur/layout-entrepreneur.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-entrepreneur/layout-entrepreneur.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout-entrepreneur/layout-entrepreneur.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.css" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/app/layout/layout.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/khotwa-frontend/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/khotwa-frontend/tsconfig.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3CDr6WWcRrotQ85Ief4xVRJ7aAz" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.Unnamed.executor": "Run",
+    "git-widget-placeholder": "Merging main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Mega-Pc/Desktop/Esprit/4ArcTIC2/PI/Git/Khotwa_pi/khotwa-backend",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="biblio" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unnamed" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="17" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <module name="biblio" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="tn.khotwa.KhotwaBackendApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-125ca727e0f0-intellij.indexing.shared.core-IU-243.23654.153" />
+        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-IU-243.23654.153" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9cea7d6a-7d57-4f1b-8b98-94094c4df2c4" name="Changes" comment="" />
+      <created>1775930806796</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1775930806796</updated>
+      <workItem from="1775930807835" duration="15000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
