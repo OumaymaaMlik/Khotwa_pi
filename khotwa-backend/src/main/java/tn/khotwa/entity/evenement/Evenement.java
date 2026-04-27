@@ -1,18 +1,18 @@
 package tn.khotwa.entity.evenement;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.khotwa.entity.UserEntities.User;
-import tn.khotwa.enums.EvenementType;
+import tn.khotwa.enums.EventsEnums.EvenementStatus;
+import tn.khotwa.enums.EventsEnums.EvenementType;
+import tn.khotwa.enums.SubscriptionEnums.PlanType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-// Entité Evenement — module Gestion des Événements
-// EvenementType réutilisé depuis tn.khotwa.biblio.enums (pas de redondance)
-// User réutilisé depuis tn.khotwa.biblio.entity.subscription
 @Entity
 @Table(name = "evenement")
 @Getter
@@ -52,23 +52,32 @@ public class Evenement {
     @Column(nullable = false)
     private EvenementType type;
 
-    // Créateur de l'événement (ADMIN ou COACH)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PlanType planType;
+
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id")
     private User creator;
 
-    // Participants inscrits à l'événement
+    @com.fasterxml.jackson.annotation.JsonProperty("creatorId")
+    public Long getCreatorId() {
+        return creator != null ? creator.getIdUser() : null;
+    }
+
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "evenement_participants",
-        joinColumns = @JoinColumn(name = "evenement_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
+            name = "evenement_participants",
+            joinColumns = @JoinColumn(name = "evenement_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     @Builder.Default
     private List<User> participants = new ArrayList<>();
 
-    // Statut : PENDING, PUBLISHED, CANCELLED, DONE
+    @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
     @Builder.Default
-    private String statut = "PENDING";
+    private EvenementStatus statut = EvenementStatus.PENDING;
 }

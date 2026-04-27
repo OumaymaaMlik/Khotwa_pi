@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/ressources/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
                         .requestMatchers("/api/progressions/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
                         .requestMatchers("/api/tags/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
+                        .requestMatchers("/api/evenement/**").hasAnyRole("ADMIN", "ENTREPRENEUR", "COACH")
 
                         // ── TOUT LE RESTE ─────────────────────────────────────────────
                         .anyRequest().authenticated()

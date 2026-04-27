@@ -15,9 +15,9 @@ import { EntrepreneurBibliothequeComponent } from './bibliotheque/bibliotheque.c
 import { EntrepreneurProgressionsComponent } from './progressions/progressions.component';
 import { EntrepreneurTalentComponent }       from './talent/talent.component';
 import { EntrepreneurNotificationsComponent } from './notifications/notifications.component';
-import { ProfileComponent }                  from './profile/profile.component';          
+import { ProfileComponent }                  from './profile/profile.component';
 import { EntrepreneurAccountPageComponent }  from './account-page/account-page.component';
-
+import { EntrepreneurEvenementsComponent }   from './Events/events.component';
 
 const routes: Routes = [
   {
@@ -37,6 +37,7 @@ const routes: Routes = [
       { path: 'notifications', component: EntrepreneurNotificationsComponent },
       { path: 'profile',      component: ProfileComponent                      },
       { path: 'account',      component: EntrepreneurAccountPageComponent  },
+      { path: 'evenements',   component: EntrepreneurEvenementsComponent  },
       { path: 'contact',      loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
 
     ],
@@ -50,7 +51,8 @@ const routes: Routes = [
     EntrepreneurMessagesComponent,  EntrepreneurBibliothequeComponent,
     EntrepreneurTalentComponent,    EntrepreneurProgressionsComponent,
     ProfileComponent,EntrepreneurNotificationsComponent,
-    EntrepreneurAccountPageComponent
+    EntrepreneurAccountPageComponent,
+    EntrepreneurEvenementsComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

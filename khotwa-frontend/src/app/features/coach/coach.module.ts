@@ -17,6 +17,7 @@ import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.compone
 import { CoachTalentComponent }        from './talent/talent.component';
 import { CoachSettingsComponent }      from './settings/settings.component';
 import { CoachAccountPageComponent }   from './account-page/account-page.component';
+import { CoachEventsComponent } from './coach-events/coach-events.component';
 
 
 const routes: Routes = [
@@ -46,7 +47,8 @@ const routes: Routes = [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
     CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
-    CoachSettingsComponent, CoachAccountPageComponent
+    CoachSettingsComponent, CoachAccountPageComponent,    CoachEventsComponent
+
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,
