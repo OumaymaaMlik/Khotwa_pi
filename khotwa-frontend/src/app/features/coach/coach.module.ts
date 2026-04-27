@@ -17,6 +17,9 @@ import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.compone
 import { CoachTalentComponent }        from './talent/talent.component';
 import { CoachSettingsComponent }      from './settings/settings.component';
 import { CoachAccountPageComponent }   from './account-page/account-page.component';
+import { CoachEventsComponent } from './coach-events/coach-events.component';
+import { CoachNotificationsComponent } from './notifications/notifications.component';
+
 
 const routes: Routes = [
   {
@@ -30,11 +33,13 @@ const routes: Routes = [
       { path: 'validations',  component: CoachValidationsComponent  },
       { path: 'planning',     component: CoachPlanningComponent     },
       { path: 'messages',     component: CoachMessagesComponent     },
+      { path: 'notifications',component: CoachNotificationsComponent },
       { path: 'bibliotheque', component: CoachBibliothequeComponent },
       { path: 'progressions', component: CoachProgressionsComponent },
       { path: 'talent',       component: CoachTalentComponent       },
       { path: 'settings',     component: CoachSettingsComponent     },
       { path: 'account',      component: CoachAccountPageComponent  },
+      { path: 'contact',      loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
     ],
   },
 ];
@@ -44,7 +49,8 @@ const routes: Routes = [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
     CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
-    CoachSettingsComponent, CoachAccountPageComponent,
+    CoachSettingsComponent, CoachAccountPageComponent,    CoachEventsComponent, CoachNotificationsComponent
+
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

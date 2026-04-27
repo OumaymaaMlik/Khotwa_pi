@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { EvenementService } from '../../../core/services/events.service';
 import { Evenement, EvenementStatus, PlanType, EvenementType } from '../../../core/models/evenement.model';
 
+
 interface Notification {
   message: string;
   urgency: 'high' | 'normal';
