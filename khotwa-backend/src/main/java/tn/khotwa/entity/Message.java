@@ -25,8 +25,12 @@ public class Message {
     @NotNull(message = "Sender ID is required")
     private Long senderId;
 
-    @NotNull(message = "Receiver ID is required")
+    // Nullable for group conversations. For DIRECT conversations we still set receiverId for compatibility.
     private Long receiverId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "conversation_id", nullable = false)
+    private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_message_id")

@@ -9,6 +9,7 @@ public class NotificationDTO {
     private Long id;
     private Long recipientId;
     private Long senderId;
+    private Long conversationId;
     private String message;
     private boolean isRead;
     private NotificationType type;

@@ -15,6 +15,7 @@ public class Notification {
 
     private Long recipientId;
     private Long senderId;
+    private Long conversationId;
     private String message;
     private boolean isRead;
 

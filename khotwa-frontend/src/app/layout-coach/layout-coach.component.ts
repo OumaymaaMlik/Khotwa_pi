@@ -139,10 +139,18 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
   onNotificationClick(notification: any): void {
     this.notifService.markRead(notification.id);
     this.notifOpen = false;
-    if (notification.senderId) {
-      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: notification.senderId } });
-    } else {
-      this.router.navigate([`${this.rolePrefix}/messages`]);
+    const msg = (notification.message || '').toLowerCase();
+    const isProjectNotification = notification.type === 'PROJECT_ASSIGNMENT'
+      || notification.type === 'PROJECT_UNASSIGNED'
+      || msg.includes('assigned to project')
+      || msg.includes('assigned to your project')
+      || msg.includes('unassigned from project');
+    if (notification.conversationId) {
+      this.router.navigate(['/coach/messages'], { queryParams: { conversationId: notification.conversationId } });
+    } else if (isProjectNotification) {
+      return;
+    } else if (notification.type === 'NEW_MESSAGE' && notification.senderId) {
+      this.router.navigate(['/coach/messages'], { queryParams: { participantId: notification.senderId } });
     }
   }
 

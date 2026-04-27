@@ -44,6 +44,27 @@ public class WebSocketEventPublisher {
         );
     }
 
+    public void publishConversationMessage(Long conversationId, MessageDTO message) {
+        messagingTemplate.convertAndSend(
+                "/topic/conversations/" + conversationId + "/messages",
+                message
+        );
+    }
+
+    public void publishConversationMessageUpdate(Long conversationId, MessageDTO message) {
+        messagingTemplate.convertAndSend(
+                "/topic/conversations/" + conversationId + "/messages-updates",
+                message
+        );
+    }
+
+    public void publishConversationTyping(Long conversationId, Long userId, boolean isTyping) {
+        messagingTemplate.convertAndSend(
+                "/topic/conversations/" + conversationId + "/typing",
+                new ConversationTypingEvent(conversationId, userId, isTyping)
+        );
+    }
+
     public void publishOnlineStatus(Long userId, boolean isOnline) {
         messagingTemplate.convertAndSend(
                 "/topic/status",
@@ -53,4 +74,5 @@ public class WebSocketEventPublisher {
 
     public record TypingEvent(Long userId, boolean typing) {}
     public record StatusEvent(Long userId, boolean online) {}
+    public record ConversationTypingEvent(Long conversationId, Long userId, boolean typing) {}
 }
