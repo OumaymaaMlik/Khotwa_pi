@@ -1,5 +1,6 @@
 /khotwa-backend/target/
 /khotwa-backend/*.jar
+/khotwa-backend/.env
 
 /khotwa-frontend/node_modules/
 /khotwa-frontend/dist/
