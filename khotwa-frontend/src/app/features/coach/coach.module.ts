@@ -18,6 +18,7 @@ import { CoachTalentComponent }        from './talent/talent.component';
 import { CoachSettingsComponent }      from './settings/settings.component';
 import { CoachAccountPageComponent }   from './account-page/account-page.component';
 
+
 const routes: Routes = [
   {
     path: '',
@@ -44,7 +45,7 @@ const routes: Routes = [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
     CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
-    CoachSettingsComponent, CoachAccountPageComponent,
+    CoachSettingsComponent, CoachAccountPageComponent
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

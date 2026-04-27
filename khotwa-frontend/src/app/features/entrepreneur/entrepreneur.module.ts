@@ -15,8 +15,9 @@ import { EntrepreneurBibliothequeComponent } from './bibliotheque/bibliotheque.c
 import { EntrepreneurProgressionsComponent } from './progressions/progressions.component';
 import { EntrepreneurTalentComponent }       from './talent/talent.component';
 import { EntrepreneurNotificationsComponent } from './notifications/notifications.component';
-import { ProfileComponent }                  from './profile/profile.component';          // ← existing PayPal page, untouched
-import { EntrepreneurAccountPageComponent }  from './account-page/account-page.component'; // ← new account page
+import { ProfileComponent }                  from './profile/profile.component';          
+import { EntrepreneurAccountPageComponent }  from './account-page/account-page.component';
+
 
 const routes: Routes = [
   {
@@ -48,7 +49,7 @@ const routes: Routes = [
     EntrepreneurMessagesComponent,  EntrepreneurBibliothequeComponent,
     EntrepreneurTalentComponent,    EntrepreneurProgressionsComponent,
     ProfileComponent,EntrepreneurNotificationsComponent,
-    EntrepreneurAccountPageComponent,
+    EntrepreneurAccountPageComponent
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

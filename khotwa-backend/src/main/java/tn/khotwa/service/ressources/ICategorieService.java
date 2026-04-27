@@ -9,9 +9,9 @@ public interface ICategorieService {
     List<CategorieView> listerToutes();
     CategorieView getParId(Long id);
 
-    CategorieView creer(String nom, String description, String couleur, String icone);
+    CategorieView creer(String nom, String description, String couleur, String icone, String secteur);
 
-    CategorieView mettreAJour(Long id, String nom, String description, String couleur, String icone);
+    CategorieView mettreAJour(Long id, String nom, String description, String couleur, String icone, String secteur);
 
     void supprimer(Long id);
 }
