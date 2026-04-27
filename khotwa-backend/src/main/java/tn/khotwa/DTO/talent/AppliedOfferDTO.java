@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AppliedOfferDTO {
+    private Long candidatureId;
     private Long annonceId;
     private String titreAnnonce;
     private String typePoste;
@@ -17,4 +18,6 @@ public class AppliedOfferDTO {
     private Double matchingScore;
     private String dateCandidature;
     private String statut;
+    private Boolean contactEntrepreneur;
+    private String dateContactEntrepreneur;
 }

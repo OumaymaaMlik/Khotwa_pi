@@ -29,7 +29,69 @@
       <div><p class="kpi-value">{{ stats.enCours }}</p><p class="kpi-label">Active projects</p></div>
     </div>
   </div>
-  <div class="bottom-grid animate-3">
+
+  <div *ngIf="loading" class="kh-card panel mt-4 text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p>Chargement des statistiques avancées...</p>
+  </div>
+
+  <div *ngIf="error" class="kh-card panel mt-4 text-center text-danger">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error && analyticsData" class="mt-4 animate-2">
+    <h3 class="kh-section-title mb-3">📊 Statistiques Offres & Talents</h3>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:linear-gradient(135deg,#2A5298,#1e3c72)">💼</div>
+        <div><p class="kpi-value">{{ analyticsData.totalOffres }}</p><p class="kpi-label">Nombre de postes</p></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:linear-gradient(135deg,#FF416C,#FF4B2B)">🎯</div>
+        <div><p class="kpi-value">{{ analyticsData.totalCandidats }}</p><p class="kpi-label">Nombre de candidats</p></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d)">📈</div>
+        <div><p class="kpi-value">{{ analyticsData.offresAvecCandidatures }}</p><p class="kpi-label">Offres avec candidatures</p></div>
+      </div>
+    </div>
+
+    <h3 class="kh-section-title mb-3 mt-4">📈 Analyse Entrepreneur</h3>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:linear-gradient(135deg,#f2994a,#f2c94c)">📞</div>
+        <div><p class="kpi-value">{{ analyticsData.tauxContactEntrepreneurs }}%</p><p class="kpi-label">Taux de contact</p></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:linear-gradient(135deg,#8E2DE2,#4A00E0)">⏳</div>
+        <div><p class="kpi-value">{{ analyticsData.tempsMoyenReponse }}h</p><p class="kpi-label">Temps moyen de réponse</p></div>
+      </div>
+    </div>
+
+    <h3 class="kh-section-title mb-3 mt-4">🔥 Top 5 Offres Actives</h3>
+    <div class="kh-card panel">
+      <table class="table" style="width: 100%; text-align: left; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid #eee;">
+            <th style="padding: 10px;">ID</th>
+            <th style="padding: 10px;">Titre</th>
+            <th style="padding: 10px;">Nombre de candidatures</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let offre of analyticsData.offresPlusActives" style="border-bottom: 1px solid #f9f9f9;">
+            <td style="padding: 10px;">#{{ offre.id }}</td>
+            <td style="padding: 10px;">{{ offre.titre }}</td>
+            <td style="padding: 10px;"><span class="kh-badge kh-badge--amber">{{ offre.nombreCandidatures }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bottom-grid animate-3 mt-4">
     <div class="kh-card panel">
       <div class="panel-header"><span class="kh-section-title">Recent projects</span><a routerLink="/admin/projets" class="kh-btn kh-btn--ghost kh-btn--sm">View all</a></div>
       <div *ngFor="let p of projets.slice(0,4)" class="project-row">

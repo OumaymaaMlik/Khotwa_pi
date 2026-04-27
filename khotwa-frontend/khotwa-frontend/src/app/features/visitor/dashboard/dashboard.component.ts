@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { TalentService } from '../../../core/services/talent.service';
+import { AiService } from '../../../core/services/ai.service';
 import { TalentProfileEntity } from '../../../core/models/talent.model';
 
 @Component({
@@ -17,10 +18,14 @@ export class VisitorDashboardComponent implements OnInit {
   aiLoading = false;
   aiAdvice = '';
   aiBullets: string[] = [];
+  keywordInput = '';
+  keywords: string[] = [];
+  suggestedRoles: string[] = [];
 
   constructor(
     public auth: AuthService,
     private talentService: TalentService,
+    private aiService: AiService,
   ) {}
 
   ngOnInit(): void {
@@ -96,6 +101,23 @@ export class VisitorDashboardComponent implements OnInit {
         this.aiAdvice = 'Assistant IA momentanément indisponible.';
         this.aiBullets = [];
         this.aiLoading = false;
+      },
+    });
+  }
+
+  generateKeywordsFromGoal(): void {
+    const skills = `${this.profile?.competences || ''} ${this.keywordInput}`
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    this.aiService.getKeywords(this.aiGoal, skills).subscribe({
+      next: (res) => {
+        this.keywords = res.keywords ?? [];
+        this.suggestedRoles = res.suggestedRoles ?? [];
+      },
+      error: () => {
+        this.keywords = [];
+        this.suggestedRoles = [];
       },
     });
   }

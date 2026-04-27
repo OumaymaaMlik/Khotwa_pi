@@ -8,6 +8,7 @@ import tn.khotwa.DTO.talent.HiringAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.HiringAiAdviceResponseDTO;
 import tn.khotwa.DTO.talent.HiringAiChatRequestDTO;
 import tn.khotwa.DTO.talent.HiringAiChatResponseDTO;
+import tn.khotwa.DTO.talent.AiKeywordsResponseDTO;
 import tn.khotwa.DTO.talent.SkillGapAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.SkillGapAiAdviceResponseDTO;
 import tn.khotwa.DTO.talent.TalentAiAdviceRequestDTO;
@@ -315,6 +316,48 @@ public class AiAdviceService {
                         "Mettre a jour CV et portfolio avec preuves d'impact.",
                         "Repasser l'analyse apres chaque nouveau projet."
                 ))
+                .build();
+    }
+
+    public AiKeywordsResponseDTO buildKeywords(String goal, List<String> baseSkills) {
+        String source = safe(goal, "") + " " + String.join(" ", safeList(baseSkills));
+        List<String> tokens = Arrays.stream(source.toLowerCase().split("[^a-z0-9+#.]+"))
+                .map(String::trim)
+                .filter(s -> s.length() >= 3)
+                .toList();
+
+        Map<String, Long> freq = tokens.stream()
+                .collect(Collectors.groupingBy(x -> x, Collectors.counting()));
+
+        List<String> keywords = freq.entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                .map(Map.Entry::getKey)
+                .distinct()
+                .limit(10)
+                .collect(Collectors.toList());
+
+        LinkedHashSet<String> roles = new LinkedHashSet<>();
+        String joined = String.join(" ", keywords);
+        if (joined.contains("spring") || joined.contains("java") || joined.contains("api")) {
+            roles.add("Backend Engineer");
+        }
+        if (joined.contains("angular") || joined.contains("react") || joined.contains("frontend")) {
+            roles.add("Frontend Engineer");
+        }
+        if (joined.contains("docker") || joined.contains("devops") || joined.contains("kubernetes")) {
+            roles.add("DevOps Engineer");
+        }
+        if (joined.contains("ai") || joined.contains("llm") || joined.contains("ml")) {
+            roles.add("AI Engineer");
+        }
+        if (roles.isEmpty()) {
+            roles.add("Fullstack Engineer");
+        }
+
+        return AiKeywordsResponseDTO.builder()
+                .keywords(keywords)
+                .suggestedRoles(new ArrayList<>(roles))
+                .summary("Keywords IA generees pour mieux cibler les offres et candidatures.")
                 .build();
     }
 

@@ -48,4 +48,20 @@ public class CandidatureController {
     public ResponseEntity<List<AppliedTalentSummaryDTO>> getTalentsApplied() {
         return ResponseEntity.ok(candidatureService.getTalentsWithAppliedOffers());
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Candidature> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String statut = body.getOrDefault("statut", "EN_ATTENTE");
+        return ResponseEntity.ok(candidatureService.updateStatut(id, statut));
+    }
+
+    @PutMapping("/{id}/contacted")
+    public ResponseEntity<Candidature> markContacted(@PathVariable Long id) {
+        return ResponseEntity.ok(candidatureService.markContacted(id));
+    }
+
+    @GetMapping("/accepted")
+    public ResponseEntity<List<Candidature>> getAccepted() {
+        return ResponseEntity.ok(candidatureService.getAcceptedCandidatures());
+    }
 }

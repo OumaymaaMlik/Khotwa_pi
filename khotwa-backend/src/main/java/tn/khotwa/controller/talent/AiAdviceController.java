@@ -8,6 +8,7 @@ import tn.khotwa.DTO.talent.HiringAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.HiringAiAdviceResponseDTO;
 import tn.khotwa.DTO.talent.HiringAiChatRequestDTO;
 import tn.khotwa.DTO.talent.HiringAiChatResponseDTO;
+import tn.khotwa.DTO.talent.AiKeywordsResponseDTO;
 import tn.khotwa.DTO.talent.SkillGapAiAdviceRequestDTO;
 import tn.khotwa.DTO.talent.SkillGapAiAdviceResponseDTO;
 import tn.khotwa.DTO.talent.TalentAiAdviceRequestDTO;
@@ -16,6 +17,7 @@ import tn.khotwa.entity.talent.AiRecommendation;
 import tn.khotwa.service.sertalent.AiRecommendationService;
 import tn.khotwa.service.sertalent.AiAdviceService;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -49,5 +51,13 @@ public class AiAdviceController {
     @GetMapping("/recommendations")
     public ResponseEntity<List<AiRecommendation>> getRecommendations() {
         return ResponseEntity.ok(aiRecommendationService.findAll());
+    }
+
+    @PostMapping("/keywords")
+    public ResponseEntity<AiKeywordsResponseDTO> buildKeywords(@RequestBody Map<String, Object> body) {
+        String goal = body.get("goal") != null ? body.get("goal").toString() : "";
+        @SuppressWarnings("unchecked")
+        List<String> skills = body.get("skills") instanceof List<?> ? (List<String>) body.get("skills") : List.of();
+        return ResponseEntity.ok(aiAdviceService.buildKeywords(goal, skills));
     }
 }

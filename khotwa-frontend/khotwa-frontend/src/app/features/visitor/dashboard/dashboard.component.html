@@ -44,6 +44,16 @@
     <button class="vis-btn vis-btn--primary" (click)="askAi()" [disabled]="aiLoading">
       {{ aiLoading ? 'Analyse…' : 'Générer un plan IA' }}
     </button>
+    <div style="margin-top:10px;">
+      <input [(ngModel)]="keywordInput" placeholder="Ajouter un contexte pour mots-clés (ex: backend spring remote)" />
+      <button class="vis-btn vis-btn--ghost" (click)="generateKeywordsFromGoal()">Générer keywords</button>
+    </div>
+    <div *ngIf="keywords.length" class="vis-highlights" style="margin-top:8px;">
+      <span class="vis-pill" *ngFor="let k of keywords">#{{ k }}</span>
+    </div>
+    <div *ngIf="suggestedRoles.length" class="vis-highlights" style="margin-top:8px;">
+      <span class="vis-pill" *ngFor="let r of suggestedRoles">Role: {{ r }}</span>
+    </div>
     <div *ngIf="aiAdvice" class="vis-ai-result">
       <p><strong>Resultat IA:</strong> {{ aiAdvice }}</p>
       <ul>

@@ -33,4 +33,16 @@ public class TalentProfile {
     private String niveauExperience; // JUNIOR, INTERMEDIAIRE, SENIOR
     private String cvUrl;
     private String linkedinUrl;
+
+    // Champs de conformité RGPD
+    private java.time.LocalDateTime rgpdConsentDate;
+    private boolean dataExportRequested;
+    private boolean deletionRequested;
+
+    public void setLinkedinId(String linkedinId) {
+    }
+
+    public void setName(String fullName) {
+
+    }
 }

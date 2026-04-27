@@ -11,6 +11,7 @@ import java.util.List;
 public interface CandidatureRepository extends JpaRepository<Candidature, Long> {
     List<Candidature> findByAnnonceId(Long annonceId);
     List<Candidature> findByTalentId(Long talentId);
+    List<Candidature> findByStatut(Candidature.StatutCandidature statut);
 
     @Query("SELECT c FROM Candidature c WHERE c.annonce.id = :annonceId ORDER BY c.matchingScore DESC")
     List<Candidature> findByAnnonceIdOrderByScoreDesc(Long annonceId);

@@ -1,9 +1,30 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProjetService } from '../../../core/services/projet.service';
+import { AdminDashboardService } from '../../../core/services/admin-dashboard.service';
+import { AdminDashboardDTO } from '../../../core/models/admin-dashboard.model';
 
 @Component({ selector:'app-admin-dashboard', templateUrl:'./dashboard.component.html', styleUrls:['./dashboard.component.css'] })
-export class AdminDashboardComponent {
-  constructor(public projetService: ProjetService) {}
+export class AdminDashboardComponent implements OnInit {
+  analyticsData: AdminDashboardDTO | null = null;
+  loading: boolean = true;
+  error: string | null = null;
+
+  constructor(public projetService: ProjetService, private dashboardService: AdminDashboardService) {}
+
+  ngOnInit() {
+    this.dashboardService.getDashboardAnalytics().subscribe({
+      next: (data) => {
+        this.analyticsData = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Failed to load analytics data';
+        this.loading = false;
+        console.error(err);
+      }
+    });
+  }
+
   get projets() { return this.projetService.projets; }
   get stats() {
     return {

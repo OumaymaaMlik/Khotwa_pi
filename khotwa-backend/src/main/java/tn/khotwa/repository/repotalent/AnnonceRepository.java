@@ -12,4 +12,7 @@ public interface AnnonceRepository extends JpaRepository<Annonce, Long> {
     List<Annonce> findByStartupId(Long startupId);
     List<Annonce> findByTypePoste(Annonce.TypePoste typePoste);
     List<Annonce> findByTitreContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String titre, String description);
+
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c.annonce FROM Candidature c")
+    List<Annonce> findAnnoncesWithCandidatures();
 }

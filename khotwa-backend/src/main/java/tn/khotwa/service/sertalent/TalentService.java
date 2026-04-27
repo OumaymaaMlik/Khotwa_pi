@@ -1,12 +1,14 @@
 // service/TalentService.java
 package tn.khotwa.service.sertalent;
 
+
 import tn.khotwa.DTO.talent.TalentProfileDTO;
 import tn.khotwa.entity.talent.TalentProfile;
 import tn.khotwa.repository.repotalent.TalentProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,4 +54,13 @@ public class TalentService {
     public void supprimerProfil(Long id) {
         talentRepository.deleteById(id);
     }
+    public TalentProfile saveOrUpdate(TalentProfile user) {
+
+        return talentRepository.save(user);
+    }
+
+    public Optional<TalentProfile> findByLinkedinId(String id) {
+        return talentRepository.findByLinkedinUrl(id);
+    }
 }
+

@@ -13,5 +13,5 @@ public interface TalentProfileRepository extends JpaRepository<TalentProfile, Lo
     Optional<TalentProfile> findByEmail(String email);
     List<TalentProfile> findByCompetences(String competences);
     List<TalentProfile> findByNomContainingIgnoreCase(String nom);
-
+    Optional<TalentProfile> findByLinkedinUrl(String linkedinUrl);
 }

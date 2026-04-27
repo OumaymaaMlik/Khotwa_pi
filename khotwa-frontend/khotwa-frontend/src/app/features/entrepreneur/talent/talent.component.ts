@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { TalentService } from '../../../core/services/talent.service';
+import { AiService } from '../../../core/services/ai.service';
 import {
   Annonce,
+  AppliedOffer,
   AppliedTalentSummary,
   AiRecommendation,
   HiringAiChatResponse,
@@ -11,15 +13,34 @@ import {
   TalentProfile,
 } from '../../../core/models/talent.model';
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  typing?: boolean;
+}
+
+export interface MarketSkillStat {
+  skill: string;
+  count: number;
+  pct: number;
+}
+
+export interface SalaryEstimate {
+  stack: string;
+  avgMin: number;
+  avgMax: number;
+}
+
 @Component({
   selector: 'app-entrepreneur-talent',
   templateUrl: './talent.component.html',
   styleUrls: ['./talent.component.css'],
 })
 export class EntrepreneurTalentComponent implements OnInit {
-  constructor(private talentService: TalentService) {}
+  constructor(private talentService: TalentService, private aiService: AiService) { }
 
-  view: 'applicants' | 'annonces' = 'applicants';
+  view: 'applicants' | 'annonces' | 'talents' = 'applicants';
 
   talents: TalentProfile[] = [];
   appliedTalents: AppliedTalentSummary[] = [];
@@ -32,17 +53,24 @@ export class EntrepreneurTalentComponent implements OnInit {
   selectedAnnonce: Annonce | null = null;
   selectedAnnonceId: number | null = null;
 
+  // ── Talents × Offres modal ──
+  showTalentsOffresModal = false;
+  searchTalentsOffres = '';
+
   showForm = false;
   showEditForm = false;
   loading = false;
   successMsg = '';
   error = '';
+  actionLoadingId: number | null = null;
 
-  /** Métiers / familles de rôles avancés (UX + envoyés à l’IA / description). */
+  /** Métiers avancés enrichis avec Backend/Frontend vérifiés */
   readonly metiersCatalog = [
     { code: 'FULLSTACK', label: 'Full-stack / Platform' },
     { code: 'BACKEND', label: 'Backend / APIs' },
     { code: 'FRONTEND', label: 'Frontend / Design system' },
+    { code: 'VERIFIED_BACKEND', label: '✓ Backend Vérifié — Tests & Clean Arch' },
+    { code: 'VERIFIED_FRONTEND', label: '✓ Frontend Vérifié — A11y & Design System' },
     { code: 'DATA_ML', label: 'Data / ML Engineer' },
     { code: 'MLOPS', label: 'MLOps / DataOps' },
     { code: 'GENAI', label: 'GenAI Engineer / LLMOps' },
@@ -73,24 +101,247 @@ export class EntrepreneurTalentComponent implements OnInit {
   editData: any = {};
 
   searchApplicants = '';
+  aiSearchHints: string[] = [];
   searchAnnonce = '';
+  searchTalents = '';
   sortMatching: 'score' | 'nom' | 'niveau' = 'score';
 
-  hiringAiLoading = false;
-  hiringAiResult: HiringAiResponse | null = null;
+  // ── Chat IA — nouveau design terminal ──
+  chatMessages: ChatMessage[] = [];
+  chatInput = '';
+  chatLoading = false;
   hiringContext = '';
+  chatInitialized = false;
+
   aiInsights: AiRecommendation[] = [];
-  hiringChatQuestion = '';
-  hiringChatLoading = false;
-  hiringChatResult: HiringAiChatResponse | null = null;
+
+  // ── Market Intelligence ──
+  marketTopSkills: MarketSkillStat[] = [];
+  salaryEstimates: SalaryEstimate[] = [];
 
   ngOnInit(): void {
     this.loadTalents();
     this.loadAppliedTalents();
     this.loadAnnonces();
     this.loadAiInsights();
+    this.buildMarketIntelligence();
+    this.initChat();
   }
 
+  // ──────────────────────────────
+  // CHAT IA — Terminal Style
+  // ──────────────────────────────
+  initChat(): void {
+    this.chatMessages = [
+      {
+        role: 'assistant',
+        content: `Hey 👋 Je suis **Alex**, Senior Engineering Lead avec 10 ans d'XP en recrutement tech.
+
+Remplissez le formulaire d'annonce et je vous donne mes conseils sur : fiche de poste, questions d'entretien, red flags à éviter et onboarding.
+
+Ou posez-moi directement une question sur votre recrutement.`,
+        timestamp: new Date(),
+      },
+    ];
+    this.chatInitialized = true;
+  }
+
+  sendChatMessage(): void {
+    const q = this.chatInput.trim();
+    if (!q || this.chatLoading) return;
+
+    this.chatMessages.push({ role: 'user', content: q, timestamp: new Date() });
+    this.chatInput = '';
+    this.chatLoading = true;
+
+    // Typing indicator
+    const typingMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date(), typing: true };
+    this.chatMessages.push(typingMsg);
+
+    this.talentService
+      .getHiringAiChat({
+        question: q,
+        contexte: this.hiringContext.trim() || undefined,
+        annonceId: this.selectedAnnonceId ?? undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          const idx = this.chatMessages.indexOf(typingMsg);
+          if (idx !== -1) {
+            const fullAnswer = this.buildChatAnswer(res);
+            this.chatMessages[idx] = { role: 'assistant', content: fullAnswer, timestamp: new Date() };
+          }
+          this.chatLoading = false;
+          this.loadAiInsights();
+        },
+        error: () => {
+          const idx = this.chatMessages.indexOf(typingMsg);
+          if (idx !== -1) {
+            this.chatMessages[idx] = {
+              role: 'assistant',
+              content: '⚠️ Erreur de connexion. Vérifiez que le backend est bien démarré sur `/api/ai/hiring-chat`.',
+              timestamp: new Date(),
+            };
+          }
+          this.chatLoading = false;
+        },
+      });
+  }
+
+  runHiringAi(): void {
+    const titre = this.newAnnonce.poste.trim() || 'Nouveau poste';
+    const typePoste = this.newAnnonce.type.toUpperCase();
+    const competencesRequises = this.newAnnonce.competences;
+    const metiers = this.newAnnonce.metiers.map((c) => this.metierLabel(c));
+
+    const userMsg = `Analyse mon annonce : **${titre}** (${typePoste}) — compétences : ${competencesRequises || 'N/A'} — métiers : ${metiers.join(', ') || 'N/A'}${this.hiringContext ? ` — contexte : ${this.hiringContext}` : ''}`;
+    this.chatMessages.push({ role: 'user', content: userMsg, timestamp: new Date() });
+
+    const typingMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date(), typing: true };
+    this.chatMessages.push(typingMsg);
+    this.chatLoading = true;
+
+    this.talentService
+      .getHiringAiAdvice({
+        titre,
+        typePoste,
+        competencesRequises,
+        metiers,
+        localisation: this.newAnnonce.localisation,
+        contexte: this.hiringContext.trim() || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          const idx = this.chatMessages.indexOf(typingMsg);
+          if (idx !== -1) {
+            const content = this.buildAdviceAnswer(res);
+            this.chatMessages[idx] = { role: 'assistant', content, timestamp: new Date() };
+          }
+          this.chatLoading = false;
+          this.loadAiInsights();
+        },
+        error: () => {
+          const idx = this.chatMessages.indexOf(typingMsg);
+          if (idx !== -1) {
+            this.chatMessages[idx] = {
+              role: 'assistant',
+              content: '⚠️ Erreur lors de la génération IA. Vérifiez `/api/ai/hiring-advice`.',
+              timestamp: new Date(),
+            };
+          }
+          this.chatLoading = false;
+        },
+      });
+  }
+
+  clearChat(): void {
+    this.initChat();
+  }
+
+  onChatKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.sendChatMessage();
+    }
+  }
+
+  private buildChatAnswer(res: HiringAiChatResponse): string {
+    let out = res.answer || '';
+    if (res.interviewQuestions?.length) {
+      out += "\n\n**Questions d'entretien recommandées:**\n" + res.interviewQuestions.map((q) => `• ${q}`).join('\n');
+    }
+    if (res.focusAreas?.length) {
+      out += '\n\n**Focus prioritaire :**\n' + res.focusAreas.map((f) => `• ${f}`).join('\n');
+    }
+    if (res.suggestedNextSteps?.length) {
+      out += '\n\n**Next steps :**\n' + res.suggestedNextSteps.map((s) => `→ ${s}`).join('\n');
+    }
+    return out;
+  }
+
+  private buildAdviceAnswer(res: HiringAiResponse): string {
+    let out = `**Fiche synthèse :** ${res.fichePoste || '—'}\n`;
+    if (res.competencesSuggerees?.length) {
+      out += '\n**Compétences suggérées :**\n' + res.competencesSuggerees.map((s) => `• ${s}`).join('\n');
+    }
+    if (res.questionsEntretien?.length) {
+      out += "\n\n**Questions d'entretien:**\n" + res.questionsEntretien.map((q) => `• ${q}`).join('\n');
+    }
+    if (res.checklistOnboarding?.length) {
+      out += '\n\n**Onboarding :**\n' + res.checklistOnboarding.map((o) => `✓ ${o}`).join('\n');
+    }
+    if (res.risquesOuGaps?.length) {
+      out += '\n\n**Risques / Écarts :**\n' + res.risquesOuGaps.map((r) => `⚠ ${r}`).join('\n');
+    }
+    return out;
+  }
+
+  // ──────────────────────────────
+  // MARKET INTELLIGENCE
+  // ──────────────────────────────
+  buildMarketIntelligence(): void {
+    // Construit dynamiquement depuis les annonces (sera rechargé après loadAnnonces)
+    setTimeout(() => this.computeMarketStats(), 1200);
+  }
+
+  computeMarketStats(): void {
+    const skillMap: Record<string, number> = {};
+    this.annonces.forEach((a) => {
+      (a.competencesRequises || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((s) => {
+          skillMap[s] = (skillMap[s] || 0) + 1;
+        });
+    });
+
+    const sorted = Object.entries(skillMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    const max = sorted[0]?.[1] || 1;
+
+    this.marketTopSkills = sorted.map(([skill, count]) => ({
+      skill,
+      count,
+      pct: Math.round((count / max) * 100),
+    }));
+
+    // Estimations salaires (statiques enrichies)
+    this.salaryEstimates = [
+      { stack: 'React + 5 ans', avgMin: 2800, avgMax: 4200 },
+      { stack: 'Spring Boot Senior', avgMin: 3000, avgMax: 4800 },
+      { stack: 'Angular Mid', avgMin: 2200, avgMax: 3400 },
+      { stack: 'DevOps / K8s', avgMin: 3500, avgMax: 5500 },
+      { stack: 'GenAI / LLMOps', avgMin: 4000, avgMax: 7000 },
+      { stack: 'Data Engineer', avgMin: 3200, avgMax: 5000 },
+    ];
+  }
+
+  // ──────────────────────────────
+  // TALENTS × OFFRES MODAL
+  // ──────────────────────────────
+  get filteredTalentsOffres(): AppliedTalentSummary[] {
+    const q = this.searchTalentsOffres.trim().toLowerCase();
+    if (!q) return this.appliedTalents;
+    return this.appliedTalents.filter((t) => {
+      const offers = (t.offres ?? []).map((o) => `${o.titreAnnonce} ${o.typePoste || ''}`).join(' ');
+      return `${t.prenom} ${t.nom} ${t.email} ${t.competences || ''} ${offers}`.toLowerCase().includes(q);
+    });
+  }
+
+  ouvrirTalentsOffres(): void {
+    this.showTalentsOffresModal = true;
+  }
+
+  fermerTalentsOffres(): void {
+    this.showTalentsOffresModal = false;
+    this.searchTalentsOffres = '';
+  }
+
+  // ──────────────────────────────
+  // LOADERS
+  // ──────────────────────────────
   loadTalents(): void {
     this.talentService.getTalents().subscribe({
       next: (data: TalentProfile[]) => {
@@ -107,6 +358,7 @@ export class EntrepreneurTalentComponent implements OnInit {
     this.talentService.getAnnonces().subscribe({
       next: (data: Annonce[]) => {
         this.annonces = data;
+        this.computeMarketStats();
       },
       error: (err: any) => {
         console.error('Erreur annonces:', err);
@@ -121,7 +373,7 @@ export class EntrepreneurTalentComponent implements OnInit {
         this.appliedTalents = rows ?? [];
       },
       error: () => {
-        this.error = 'Impossible de charger les candidats ayant postule.';
+        this.error = 'Impossible de charger les candidats ayant postulé.';
       },
     });
   }
@@ -141,9 +393,7 @@ export class EntrepreneurTalentComponent implements OnInit {
 
   private buildDescriptionPayload(): string {
     const desc = (this.newAnnonce.description || '').trim();
-    const labels = this.newAnnonce.metiers
-      .map((c) => this.metierLabel(c))
-      .filter(Boolean);
+    const labels = this.newAnnonce.metiers.map((c) => this.metierLabel(c)).filter(Boolean);
     const met = labels.length ? `Métiers cibles: ${labels.join(', ')}` : '';
     return [desc, met].filter(Boolean).join('\n\n');
   }
@@ -168,14 +418,7 @@ export class EntrepreneurTalentComponent implements OnInit {
         this.showForm = false;
         this.loading = false;
         this.successMsg = 'Annonce publiée avec succès';
-        this.newAnnonce = {
-          poste: '',
-          type: 'stagiaire',
-          competences: '',
-          description: '',
-          localisation: 'Tunis',
-          metiers: [],
-        };
+        this.newAnnonce = { poste: '', type: 'stagiaire', competences: '', description: '', localisation: 'Tunis', metiers: [] };
         setTimeout(() => (this.successMsg = ''), 3000);
       },
       error: (err: any) => {
@@ -259,9 +502,7 @@ export class EntrepreneurTalentComponent implements OnInit {
 
     this.talentService.getMatchingPourAnnonce(annonce.id).subscribe({
       next: (data: MatchingResultDTO[]) => {
-        this.matchingResults = [...data].sort(
-          (a, b) => (b.matchingScore ?? 0) - (a.matchingScore ?? 0),
-        );
+        this.matchingResults = [...data].sort((a, b) => (b.matchingScore ?? 0) - (a.matchingScore ?? 0));
         this.matchingLoading = false;
       },
       error: (err: any) => {
@@ -297,6 +538,14 @@ export class EntrepreneurTalentComponent implements OnInit {
     });
   }
 
+  get filteredTalents(): TalentProfile[] {
+    const q = this.searchTalents.trim().toLowerCase();
+    if (!q) return this.talents;
+    return this.talents.filter((t) =>
+      `${t.prenom} ${t.nom} ${t.email} ${t.competences || ''} ${t.niveauExperience || ''}`.toLowerCase().includes(q)
+    );
+  }
+
   get sortedMatching(): MatchingResultDTO[] {
     const rows = [...this.matchingResults];
     if (this.sortMatching === 'nom') {
@@ -309,59 +558,9 @@ export class EntrepreneurTalentComponent implements OnInit {
     return rows;
   }
 
-  runHiringAi(): void {
-    const titre = this.newAnnonce.poste.trim() || 'Nouveau poste';
-    const typePoste = this.newAnnonce.type.toUpperCase();
-    const competencesRequises = this.newAnnonce.competences;
-    const metiers = this.newAnnonce.metiers.map((c) => this.metierLabel(c));
-    this.hiringAiLoading = true;
-    this.hiringAiResult = null;
-    this.talentService
-      .getHiringAiAdvice({
-        titre,
-        typePoste,
-        competencesRequises,
-        metiers,
-        localisation: this.newAnnonce.localisation,
-        contexte: this.hiringContext.trim() || undefined,
-      })
-      .subscribe({
-        next: (res) => {
-          this.hiringAiResult = res;
-          this.hiringAiLoading = false;
-          this.loadAiInsights();
-        },
-        error: () => {
-          this.hiringAiLoading = false;
-          this.error = 'La génération IA a échoué. Vérifiez /api/ai/hiring-advice.';
-        },
-      });
-  }
-
   loadAiInsights(): void {
     this.talentService.getAiRecommendations().subscribe({
-      next: (rows) => this.aiInsights = rows ?? [],
-    });
-  }
-
-  runHiringChat(): void {
-    const question = this.hiringChatQuestion.trim();
-    if (!question) return;
-    this.hiringChatLoading = true;
-    this.hiringChatResult = null;
-    this.talentService.getHiringAiChat({
-      question,
-      contexte: this.hiringContext.trim() || undefined,
-      annonceId: this.selectedAnnonceId ?? undefined,
-    }).subscribe({
-      next: (res) => {
-        this.hiringChatResult = res;
-        this.hiringChatLoading = false;
-      },
-      error: () => {
-        this.error = 'Le chat IA recrutement est indisponible.';
-        this.hiringChatLoading = false;
-      },
+      next: (rows) => (this.aiInsights = rows ?? []),
     });
   }
 
@@ -402,19 +601,13 @@ export class EntrepreneurTalentComponent implements OnInit {
         const prenom = parts.length <= 1 ? '' : parts.slice(0, -1).join(' ');
         const fromMatch: TalentCompetence[] = (m.competencesCommunes || []).map((n) => ({ nom: n, niveau: 0 }));
         this.selectedCandidate = {
-          id: m.talentId,
-          nom,
-          prenom,
-          email: m.emailTalent,
-          competences: fromMatch,
-          diplome: '',
-          disponible: true,
+          id: m.talentId, nom, prenom, email: m.emailTalent,
+          competences: fromMatch, diplome: '', disponible: true,
         } as TalentProfile;
       }
     } else {
       this.selectedCandidate = source as TalentProfile;
     }
-
     if (!this.selectedCandidate) return;
     this.showProfileModal = true;
   }
@@ -422,11 +615,7 @@ export class EntrepreneurTalentComponent implements OnInit {
   competencesPourAffichage(c: TalentProfile | null): TalentCompetence[] {
     if (!c?.competences) return [];
     if (Array.isArray(c.competences)) return c.competences;
-    return String(c.competences)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((nom) => ({ nom, niveau: 0 }));
+    return String(c.competences).split(',').map((s) => s.trim()).filter(Boolean).map((nom) => ({ nom, niveau: 0 }));
   }
 
   fermerProfil(): void {
@@ -438,5 +627,88 @@ export class EntrepreneurTalentComponent implements OnInit {
     const subject = encodeURIComponent('Opportunity from Startup');
     const body = encodeURIComponent('Hello, I saw your profile and would like to connect with you.');
     window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
+  }
+
+  updateOfferStatus(offer: AppliedOffer, statut: 'ACCEPTEE' | 'REFUSEE'): void {
+    if (!offer.candidatureId || this.actionLoadingId != null) return;
+    this.actionLoadingId = offer.candidatureId;
+    this.talentService.updateCandidatureStatus(offer.candidatureId, statut).subscribe({
+      next: () => {
+        this.successMsg = statut === 'ACCEPTEE' ? 'Candidat accepte.' : 'Candidat refuse.';
+        this.actionLoadingId = null;
+        this.loadAppliedTalents();
+      },
+      error: () => {
+        this.error = 'Impossible de mettre a jour le statut de candidature.';
+        this.actionLoadingId = null;
+      },
+    });
+  }
+
+  contacterDepuisCandidature(offer: AppliedOffer, email: string): void {
+    if (offer.candidatureId && this.actionLoadingId == null) {
+      this.actionLoadingId = offer.candidatureId;
+      this.talentService.markCandidatureContacted(offer.candidatureId).subscribe({
+        next: () => {
+          this.actionLoadingId = null;
+          this.loadAppliedTalents();
+        },
+        error: () => {
+          this.actionLoadingId = null;
+        },
+      });
+    }
+    this.contacterParEmail(email);
+  }
+
+  talentNiveauLabel(t: TalentProfile): string {
+    const n = (t.niveauExperience || '').toUpperCase();
+    if (n.includes('SENIOR')) return 'Senior';
+    if (n.includes('INTERMEDIAIRE') || n.includes('MID')) return 'Mid';
+    if (n.includes('JUNIOR')) return 'Junior';
+    return t.niveauExperience || '—';
+  }
+
+  hasSkill(competences: any, skill: string): boolean {
+    if (!competences) return false;
+    let str = '';
+    if (typeof competences === 'string') {
+      str = competences;
+    } else if (Array.isArray(competences)) {
+      str = competences.map((c: any) => c.nom || c).join(', ');
+    }
+    return str.toLowerCase().includes(skill.toLowerCase());
+  }
+
+  getTalentBadges(t: TalentProfile): string[] {
+    const skillsStr = typeof t.competences === 'string' ? t.competences : (Array.isArray(t.competences) ? t.competences.map((c: any) => c.nom || c).join(', ') : '');
+    const skills = (skillsStr || '').toLowerCase();
+    const badges: string[] = [];
+    if (skills.includes('react')) badges.push('Expert React');
+    if (skills.includes('spring') || skills.includes('java')) badges.push('Expert Java');
+    if (skills.includes('docker') || skills.includes('k8s') || skills.includes('kubernetes')) badges.push('DevOps Ready');
+    if (skills.includes('angular')) badges.push('Angular Pro');
+    if ((t.niveauExperience || '').toUpperCase().includes('SENIOR')) badges.push('Livraison Rapide');
+    return badges.slice(0, 3);
+  }
+
+  suggestApplicantKeywords(): void {
+    const skillsPool = this.appliedTalents
+      .flatMap((t) => (t.competences || '').split(','))
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 30);
+    this.aiService.getKeywords(this.searchApplicants || 'recrutement startup', skillsPool).subscribe({
+      next: (res) => {
+        this.aiSearchHints = res.keywords ?? [];
+      },
+      error: () => {
+        this.aiSearchHints = [];
+      },
+    });
+  }
+
+  applyHintToSearch(hint: string): void {
+    this.searchApplicants = hint;
   }
 }

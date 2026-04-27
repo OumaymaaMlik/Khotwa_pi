@@ -26,6 +26,7 @@ public class CandidatureService {
     private final TalentProfileRepository talentRepository;
     private final AnnonceRepository annonceRepository;
     private final MatchingService matchingService;
+    private final NotificationEmailService notificationEmailService;
 
     public Candidature postuler(Long talentId, Long annonceId, String message) {
         TalentProfile talent = talentRepository.findById(talentId)
@@ -44,7 +45,9 @@ public class CandidatureService {
                 .messageMotivaion(message)
                 .build();
 
-        return candidatureRepository.save(candidature);
+        Candidature saved = candidatureRepository.save(candidature);
+        notificationEmailService.sendNewApplicationNotification(saved);
+        return saved;
     }
 
     /**
@@ -117,6 +120,7 @@ public class CandidatureService {
                     .filter(c -> c.getAnnonce() != null)
                     .sorted(Comparator.comparing(Candidature::getDateCandidature, Comparator.nullsLast(Comparator.reverseOrder())))
                     .map(c -> AppliedOfferDTO.builder()
+                            .candidatureId(c.getId())
                             .annonceId(c.getAnnonce().getId())
                             .titreAnnonce(c.getAnnonce().getTitre())
                             .typePoste(c.getAnnonce().getTypePoste() != null ? c.getAnnonce().getTypePoste().name() : null)
@@ -124,6 +128,8 @@ public class CandidatureService {
                             .matchingScore(c.getMatchingScore())
                             .dateCandidature(c.getDateCandidature() != null ? c.getDateCandidature().toString() : null)
                             .statut(c.getStatut() != null ? c.getStatut().name() : null)
+                            .contactEntrepreneur(Boolean.TRUE.equals(c.getContactEntrepreneur()))
+                            .dateContactEntrepreneur(c.getDateContactEntrepreneur() != null ? c.getDateContactEntrepreneur().toString() : null)
                             .build())
                     .collect(Collectors.toList());
 
@@ -137,5 +143,30 @@ public class CandidatureService {
                     .build();
         }).sorted(Comparator.comparing((AppliedTalentSummaryDTO x) -> x.getOffres() != null ? x.getOffres().size() : 0).reversed())
                 .collect(Collectors.toList());
+    }
+
+    public Candidature updateStatut(Long candidatureId, String statut) {
+        Candidature candidature = candidatureRepository.findById(candidatureId)
+                .orElseThrow(() -> new RuntimeException("Candidature introuvable"));
+        Candidature.StatutCandidature newStatus = Candidature.StatutCandidature.valueOf(statut.toUpperCase());
+        candidature.setStatut(newStatus);
+        candidature.setDateDecision(LocalDateTime.now());
+        Candidature saved = candidatureRepository.save(candidature);
+        notificationEmailService.sendStatusChangedNotification(saved);
+        return saved;
+    }
+
+    public Candidature markContacted(Long candidatureId) {
+        Candidature candidature = candidatureRepository.findById(candidatureId)
+                .orElseThrow(() -> new RuntimeException("Candidature introuvable"));
+        candidature.setContactEntrepreneur(true);
+        candidature.setDateContactEntrepreneur(LocalDateTime.now());
+        Candidature saved = candidatureRepository.save(candidature);
+        notificationEmailService.sendContactNotification(saved);
+        return saved;
+    }
+
+    public List<Candidature> getAcceptedCandidatures() {
+        return candidatureRepository.findByStatut(Candidature.StatutCandidature.ACCEPTEE);
     }
 }

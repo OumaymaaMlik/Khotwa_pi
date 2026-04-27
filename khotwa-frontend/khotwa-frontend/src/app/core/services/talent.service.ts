@@ -21,7 +21,8 @@ import {
   AiRecommendation,
   SkillGapAiAdviceRequest,
   SkillGapAiAdviceResponse,
-  AppliedTalentSummary
+  AppliedTalentSummary,
+  AiKeywordsResponse
 } from '../models/talent.model';
 
 @Injectable({ providedIn: 'root' })
@@ -211,6 +212,21 @@ updateAnnonce(id: number, data: any): Observable<any> {
 
   getTalentsWithAppliedOffers(): Observable<AppliedTalentSummary[]> {
     return this.http.get<AppliedTalentSummary[]>(`${this.API}/candidatures/talents-applied`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getAiKeywords(goal: string, skills: string[]): Observable<AiKeywordsResponse> {
+    return this.http.post<AiKeywordsResponse>(`${this.API}/ai/keywords`, { goal, skills })
+      .pipe(catchError(this.handleError));
+  }
+
+  updateCandidatureStatus(candidatureId: number, statut: 'ACCEPTEE' | 'REFUSEE' | 'EN_ATTENTE'): Observable<Candidature> {
+    return this.http.put<Candidature>(`${this.API}/candidatures/${candidatureId}/status`, { statut })
+      .pipe(catchError(this.handleError));
+  }
+
+  markCandidatureContacted(candidatureId: number): Observable<Candidature> {
+    return this.http.put<Candidature>(`${this.API}/candidatures/${candidatureId}/contacted`, {})
       .pipe(catchError(this.handleError));
   }
 

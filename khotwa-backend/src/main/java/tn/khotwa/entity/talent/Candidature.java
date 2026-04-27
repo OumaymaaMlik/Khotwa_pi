@@ -30,6 +30,12 @@ public class Candidature {
 
     private LocalDateTime dateCandidature;
 
+    private LocalDateTime dateDecision;
+
+    private LocalDateTime dateContactEntrepreneur;
+
+    private Boolean contactEntrepreneur;
+
     @Column(columnDefinition = "TEXT")
     private String messageMotivaion;
 

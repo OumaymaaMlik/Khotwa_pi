@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AiRecommendation,
+  AiKeywordsResponse,
   HiringAiRequest,
   HiringAiResponse,
   SkillGapAnalysis,
@@ -28,5 +29,9 @@ export class AiService {
 
   getRecommendations(): Observable<AiRecommendation[]> {
     return this.talentService.getAiRecommendations();
+  }
+
+  getKeywords(goal: string, skills: string[]): Observable<AiKeywordsResponse> {
+    return this.talentService.getAiKeywords(goal, skills);
   }
 }

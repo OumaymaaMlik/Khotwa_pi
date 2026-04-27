@@ -13,6 +13,7 @@ export interface TalentProfile {
   diplome: string;
   disponible: boolean;
   scoreMatch?: number;
+  niveauExperience?: string;
 }
 
 export interface Annonce {
@@ -170,7 +171,14 @@ export interface AiRecommendation {
   relatedTalentId?: number;
 }
 
+export interface AiKeywordsResponse {
+  keywords: string[];
+  suggestedRoles: string[];
+  summary: string;
+}
+
 export interface AppliedOffer {
+  candidatureId?: number;
   annonceId: number;
   titreAnnonce: string;
   typePoste?: string;
@@ -178,6 +186,8 @@ export interface AppliedOffer {
   matchingScore?: number;
   dateCandidature?: string;
   statut?: string;
+  contactEntrepreneur?: boolean;
+  dateContactEntrepreneur?: string;
 }
 
 export interface AppliedTalentSummary {
