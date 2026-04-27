@@ -1,92 +1,78 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { Observable, tap, catchError, throwError } from 'rxjs';
-import {
-  AuthResponse,
-  LoginRequest,
-  RegisterRequest,
-  User,
-  UserResponse,
-  UserRole,
-  PlanType,
-} from '../models/user.model';
+import { HttpClient } from '@angular/common/http';
+import { Observable, tap, BehaviorSubject } from 'rxjs';
+import { User, UserResponse, UserRole } from '../models/user.model';
+import { HttpHeaders } from '@angular/common/http';
+import { catchError, throwError } from 'rxjs';
 
-const API_BASE  = '/khotwa/api';
-const TOKEN_KEY = 'khotwa_token';
-const USER_KEY  = 'khotwa_user';
+const TOKEN_KEY   = 'khotwa_token';
+const USER_KEY    = 'khotwa_user';
+const ROLE_KEY    = 'khotwa_role';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
+  // Backend JWT endpoints
+  private readonly AUTH_API  = 'http://localhost:8084/khotwa/api/auth';
+  private readonly USERS_API = 'http://localhost:8084/khotwa/api/users';
+
   private _currentUser: User | null = null;
+  public currentUserSubject = new BehaviorSubject<User | null>(null);
 
-  constructor(private http: HttpClient, private router: Router) {
-    const saved = localStorage.getItem(USER_KEY);
-    if (saved) {
-      try { this._currentUser = JSON.parse(saved); } catch { this.clearSession(); }
-    }
+  constructor(private http: HttpClient) {
+    this._loadSession();
   }
 
-  // ── Getters ───────────────────────────────────────────────────────────────
+  // ── Accesseurs ────────────────────────────────────────────────────
+  get currentUser(): User | null { return this._currentUser; }
+  get role(): UserRole | null    { return this._currentUser?.role ?? null; }
+  get isLoggedIn(): boolean      { return this._currentUser !== null && !!this.getToken(); }
+  get token(): string | null     { return this.getToken(); }
 
-  get currentUser(): User | null  { return this._currentUser; }
-  get token(): string | null      { return localStorage.getItem(TOKEN_KEY); }
-  get role(): UserRole | null     { return this._currentUser?.role ?? null; }
-  get isAdmin(): boolean          { return this._currentUser?.role === 'ADMIN'; }
-  get isEntrepreneur(): boolean   { return this._currentUser?.role === 'ENTREPRENEUR'; }
-  get isCoach(): boolean          { return this._currentUser?.role === 'COACH'; }
-  get isLoggedIn(): boolean       { return !!this.token && !!this._currentUser; }
-  get planType(): PlanType | null { return this._currentUser?.planType ?? null; }
+  get isAdmin():        boolean { return this.role === 'ADMIN'; }
+  get isEntrepreneur(): boolean { return this.role === 'ENTREPRENEUR'; }
+  get isCoach():        boolean { return this.role === 'COACH'; }
+  get isVisitor():      boolean { return this.role === 'VISITOR'; }
 
-  get hasActiveSubscription(): boolean {
-    if (!this._currentUser) return false;
-    if (this.isCoach || this.isAdmin) return true;
-    return this._currentUser.planType !== 'FREE' && this._currentUser.planType !== null;
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
   }
 
-  canAccess(requiredPlan: PlanType): boolean {
-    if (!this._currentUser) return false;
-    if (this.isCoach || this.isAdmin) return true;
-    const hierarchy: Record<PlanType, number> = { FREE: 1, PREMIUM: 2, INSTITUTIONAL: 3 };
-    const userPlan = this._currentUser.planType ?? 'FREE';
-    return hierarchy[userPlan] >= hierarchy[requiredPlan];
-  }
 
-  getDefaultRoute(): string {
-    switch (this._currentUser?.role) {
-      case 'ADMIN':        return '/khotwaadmin/dashboard';
-      case 'ENTREPRENEUR': return '/entrepreneur/dashboard';
-      case 'COACH':        return '/coach/dashboard';
-      default:             return '/login';
-    }
-  }
 
-  // ── Auth methods ──────────────────────────────────────────────────────────
-
-  login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API_BASE}/auth/login`, credentials).pipe(
-      tap(response => this.handleAuthResponse(response)),
-      catchError(err => throwError(() => this.extractError(err)))
+  // ── Login  →  POST /api/auth/login ───────────────────────────────
+  // Backend retourne : { token, idUser, emailAddress, role, mustChangePassword }
+  signIn(credentials: { emailAddress: string; password: string }): Observable<any> {
+    return this.http.post<any>(`${this.AUTH_API}/login`, {
+      emailAdress: credentials.emailAddress,
+      emailAddress: credentials.emailAddress,
+      password: credentials.password,
+    }).pipe(
+      tap(res => this._saveLoginResponse(res))
     );
   }
 
-  register(payload: RegisterRequest): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${API_BASE}/auth/register`, payload).pipe(
-      catchError(err => throwError(() => this.extractError(err)))
+  loginWithGoogle(idToken: string, mode: 'signin' | 'signup', role?: string): Observable<any> {
+    const body: any = { idToken, mode };
+    if (role) {
+      body.role = role;
+    }
+    return this.http.post<any>(`${this.AUTH_API}/google`, body).pipe(
+      tap(res => this._saveLoginResponse(res))
     );
   }
 
-  refreshProfile(): Observable<UserResponse> {
-    const token = localStorage.getItem(TOKEN_KEY);
+    refreshProfile(): Observable<UserResponse> {
+      const token = localStorage.getItem(TOKEN_KEY);
     const headers = token
       ? new HttpHeaders({ Authorization: `Bearer ${token}` })
       : new HttpHeaders();
 
-    return this.http.get<UserResponse>(`${API_BASE}/users/me`, { headers }).pipe(
+    return this.http.get<UserResponse>(`${this.USERS_API}/me`, { headers }).pipe(
       tap(profile => {
         this._currentUser = {
           idUser:             profile.idUser,
+          id:                 String(profile.idUser ?? ''),
           firstName:          profile.firstName,
           lastName:           profile.lastName,
           emailAddress:       profile.emailAddress,
@@ -98,44 +84,153 @@ export class AuthService {
           phoneNumber:        profile.phoneNumber,
           mustChangePassword: profile.mustChangePassword,
         };
+        this.currentUserSubject.next(this._currentUser);
         localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
       }),
       catchError(err => throwError(() => this.extractError(err)))
     );
   }
 
-  logout(): void {
-    this.clearSession();
-    this.router.navigateByUrl('/login');
+  // ── Register  →  POST /api/auth/register ─────────────────────────
+  // Backend retourne : UserResponse (pas de token)
+  // → on enchaîne avec un login automatique
+  signUp(userData: {
+    firstName: string; lastName: string;
+    emailAddress: string; password: string;
+    role?: string; phoneNumber?: string | null; startup?: string | null;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.AUTH_API}/register`, {
+      ...userData,
+      emailAdress: userData.emailAddress,
+    }).pipe(
+      tap(res => {
+        // Stocker le profil temporairement — le token arrive via signIn()
+        if (res?.idUser) {
+          this._saveProfileOnly(res);
+        }
+      })
+    );
   }
 
-  // ── Private helpers ───────────────────────────────────────────────────────
+  // ── Get my profile  →  GET /api/users/me  ────────────────────────
+  getMyProfile(): Observable<any> {
+    return this.http.get<any>(`${this.USERS_API}/me`).pipe(
+      tap((profile: any) => {
+        if (this._currentUser && profile) {
+          this._currentUser = { ...this._currentUser, ...this._mapProfile(profile) };
+          localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
+        }
+      })
+    );
+  }
 
-  private handleAuthResponse(response: AuthResponse): void {
-    localStorage.setItem(TOKEN_KEY, response.token);
-    this._currentUser = {
-      idUser:             response.idUser,
-      firstName:          '',
-      lastName:           '',
-      emailAddress:       response.emailAddress,
-      role:               response.role,
-      planType:           null,
-      pendingPlan:        null,
-      avatar:             null,
-      startup:            null,
-      phoneNumber:        null,
-      mustChangePassword: response.mustChangePassword,
+  // ── Visitor (local, sans backend) ────────────────────────────────
+  setVisitorSession(): void {
+    const visitor: User = {
+      idUser: 0, id: 'visitor',
+      firstName: 'Guest', lastName: 'Visitor',
+      emailAddress: '', role: 'VISITOR',
     };
+    this._currentUser = visitor;
+    this.currentUserSubject.next(this._currentUser);
+    localStorage.setItem(TOKEN_KEY, 'VISITOR');
+    localStorage.setItem(ROLE_KEY,  'VISITOR');
+    localStorage.setItem(USER_KEY,  JSON.stringify(visitor));
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────
+  logout(): void {
+    this._currentUser = null;
+    this.currentUserSubject.next(null);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(ROLE_KEY);
+    // Legacy keys cleanup
+    localStorage.removeItem('user_token');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_profile');
+  }
+
+  // ── Route par défaut selon le rôle ───────────────────────────────
+  getDefaultRoute(): string {
+    switch (this.role) {
+      case 'ADMIN':        return '/khotwaadmin/dashboard';
+      case 'ENTREPRENEUR': return '/entrepreneur/dashboard';
+      case 'COACH':        return '/coach/dashboard';
+      case 'VISITOR':      return '/visitor/events';
+      default:             return '/login';
+    }
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────
+
+  // Cas login : { token, idUser, emailAddress, role, mustChangePassword }
+  private _saveLoginResponse(res: any): void {
+    if (!res?.token) return;
+    localStorage.setItem(TOKEN_KEY, res.token);
+    localStorage.setItem(ROLE_KEY,  res.role ?? '');
+
+    this._currentUser = {
+      idUser:       res.idUser,
+      id:           String(res.idUser ?? ''),
+      emailAddress: res.emailAddress ?? res.email,
+      role:         res.role as UserRole,
+      firstName:    res.firstName  ?? '',
+      lastName:     res.lastName   ?? '',
+      planType:     res.planType,
+      pendingPlan:  res.pendingPlan,
+      avatar:       res.avatar,
+      startup:      res.startup,
+      phoneNumber:  res.phoneNumber,
+    };
+    this.currentUserSubject.next(this._currentUser);
     localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
   }
 
-  private clearSession(): void {
-    this._currentUser = null;
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+  // Cas register : UserResponse sans token
+  private _saveProfileOnly(profile: any): void {
+    this._currentUser = {
+      idUser:       profile.idUser,
+      id:           String(profile.idUser ?? ''),
+      emailAddress: profile.emailAddress,
+      role:         profile.role as UserRole,
+      firstName:    profile.firstName ?? '',
+      lastName:     profile.lastName  ?? '',
+      planType:     profile.planType,
+      pendingPlan:  profile.pendingPlan,
+      avatar:       profile.avatar,
+      startup:      profile.startup,
+      phoneNumber:  profile.phoneNumber,
+    };
+    this.currentUserSubject.next(this._currentUser);
+    localStorage.setItem(ROLE_KEY, profile.role ?? '');
+    localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
   }
 
-  private extractError(err: any): string {
-    return err?.error?.message || err?.message || 'Une erreur est survenue.';
+  private _mapProfile(p: any): Partial<User> {
+    return {
+      idUser: p.idUser, id: String(p.idUser ?? ''),
+      emailAddress: p.emailAddress,
+      role: p.role as UserRole,
+      firstName: p.firstName, lastName: p.lastName,
+      planType: p.planType, pendingPlan: p.pendingPlan,
+      avatar: p.avatar, startup: p.startup, phoneNumber: p.phoneNumber,
+    };
+  }
+
+  private _loadSession(): void {
+    try {
+      const saved = localStorage.getItem(USER_KEY)
+                 ?? localStorage.getItem('user_profile'); // legacy key
+      if (saved) this._currentUser = JSON.parse(saved);
+      this.currentUserSubject.next(this._currentUser);
+    } catch {
+      this.logout();
+    }
+  }
+
+  private extractError(error: any): any {
+    return error;
   }
 }

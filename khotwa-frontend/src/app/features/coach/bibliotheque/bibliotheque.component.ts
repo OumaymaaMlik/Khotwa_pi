@@ -1,13 +1,14 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, NgZone } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RessourceService, Ressource, Categorie, ProgressStatus, PlanType } from '../../../core/services/ressource.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { forkJoin } from 'rxjs';
 
 declare const pdfjsLib: any;
 
 export interface CourseFolder {
   name: string;
-  fichiers: any[];
+  files: any[];
   expanded: boolean;
 }
 
@@ -55,14 +56,17 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
     PDF: '📄', VIDEO: '🎥', EXCEL: '📊', WORD: '📝', IMAGE: '🖼️', LINK: '🔗'
   };
 
-  userId = 3;
-  userRole = 'COACH';
-  userPlan: PlanType = 'FREE'; // FREE | PREMIUM | INSTITUTIONAL
-  
+  get userId(): number   { return this.auth.currentUser?.idUser ?? 0; }
+  get userRole(): string { return this.auth.currentUser?.role   ?? 'COACH'; }
+  get userPlan(): PlanType {
+    return (this.auth.currentUser?.planType as PlanType) ?? 'FREE';
+  }
+
   private apiBase = this.svc.getApiOrigin();
 
   constructor(
     private svc: RessourceService,
+    private auth: AuthService,
     private sanitizer: DomSanitizer,
     private zone: NgZone
   ) {}
@@ -116,19 +120,19 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
         });
         this.ressources = list.map(r => ({
           ...r,
-          maProgression: pm.has(r.id)
+          maProgress: pm.has(r.id)
             ? { 
-                statut: pm.get(r.id).statut, 
+                status: pm.get(r.id).statut as any, 
                 pourcentage: pm.get(r.id).pourcentage,
                 positionVideoSec: pm.get(r.id).positionVideoSec,
                 currentPage: pm.get(r.id).positionVideoSec 
               }
-            : r.maProgression
+            : r.maProgress
         }));
         this.buildFolders();
         this.loading = false;
       },
-      error: () => { this.error = '⚠️ Impossible de joindre le serveur.'; this.loading = false; }
+      error: () => { this.error = '⚠️ Unable to reach the server.'; this.loading = false; }
     });
   }
 
@@ -141,7 +145,7 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       next: res => {
         const detail = res.data?.ressource ?? res.data ?? r;
         const tags = res.data?.tags ?? detail.tags ?? r.tags ?? [];
-        this.startViewer({ ...r, ...detail, tags, maProgression: r.maProgression ?? detail.maProgression });
+        this.startViewer({ ...r, ...detail, tags, maProgress: r.maProgress ?? detail.maProgression });
       },
       error: () => this.startViewer(r)
     });
@@ -150,16 +154,45 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
   private startViewer(r: Ressource) {
     this.viewerRessource = r;
     this.viewerType = r.type === 'VIDEO' ? 'video' : r.type === 'PDF' ? 'pdf' : r.type === 'IMAGE' ? 'image' : 'other';
-    this.resumeAt = (r.maProgression as any)?.positionVideoSec ?? 0;
+    this.resumeAt = (r.maProgress as any)?.positionVideoSec ?? 0;
     this.revokeBlobUrl();
     this.blobUrl = null; this.rawBlobUrl = ''; this.pdfDoc = null;
 
-    if (!r.maProgression || r.maProgression.statut === 'NOT_STARTED') {
+    if (r.type === 'LINK' || (!r.urlFichier && r.urlExterne)) {
+      // LINK → consultation instantanée = 100% COMPLETED
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+      window.open(r.urlExterne!, '_blank');
+      this.showViewer = false;
+    } else if (r.type === 'IMAGE') {
+      // IMAGE → affichage immédiat = 100% COMPLETED
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+    } else if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+      // PDF / VIDEO → démarrer à IN_PROGRESS 1%
       this.svc.updateProgressionHttp(this.userId, r.id, 'IN_PROGRESS', 1).subscribe();
     }
 
+    // ── Rendu du contenu (indépendant de la progression) ──
     if (r.type === 'VIDEO') {
-      this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+      if (r.urlFichier && !r.urlFichier.startsWith('http')) {
+        this.viewerLoading = true;
+        this.showViewer = true;
+        this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+          next: (blob: Blob) => {
+            this.rawBlobUrl = URL.createObjectURL(blob);
+            this.viewerUrl = this.rawBlobUrl;
+            this.viewerLoading = false;
+          },
+          error: () => {
+            this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+            this.viewerLoading = false;
+          }
+        });
+      } else {
+        this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+        this.showViewer = true;
+      }
       this.showViewer = true;
       this.startSaveInterval(r);
     } else if (r.type === 'PDF' || r.type === 'IMAGE') {
@@ -171,7 +204,12 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
           this.viewerLoading = false;
           if (r.type === 'PDF') this.loadPdfJs(this.rawBlobUrl, r);
         },
-        error: () => { this.viewerLoading = false; }
+        error: (err: any) => {
+          console.error('Download error:', err);
+          this.viewerLoading = false;
+          this.showViewer = false;
+          alert(err?.error?.message || 'Impossible de charger la ressource.');
+        }
       });
     } else {
       this.viewerUrl = this.formatFullUrl(r.urlExterne || r.urlFichier);
@@ -186,7 +224,7 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       this.zone.run(() => {
         this.pdfDoc = doc;
         this.pdfTotalPages = doc.numPages;
-        const savedPage = (r.maProgression as any)?.positionVideoSec ?? 1;
+        const savedPage = (r.maProgress as any)?.positionVideoSec ?? 1;
         this.pdfCurrentPage = Math.max(1, Math.min(savedPage, this.pdfTotalPages));
         setTimeout(() => this.renderPdfPage(this.pdfCurrentPage, r), 100);
       });
@@ -208,11 +246,11 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
         this.zone.run(() => {
           this.pdfRendering = false;
           const pct = Math.round((pageNum / this.pdfTotalPages) * 100);
-          const statut: ProgressStatus = pct >= 100 ? 'COMPLETED' : 'IN_PROGRESS';
+          const status: ProgressStatus = pct >= 100 ? 'COMPLETED' : 'IN_PROGRESS';
           const target = r ?? this.viewerRessource;
           if (target) {
-            if (this.viewerRessource) this.viewerRessource.maProgression = { statut, pourcentage: pct };
-            this.svc.saveVideoProgressionHttp(this.userId, target.id, statut, pct, pageNum).subscribe();
+            if (this.viewerRessource) this.viewerRessource.maProgress = { status, pourcentage: pct };
+            this.svc.saveVideoProgressionHttp(this.userId, target.id, status, pct, pageNum).subscribe();
           }
         });
       });
@@ -230,8 +268,8 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       const sec = Math.floor(video.currentTime);
       const dur = video.duration || r.dureeSec || 1;
       const pct = Math.min(100, Math.round(sec / dur * 100));
-      const statut: ProgressStatus = pct >= 95 ? 'COMPLETED' : 'IN_PROGRESS';
-      this.svc.saveVideoProgressionHttp(this.userId, r.id, statut, pct, sec).subscribe();
+      const status: ProgressStatus = pct >= 95 ? 'COMPLETED' : 'IN_PROGRESS';
+      this.svc.saveVideoProgressionHttp(this.userId, r.id, status, pct, sec).subscribe();
     }, 10000);
   }
 
@@ -255,25 +293,28 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
   }
 
   downloadRessource(r: Ressource) {
-    const url = this.formatFullUrl(r.urlFichier || (r as any).urlExterne);
-    if (!url) { alert('Aucun fichier attaché.'); return; }
-
-    fetch(url, { headers: { 'X-User-Id': String(this.userId), 'X-User-Role': this.userRole } })
-      .then(res => {
-        if (!res.ok) throw new Error('Download failed');
-        return res.blob();
-      })
-      .then(blob => {
+    // On passe par HttpClient (et donc le JwtInterceptor) pour inclure le token JWT.
+    // Le fetch natif contourne l'interceptor Angular => 403 garanti.
+    if (r.urlExterne) {
+      window.open(r.urlExterne, '_blank');
+      return;
+    }
+    this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+      next: (blob: Blob) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = (r as any).nomFichierOriginal || r.titre || 'document';
         a.click();
         URL.revokeObjectURL(a.href);
-      })
-      .catch(() => window.open(url, '_blank'));
+      },
+      error: (err: any) => {
+        console.error('Erreur telechargement:', err);
+        alert(err?.error?.message || 'Impossible de telecharger la ressource.');
+      }
+    });
   }
 
-  isCompleted(r: Ressource): boolean { return r.maProgression?.statut === 'COMPLETED'; }
+  isCompleted(r: Ressource): boolean { return r.maProgress?.status === 'COMPLETED'; }
   getProgressColor(s: string): string { return s === 'COMPLETED' ? 'var(--green)' : s === 'IN_PROGRESS' ? 'var(--teal)' : 'var(--text-muted)'; }
   getAccessBadge(a: string): string { return a === 'FREE' ? 'kh-badge--green' : a === 'PREMIUM' ? 'kh-badge--amber' : 'kh-badge--violet'; }
 
@@ -289,11 +330,11 @@ export class CoachBibliothequeComponent implements OnInit, OnDestroy {
       } else solo.push(r);
     });
     this.folders = [];
-    grouped.forEach((fichiers, name) => {
-      if (fichiers.length > 1) this.folders.push({ name, fichiers, expanded: false });
-      else solo.push(...fichiers);
+    grouped.forEach((files, name) => {
+      if (files.length > 1) this.folders.push({ name, files, expanded: false });
+      else solo.push(...files);
     });
-    if (solo.length > 0) this.folders.push({ name: '__solo__', fichiers: solo, expanded: true });
+    if (solo.length > 0) this.folders.push({ name: '__solo__', files: solo, expanded: true });
   }
 
   toggleFolder(folder: CourseFolder) { folder.expanded = !folder.expanded; }

@@ -416,25 +416,3 @@
   border-color: var(--ent-teal) !important;
   box-shadow: 0 0 0 3px rgba(42,191,191,0.15) !important;
 }
-/* Notification item color variants */
-.ent-notif-item.notif-item--warning {
-  border-left: 3px solid rgba(245,166,35,0.7);
-}
-.ent-notif-item.notif-item--error {
-  border-left: 3px solid rgba(232,74,74,0.7);
-}
- 
-/* Link hint inside notification */
-.ent-notif-item__link {
-  font-size: 11px;
-  color: var(--ent-teal);
-  font-weight: 600;
-  margin: 4px 0 0;
-  cursor: pointer;
-}
- 
-/* Dot colors */
-.dot-warning { background: #F5A623; }
-.dot-error   { background: #E84A4A; }
-.dot-info    { background: #2ABFBF; }
-.dot-success { background: #27AE7A; }

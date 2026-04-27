@@ -7,7 +7,7 @@ export interface Slot {
   date: Date;
   heureDebut: string;
   heureFin: string;
-  statut: SlotStatut;
+  status: SlotStatut;
   entrepreneurId?: string;
 }
 

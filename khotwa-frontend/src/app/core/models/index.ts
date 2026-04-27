@@ -6,3 +6,4 @@ export * from './message.model';
 export * from './planning.model';
 export * from './subscription.model';
 export * from './talent.model';
+export * from './secteur.model';

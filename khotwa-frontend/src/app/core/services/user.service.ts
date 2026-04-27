@@ -4,8 +4,6 @@ import { Observable, tap } from 'rxjs';
 import { UserResponse } from '../models/user.model';
 import { AuthService } from './auth.service';
 
-const API_BASE = '/khotwa/api';
-
 export interface UpdateProfilePayload {
   firstName?: string;
   lastName?: string;
@@ -18,33 +16,65 @@ export interface UpdateProfilePayload {
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
-  confirmPassword: string;
+  confirmPassword?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  private readonly API = 'http://localhost:8084/khotwa/api/users';
 
-  /** GET /api/users/me */
+  constructor(
+    private http: HttpClient,
+    private auth: AuthService
+  ) {}
+
+  // GET /me
   getMyProfile(): Observable<UserResponse> {
-    return this.http.get<UserResponse>(`${API_BASE}/users/me`);
+    return this.http.get<UserResponse>(`${this.API}/me`);
   }
 
-  /** PUT /api/users/me */
+  // UPDATE /me
   updateMyProfile(payload: UpdateProfilePayload): Observable<UserResponse> {
-    return this.http.put<UserResponse>(`${API_BASE}/users/me`, payload).pipe(
+    return this.http.put<UserResponse>(`${this.API}/me`, payload).pipe(
       tap(() => this.auth.refreshProfile().subscribe())
     );
+  }
+
+  //  CHANGE PASSWORD
+  changePassword(payload: ChangePasswordPayload): Observable<void> {
+    return this.http.put<void>(`${this.API}/me/change-password`, payload);
+  }
+
+  //  ALL USERS (ADMIN)
+  getAllUsers(params?: any): Observable<any> {
+    return this.http.get<any>(`${this.API}`, { params });
+  }
+
+  getUsersHttp(params?: any): Observable<any> {
+    return this.getAllUsers(params);
+  }
+
+  getUserById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.API}/${id}`);
+  }
+
+  adminUpdateUser(id: number, body: any): Observable<any> {
+    return this.http.put<any>(`${this.API}/${id}`, body);
+  }
+
+  //  PLAN
+  updateUserPlan(id: number, body: { planType: string }): Observable<any> {
+    return this.http.put<any>(`${this.API}/${id}/plan`, body);
+  }
+
+  deleteUser(id : number): Observable<any> {
+    return this.http.delete<any>(`${this.API}/${id}`);
   }
 
   uploadAvatar(file: File): Observable<{ avatarUrl: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<{ avatarUrl: string }>(`${API_BASE}/users/me/avatar`, formData);
-  }
-
-  changePassword(payload: ChangePasswordPayload): Observable<void> {
-    return this.http.put<void>(`${API_BASE}/users/me/change-password`, payload);
+    return this.http.post<{ avatarUrl: string }>(`${this.API}/me/avatar`, formData);
   }
 }

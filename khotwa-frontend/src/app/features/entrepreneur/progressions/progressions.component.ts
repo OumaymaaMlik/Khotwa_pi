@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { RessourceService, Ressource } from '../../../core/services/ressource.service';
+import { RessourceService } from '../../../core/services/ressource.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -12,14 +13,17 @@ export class EntrepreneurProgressionsComponent implements OnInit {
   progressions: any[] = [];
   loading = false;
 
-  userId   = 2;
-  userRole = 'ENTREPRENEUR';
-
   typeIcons: Record<string, string> = {
     PDF: '📄', VIDEO: '🎥', EXCEL: '📊', WORD: '📝', IMAGE: '🖼️', LINK: '🔗'
   };
 
-  constructor(private svc: RessourceService, private router: Router) {}
+  constructor(
+    private svc: RessourceService,
+    private auth: AuthService,
+    private router: Router
+  ) {}
+
+  get userId(): number { return this.auth.currentUser?.idUser ?? 0; }
 
   ngOnInit() { this.load(); }
 
@@ -28,7 +32,6 @@ export class EntrepreneurProgressionsComponent implements OnInit {
     this.svc.getMesProgressionsHttp(this.userId).subscribe({
       next: res => {
         this.progressions = (res.data ?? []).sort((a: any, b: any) => {
-          // Tri : en cours en premier, complétés en dernier
           const order: any = { IN_PROGRESS: 0, NOT_STARTED: 1, COMPLETED: 2 };
           return (order[a.statut] ?? 1) - (order[b.statut] ?? 1);
         });
@@ -38,9 +41,9 @@ export class EntrepreneurProgressionsComponent implements OnInit {
     });
   }
 
-  get enCours()   { return this.progressions.filter(p => p.statut === 'IN_PROGRESS'); }
-  get complets()  { return this.progressions.filter(p => p.statut === 'COMPLETED'); }
-  get nonDemarre(){ return this.progressions.filter(p => p.statut === 'NOT_STARTED'); }
+  get enCours()    { return this.progressions.filter(p => p.statut === 'IN_PROGRESS'); }
+  get complets()   { return this.progressions.filter(p => p.statut === 'COMPLETED'); }
+  get nonDemarre() { return this.progressions.filter(p => p.statut === 'NOT_STARTED'); }
 
   getProgressColor(s: string): string {
     return s === 'COMPLETED' ? 'var(--green)' : s === 'IN_PROGRESS' ? 'var(--teal)' : 'var(--text-muted)';

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export type PlanType       = 'FREE' | 'PREMIUM' | 'INSTITUTIONAL';
@@ -25,7 +25,8 @@ export interface Ressource {
   categorie: { id: number; nom: string; couleur: string; icone: string } | null;
   tags: { id: number; nom: string }[];
   createdAt: string;
-  maProgression: { statut: ProgressStatus; pourcentage: number } | null;
+  maProgress?: { status?: ProgressStatus; statut?: ProgressStatus; pourcentage: number } | null;
+  maProgression?: { statut?: ProgressStatus; pourcentage: number } | null;
   urlExterne?: string;
 }
 
@@ -39,15 +40,6 @@ export class RessourceService {
   private api = 'http://localhost:8084/khotwa/api';
 
   constructor(private http: HttpClient) {}
-
-  // ── Headers de Sécurité ──────────────────────────────────────────
-  private h(userId = 1, role = 'ADMIN', plan: string = 'FREE'): HttpHeaders {
-    return new HttpHeaders({
-      'X-User-Id':   String(userId),
-      'X-User-Role': role,
-      'X-User-Plan': plan,
-    });
-  }
 
   getApiOrigin(): string {
     return this.api;
@@ -63,60 +55,56 @@ export class RessourceService {
     if (filters.categorieId) params = params.set('categorieId', String(filters.categorieId));
     if (filters.search) params = params.set('search', filters.search);
 
-    return this.http.get<any>(`${this.api}/ressources`, {
-      params,
-      headers: this.h(filters.userId, filters.role, filters.plan ?? 'FREE')
-    });
+    // Le backend résout rôle/plan/secteur depuis le JWT — pas besoin de headers custom
+    return this.http.get<any>(`${this.api}/ressources`, { params });
   }
 
   getRessourceByIdHttp(id: number, userId = 1, role = 'ADMIN', plan = 'FREE'): Observable<any> {
-    return this.http.get<any>(`${this.api}/ressources/${id}`, { headers: this.h(userId, role, plan) });
+    return this.http.get<any>(`${this.api}/ressources/${id}`);
   }
 
   createRessourceHttp(fd: FormData, adminId = 1): Observable<any> {
     return this.http.post<any>(`${this.api}/ressources`, fd, {
-      headers: new HttpHeaders({ 'X-User-Id': String(adminId), 'X-User-Role': 'ADMIN' })
+      headers: {}
     });
   }
 
   updateRessourceHttp(id: number, body: any): Observable<any> {
-    return this.http.put<any>(`${this.api}/ressources/${id}`, body, { headers: this.h() });
+    return this.http.put<any>(`${this.api}/ressources/${id}`, body);
   }
 
   togglePublieHttp(id: number): Observable<any> {
-    return this.http.patch<any>(`${this.api}/ressources/${id}/toggle-publie`, {}, { headers: this.h() });
+    return this.http.patch<any>(`${this.api}/ressources/${id}/toggle-publie`, {});
   }
 
   deleteRessourceHttp(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.api}/ressources/${id}`, { headers: this.h() });
+    return this.http.delete<any>(`${this.api}/ressources/${id}`);
   }
 
   // ── Statistiques ─────────────────────────────────────────────────
   getStatsHttp(userId = 1): Observable<any> {
-    return this.http.get<any>(`${this.api}/ressources/stats`, { headers: this.h(userId) });
+    return this.http.get<any>(`${this.api}/ressources/stats`);
   }
 
-  // ── Progression ──────────────────────────────────────────────────
-  updateProgressionHttp(userId: number, ressourceId: number, statut: ProgressStatus, pourcentage: number): Observable<any> {
+  // ── Progress ──────────────────────────────────────────────────
+  updateProgressionHttp(userId: number, ressourceId: number, status: ProgressStatus, pourcentage: number): Observable<any> {
     return this.http.post<any>(`${this.api}/progressions`, 
-      { ressourceId, statut, pourcentage }, 
-      { headers: this.h(userId) }
+      { ressourceId, statut: status, pourcentage }
     );
   }
 
   marquerTermineHttp(userId: number, ressourceId: number): Observable<any> {
-    return this.http.post<any>(`${this.api}/progressions/${ressourceId}/terminer`, {}, { headers: this.h(userId) });
+    return this.http.post<any>(`${this.api}/progressions/${ressourceId}/terminer`, {});
   }
 
-  saveVideoProgressionHttp(userId: number, ressourceId: number, statut: ProgressStatus, pourcentage: number, positionVideoSec: number): Observable<any> {
+  saveVideoProgressionHttp(userId: number, ressourceId: number, status: ProgressStatus, pourcentage: number, positionVideoSec: number): Observable<any> {
     return this.http.post<any>(`${this.api}/progressions`,
-      { ressourceId, statut, pourcentage, positionVideoSec },
-      { headers: this.h(userId) }
+      { ressourceId, statut: status, pourcentage, positionVideoSec }
     );
   }
 
   getMesProgressionsHttp(userId: number): Observable<any> {
-    return this.http.get<any>(`${this.api}/progressions/mes`, { headers: this.h(userId) });
+    return this.http.get<any>(`${this.api}/progressions/mes`);
   }
 
   // ── Catégories ───────────────────────────────────────────────────
@@ -125,23 +113,20 @@ export class RessourceService {
   }
 
   createCategorieHttp(body: any): Observable<any> {
-    return this.http.post<any>(`${this.api}/categories`, body, { headers: this.h() });
+    return this.http.post<any>(`${this.api}/categories`, body);
   }
 
   updateCategorieHttp(id: number, body: any): Observable<any> {
-    return this.http.put<any>(`${this.api}/categories/${id}`, body, { headers: this.h() });
+    return this.http.put<any>(`${this.api}/categories/${id}`, body);
   }
 
   deleteCategorieHttp(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.api}/categories/${id}`, { headers: this.h() });
+    return this.http.delete<any>(`${this.api}/categories/${id}`);
   }
 
   // ── Utilitaires ──────────────────────────────────────────────────
   downloadAsBlob(ressourceId: number, userId: number, role: string, plan = 'FREE'): Observable<Blob> {
-    return this.http.get(`${this.api}/ressources/${ressourceId}/download`, {
-        headers: this.h(userId, role, plan),
-        responseType: 'blob'
-    });
+    return this.http.get(`${this.api}/ressources/${ressourceId}/download`, { responseType: 'blob' });
   }
 
   buildFormData(form: any, fichier: File | null): FormData {
@@ -153,5 +138,20 @@ export class RessourceService {
     });
     if (fichier) fd.append('fichier', fichier, fichier.name);
     return fd;
+  }
+
+  // ── Progressions coach ────────────────────────────────────────────
+
+  /** GET /api/progressions/coach/mes-entrepreneurs
+   *  Retourne les progressions de tous les entrepreneurs suivis par le coach.
+   *  Structure : [{ entrepreneurId, entrepreneurNom, entrepreneurEmail, total, enCours, completes, tauxCompletion, progressions: [...] }]
+   */
+  getProgressionsEntrepreneursHttp(coachId: number): Observable<any> {
+    return this.http.get<any>(`${this.api}/progressions/coach/mes-entrepreneurs`);
+  }
+
+  /** GET /api/progressions/coach/entrepreneur/{entrepreneurId} */
+  getProgressionsEntrepreneurHttp(entrepreneurId: number, coachId: number): Observable<any> {
+    return this.http.get<any>(`${this.api}/progressions/coach/entrepreneur/${entrepreneurId}`);
   }
 }

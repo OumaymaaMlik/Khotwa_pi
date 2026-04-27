@@ -1,60 +1,100 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-
-export interface Notification {
-  id: string;
-  titre: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  date: Date;
-  lu: boolean;
-  link?: string;
-}
+import { MessageService } from './message.service';
+import { AuthService } from './auth.service';
+import { Notification } from '../models/message.model';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
 
-  private base = '/khotwa';  // ✅ URL relative — passe par le proxy Angular
+  private _notifs$ = new BehaviorSubject<Notification[]>([]);
 
-  private _notifs: Notification[] = [];
+  constructor(
+    private messageService: MessageService,
+    private authService: AuthService
+  ) {
+    this.loadNotifications();
+  }
 
-  constructor(private http: HttpClient) {}
+  get currentUserId(): number {
+    const u = this.authService.currentUser;
+    if (!u) return 0;
+    if (typeof u.idUser === 'number' && u.idUser > 0) return u.idUser;
+    if (u.id != null && u.id !== '') {
+      const n = Number(u.id);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    return 0;
+  }
 
-  loadExpirationAlert(userId: number): void {
-    this.http.get<any>(`${this.base}/subscriptions/user/${userId}/expiration-alert`)
-      .subscribe({
-        next: (data) => {
-          if (data?.hasAlert) {
-            const daysLeft: number = data.daysLeft;
-            const planLabel: string = data.planLabel ?? 'your plan';
+  reload() {
+    this.loadNotifications();
+  }
 
-            this._notifs = this._notifs.filter(n => n.id !== 'expiration-alert');
+  /** Map backend DTO (isRead) to UI model (read). */
+  private normalizeNotification(raw: any): Notification {
+    return {
+      id: raw.id,
+      recipientId: raw.recipientId,
+      senderId: raw.senderId,
+      message: raw.message ?? '',
+      type: raw.type,
+      createdAt: raw.createdAt,
+      read: raw.read ?? raw.isRead ?? false
+    };
+  }
 
-            const notif: Notification = {
-              id: 'expiration-alert',
-              titre: daysLeft === 0
-                ? 'Subscription expires today!'
-                : `Subscription expires in ${daysLeft} day(s)`,
-              message: `Your ${planLabel} subscription expires on ${data.dateFin}. Renew now to avoid interruption.`,
-              type: daysLeft <= 1 ? 'error' : 'warning',
-              date: new Date(),
-              lu: false,
-              link: '/entrepreneur/profile'
-            };
+  loadNotifications() {
+    const userId = this.currentUserId;
+    if (userId === 0) return;
 
-            this._notifs = [notif, ...this._notifs];
-          }
-        },
-        error: () => {} // silencieux — pas d'alerte si l'endpoint échoue
+    this.messageService.getNotifications(userId).subscribe({
+      next: (notifs) =>
+        this._notifs$.next((notifs ?? []).map((n) => this.normalizeNotification(n))),
+      error: (err) => console.error('Failed to load notifications', err)
+    });
+  }
+
+  latestFive() {
+    return this._notifs$.getValue()
+      .slice()
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }
+
+  notifs() { return this._notifs$.getValue(); }
+
+  notifs$() { return this._notifs$.asObservable(); }
+
+  nonLus() { return this._notifs$.getValue().filter(n => !n.read).length; }
+
+  addNotification(notification: Notification | any) {
+    const normalized = this.normalizeNotification(notification);
+    const current = this._notifs$.getValue();
+    this._notifs$.next([normalized, ...current]);
+  }
+
+  markAllRead() {
+    const notifs = this._notifs$.getValue();
+    const unread = notifs.filter(n => !n.read);
+    unread.forEach(n => {
+      this.messageService.markNotificationAsRead(n.id).subscribe({
+        next: (updated) => {
+          const u = this.normalizeNotification(updated);
+          const current = this._notifs$.getValue().map(x => x.id === u.id ? u : x);
+          this._notifs$.next(current);
+        }
       });
+    });
   }
 
-  addNotif(notif: Notification): void {
-    this._notifs = [notif, ...this._notifs];
+  markRead(id: number) {
+    this.messageService.markNotificationAsRead(id).subscribe({
+      next: (updated) => {
+        const u = this.normalizeNotification(updated);
+        const current = this._notifs$.getValue().map(n => n.id === u.id ? u : n);
+        this._notifs$.next(current);
+      }
+    });
   }
-
-  notifs(): Notification[]  { return this._notifs; }
-  nonLus(): number          { return this._notifs.filter(n => !n.lu).length; }
-  markAllRead(): void       { this._notifs = this._notifs.map(n => ({ ...n, lu: true })); }
-  markRead(id: string): void { this._notifs = this._notifs.map(n => n.id === id ? { ...n, lu: true } : n); }
 }

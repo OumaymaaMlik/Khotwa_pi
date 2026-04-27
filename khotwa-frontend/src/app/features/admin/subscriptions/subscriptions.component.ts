@@ -8,9 +8,11 @@ import {
   PlanType,
   SubscriptionStatus
 } from '../../../core/models/subscription.model';
+import { DiscountService } from '../../../core/services/discount.service';
+import { Discount, CreateDiscountRequest } from '../../../core/models/discount.model';
 
 type FilterType = 'ALL' | PlanType;
-type AdminTab = 'subscribers' | 'plans' | 'analytics' | 'engagement';
+type AdminTab = 'subscribers' | 'plans' | 'analytics' | 'engagement' | 'discounts';
 type RevenueView = 'summary' | 'by-user' | 'by-month' | 'by-day';
 
 @Component({
@@ -57,6 +59,21 @@ churnLoading = false;
   suspendTarget: Subscription | null = null;
   planForm: PlanOffer = this.getEmptyPlan();
 
+  discounts: Discount[] = [];
+discountsLoading = false;
+showDiscountModal = false;
+discountSaving = false;
+discountFormError = '';
+discountForm: CreateDiscountRequest = this.getEmptyDiscount();
+
+discountValidFromDate = '';
+discountValidFromTime = '00:00';
+discountValidUntilDate = '';
+discountValidUntilTime = '23:59';
+
+entrepreneurUsers: { id: number; fullName: string; email: string }[] = [];
+
+
   private svgMap: Record<string, string> = {
     users:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
     box:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
@@ -75,7 +92,7 @@ churnLoading = false;
   };
   private iconCache: Record<string, SafeHtml> = {};
 
-  constructor(private subscriptionService: SubscriptionService, private sanitizer: DomSanitizer) {}
+  constructor(private subscriptionService: SubscriptionService, private sanitizer: DomSanitizer, private discountService: DiscountService) {}
 
   ngOnInit(): void {
     this.loadSubscriptions();
@@ -119,6 +136,29 @@ churnLoading = false;
     next: (s) => { this.churnStats = s; }
   });
 }
+
+ 
+loadDiscounts(): void {
+  this.discountsLoading = true;
+  this.discountService.getAllDiscounts().subscribe({
+    next: (data) => { this.discounts = data ?? []; this.discountsLoading = false; },
+    error: () => { this.discountsLoading = false; }
+  });
+}
+ 
+loadEntrepreneurUsers(): void {
+  // Extrait les users uniques depuis les abonnements déjà chargés
+  const seen = new Set<number>();
+  this.entrepreneurUsers = this.subscriptions
+    .filter(s => s.user && s.user.idUser)
+    .filter(s => { const ok = !seen.has(s.user!.idUser!); seen.add(s.user!.idUser!); return ok; })
+    .map(s => ({
+      id: s.user!.idUser!,
+      fullName: `${s.user!.firstName ?? ''} ${s.user!.lastName ?? ''}`.trim(),
+      email: (s.user as any)?.email ?? ''
+    }));
+}
+
 
 computeAllChurn(): void {
   this.churnLoading = true;
@@ -385,4 +425,107 @@ getRiskClass(level: string): string {
     return (avantages || '').split('\n').map(i => i.trim()).filter(Boolean);
   }
   private getEmptyPlan(): PlanOffer { return { type: 'FREE', label: '', prix: 0, duree: 30, description: '', avantages: '' }; }
+
+
+
+openAddDiscount(): void {
+  this.discountFormError = '';
+  this.discountForm = this.getEmptyDiscount();
+  // Valeurs par défaut : aujourd'hui → dans 7 jours
+  const now = new Date();
+  this.discountValidFromDate  = this.toDateInput(now);
+  this.discountValidFromTime  = this.toTimeInput(now);
+  const end = new Date(now); end.setDate(end.getDate() + 7);
+  this.discountValidUntilDate = this.toDateInput(end);
+  this.discountValidUntilTime = '23:59';
+  this.loadEntrepreneurUsers();
+  this.showDiscountModal = true;
+}
+ 
+closeDiscountModal(): void {
+  this.showDiscountModal = false;
+  this.discountSaving = false;
+  this.discountFormError = '';
+  this.discountForm = this.getEmptyDiscount();
+}
+ 
+saveDiscount(): void {
+  this.discountFormError = '';
+ 
+  if (!this.discountForm.planOfferId) {
+    this.discountFormError = 'Veuillez sélectionner un plan.'; return;
+  }
+  if (!this.discountForm.discountPercent || this.discountForm.discountPercent <= 0 || this.discountForm.discountPercent >= 100) {
+    this.discountFormError = 'Le pourcentage doit être entre 1 et 99.'; return;
+  }
+  if (!this.discountValidFromDate || !this.discountValidUntilDate) {
+    this.discountFormError = 'Veuillez renseigner les dates.'; return;
+  }
+ 
+  const validFrom  = `${this.discountValidFromDate}T${this.discountValidFromTime}:00`;
+  const validUntil = `${this.discountValidUntilDate}T${this.discountValidUntilTime}:00`;
+ 
+  if (new Date(validUntil) <= new Date(validFrom)) {
+    this.discountFormError = 'La date de fin doit être après la date de début.'; return;
+  }
+ 
+  const payload: CreateDiscountRequest = {
+    userId:          this.discountForm.userId || null,
+    planOfferId:     Number(this.discountForm.planOfferId),
+    discountPercent: Number(this.discountForm.discountPercent),
+    validFrom,
+    validUntil,
+    notes:           this.discountForm.notes || null
+  };
+ 
+  this.discountSaving = true;
+  this.discountService.createDiscount(payload).subscribe({
+    next: () => { this.discountSaving = false; this.closeDiscountModal(); this.loadDiscounts(); },
+    error: (err: any) => {
+      this.discountSaving = false;
+      this.discountFormError = err?.error?.message ?? 'Erreur lors de la création.';
+    }
+  });
+}
+ 
+deactivateDiscount(d: Discount): void {
+  if (!confirm(`Désactiver la remise de ${d.discountPercent}% ?`)) return;
+  this.discountService.deactivateDiscount(d.id!).subscribe({
+    next: () => this.loadDiscounts(),
+    error: console.error
+  });
+}
+ 
+deleteDiscount(d: Discount): void {
+  if (!confirm(`Supprimer définitivement cette remise ?`)) return;
+  this.discountService.deleteDiscount(d.id!).subscribe({
+    next: () => this.loadDiscounts(),
+    error: console.error
+  });
+}
+ 
+getDiscountedPrice(d: Discount): number {
+  if (!d.planOfferPrix) return 0;
+  return Math.round(d.planOfferPrix * (1 - d.discountPercent / 100) * 100) / 100;
+}
+ 
+getDiscountStatusClass(status: string): string {
+  return ({ ACTIVE: 'kh-badge--green', EXPIRED: 'kh-badge--red', USED: 'kh-badge--neutral' } as any)[status] ?? 'kh-badge--neutral';
+}
+ 
+formatDatetime(dt: string | null | undefined): string {
+  if (!dt) return '-';
+  return new Date(dt).toLocaleString('fr-TN', { dateStyle: 'short', timeStyle: 'short' });
+}
+ 
+private getEmptyDiscount(): CreateDiscountRequest {
+  return { userId: null, planOfferId: 0, discountPercent: 10, validFrom: '', validUntil: '', notes: '' };
+}
+ 
+private toDateInput(d: Date): string {
+  return d.toISOString().substring(0, 10);
+}
+private toTimeInput(d: Date): string {
+  return d.toTimeString().substring(0, 5);
+}
 }

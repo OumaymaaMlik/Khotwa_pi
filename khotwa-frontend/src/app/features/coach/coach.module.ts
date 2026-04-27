@@ -15,12 +15,13 @@ import { CoachMessagesComponent }      from './messages/messages.component';
 import { CoachProgressionsComponent }  from './progressions/progressions.component';
 import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
 import { CoachTalentComponent }        from './talent/talent.component';
+import { CoachSettingsComponent }      from './settings/settings.component';
 import { CoachAccountPageComponent }   from './account-page/account-page.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: LayoutCoachComponent,
+    component: LayoutCoachComponent,   // ← nouveau layout coach
     children: [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: CoachDashboardComponent    },
@@ -32,7 +33,8 @@ const routes: Routes = [
       { path: 'bibliotheque', component: CoachBibliothequeComponent },
       { path: 'progressions', component: CoachProgressionsComponent },
       { path: 'talent',       component: CoachTalentComponent       },
-      { path: 'account',      component: CoachAccountPageComponent  }, // ← new
+      { path: 'settings',     component: CoachSettingsComponent     },
+      { path: 'account',      component: CoachAccountPageComponent  },
     ],
   },
 ];
@@ -42,7 +44,7 @@ const routes: Routes = [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
     CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
-    CoachAccountPageComponent,
+    CoachSettingsComponent, CoachAccountPageComponent,
   ],
   imports: [
     CommonModule, FormsModule, SharedModule,

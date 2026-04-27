@@ -16,7 +16,10 @@
             "outputPath": "dist/khotwa-ng",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js",
+              "src/polyfills.ts" 
+            ],
             "tsConfig": "tsconfig.app.json",
            "assets": [
   "src/favicon.ico",
@@ -38,8 +41,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "16kB",
-                  "maximumError": "32kB"
+                  "maximumWarning": "56kB",
+                  "maximumError": "72kB"
                 }
               ],
               "outputHashing": "all"
@@ -57,7 +60,7 @@
           "options": {
             "proxyConfig": "proxy.conf.json",
               "liveReload": true
-  
+
           },
           "configurations": {
             "production": { "buildTarget": "khotwa-ng:build:production" },

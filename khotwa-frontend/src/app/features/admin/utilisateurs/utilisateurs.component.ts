@@ -1,18 +1,50 @@
-import { Component } from '@angular/core';
-@Component({ selector:'app-admin-utilisateurs', templateUrl:'./utilisateurs.component.html', styleUrls:['./utilisateurs.component.css'] })
-export class AdminUtilisateursComponent {
-  filtre = 'tous'; search = '';
-  users = [
-    {id:'u1',nom:'Bensalem',prenom:'Karim',email:'admin@khotwa.tn',role:'admin',statut:'ACTIVE',createdAt:'2024-01-01'},
-    {id:'u2',nom:'Trabelsi',prenom:'Sara',email:'sara@startup.tn',role:'entrepreneur',statut:'ACTIVE',createdAt:'2024-02-15'},
-    {id:'u3',nom:'Mansouri',prenom:'Ahmed',email:'ahmed@coach.tn',role:'coach',statut:'ACTIVE',createdAt:'2024-03-01'},
-    {id:'u4',nom:'Ben Ali',prenom:'Nadia',email:'nadia@edu.tn',role:'entrepreneur',statut:'inactif',createdAt:'2024-04-10'},
-    {id:'u5',nom:'Chaabane',prenom:'Omar',email:'omar@agri.tn',role:'entrepreneur',statut:'ACTIVE',createdAt:'2024-05-20'},
-  ];
-  get filteredUsers() {
-    let l = this.users;
-    if (this.filtre !== 'tous') l = l.filter(u => u.role === this.filtre);
-    if (this.search) l = l.filter(u => (u.nom+' '+u.prenom+' '+u.email).toLowerCase().includes(this.search.toLowerCase()));
-    return l;
+import { Component, OnInit } from '@angular/core';
+import { UserService } from '../../../core/services/user.service';
+
+@Component({
+  selector: 'app-admin-utilisateurs',
+  templateUrl: './utilisateurs.component.html',
+  styleUrls: ['./utilisateurs.component.css']
+})
+export class AdminUtilisateursComponent implements OnInit {
+
+  users: any[] = [];
+  loading = false;
+  filtre = 'all';
+  search = '';
+  currentPage = 0;
+  pageSize = 10;
+  totalElements = 0;
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit() { this.load(); }
+
+  load() {
+    this.loading = true;
+    this.userService.getUsersHttp({ page: this.currentPage, size: this.pageSize, role: this.filtre, search: this.search })
+      .subscribe({
+        next: (res: any) => {
+          this.users = res.data ?? [];
+          this.totalElements = res.totalElements ?? this.users.length;
+          this.loading = false;
+        },
+        error: () => this.loading = false
+      });
+  }
+
+  onFilterChange() { this.currentPage = 0; this.load(); }
+
+  deleteUser(id: number) {
+    if (!confirm('Supprimer cet utilisateur ?')) return;
+    this.userService.deleteUser(id).subscribe({ next: () => this.load() });
+  }
+
+  nextPage() {
+    if ((this.currentPage + 1) * this.pageSize < this.totalElements) { this.currentPage++; this.load(); }
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) { this.currentPage--; this.load(); }
   }
 }

@@ -1,28 +1,319 @@
 import { Injectable } from '@angular/core';
-import { Projet, ProjetStatut } from '../models';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map, tap, switchMap } from 'rxjs';
+import { AuthService } from './auth.service';
+import { Projet, ProjetStatut, SecteurProjet } from '../models';
 
-const MOCK: Projet[] = [
-  { id:'p1', titre:'Plateforme E-Learning', description:'Application mobile de formation en ligne', statut:'in_progress', progression:65, entrepreneurId:'u2', coachId:'u3', etapes:[
-    {id:'e1',titre:'Market Research',ordre:1,projetId:'p1',dateDebut:new Date('2024-01-01'),dateFin:new Date('2024-01-31'),taches:[]},
-    {id:'e2',titre:'MVP Development',ordre:2,projetId:'p1',dateDebut:new Date('2024-02-01'),dateFin:new Date('2024-04-30'),taches:[]},
-    {id:'e3',titre:'Tests & Validation',ordre:3,projetId:'p1',dateDebut:new Date('2024-05-01'),dateFin:new Date('2024-06-30'),taches:[]},
-  ], createdAt:new Date('2024-01-01'), updatedAt:new Date('2024-11-20') },
-  { id:'p2', titre:'HealthMobile App', description:'Health app for patient tracking', statut:'in_progress', progression:30, entrepreneurId:'u2', coachId:'u3', etapes:[], createdAt:new Date('2024-03-01'), updatedAt:new Date('2024-11-18') },
-  { id:'p3', titre:'BTP Connect', description:'Construction materials marketplace', statut:'completed', progression:100, entrepreneurId:'u2', etapes:[], createdAt:new Date('2023-06-01'), updatedAt:new Date('2024-10-01') },
-  { id:'p4', titre:'AgriSmart', description:'IoT for connected agriculture', statut:'suspended', progression:20, entrepreneurId:'u2', coachId:'u3', etapes:[], createdAt:new Date('2024-08-01'), updatedAt:new Date('2024-11-01') },
-];
+type SecteurProjetInput = SecteurProjet | '';
+
+export interface ProjetDraftInput {
+  nomStartup: string;
+  description: string;
+  secteur: SecteurProjetInput;
+  problemeAdresse: string;
+  solutionProposee: string;
+  businessModel: string;
+  stadeProjet: 'IDEE' | 'POC' | 'MVP' | 'PROTOTYPE' | 'COMMERCIALISATION' | 'SCALING';
+  innovationDescription: string;
+  scalabiliteDescription: string;
+  pocDisponible: boolean;
+  dateDebutProjet: string;
+  dateFinProjet: string;
+}
+
+interface BackendProjetResponse {
+  id: number;
+  nomStartup: string;
+  description: string;
+  secteur: SecteurProjet;
+  problemeAdresse: string;
+  solutionProposee: string;
+  businessModel: string;
+  stadeProjet: 'IDEE' | 'POC' | 'MVP' | 'PROTOTYPE' | 'COMMERCIALISATION' | 'SCALING';
+  innovationDescription: string;
+  scalabiliteDescription: string;
+  pocDisponible: boolean;
+  dateDebutProjet: string;
+  dateFinProjet: string;
+  dateCreation: string;
+  dateDerniereMiseAJour: string;
+  statutProjet: 'EN_COURS' | 'SUSPENDU' | 'TERMINE' | 'ARCHIVE';
+  etatValidation: 'BROUILLON' | 'SOUMIS_ADMIN' | 'AFFECTE_COACH' | 'EN_REVUE' | 'A_CORRIGER' | 'VALIDE' | 'REFUSE';
+  commentaireCorrectionCoach?: string;
+  dateDemandeCorrection?: string;
+  statutCorrectionProjet?: 'DEMANDEE' | 'RESOUMISE_PAR_ENTREPRENEUR' | 'APPROUVEE_PAR_COACH' | 'RECORRECTION_DEMANDEE';
+  correctionResoumiseEnAttenteCoach?: boolean;
+  scoreDisciplineGlobal: number;
+  entrepreneurId: number;
+}
+
+/** Alias for UI components that expect a “DTO” name; maps to the canonical `Projet` model. */
+export type ProjetResponseDto = Projet;
+
+export interface AdminReportingResponse {
+  projetsSoumis: number;
+  projetsValides: number;
+  projetsRefuses: number;
+  retardsTachesActifs: number;
+  retardsSousTachesActifs: number;
+  scoreMoyenDiscipline: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ProjetService {
-  private _projets: Projet[] = [...MOCK];
+  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private _projets: Projet[] = [];
+
+  constructor(
+    private auth: AuthService,
+    private http: HttpClient,
+  ) {}
+
+  /** Prefer `idUser` (set by login / refresh); `id` string may be absent after older profile payloads. */
+  private currentUserNumericId(): number {
+    const u = this.auth.currentUser;
+    if (u?.idUser != null && Number.isFinite(u.idUser) && u.idUser > 0) {
+      return u.idUser;
+    }
+    const parsed = Number(u?.id ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
 
   get projets(): Projet[] { return this._projets; }
-  get projetsActifs(): Projet[] { return this._projets.filter(p => p.statut === 'in_progress'); }
+  get projetsActifs(): Projet[] { return this._projets.filter(p => p.status === 'in_progress'); }
+  get projetsEntrepreneur(): Projet[] {
+    const n = this.currentUserNumericId();
+    const entrepreneurId = n > 0 ? String(n) : String(this.auth.currentUser?.id ?? 'u2');
+    return this._projets.filter(p => p.entrepreneurId === entrepreneurId);
+  }
 
   getById(id: string): Projet | undefined { return this._projets.find(p => p.id === id); }
-  updateStatut(id: string, statut: ProjetStatut): void {
+
+  loadEntrepreneurProjects(): Observable<Projet[]> {
+    const entrepreneurId = this.currentUserNumericId();
+    if (!entrepreneurId || isNaN(entrepreneurId) || entrepreneurId <= 0) {
+      return new Observable(observer => {
+        observer.error(new Error('Session expirée ou invalide. Veuillez vous reconnecter.'));
+      });
+    }
+    return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/entrepreneur/projets`, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((rows) => rows.map((row) => this.toProjetModel(row))),
+      tap((rows) => {
+        this._projets = this.sortProjects(rows);
+      })
+    );
+  }
+
+  loadAdminSubmittedProjects(): Observable<Projet[]> {
+    return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/admin/projets/soumis`).pipe(
+      map((rows) => rows.map((row) => this.toProjetModel(row))),
+      tap((rows) => {
+        this._projets = this.sortProjects(rows);
+      })
+    );
+  }
+
+  loadCoachAssignedProjects(): Observable<Projet[]> {
+    const coachId = this.currentUserNumericId();
+    return this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/coach/projets-affectes`, {
+      params: { coachId: String(coachId) }
+    }).pipe(
+      map((rows) => rows.map((row) => this.toProjetModel(row))),
+      tap((rows) => {
+        this._projets = this.sortProjects(rows);
+      })
+    );
+  }
+
+  /** Loads projects assigned to the current coach (`coachId` is ignored; session defines the coach). */
+  getProjetsCoach(_coachId?: number | string | null): Observable<Projet[]> {
+    return this.loadCoachAssignedProjects();
+  }
+
+  /** Loads projects for the logged-in entrepreneur (`userId` is ignored; session defines the user). */
+  getProjetsEntrepreneur(_userId?: number | string | null): Observable<Projet[]> {
+    return this.loadEntrepreneurProjects();
+  }
+
+  validerProjet(projectId: number | string): Observable<Projet[]> {
+    const id = String(projectId);
+    return this.http.post<unknown>(`${this.apiUrl}/coach/projets/${id}/valider`, {}).pipe(
+      switchMap(() => this.loadCoachAssignedProjects()),
+    );
+  }
+
+  demanderCorrectionProjet(projectId: number | string, commentaire: string): Observable<Projet[]> {
+    const id = String(projectId);
+    return this.http.post<unknown>(`${this.apiUrl}/coach/projets/${id}/demander-correction`, { commentaire }).pipe(
+      switchMap(() => this.loadCoachAssignedProjects()),
+    );
+  }
+
+  loadAdminReporting(): Observable<AdminReportingResponse> {
+    return this.http.get<AdminReportingResponse>(`${this.apiUrl}/admin/reporting`);
+  }
+
+  createProjet(form: ProjetDraftInput): Observable<Projet> {
+    const entrepreneurId = this.currentUserNumericId();
+    
+    // Defensive check: prevent invalid FK constraint violation
+    if (entrepreneurId <= 0) {
+      return new Observable(observer => {
+        observer.error(new Error('Invalid entrepreneur authentication. Please log in and try again.'));
+      });
+    }
+
+    const payload = {
+      nomStartup: form.nomStartup,
+      description: form.description,
+      secteur: form.secteur,
+      problemeAdresse: form.problemeAdresse,
+      solutionProposee: form.solutionProposee,
+      businessModel: form.businessModel,
+      stadeProjet: form.stadeProjet,
+      innovationDescription: form.innovationDescription,
+      scalabiliteDescription: form.scalabiliteDescription,
+      pocDisponible: form.pocDisponible,
+      dateDebutProjet: form.dateDebutProjet,
+      dateFinProjet: form.dateFinProjet,
+    };
+
+    return this.http.post<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets`, payload, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((row) => this.toProjetModel(row)),
+      tap((projet) => {
+        this._projets = this.mergeProjects([projet]);
+      })
+    );
+  }
+
+  updateProjet(id: string, form: ProjetDraftInput): Observable<Projet> {
+    const entrepreneurId = this.currentUserNumericId();
+    const payload = {
+      nomStartup: form.nomStartup,
+      description: form.description,
+      secteur: form.secteur,
+      problemeAdresse: form.problemeAdresse,
+      solutionProposee: form.solutionProposee,
+      businessModel: form.businessModel,
+      stadeProjet: form.stadeProjet,
+      innovationDescription: form.innovationDescription,
+      scalabiliteDescription: form.scalabiliteDescription,
+      pocDisponible: form.pocDisponible,
+      dateDebutProjet: form.dateDebutProjet,
+      dateFinProjet: form.dateFinProjet,
+    };
+
+    return this.http.put<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets/${id}`, payload, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((row) => this.toProjetModel(row)),
+      tap((projet) => {
+        this._projets = this.mergeProjects([projet]);
+      })
+    );
+  }
+
+  submitProjet(id: string): Observable<Projet> {
+    const entrepreneurId = this.currentUserNumericId();
+    return this.http.post<BackendProjetResponse>(`${this.apiUrl}/entrepreneur/projets/${id}/soumettre`, null, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      map((row) => this.toProjetModel(row)),
+      tap((projet) => {
+        this._projets = this.mergeProjects([projet]);
+      })
+    );
+  }
+
+  deleteProjet(id: string): Observable<void> {
+    const entrepreneurId = this.currentUserNumericId();
+    return this.http.delete<void>(`${this.apiUrl}/entrepreneur/projets/${id}`, {
+      params: { entrepreneurId: String(entrepreneurId) }
+    }).pipe(
+      tap(() => {
+        this._projets = this._projets.filter((p) => p.id !== id);
+      })
+    );
+  }
+
+  assignCoach(projetId: string, coachId: string): Projet | undefined {
+    const projet = this._projets.find(p => p.id === projetId);
+    if (!projet || !projet.submitted) {
+      return projet;
+    }
+
+    projet.coachId = coachId;
+    projet.updatedAt = new Date();
+    return projet;
+  }
+
+  updateStatut(id: string, status: ProjetStatut): void {
     const p = this._projets.find(p => p.id === id);
-    if (p) { p.statut = statut; p.updatedAt = new Date(); }
+    if (p) { p.status = status; p.updatedAt = new Date(); }
   }
   delete(id: string): void { this._projets = this._projets.filter(p => p.id !== id); }
+
+  private toProjetModel(row: BackendProjetResponse & { projectCorrectionRequired?: boolean }): Projet {
+    const disciplineScore = row.scoreDisciplineGlobal ?? 0;
+    return {
+      id: String(row.id),
+      titre: row.nomStartup,
+      description: row.description,
+      status: this.toUiStatus(row.statutProjet),
+      submitted: row.etatValidation !== 'BROUILLON',
+      etatValidation: row.etatValidation,
+      commentaireCorrectionCoach: row.commentaireCorrectionCoach?.trim() || undefined,
+      dateDemandeCorrection: row.dateDemandeCorrection ? new Date(row.dateDemandeCorrection) : undefined,
+      statutCorrectionProjet: row.statutCorrectionProjet,
+      correctionResoumiseEnAttenteCoach: row.correctionResoumiseEnAttenteCoach === true,
+      stadeProjet: row.stadeProjet,
+      secteur: row.secteur,
+      problemeAdresse: row.problemeAdresse,
+      solutionProposee: row.solutionProposee,
+      businessModel: row.businessModel,
+      innovationDescription: row.innovationDescription,
+      scalabiliteDescription: row.scalabiliteDescription,
+      pocDisponible: row.pocDisponible,
+      dateDebutProjet: row.dateDebutProjet ? new Date(row.dateDebutProjet) : undefined,
+      dateFinProjet: row.dateFinProjet ? new Date(row.dateFinProjet) : undefined,
+      disciplineScore,
+      progression: Math.max(0, Math.min(100, disciplineScore)),
+      entrepreneurId: String(row.entrepreneurId),
+      etapes: [],
+      createdAt: new Date(row.dateCreation),
+      updatedAt: new Date(row.dateDerniereMiseAJour),
+      projectCorrectionRequired: row.statutCorrectionProjet === 'DEMANDEE' || row.statutCorrectionProjet === 'RECORRECTION_DEMANDEE',
+    };
+  }
+
+  private mergeProjects(incoming: Projet[]): Projet[] {
+    const mapById = new Map<string, Projet>();
+
+    for (const p of this._projets) {
+      mapById.set(p.id, p);
+    }
+    for (const p of incoming) {
+      mapById.set(p.id, p);
+    }
+
+    return this.sortProjects(Array.from(mapById.values()));
+  }
+
+  private sortProjects(projects: Projet[]): Projet[] {
+    return [...projects].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  private toUiStatus(statut: BackendProjetResponse['statutProjet']): ProjetStatut {
+    if (statut === 'SUSPENDU') {
+      return 'suspended';
+    }
+    if (statut === 'TERMINE' || statut === 'ARCHIVE') {
+      return 'completed';
+    }
+    return 'in_progress';
+  }
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { UserService, UpdateProfilePayload, ChangePasswordPayload } from '../../core/services/user.service';
-import { UserResponse } from '../../core/models/user.model';
+import { UserResponse ,User} from '../../core/models/user.model';
 import { HttpClient } from '@angular/common/http';
 
 type Tab = 'info' | 'avatar' | 'password';
@@ -167,10 +167,10 @@ export class AccountComponent implements OnInit {
         const avatarUrl = res.avatarUrl;
         this.userService.updateMyProfile({ avatar: avatarUrl }).subscribe({
           next: (updated: UserResponse) => {
-            this.currentAvatar = updated.avatar;
+            this.currentAvatar = updated.avatar ?? null;
             this.avatarPreview = null;
             this.avatarFile = null;
-            this.uploadingAvatar = false;
+            this.uploadingAvatar = false; 
             this.successMsg = 'Avatar mis à jour avec succès !';
             this.auth.refreshProfile().subscribe();
           },

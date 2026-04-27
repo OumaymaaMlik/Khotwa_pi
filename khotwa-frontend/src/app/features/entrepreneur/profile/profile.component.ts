@@ -3,6 +3,9 @@ import { SubscriptionService } from '../../../core/services/subscription.service
 import { AuthService } from '../../../core/services/auth.service';
 import { Subscription, PlanOffer, SubscriptionStatus } from '../../../core/models/subscription.model';
 import { PlanType } from '../../../core/models/user.model';
+import { DiscountService } from '../../../core/services/discount.service';
+import { Discount } from '../../../core/models/discount.model';
+ 
 
 declare var paypal: any;
 
@@ -36,23 +39,29 @@ export class ProfileComponent implements OnInit {
 
   discountedPaymentPrice: number | null = null;
 
+  activeDiscounts: Discount[] = [];
+
+  activeDiscountId: number | null = null;
+
+
+  plansWithDiscounts: { offer: PlanOffer; bestDiscount: Discount | null }[] = [];
+
+
   get currentUserId(): number {
     return this.authService.currentUser?.idUser ?? 0;
   }
 
   constructor(
     @Inject(SubscriptionService) private subscriptionService: SubscriptionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private discountService: DiscountService 
   ) {}
 
   ngOnInit(): void {
-    console.log('Current user in profile:', this.authService.currentUser);
-    console.log('Current user id:', this.currentUserId);
-
-    this.loadCurrentSubscription();
-    this.loadPlans(); 
-  }
-
+  this.loadCurrentSubscription();
+  this.loadPlans();
+  this.loadActiveDiscounts();
+}
   // ── Chargements ───────────────────────────────────────────────────────────
 
   loadCurrentSubscription(): void {
@@ -64,16 +73,53 @@ export class ProfileComponent implements OnInit {
   }
 
   loadPlans(): void {
-    this.subscriptionService.getAvailablePlans().subscribe({
-      next: (data: PlanOffer[]) => {
-        this.plans = data;
-        this.checkUpgradeSuggestion();
-      },
-      error: (err: any) => { console.error('Error loading plans', err); }
-    });
-  }
-
-
+  this.subscriptionService.getAvailablePlans().subscribe({
+    next: (data: PlanOffer[]) => {
+      this.plans = data;
+      this.buildPlansWithDiscounts();
+      this.checkUpgradeSuggestion();
+    },
+    error: (err: any) => { console.error('Error loading plans', err); }
+  });
+}
+loadActiveDiscounts(): void {
+  if (!this.currentUserId) return;
+  this.discountService.getActiveDiscountsForUser(this.currentUserId).subscribe({
+    next: (discounts: Discount[]) => {
+      this.activeDiscounts = discounts ?? [];
+      this.buildPlansWithDiscounts();
+    },
+    error: () => { this.activeDiscounts = []; }
+  });
+}
+buildPlansWithDiscounts(): void {
+  if (!this.plans.length) return;
+ 
+  const currentPlanRank = this.currentSubscription
+    ? this.getPlanRank(this.currentSubscription.plan)
+    : 0;
+ 
+  this.plansWithDiscounts = this.plans.map(offer => {
+    // Ne montrer les remises que pour les plans supérieurs au plan actuel
+    const planRank = this.getPlanRank(offer.type);
+    let bestDiscount: Discount | null = null;
+ 
+    if (planRank > currentPlanRank) {
+      // Cherche la meilleure remise pour ce plan parmi les remises actives
+      const discountsForPlan = this.activeDiscounts.filter(
+        d => d.planOfferId === offer.id
+      );
+      if (discountsForPlan.length > 0) {
+        // Prend celle avec le plus grand pourcentage
+        bestDiscount = discountsForPlan.reduce((best, curr) =>
+          curr.discountPercent > best.discountPercent ? curr : best
+        );
+      }
+    }
+ 
+    return { offer, bestDiscount };
+  });
+}
   checkUpgradeSuggestion(): void {
     if (!this.currentUserId) return;
     this.subscriptionService.getUpgradeSuggestion(this.currentUserId).subscribe({
@@ -308,34 +354,58 @@ export class ProfileComponent implements OnInit {
     this.paypalRendered = true;
   }
 
-  private _confirmPayment(orderId: string, payerId: string, montantPaye?: number | null, discountPercent?: number | null): void {
-    if (!this.selectedPlan || !this.currentUserId) {
-      this.paymentError = 'Missing data. Please try again.';
-      this.paymentProcessing = false; return;
-    }
-    this.paymentProcessing = true; this.paymentError = '';
-    this.subscriptionService.confirmPaypalPayment(
-      this.currentUserId,
-      this.selectedPlan.id!,
-      orderId,
-      payerId,
-      montantPaye     ?? null,  
-      discountPercent ?? null   
-    ).subscribe({
-      next: (res: Subscription) => {
-        this.paymentProcessing = false; this.paymentSuccess = true;
-        this.currentSubscription = res; this.loadCurrentSubscription();
-        if (res.idSubscription != null && this.modalAutoRenew !== res.autoRenouvellement) {
-          this.subscriptionService.updateAutoRenew(res.idSubscription, this.modalAutoRenew).subscribe();
-        }
-      },
-      error: (err: any) => {
-        console.error('Payment confirmation error:', err);
-        this.paymentProcessing = false;
-        this.paymentError = 'Payment received but activation failed. Please contact support.';
-      }
-    });
+  private _confirmPayment(
+  orderId: string,
+  payerId: string,
+  montantPaye?: number | null,
+  discountPercent?: number | null
+): void {
+  if (!this.selectedPlan || !this.currentUserId) {
+    this.paymentError = 'Missing data. Please try again.';
+    this.paymentProcessing = false;
+    return;
   }
+
+  this.paymentProcessing = true;
+  this.paymentError = '';
+
+  this.subscriptionService.confirmPaypalPayment(
+    this.currentUserId,
+    this.selectedPlan.id!,
+    orderId,
+    payerId,
+    montantPaye     ?? null,
+    discountPercent ?? null
+  ).subscribe({
+    next: (res: Subscription) => {
+      this.paymentProcessing = false;
+      this.paymentSuccess    = true;
+      this.currentSubscription = res;
+
+      // Marquer la remise comme utilisée si une remise était active
+      if (this.activeDiscountId) {
+        this.discountService.markDiscountAsUsed(this.activeDiscountId).subscribe();
+        this.activeDiscountId = null;
+      }
+
+      this.loadCurrentSubscription();
+      this.loadActiveDiscounts(); // Recharge les remises (la remise utilisée disparaît)
+
+      if (res.idSubscription != null && this.modalAutoRenew !== res.autoRenouvellement) {
+        this.subscriptionService.updateAutoRenew(res.idSubscription, this.modalAutoRenew).subscribe();
+      }
+    },
+    error: (err: any) => {
+      console.error('Payment confirmation error:', err);
+      this.paymentProcessing = false;
+      this.paymentError = 'Payment received but activation failed. Please contact support.';
+    }
+  });
+}
+
+hasAnyDiscount(): boolean {
+  return this.plansWithDiscounts.some(p => p.bestDiscount !== null);
+}
 
   private _doFreeSubscribe(): void {
     this.isProcessing = true;
@@ -350,4 +420,30 @@ export class ProfileComponent implements OnInit {
       error: () => { this.isProcessing = false; this.paymentError = 'An error occurred. Please try again.'; }
     });
   }
+
+  openPlanModalWithDiscount(plan: PlanOffer, discount: Discount | null): void {
+  if (this.isCurrentPlan(plan) || this.isProcessing) return;
+ 
+  if (discount) {
+    // Applique le prix remisé
+    this.discountedPaymentPrice = discount.discountedPrice ?? null;
+    // Stocke l'id de la remise pour la marquer comme utilisée après paiement
+    this.activeDiscountId = discount.id ?? null;
+  } else {
+    this.discountedPaymentPrice = null;
+    this.activeDiscountId = null;
+  }
+ 
+  this.openPlanModal(plan);
+}
+
+formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+ 
+getPlanTypeBadge(type: string): string {
+  return ({ FREE: 'badge-free', PREMIUM: 'badge-premium', INSTITUTIONAL: 'badge-institutional' } as any)[type] ?? '';
+}
+ 
 }

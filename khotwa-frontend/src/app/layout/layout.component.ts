@@ -1,25 +1,18 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
+import { MessageService } from '../core/services/message.service';
+import { WebSocketService } from '../core/services/websocket.service';
+import { OnlineStatusService } from '../core/services/online-status.service';
 import { UserRole } from '../core/models';
 import { filter } from 'rxjs/operators';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
-interface NavItem {
-  label: string;
-  icon: string;
-  route: string;
-  roles: UserRole[];
-  section?: string;
-}
+interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
 
-@Component({
-  selector: 'app-layout',
-  templateUrl: './layout.component.html',
-  styleUrls: ['./layout.component.css']
-})
-export class LayoutComponent implements OnInit {
+@Component({ selector: 'app-layout', templateUrl: './layout.component.html', styleUrls: ['./layout.component.css'] })
+export class LayoutComponent implements OnInit, OnDestroy {
 
   sidebarOpen   = true;
   sidebarMobile = false;
@@ -30,19 +23,22 @@ export class LayoutComponent implements OnInit {
   private safeIconCache: Record<string, SafeHtml> = {};
 
   navItems: NavItem[] = [
-    { label: 'Dashboard',     icon: 'dashboard', route: 'dashboard',     roles: ['ADMIN','ENTREPRENEUR','COACH'], section: 'Main' },
-    { label: 'Projects',      icon: 'folder',    route: 'projets',       roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Workflows',     icon: 'workflow',  route: 'workflows',     roles: ['ENTREPRENEUR'] },
-    { label: 'Planning',      icon: 'calendar',  route: 'planning',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Messages',      icon: 'message',   route: 'messages',      roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Library',       icon: 'book',      route: 'bibliotheque',  roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'My Progress',   icon: 'progress',  route: 'progressions',  roles: ['ENTREPRENEUR','COACH'] },
-    { label: 'My Startups',   icon: 'rocket',    route: 'startups',      roles: ['COACH'] },
-    { label: 'Validations',   icon: 'check',     route: 'validations',   roles: ['COACH'] },
-    { label: 'Events',        icon: 'event',     route: 'evenements',    roles: ['ADMIN'], section: 'Admin' },
-    { label: 'Talent Market', icon: 'people',    route: 'talent',        roles: ['ADMIN','ENTREPRENEUR','COACH'] },
-    { label: 'Subscriptions', icon: 'card2',     route: 'subscriptions', roles: ['ADMIN'] },
-    { label: 'Users',         icon: 'users',     route: 'utilisateurs',  roles: ['ADMIN'] },
+    { label: 'Dashboard', icon: 'dashboard', route: 'dashboard', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
+
+    { label: 'Projects', icon: 'folder', route: 'projets', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
+
+    { label: 'Library', icon: 'book', route: 'bibliotheque', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
+
+    { label: 'Talent Market', icon: 'people', route: 'talent', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
+
+
+    // ADMIN ONLY
+    { label: 'Users', icon: 'users', route: 'utilisateurs', roles: ['ADMIN'] },
+    { label: 'Subscriptions', icon: 'card', route: 'subscriptions', roles: ['ADMIN'] },
+
+    // COACH ONLY
+    { label: 'My Startups', icon: 'rocket', route: 'startups', roles: ['COACH'] },
+    { label: 'Validations', icon: 'check', route: 'validations', roles: ['COACH'] },
   ];
 
   svgIcons: Record<string, string> = {
@@ -67,11 +63,15 @@ export class LayoutComponent implements OnInit {
     close:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
     chevLeft:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>`,
     chevRight: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`,
+    card:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
   };
 
   constructor(
     public auth: AuthService,
     public notifService: NotificationService,
+    private messageService: MessageService,
+    private wsService: WebSocketService,
+    private onlineStatusService: OnlineStatusService,
     private router: Router,
     private sanitizer: DomSanitizer
   ) {}
@@ -82,9 +82,27 @@ export class LayoutComponent implements OnInit {
       .subscribe((e: any) => { this.currentUrl = e.url; });
     this.currentUrl = this.router.url;
     this.onResize();
+
+    const afterProfile = () => {
+      const uid = this.auth.currentUser?.idUser
+        ?? (this.auth.currentUser?.id != null ? Number(this.auth.currentUser.id) : 0);
+      if (uid > 0) {
+        this.notifService.reload();
+      }
+    };
+
     if (!this.auth.currentUser?.firstName) {
-      this.auth.refreshProfile().subscribe({ next: () => {}, error: () => {} });
+      this.auth.refreshProfile().subscribe({
+        next: () => afterProfile(),
+        error: () => afterProfile()
+      });
+    } else {
+      afterProfile();
     }
+  }
+
+  ngOnDestroy(): void {
+    // WebSocket disabled
   }
 
   @HostListener('window:resize')
@@ -93,6 +111,7 @@ export class LayoutComponent implements OnInit {
       this.sidebarOpen   = false;
       this.sidebarMobile = true;
     } else {
+      this.sidebarOpen   = true;
       this.sidebarMobile = false;
     }
   }
@@ -118,7 +137,8 @@ export class LayoutComponent implements OnInit {
   getRoute(item: NavItem): string  { return `${this.rolePrefix}/${item.route}`; }
   getIcon(name: string): SafeHtml {
     if (!this.safeIconCache[name]) {
-      this.safeIconCache[name] = this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] ?? '');
+      this.safeIconCache[name] =
+        this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] ?? '');
     }
     return this.safeIconCache[name];
   }
@@ -126,20 +146,30 @@ export class LayoutComponent implements OnInit {
     if (section === 'Admin') return this.getIcon('users');
     return this.getIcon('dashboard');
   }
-  isActive(item: NavItem): boolean { return this.currentUrl.includes(`/${item.route}`); }
 
-  // ── Role helpers ──────────────────────────────────────────────────────────
-  get roleLabel(): string {
+ get roleLabel(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'ADMIN' ? 'Administrator' : r === 'ENTREPRENEUR' ? 'Entrepreneur' : r === 'COACH' ? 'Coach' : '';
+    if (r === 'ADMIN') return 'ADMINistrator';
+    if (r === 'ENTREPRENEUR') return 'ENTREPRENEUR';
+    if (r === 'COACH') return 'COACH';
+    if (r === 'VISITOR') return 'VISITOR'; // Ajout du label
+    return '';
   }
+
   get roleColor(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'ADMIN' ? '#E8622A' : r === 'ENTREPRENEUR' ? '#2ABFBF' : '#7C5CBF';
+    if (r === 'ADMIN') return '#E8622A';
+    if (r === 'ENTREPRENEUR') return '#2ABFBF';
+    if (r === 'COACH') return '#7C5CBF';
+    return '#F5A623';
   }
+
   get rolePrefix(): string {
     const r = this.auth.currentUser?.role;
-    return r === 'ADMIN' ? '/khotwaadmin' : r === 'ENTREPRENEUR' ? '/entrepreneur' : '/coach';
+    if (r === 'ADMIN') return '/khotwaadmin';
+    if (r === 'ENTREPRENEUR') return '/entrepreneur';
+    if (r === 'COACH') return '/coach';
+    return '/visitor';
   }
   get userInitials(): string {
     const f = this.auth.currentUser?.firstName?.trim() ?? '';
@@ -153,18 +183,43 @@ export class LayoutComponent implements OnInit {
     return u?.emailAddress || u?.email || '';
   }
 
-  // ── Page title ────────────────────────────────────────────────────────────
+isActive(item: NavItem): boolean {
+  return this.router.url.split('?')[0] === `${this.rolePrefix}/${item.route}`;
+}  //switchRole(role: UserRole) { this.auth.login(role); this.router.navigateByUrl(this.auth.getDefaultRoute()); }
+logout(): void {
+  const userId = this.auth.currentUser?.idUser
+    ?? (this.auth.currentUser?.id != null ? Number(this.auth.currentUser.id) : 0);
+  if (userId > 0) {
+    this.messageService.announceOffline(userId).subscribe({
+      error: () => {}
+    });
+    this.onlineStatusService.removeOnlineUser(userId);
+  }
+  this.onlineStatusService.clearOnlineUsers();
+  this.wsService.disconnect();
+  this.auth.logout();
+  this.router.navigateByUrl('/');
+}  // ── Page title ────────────────────────────────────────────────────────────
   get currentPageLabel(): string {
     const found = this.visibleNav.find(i => this.isActive(i));
     return found?.label ?? 'Dashboard';
   }
 
   // ── Notifications ─────────────────────────────────────────────────────────
-  get nonLus(): number { return this.notifService.nonLus(); }
-  get notifs()         { return this.notifService.notifs(); }
+  get nonLus(): number { return Math.min(this.notifService.nonLus(), 99); }
+  get notifs() { return this.notifService.latestFive(); }
 
-  logout(): void {
-    this.auth.logout();
-    this.router.navigateByUrl('/');
+  onNotificationClick(n: any): void {
+    this.notifService.markRead(n.id);
+    this.notifOpen = false;
+    if (n.link) {
+      this.router.navigateByUrl(n.link);
+      return;
+    }
+    if (n.senderId) {
+      this.router.navigate([`${this.rolePrefix}/messages`], { queryParams: { conversationId: n.senderId } });
+    } else {
+      this.router.navigate([`${this.rolePrefix}/messages`]);
+    }
   }
 }

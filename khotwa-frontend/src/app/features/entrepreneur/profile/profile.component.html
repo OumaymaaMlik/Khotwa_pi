@@ -195,102 +195,129 @@
       </div>
     </div>
 
+    <!-- Discount alert banner -->
+    <div class="discount-alert" *ngIf="hasAnyDiscount()">
+      <i class="bi bi-tag-fill"></i>
+      <div class="discount-alert__body">
+        <strong>Exclusive discount available!</strong>
+        <span>Your admin has granted you a special price on an upgrade plan. See the badges below.</span>
+      </div>
+    </div>
+
     <div class="plans-grid">
       <div
-        *ngFor="let plan of plans"
+        *ngFor="let item of plansWithDiscounts"
         class="plan-card"
         [ngClass]="{
-          'plan-card--premium': plan.type === 'PREMIUM',
-          'plan-card--institutional': plan.type === 'INSTITUTIONAL',
-          'plan-card--current': isCurrentPlan(plan)
+          'plan-card--premium':        item.offer.type === 'PREMIUM',
+          'plan-card--institutional':  item.offer.type === 'INSTITUTIONAL',
+          'plan-card--current':        isCurrentPlan(item.offer),
+          'plan-card--has-discount':   item.bestDiscount !== null
         }"
       >
-        <div class="plan-ribbon plan-ribbon--current" *ngIf="isCurrentPlan(plan)">
-          <i class="bi bi-check2-circle"></i>
-          Current Subscription
+        <!-- Current plan ribbon -->
+        <div class="plan-ribbon plan-ribbon--current"
+             *ngIf="isCurrentPlan(item.offer) && !item.bestDiscount">
+          <i class="bi bi-check2-circle"></i> Current Subscription
         </div>
-        <div class="plan-ribbon plan-ribbon--institutional" *ngIf="plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan)">
-          <i class="bi bi-star-fill"></i>
-          Enterprise
+        <!-- Enterprise ribbon -->
+        <div class="plan-ribbon plan-ribbon--institutional"
+             *ngIf="item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer) && !item.bestDiscount">
+          <i class="bi bi-star-fill"></i> Enterprise
+        </div>
+        <!-- Discount ribbon -->
+        <div class="plan-ribbon plan-ribbon--discount" *ngIf="item.bestDiscount">
+          <i class="bi bi-tag-fill"></i>
+          −{{ item.bestDiscount.discountPercent }}% · Exclusive offer
         </div>
 
         <div class="plan-top">
           <div>
-            <h3>{{ plan.label }}</h3>
-            <p>{{ plan.description }}</p>
+            <h3>{{ item.offer.label }}</h3>
+            <p>{{ item.offer.description }}</p>
           </div>
-          <span
-            class="plan-badge"
+          <span class="plan-badge"
             [ngClass]="{
-              'plan-badge--free': plan.type === 'FREE',
-              'plan-badge--premium': plan.type === 'PREMIUM',
-              'plan-badge--institutional': plan.type === 'INSTITUTIONAL'
-            }"
-          >
-            {{ plan.type === 'FREE' ? 'Free' : (plan.type === 'PREMIUM' ? 'Premium' : 'Gold') }}
+              'plan-badge--free':          item.offer.type === 'FREE',
+              'plan-badge--premium':       item.offer.type === 'PREMIUM',
+              'plan-badge--institutional': item.offer.type === 'INSTITUTIONAL'
+            }">
+            {{ item.offer.type === 'FREE' ? 'Free' : (item.offer.type === 'PREMIUM' ? 'Premium' : 'Gold') }}
           </span>
         </div>
 
-        <div class="plan-price">
-          <span
-            class="plan-price-val"
+        <!-- Normal price (no discount) -->
+        <div class="plan-price" *ngIf="!item.bestDiscount">
+          <span class="plan-price-val"
             [ngClass]="{
-              'plan-price-val--orange': isCurrentPlan(plan),
-              'plan-price-val--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan)
-            }"
-          >
-            {{ plan.prix === 0 ? 'Free' : plan.prix }}
+              'plan-price-val--orange': isCurrentPlan(item.offer),
+              'plan-price-val--gold':   item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer)
+            }">
+            {{ item.offer.prix === 0 ? 'Free' : item.offer.prix }}
           </span>
-          <span class="plan-price-unit" *ngIf="plan.prix !== 0">DT / month</span>
+          <span class="plan-price-unit" *ngIf="item.offer.prix !== 0">DT / month</span>
+        </div>
+
+        <!-- Discounted price -->
+        <div class="plan-price plan-price--discounted" *ngIf="item.bestDiscount">
+          <div class="plan-price-row">
+            <span class="plan-price-original-struck">{{ item.offer.prix | number:'1.2-2' }} DT</span>
+            <span class="plan-price-discount-chip">−{{ item.bestDiscount.discountPercent }}%</span>
+          </div>
+          <div class="plan-price-row">
+            <span class="plan-price-val plan-price-val--discount">
+              {{ item.bestDiscount.discountedPrice | number:'1.2-2' }}
+            </span>
+            <span class="plan-price-unit">DT / month</span>
+          </div>
+          <div class="plan-price-validity">
+            Valid until {{ formatDate(item.bestDiscount.validUntil) }}
+          </div>
         </div>
 
         <div class="plan-duration">
           <i class="bi bi-clock"></i>
-          {{ getDuration(plan) }}
+          {{ getDuration(item.offer) }}
         </div>
 
         <div class="plan-divider"></div>
 
         <ul class="plan-features">
-          <li
-            *ngFor="let item of getAvantagesList(plan.avantages || '')"
+          <li *ngFor="let feat of getAvantagesList(item.offer.avantages || '')"
             [ngClass]="{
-              'plan-features--orange': isCurrentPlan(plan),
-              'plan-features--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan)
-            }"
-          >
-            <i
-              class="bi bi-check2"
+              'plan-features--orange': isCurrentPlan(item.offer),
+              'plan-features--gold':   item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer)
+            }">
+            <i class="bi bi-check2"
               [ngClass]="{
-                'icon--orange': isCurrentPlan(plan),
-                'icon--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan),
-                'icon--teal': !isCurrentPlan(plan) && plan.type !== 'INSTITUTIONAL'
-              }"
-            ></i>
-            <span>{{ item }}</span>
+                'icon--orange': isCurrentPlan(item.offer),
+                'icon--gold':   item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer),
+                'icon--teal':   !isCurrentPlan(item.offer) && item.offer.type !== 'INSTITUTIONAL'
+              }"></i>
+            <span>{{ feat }}</span>
           </li>
         </ul>
 
         <button
           class="kh-btn kh-btn--full"
           [ngClass]="{
-            'kh-btn--current-disabled': isCurrentPlan(plan),
-            'kh-btn--gold': plan.type === 'INSTITUTIONAL' && !isCurrentPlan(plan),
-            'kh-btn--action': !isCurrentPlan(plan) && plan.type !== 'INSTITUTIONAL'
+            'kh-btn--current-disabled': isCurrentPlan(item.offer) && !item.bestDiscount,
+            'kh-btn--discount':         !!item.bestDiscount,
+            'kh-btn--gold':             item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer) && !item.bestDiscount,
+            'kh-btn--action':           !isCurrentPlan(item.offer) && item.offer.type !== 'INSTITUTIONAL' && !item.bestDiscount
           }"
-          [disabled]="isCurrentPlan(plan) || isProcessing || !canChangePlan(plan.type)"
-          (click)="openPlanModal(plan)"
+          [disabled]="(isCurrentPlan(item.offer) && !item.bestDiscount) || isProcessing || !canChangePlan(item.offer.type)"
+          (click)="openPlanModalWithDiscount(item.offer, item.bestDiscount)"
           style="margin-top:auto;"
         >
-          <i
-            class="bi"
+          <i class="bi"
             [ngClass]="{
-              'bi-check2-circle': isCurrentPlan(plan),
-              'bi-arrow-up-right': !isCurrentPlan(plan) && isUpgrade(plan.type),
-              'bi-arrow-repeat': !isCurrentPlan(plan) && !isUpgrade(plan.type)
-            }"
-          ></i>
-          {{ getButtonLabel(plan) }}
+              'bi-check2-circle':  isCurrentPlan(item.offer) && !item.bestDiscount,
+              'bi-tag-fill':       !!item.bestDiscount,
+              'bi-arrow-up-right': !isCurrentPlan(item.offer) && !item.bestDiscount && isUpgrade(item.offer.type),
+              'bi-arrow-repeat':   !isCurrentPlan(item.offer) && !item.bestDiscount && !isUpgrade(item.offer.type)
+            }"></i>
+          {{ item.bestDiscount ? 'Subscribe with −' + item.bestDiscount.discountPercent + '% off' : getButtonLabel(item.offer) }}
         </button>
       </div>
     </div>
