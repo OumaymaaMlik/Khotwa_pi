@@ -1,0 +1,4 @@
+package tn.khotwa.repository.SubscriptionRepo;
+
+public class DiscountRepository {
+}
