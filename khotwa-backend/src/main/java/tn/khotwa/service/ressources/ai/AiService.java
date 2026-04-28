@@ -1,4 +1,4 @@
-package tn.khotwa.service.ai;
+package tn.khotwa.service.ressources.ai;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeType;
 import tn.khotwa.entity.ressources.Ressource;
-import tn.khotwa.enums.ResourceType;
 import tn.khotwa.repository.ressources.RessourceRepository;
 
 import java.io.File;
@@ -182,7 +181,7 @@ public class AiService {
                 .text("Tu es un assistant pour entrepreneurs tunisiens. " +
                         "Décris ce que tu vois dans cette image en 3-4 phrases. " +
                         "Explique comment elle peut être utile pour un entrepreneur. " +
-                        "Réponds en français.")
+                        "Réponds en anglais.")
                 .media(List.of(media))
                 .build();
         try {
@@ -206,7 +205,7 @@ public class AiService {
                 - De quoi parle probablement cette vidéo
                 - Ce que l'entrepreneur va apprendre
                 - À qui elle s'adresse
-                Réponds en français.
+                Réponds en anglais.
                 """.formatted(
                 r.getTitre(),
                 isYoutube ? "C'est une vidéo YouTube." : "",
@@ -237,7 +236,7 @@ public class AiService {
                 ? """
                   Génère un résumé de 3 phrases pour une ressource web intitulée "%s".
                   URL : %s
-                  Réponds en français.
+                  Réponds en anglais.
                   """.formatted(r.getTitre(), r.getUrlExterne())
                 : """
                   Tu es un assistant pour entrepreneurs tunisiens.
@@ -254,7 +253,7 @@ public class AiService {
                 Tu es un assistant pour entrepreneurs tunisiens sur la plateforme Khotwa.
                 Une ressource de type %s est disponible avec le titre : "%s"
                 En te basant uniquement sur le titre, génère un résumé utile de 2-3 phrases.
-                Réponds en français.
+                Réponds en anglais.
                 """.formatted(type, titre);
         return safeCall(prompt, "Résumé non disponible pour le moment.");
     }
@@ -518,8 +517,19 @@ public class AiService {
             return chatClient.prompt().user(prompt).call().content();
         } catch (Exception e) {
             log.error("Erreur Appel IA : {}", e.getMessage());
-            if (e.getMessage() != null && e.getMessage().contains("429")) {
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            if (msg.contains("429")) {
                 return "Serveur saturé (Quota Google atteint). Réessayez dans 15 secondes.";
+            }
+            if (msg.contains("403") || msg.contains("leaked") || msg.contains("API key")) {
+                log.error("🔑 Clé API Google invalide ou compromise. Regénérez la clé sur https://aistudio.google.com/app/apikey");
+                return "Service IA temporairement indisponible (clé API invalide). Contactez l'administrateur.";
+            }
+            if (msg.contains("401")) {
+                return "Service IA non autorisé. Vérifiez la configuration de la clé API.";
+            }
+            if (msg.contains("500") || msg.contains("503")) {
+                return "Service Google Gemini temporairement indisponible. Réessayez dans quelques instants.";
             }
             return fallback;
         }

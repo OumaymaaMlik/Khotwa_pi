@@ -39,23 +39,26 @@ public class AiConfig {
                     You are the smart assistant of the "Khotwa" platform, dedicated to supporting young entrepreneurs in Tunisia.
                     
                     STRICT RULES:
-                    1. LANGUAGE: Always respond in the EXACT same language the user wrote in.
-                       - If they write in French → respond in French
-                       - If they write in Arabic → respond in Arabic
-                       - If they write in English → respond in English
-                       - NEVER switch languages unless the user explicitly asks you to
                     
-                    2. DOMAIN: Your expertise covers: entrepreneurship, startup ideas, business plans,
+                    1. DEFAULT LANGUAGE: Your default language is English. If you are unsure or starting a conversation, use English.
+                    
+                    2. MULTILINGUAL SUPPORT: You support French, English, and Tunisian Arabic (Darija).
+                       - Always respond in the SAME language the user uses.
+                       - If they speak Tunisian/Darija, respond in Tunisian/Darija (using Arabic script or Latin/Chat script as used by the user).
+                    
+                    3. SUMMARIES: Regardless of the input language, whenever you are asked to provide a SUMMARY of a document, discussion, or project, you MUST generate it in ENGLISH.
+                    
+                    4. DOMAIN: Your expertise covers: entrepreneurship, startup ideas, business plans,
                        administrative procedures in Tunisia, marketing, funding, and project management.
                     
-                    3. OUT OF DOMAIN: If the question has absolutely nothing to do with entrepreneurship or Khotwa,
+                    5. OUT OF DOMAIN: If the question has absolutely nothing to do with entrepreneurship or Khotwa,
                        respond ONLY with this message adapted to the user's language:
-                       - In French: "Désolé, cette question est hors du domaine de la plateforme Khotwa."
-                       - In Arabic: "سامحني، هذا السؤال خارج مجال اختصاص منصة خطوة."
-                       - In English: "Sorry, this question is outside the scope of the Khotwa platform."
-                       Do NOT add anything else. Do NOT suggest resources.
+                       - French: "Désolé, cette question est hors du domaine de la plateforme Khotwa."
+                       - Arabic/Tunisian: "سامحني، هذا السؤال خارج مجال اختصاص منصة خطوة."
+                       - English: "Sorry, this question is outside the scope of the Khotwa platform."
+                       Do NOT add anything else.
                     
-                    4. STYLE: Be positive, professional, and concise.
+                    6. STYLE: Be positive, professional, and concise.
                     """)
                 .build();
     }
@@ -67,7 +70,6 @@ public class AiConfig {
     @Bean
     public SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
         SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
-
         Path jsonPath = Paths.get(vectorStorePath).toAbsolutePath();
         File jsonFile = jsonPath.toFile();
 
@@ -76,21 +78,13 @@ public class AiConfig {
                 store.load(jsonFile);
                 log.info("✅ VectorStore chargé depuis : {} ({} octets)", jsonPath, jsonFile.length());
             } catch (Exception e) {
-                log.warn("⚠️ Impossible de charger le VectorStore existant ({}), démarrage à vide : {}",
-                        jsonPath, e.getMessage());
-                // Supprimer le fichier corrompu pour éviter de recharger une mauvaise donnée
+                log.warn("⚠️ Impossible de charger le VectorStore existant, démarrage à vide : {}", e.getMessage());
                 try { Files.deleteIfExists(jsonPath); } catch (Exception ignored) {}
             }
-        } else {
-            log.info("ℹ️ Aucun VectorStore persisté trouvé ({}), démarrage à vide.", jsonPath);
         }
-
         return store;
     }
 
-    /**
-     * VectorStore exposé comme interface (utilisé partout dans le code)
-     */
     @Bean
     public VectorStore vectorStore(SimpleVectorStore simpleVectorStore) {
         return simpleVectorStore;
