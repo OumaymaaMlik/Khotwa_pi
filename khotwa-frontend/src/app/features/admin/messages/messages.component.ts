@@ -506,7 +506,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   getColor(id: number): string {
-    const colors = ['#2ABFBF', '#7C5CBF', '#E8622A', '#27AE7A', '#F5A623'];
+    const colors = ['#2ABFBF', '#7C5CBF', '#2ABFBF', '#27AE7A', '#2ABFBF'];
     return colors[id % colors.length];
   }
 

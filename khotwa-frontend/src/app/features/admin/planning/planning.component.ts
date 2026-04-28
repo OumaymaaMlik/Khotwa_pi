@@ -66,7 +66,7 @@ export class AdminPlanningComponent implements OnInit {
   monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   dayNames = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   calEvents = [
-    {id:'e1',titre:'Pitch Day',date:5,type:'evenement',couleur:'#E8622A'},
+    {id:'e1',titre:'Pitch Day',date:5,type:'evenement',couleur:'#2ABFBF'},
     {id:'e2',titre:'Livraison MVP',date:12,type:'deadline',couleur:'#E84A4A'},
     {id:'e3',titre:'Sprint Review',date:15,type:'rdv',couleur:'#2ABFBF'},
     {id:'e4',titre:'Demo Client',date:22,type:'rdv',couleur:'#7C5CBF'},
@@ -89,7 +89,7 @@ export class AdminPlanningComponent implements OnInit {
   conversations = [
     {id:'c1',nom:'Sara Trabelsi',initials:'ST',color:'#2ABFBF',lastMsg:'Hello, I updated the deliverables',time:'11:24',unread:2,messages:[{from:'Sara',text:'Hello! I updated the sprint deliverables',time:'11:20',mine:false},{from:'Moi',text:"Great, I'll check that",time:'11:22',mine:true}]},
     {id:'c2',nom:'Ahmed Coach',initials:'AC',color:'#7C5CBF',lastMsg:'Coaching session confirmed',time:'10:15',unread:0,messages:[{from:'Ahmed',text:'Coaching session confirmed for Friday 2pm',time:'10:15',mine:false}]},
-    {id:'c3',nom:'KHOTWA Team',initials:'KH',color:'#E8622A',lastMsg:'Reminder: webinar tomorrow 10am',time:'09:00',unread:1,messages:[{from:'KHOTWA',text:'Reminder: webinar tomorrow at 10am',time:'09:00',mine:false}]},
+    {id:'c3',nom:'KHOTWA Team',initials:'KH',color:'#2ABFBF',lastMsg:'Reminder: webinar tomorrow 10am',time:'09:00',unread:1,messages:[{from:'KHOTWA',text:'Reminder: webinar tomorrow at 10am',time:'09:00',mine:false}]},
   ];
   selectedConv: any = null;
   newMsg = '';
@@ -102,3 +102,4 @@ export class AdminPlanningComponent implements OnInit {
   onMsgKey(e:KeyboardEvent) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.sendMsg();} }
   delete(id:string) { this.projetService.delete(id); }
 }
+

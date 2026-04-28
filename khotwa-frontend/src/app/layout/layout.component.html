@@ -1,4 +1,6 @@
-<div class="app-shell" [class.sidebar-open]="sidebarOpen">
+<div class="app-shell"
+     [class.sidebar-open]="sidebarOpen"
+     [class.sidebar-collapsed]="!sidebarOpen && !sidebarMobile">
 
   <!-- ══ Mobile overlay ══ -->
   <div class="overlay" *ngIf="sidebarOpen && sidebarMobile" (click)="closeOnMobile()"></div>
@@ -7,11 +9,7 @@
     <!-- Brand -->
     <div class="sidebar__brand">
       <img src="assets/khotwa-logo.png" alt="KHOTWA" style="height:36px;width:auto;object-fit:contain;" />
-      <div class="brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ', #FF9A5C)'">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-        </svg>
-      </div>
+      
       <div class="brand-text">
         <span class="brand-name">KHOTWA</span>
         <span class="brand-role" [style.color]="roleColor">{{ roleLabel }}</span>
@@ -83,7 +81,7 @@
         </div>
         <div class="user-info">
           <p class="user-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
-          <p class="user-email">{{ auth.currentUser?.emailAddress || '' }}</p>
+          <p class="user-email">{{ userEmail }}</p>
         </div>
         <button class="logout-btn" (click)="logout()" title="Sign out">
           <span [innerHTML]="getIcon('logout')"></span>
@@ -103,7 +101,7 @@
 
       <!-- Expand hint shown when collapsed on desktop -->
       <button class="topbar__expand-brand" *ngIf="!sidebarOpen && !sidebarMobile" (click)="toggleSidebar()">
-        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#FF9A5C)'">
+        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#5AD5D5)'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
@@ -111,11 +109,7 @@
       </button>
 
       <!-- Breadcrumb -->
-      <div class="topbar__breadcrumb">
-        <span class="bc-root">{{ roleLabel }}</span>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">{{ currentPageLabel }}</span>
-      </div>
+     
 
       <!-- Search -->
       <div class="topbar__search">

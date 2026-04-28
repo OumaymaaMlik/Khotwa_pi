@@ -1,4 +1,4 @@
-package tn.khotwa.config;
+package tn.khotwa.config.ressourceAi;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,16 +12,7 @@ import tn.khotwa.service.ai.AiService;
 import java.io.File;
 import java.nio.file.Paths;
 
-/**
- * FIX 2 — Évite la double indexation au démarrage
- *
- * Logique :
- *  - Si le fichier vector-store.json existe ET est non vide → déjà indexé, on skip
- *  - Sinon → on indexe et on sauvegarde
- *
- * Pour forcer une ré-indexation complète : supprimer le fichier vector-store.json
- * ou appeler POST /api/ai/indexation/refresh
- */
+
 @Component
 @RequiredArgsConstructor
 @Slf4j

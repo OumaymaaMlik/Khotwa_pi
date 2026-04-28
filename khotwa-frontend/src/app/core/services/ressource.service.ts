@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams,HttpRequest  } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export type PlanType       = 'FREE' | 'PREMIUM' | 'INSTITUTIONAL';
@@ -31,7 +31,7 @@ export interface Ressource {
 }
 
 export interface Categorie {
-  id: number; nom: string; description: string; couleur: string; icone: string;
+  id: number; nom: string; description: string; couleur: string; icone: string; secteur?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -64,9 +64,10 @@ export class RessourceService {
   }
 
   createRessourceHttp(fd: FormData, adminId = 1): Observable<any> {
-    return this.http.post<any>(`${this.api}/ressources`, fd, {
-      headers: {}
+    const req = new HttpRequest('POST', `${this.api}/ressources`, fd, {
+      reportProgress: true,
     });
+    return this.http.request(req);
   }
 
   updateRessourceHttp(id: number, body: any): Observable<any> {

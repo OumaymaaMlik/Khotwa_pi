@@ -24,10 +24,12 @@
 .prog-pct { font-size: 11px; font-weight: 700; color: var(--text-secondary); width: 30px; text-align: right; }
 .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .qa-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-app); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: var(--text-primary); text-decoration: none; transition: all 0.15s; }
-.qa-btn:hover { background: var(--orange-light); color: var(--orange); }
+.qa-btn:hover { background: var(--teal-light); color: var(--teal); }
 .alert-list { display: flex; flex-direction: column; gap: 10px; }
 .alert-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--bg-app); }
 .alert-item--red { background: rgba(232,74,74,0.06); }
-.alert-item--amber { background: rgba(245,166,35,0.06); }
+.alert-item--amber { background: rgba(42,191,191,0.06); }
 .alert-title { font-size: 13px; font-weight: 600; }
 .alert-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+

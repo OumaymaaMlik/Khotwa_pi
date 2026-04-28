@@ -20,7 +20,7 @@
 .feedback-item {
   background: #fff;
   border: 1px solid #e4edf2;
-  border-left: 4px solid #e8622a;
+  border-left: 4px solid #2ABFBF;
   border-radius: 12px;
   padding: 14px;
 }
@@ -59,7 +59,7 @@
 }
 
 .status.unread {
-  color: #e8622a;
+  color: #2ABFBF;
   background: #fff3ee;
 }
 
@@ -81,7 +81,7 @@
 .actions button {
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #2abfbf, #e8622a);
+  background: linear-gradient(135deg, #2abfbf, #2ABFBF);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -95,3 +95,4 @@
   padding: 14px;
   text-align: center;
 }
+

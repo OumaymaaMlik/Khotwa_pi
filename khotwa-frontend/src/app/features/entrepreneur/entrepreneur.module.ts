@@ -20,8 +20,6 @@ import { EntrepreneurAccountPageComponent }  from './account-page/account-page.c
 import { EntrepreneurEvenementsComponent }   from './Events/events.component';
 
 // ── Composants IA ──────────────────────────────────────────
-import { AiSearchComponent }  from '../../ressourceAi/ai-search/ai-search.component';
-import { AiChatbotComponent } from '../../ressourceAi/ai-chatbot/ai-chatbot.component';
 import { AiResumeComponent }  from '../../ressourceAi/ai-resume/ai-resume.component';
 
 const routes: Routes = [
@@ -63,8 +61,6 @@ const routes: Routes = [
     EntrepreneurAccountPageComponent,
     EntrepreneurEvenementsComponent,
     // ── IA ──
-    AiSearchComponent,
-    AiChatbotComponent,
     AiResumeComponent,
   ],
   imports: [

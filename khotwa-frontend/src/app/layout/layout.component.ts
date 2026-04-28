@@ -11,7 +11,13 @@ import { filter } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 
-interface NavItem { label: string; icon: string; route: string; roles: UserRole[]; }
+interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+  roles: UserRole[];
+  section?: 'Main' | 'Finance & Users' | 'Content';
+}
 
 @Component({ selector: 'app-layout', templateUrl: './layout.component.html', styleUrls: ['./layout.component.css'] })
 export class LayoutComponent implements OnInit, OnDestroy {
@@ -29,21 +35,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private feedbackPollTimer?: ReturnType<typeof setInterval>;
 
   navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: 'dashboard', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
-
+    { label: 'Dashboard', icon: 'dashboard', route: 'dashboard', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'], section: 'Main' },
     { label: 'Projects', icon: 'folder', route: 'projets', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
-
-    { label: 'Library', icon: 'book', route: 'bibliotheque', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
-
-    { label: 'Talent Market', icon: 'people', route: 'talent', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
-    { label: 'Events',       icon: 'event',     route: 'evenements',   roles: ['ADMIN','ENTREPRENEUR','COACH', 'VISITOR'] },
-    { label: 'Messages',    icon: 'message',   route: 'messages',     roles: ['ADMIN','ENTREPRENEUR','COACH'] },
+    { label: 'Messages', icon: 'message', route: 'messages', roles: ['ADMIN','ENTREPRENEUR','COACH'] },
 
 
     // ADMIN ONLY
-    { label: 'Users', icon: 'users', route: 'utilisateurs', roles: ['ADMIN'] },
     { label: 'Subscriptions', icon: 'card', route: 'subscriptions', roles: ['ADMIN'] },
     { label: 'Feedbacks', icon: 'message', route: 'feedbacks', roles: ['ADMIN'] },
+
+    // CONTENT
+    { label: 'Library', icon: 'book', route: 'bibliotheque', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'], section: 'Content' },
+    { label: 'Events', icon: 'event', route: 'evenements', roles: ['ADMIN','ENTREPRENEUR','COACH', 'VISITOR'] },
+    { label: 'Talent Market', icon: 'people', route: 'talent', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'] },
 
     // COACH ONLY
     { label: 'My Startups', icon: 'rocket', route: 'startups', roles: ['COACH'] },
@@ -160,7 +164,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return this.safeIconCache[name];
   }
   getSectionIcon(section?: string): SafeHtml {
-    if (section === 'Admin') return this.getIcon('users');
+    if (section === 'Finance & Users') return this.getIcon('card');
+    if (section === 'Content') return this.getIcon('book');
     return this.getIcon('dashboard');
   }
 
@@ -175,7 +180,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   get roleColor(): string {
     const r = this.auth.currentUser?.role;
-    if (r === 'ADMIN') return '#E8622A';
+    if (r === 'ADMIN') return '#2ABFBF';
     if (r === 'ENTREPRENEUR') return '#2ABFBF';
     if (r === 'COACH') return '#7C5CBF';
     return '#F5A623';
