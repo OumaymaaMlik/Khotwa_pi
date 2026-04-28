@@ -27,8 +27,13 @@
 .assign-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.42);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px; }
 .assign-modal { width:min(480px,100%);background:white;border-radius:20px;padding:22px;border:1px solid var(--border);box-shadow:var(--shadow-lg); }
 .assign-modal--wide { width:min(760px,100%);max-height:88vh;overflow:auto; }
+.assign-modal--coachs { width:min(820px,100%);padding:24px; }
 .assign-modal--success { width:min(460px,100%); }
 .project-details-modal { width:min(760px,100%); }
+.assign-modal-header--coachs h3 { font-size:36px;line-height:1.08;letter-spacing:-0.02em; }
+.project-details-header { margin-bottom:2px; }
+.project-details-title-wrap { display:flex;flex-direction:column;gap:2px; }
+.project-details-kicker { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8; }
 .assign-modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
 .assign-modal-header h3 { font-family:"Plus Jakarta Sans",sans-serif;font-size:20px;font-weight:800; }
 .assign-modal-close { border:none;background:transparent;color:var(--text-muted);font-size:24px;line-height:1;cursor:pointer;padding:0 4px; }
@@ -55,17 +60,37 @@
 .metric-pill--risk { color:#a33a2a;background:rgba(235,87,87,0.13);border-color:rgba(235,87,87,0.28); }
 .metric-pill--neutral { color:#4b5563;background:#eef1f6;border-color:#dde2eb; }
 .assign-flow-step { margin:12px 0 6px;font-size:12px;font-weight:700;color:#475569; }
+.assign-step-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+.assign-step-card { border:1px solid var(--border);border-radius:14px;padding:12px;background:#fcfcfe; }
+.assign-step-card--primary { margin-bottom:12px; }
+.assign-step-card .assign-flow-step { margin-top:0; }
+.assign-step-card .assign-select { background:white; }
+.assign-actions--coachs { position:sticky;bottom:0;background:linear-gradient(to top,#fff 75%,rgba(255,255,255,0));padding-top:14px;margin-top:14px; }
+.project-details-summary { display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px; }
+.project-details-summary .assign-modal-sub { margin:0; }
+.project-status-pill { display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:0.04em;border:1px solid transparent;white-space:nowrap; }
+.project-status-pill--teal { background:rgba(42,191,191,0.12);border-color:rgba(42,191,191,0.28);color:#0f7f7f; }
+.project-status-pill--green { background:rgba(39,174,122,0.12);border-color:rgba(39,174,122,0.28);color:#187a55; }
+.project-status-pill--amber { background:rgba(245,166,35,0.14);border-color:rgba(245,166,35,0.3);color:#8a6208; }
 .project-details-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 18px; }
 .project-details-item { padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:#fbfbfd;display:flex;flex-direction:column;gap:4px; }
 .project-details-item span { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted); }
 .project-details-item strong { font-size:13px;color:var(--text-primary);line-height:1.4; }
+.project-details-progress { margin-top:3px; }
 .project-details-section { margin-top:14px; }
 .project-details-text { font-size:13px;line-height:1.6;color:var(--text-secondary);margin:0; }
-.project-details-list { margin:0;padding-left:18px;color:var(--text-secondary);font-size:13px;line-height:1.6; }
+.project-details-list { margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px; }
+.project-details-list li { border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fcfcfd;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--text-secondary);font-size:13px; }
+.coach-role-pill { padding:4px 8px;border-radius:999px;background:#eef1f6;border:1px solid #dde2eb;color:#4b5563;font-size:11px;font-weight:700;white-space:nowrap; }
 
 @media (max-width: 720px) {
 	.project-details-grid { grid-template-columns:1fr; }
 	.rec-card__head { flex-direction:column;align-items:flex-start; }
+	.project-details-summary { flex-direction:column;align-items:flex-start; }
+	.project-details-list li { flex-direction:column;align-items:flex-start; }
+	.assign-step-grid { grid-template-columns:1fr; }
+	.assign-modal--coachs { padding:18px; }
+	.assign-modal-header--coachs h3 { font-size:28px; }
 }
 
 

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LayoutModule } from '../../layout/layout.module';
 import { LayoutComponent } from '../../layout/layout.component';
+import { SharedModule } from '../../shared/shared.module';
 
 import { AdminDashboardComponent }    from './dashboard/dashboard.component';
 import { AdminProjetsComponent }       from './projets/projets.component';
@@ -46,6 +47,6 @@ const routes: Routes = [
     AdminEvenementsComponent, SubscriptionsComponent,
     AdminTalentComponent,AdminNotificationsComponent ,AdminFeedbacksComponent,
   ],
-  imports: [CommonModule, FormsModule, LayoutModule, RouterModule.forChild(routes)],
+  imports: [CommonModule, FormsModule, LayoutModule, SharedModule,RouterModule.forChild(routes)],
 })
 export class AdminModule {}

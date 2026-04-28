@@ -1,6 +1,5 @@
 package tn.khotwa.service.ressources.ai;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -14,6 +13,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.PathResource;
@@ -34,15 +34,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class AiService {
 
     private final ChatClient            chatClient;
     private final ChatModel             chatModel;
     private final VectorStore           vectorStore;
-    private final SimpleVectorStore     simpleVectorStore;  // pour save()
+    private final SimpleVectorStore     simpleVectorStore;
     private final RessourceRepository   ressourceRepository;
+
+    public AiService(
+            @Qualifier("geminiChatClient") ChatClient chatClient,
+            @Qualifier("googleGenAiChatModel") ChatModel chatModel,
+            VectorStore vectorStore,
+            SimpleVectorStore simpleVectorStore,
+            RessourceRepository ressourceRepository) {
+        this.chatClient = chatClient;
+        this.chatModel = chatModel;
+        this.vectorStore = vectorStore;
+        this.simpleVectorStore = simpleVectorStore;
+        this.ressourceRepository = ressourceRepository;
+    }
 
     @Value("${app.upload.dir}")
     private String uploadDir;

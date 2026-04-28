@@ -20,6 +20,12 @@ public record UpdateProfileRequest(
         String phoneNumber,
 
         @Size(max = 255, message = "Startup must be at most 255 characters.")
-        String startup
+        String startup,
+
+        @Size(max = 100, message = "Specialite must be at most 100 characters.")
+        String specialite,
+
+        @Size(max = 50, message = "Disponibilite must be at most 50 characters.")
+        String disponibilite
 ) {
 }

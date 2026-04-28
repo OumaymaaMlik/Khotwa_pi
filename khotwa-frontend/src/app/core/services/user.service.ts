@@ -11,6 +11,8 @@ export interface UpdateProfilePayload {
   phoneNumber?: string;
   startup?: string;
   avatar?: string;
+  specialite?: string;    // AJOUT — spécialité du coach
+  disponibilite?: string; // AJOUT — plage de dates "YYYY-MM-DD/YYYY-MM-DD"
 }
 
 export interface ChangePasswordPayload {

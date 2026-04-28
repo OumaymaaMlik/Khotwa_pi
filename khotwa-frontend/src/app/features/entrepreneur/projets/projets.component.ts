@@ -2,9 +2,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { MessageService } from '../../../core/services/message.service';
 import { ProjetService, ProjetDraftInput } from '../../../core/services/projet.service';
-import { Projet, SecteurProjet, SECTEUR_PROJET_OPTIONS, getDisciplineLevelClass, formatProjetStatusLabel } from '../../../core/models';
+import { Projet, SecteurProjet, SECTEUR_PROJET_OPTIONS, getDisciplineLevelClass, formatProjetStatusLabel, parseBmc, stringifyBmc, BmcData, EMPTY_BMC } from '../../../core/models';
+import { AiPitchService, PitchFieldKey } from '../../../core/services/ai-pitch.service';
+
 
 // ─── Types locaux ────────────────────────────────────────────────────────────
 
@@ -34,6 +35,41 @@ interface AssignedCoach {
   coachId: number;
   coachNomAffiche?: string;
   roleCoachProjet: 'COACH_PRINCIPAL' | 'COACH_SECONDAIRE' | 'EXPERT_METIER';
+}
+
+interface AssignedCoachApiRow {
+  coachId?: number | string;
+  roleCoachProjet?: 'COACH_PRINCIPAL' | 'COACH_SECONDAIRE' | 'EXPERT_METIER' | string;
+  coachNomAffiche?: string;
+  nomAffiche?: string;
+  fullName?: string;
+  coachName?: string;
+  nom?: string;
+  prenom?: string;
+  firstName?: string;
+  lastName?: string;
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    emailAddress?: string;
+  };
+  coach?: {
+    firstName?: string;
+    lastName?: string;
+    nom?: string;
+    prenom?: string;
+    nomAffiche?: string;
+    fullName?: string;
+  };
+  utilisateur?: {
+    firstName?: string;
+    lastName?: string;
+    nom?: string;
+    prenom?: string;
+    nomAffiche?: string;
+    fullName?: string;
+  };
+  [key: string]: unknown;
 }
 
 interface WorkflowTache {
@@ -188,7 +224,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   correctionGuideSeenByProjectId: Record<string, string> = {};
   currentCalendarCursor = this.createMonthAnchor(new Date());
   createProjectStep = 1;
-  readonly createProjectStepCount = 4;
+  readonly createProjectStepCount = 5;
   readonly minProjectDurationDays = 30;
 
   // ── Données projet & tâches ────────────────────────────────────────────────
@@ -215,11 +251,11 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   // ── Colonnes Kanban ────────────────────────────────────────────────────────
   readonly boardColumns: WorkflowBoardColumn[] = [
-    { key: 'A_FAIRE',      title: 'A_FAIRE',       subtitle: 'Waiting to start',   tone: 'teal'  },
-    { key: 'EN_COURS',     title: 'EN_COURS',      subtitle: 'In progress',        tone: 'teal'  },
-    { key: 'A_CORRIGER',   title: 'A_CORRIGER',    subtitle: 'Needs correction',   tone: 'red'   },
-    { key: 'EN_CORRECTION',title: 'EN_CORRECTION', subtitle: 'Under correction',   tone: 'amber' },
-    { key: 'TERMINEE',     title: 'TERMINEE',      subtitle: 'Completed',          tone: 'green' },
+    { key: 'A_FAIRE',      title: 'TO_DO',       subtitle: 'Waiting to start',   tone: 'teal'  },
+    { key: 'EN_COURS',     title: 'IN_PROGRESS',      subtitle: 'In progress',        tone: 'teal'  },
+    { key: 'A_CORRIGER',   title: 'TO_FIX',    subtitle: 'Needs correction',   tone: 'red'   },
+    { key: 'EN_CORRECTION',title: 'IN_REVIEW', subtitle: 'Under correction',   tone: 'amber' },
+    { key: 'TERMINEE',     title: 'COMPLETED',      subtitle: 'Completed',          tone: 'green' },
   ];
 
   readonly taskStatusOptions: StatutTache[] = ['A_FAIRE', 'EN_COURS', 'A_CORRIGER', 'EN_CORRECTION', 'TERMINEE', 'EN_RETARD', 'BLOQUEE'];
@@ -237,7 +273,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   conversationForm = {
     nomStartup: '',
     secteur: '' as SecteurProjetInput,
-    stadeProjet: 'IDEE' as ProjetDraftInput['stadeProjet'],
+    stadeProjet: '' as ProjetDraftInput['stadeProjet'],
     pitch: '',
     dateDebutProjet: '',
     dateFinProjet: '',
@@ -246,20 +282,36 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     innovationDescription: '',
     scalabiliteDescription: '',
     pocDisponible: false,
+    bmc: {
+    propositionValeur: '',
+    segmentsClientele: '',
+    canaux: '',
+    relationsClients: '',
+    sourcesRevenus: '',
+    ressourcesCles: '',
+    activitesCles: '',
+    structureCouts: '',
+    partenaires: '',
+  }
   };
+  editBmc: BmcData = { ...EMPTY_BMC };
 
   // ── Constantes privées ─────────────────────────────────────────────────────
   private readonly apiUrl = 'http://localhost:8084/khotwa';
   private readonly selectedProjectStorageKey = 'entrepreneur-selected-project-id';
   private readonly pendingCoachApprovalStorageKey = 'entrepreneur-pending-coach-approval-project-ids';
   private waitingApprovalPollHandle: ReturnType<typeof setInterval> | null = null;
+  private coachNameById: Record<number, string> = {};
+  private coachDirectoryLoaded = false;
+  private coachDirectoryLoading = false;
 
   constructor(
     public projetService: ProjetService,
     private http: HttpClient,
     private authService: AuthService,
     private router: Router,
-    private messageService: MessageService,
+    private aiPitchService: AiPitchService,  // ← ajouter
+
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -281,15 +333,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     this.projetService.loadEntrepreneurProjects().subscribe({
       next: (projects) => {
-        console.log('[DEBUG] All loaded projects:', projects);
         projects.forEach(p => {
-          console.log(`[DEBUG] Project ${p.id} projectCorrectionRequired:`, p.projectCorrectionRequired);
-          if (p.projectCorrectionRequired) {
-            const corrKey = this.getCorrectionGuideStorageKey(p);
-            if (localStorage.getItem(corrKey)) {
-              this.correctionGuideSeenByProjectId[p.id] = corrKey;
-            }
-          }
+          // ...existing code...
         });
         const persistedProjectId = this.getPersistedSelectedProjectId();
         const persistedProject = persistedProjectId
@@ -299,7 +344,16 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
           const currentProject = this.selectedWorkflowProject
             ? projects.find((project) => project.id === this.selectedWorkflowProject?.id)
             : null;
-          this.selectProject(persistedProject ?? currentProject ?? projects[0]);
+          const selected = persistedProject ?? currentProject ?? projects[0];
+          this.selectProject(selected);
+          // CHARGEMENT AUTO DES TÂCHES ET SOUS-TÂCHES POUR LE PROJET SÉLECTIONNÉ
+          this.http.get<any[]>(`${this.apiUrl}/entrepreneur/projets/${selected.id}/taches`).subscribe({
+            next: (tasks) => {
+              this.workflowTaches = tasks;
+              tasks.forEach(task => this.loadSousTaches(task.id));
+            },
+            error: () => {}
+          });
         }
       },
       error: () => {
@@ -323,7 +377,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   get selectedProjectName(): string {
-    return this.selectedWorkflowProject?.titre ?? 'Choisir un projet';
+    return this.selectedWorkflowProject?.titre ?? 'Choose a project';
   }
 
   openProjectDetailsModal(): void { this.showProjectDetailsModal = true; }
@@ -355,7 +409,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Démarre le rafraîchissement automatique (toutes les 60 s). */
+  /** Starts automatic refresh (every 60s). */
   private startCountdownRefresh(): void {
     this.stopCountdownRefresh();
     this.countdownRefreshInterval = setInterval(() => {
@@ -385,26 +439,26 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
   /**
    * Formate le label lisible du compteur à rebours.
-   * Exemples :
-   *   "⚠️ En retard de 3 jour(s)"
-   *   "🔴 Deadline aujourd'hui !"
-   *   "🟠 2j restant(s) — pas encore démarré !"
-   *   "⏳ 10 jour(s) restant(s)"
+   * Examples:
+   *   "Late by 3 day(s)"
+   *   "Deadline is today!"
+   *   "2 day(s) left - not started yet"
+   *   "10 day(s) left"
    */
   formatCountdownLabel(countdown: CountdownInfo | undefined): string {
     if (!countdown || countdown.dateFin == null) { return ''; }
 
     if (countdown.enRetard) {
-      return `⚠️ En retard de ${countdown.retardJours} jour(s)`;
+      return `Late by ${countdown.retardJours} day(s)`;
     }
     if (countdown.joursRestants === 0) {
-      return '🔴 Deadline aujourd\'hui !';
+      return 'Deadline is today!';
     }
     if (countdown.joursRestants != null && countdown.joursRestants > 0) {
       if (countdown.urgence) {
-        return `🟠 ${countdown.joursRestants}j restant(s) — pas encore démarré !`;
+        return `${countdown.joursRestants} day(s) left - not started yet`;
       }
-      return `⏳ ${countdown.joursRestants} jour(s) restant(s)`;
+      return `${countdown.joursRestants} day(s) left`;
     }
     return '';
   }
@@ -445,7 +499,17 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       innovationDescription: '',
       scalabiliteDescription: '',
       pocDisponible: false,
-    };
+      bmc: {
+      propositionValeur: '',
+      segmentsClientele: '',
+      canaux: '',
+      relationsClients: '',
+      sourcesRevenus: '',
+      ressourcesCles: '',
+      activitesCles: '',
+      structureCouts: '',
+      partenaires: '',
+    } };
     this.showCreateProjectModal = true;
   }
 
@@ -466,9 +530,11 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   canContinueCurrentCreateStep(): boolean {
-    if (this.createProjectStep === 1) { return this.conversationForm.nomStartup.trim().length >= 3; }
-    if (this.createProjectStep === 2) { return !!this.conversationForm.secteur; }
-    if (this.createProjectStep === 3) { return !!this.conversationForm.stadeProjet; }
+  if (this.createProjectStep === 1) { return this.conversationForm.nomStartup.trim().length >= 3; }
+  if (this.createProjectStep === 2) { return !!this.conversationForm.secteur; }
+  if (this.createProjectStep === 3) { return !!this.conversationForm.stadeProjet; }
+  if (this.createProjectStep === 4) {
+    // Étape 4 : pitch + dates
     if (this.conversationForm.pitch.trim().length < 10) { return false; }
     return this.getProjectTimelineValidationError(
       this.conversationForm.dateDebutProjet,
@@ -476,6 +542,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       true,
     ) === null;
   }
+  // Étape 5 : BMC — au moins proposition de valeur et sources de revenus obligatoires
+  return this.conversationForm.bmc.propositionValeur.trim().length >= 5
+      && this.conversationForm.bmc.sourcesRevenus.trim().length >= 5;
+}
 
   getConversationTimelineValidationError(): string | null {
     return this.getProjectTimelineValidationError(
@@ -515,7 +585,17 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       secteur,
       problemeAdresse: pitch,
       solutionProposee: this.conversationForm.solutionProposee.trim() || `Solution proposée pour ${name}`,
-      businessModel: this.conversationForm.businessModel.trim() || `Modèle économique initial de ${name}`,
+      businessModel: stringifyBmc({
+      propositionValeur: this.conversationForm.bmc.propositionValeur.trim(),
+      segmentsClientele: this.conversationForm.bmc.segmentsClientele.trim(),
+      canaux:            this.conversationForm.bmc.canaux.trim(),
+      relationsClients:  this.conversationForm.bmc.relationsClients.trim(),
+      sourcesRevenus:    this.conversationForm.bmc.sourcesRevenus.trim(),
+      ressourcesCles:    this.conversationForm.bmc.ressourcesCles.trim(),
+      activitesCles:     this.conversationForm.bmc.activitesCles.trim(),
+      structureCouts:    this.conversationForm.bmc.structureCouts.trim(),
+      partenaires:       this.conversationForm.bmc.partenaires.trim(),
+      }),     
       stadeProjet: this.conversationForm.stadeProjet,
       innovationDescription: this.conversationForm.innovationDescription.trim() || 'Initial draft generated from conversational flow.',
       scalabiliteDescription: this.conversationForm.scalabiliteDescription.trim() || 'Scalability plan to be detailed with coach.',
@@ -546,24 +626,32 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════════════════════════
 
   openEditProject(project: Projet): void {
-    this.submitMessage = '';
-    this.editingProject = project;
-    this.form = {
-      nomStartup: project.titre,
-      description: project.description,
-      secteur: project.secteur ?? '',
-      problemeAdresse: project.problemeAdresse ?? '',
-      solutionProposee: project.solutionProposee ?? '',
-      businessModel: project.businessModel ?? '',
-      stadeProjet: project.stadeProjet ?? 'IDEE',
-      innovationDescription: project.innovationDescription ?? '',
-      scalabiliteDescription: project.scalabiliteDescription ?? '',
-      pocDisponible: project.pocDisponible ?? false,
-      dateDebutProjet: this.toDateInputValue(project.dateDebutProjet),
-      dateFinProjet: this.toDateInputValue(project.dateFinProjet),
-    };
-    this.showProjectModal = true;
-  }
+  this.submitMessage = '';
+  this.editingProject = project;
+
+  // Parser le BMC existant depuis businessModel
+  const bmc = parseBmc(project.businessModel);
+
+  this.form = {
+    nomStartup:            project.titre,
+    description:           project.description,
+    secteur:               project.secteur ?? '',
+    problemeAdresse:       project.problemeAdresse ?? '',
+    solutionProposee:      project.solutionProposee ?? '',
+    businessModel:         project.businessModel ?? '',  // conservé tel quel
+    stadeProjet:           project.stadeProjet ?? 'IDEE',
+    innovationDescription: project.innovationDescription ?? '',
+    scalabiliteDescription:project.scalabiliteDescription ?? '',
+    pocDisponible:         project.pocDisponible ?? false,
+    dateDebutProjet:       this.toDateInputValue(project.dateDebutProjet),
+    dateFinProjet:         this.toDateInputValue(project.dateFinProjet),
+  };
+
+  // Pré-remplir le formulaire BMC pour l'édition
+  this.editBmc = { ...bmc };
+
+  this.showProjectModal = true;
+}
 
   closeProjectModal(): void { this.showProjectModal = false; }
 
@@ -596,6 +684,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
 
     this.isSubmitting = true;
     this.submitMessage = '';
+    this.form.businessModel = stringifyBmc(this.editBmc);
 
     this.projetService.updateProjet(this.editingProject.id, this.form).subscribe({
       next: () => {
@@ -892,9 +981,29 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   getTaskStatusLabel(task: WorkflowTache): string {
-    if (task.statutTache === 'EN_RETARD') { return 'EN_COURS (retard)'; }
-    if (task.statutTache === 'BLOQUEE')   { return 'EN_COURS (bloquée)'; }
+    if (task.statutTache === 'EN_RETARD') { return 'IN_PROGRESS (late)'; }
+    if (task.statutTache === 'BLOQUEE')   { return 'IN_PROGRESS (blocked)'; }
     return task.statutTache;
+  }
+
+  getSubTaskStatusLabel(status: StatutTache): string {
+    if (status === 'A_FAIRE') { return 'TO_DO'; }
+    if (status === 'EN_COURS') { return 'IN_PROGRESS'; }
+    if (status === 'A_CORRIGER') { return 'TO_FIX'; }
+    if (status === 'EN_CORRECTION') { return 'IN_REVIEW'; }
+    if (status === 'TERMINEE') { return 'COMPLETED'; }
+    if (status === 'EN_RETARD') { return 'LATE'; }
+    if (status === 'BLOQUEE') { return 'BLOCKED'; }
+    return status;
+  }
+
+  formatPriorityLabel(priority: string | null | undefined): string {
+    const key = (priority || '').trim().toUpperCase();
+    if (key === 'BASSE') { return 'LOW'; }
+    if (key === 'MOYENNE') { return 'MEDIUM'; }
+    if (key === 'HAUTE') { return 'HIGH'; }
+    if (key === 'CRITIQUE') { return 'CRITICAL'; }
+    return key || 'N/A';
   }
 
   toggleTaskExpansion(task: WorkflowTache): void {
@@ -1047,7 +1156,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
       { key: 'scalabiliteDescription',label: 'Scalability',       value: toValue(project.scalabiliteDescription),missing: !project.scalabiliteDescription?.trim()},
       { key: 'stadeProjet',           label: 'Project stage',     value: toValue(project.stadeProjet),           missing: !project.stadeProjet                   },
       { key: 'secteur',               label: 'Sector',            value: toValue(project.secteur),               missing: !project.secteur                       },
-      { key: 'pocDisponible',         label: 'POC available',     value: toValue(project.pocDisponible),         missing: false                                  },
+
     ];
   }
 
@@ -1211,6 +1320,10 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     return 'TERMINEE';
   }
 
+  getSubmissionTargetStatusLabel(sousTache: WorkflowSousTache): string {
+    return this.getSubTaskStatusLabel(this.getSubmissionTargetStatusForEntrepreneur(sousTache));
+  }
+
   canSubmitSousTache(sousTache: WorkflowSousTache): boolean {
     if (!this.canOpenSousTacheSubmitModal(sousTache)) { return false; }
     const hasFile = !!this.uploadFileBySousTacheId[sousTache.id];
@@ -1227,11 +1340,11 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   getSousTacheSubmissionBlockReason(sousTache: WorkflowSousTache): string {
-    if (sousTache.statutSousTache === 'TERMINEE')     { return 'Cette sous-tâche est déjà terminée: soumission désactivée.'; }
-    if (sousTache.statutSousTache === 'EN_CORRECTION'){ return 'Sous-tâche déjà re-soumise: en attente de revue coach.'; }
+    if (sousTache.statutSousTache === 'TERMINEE')     { return 'This subtask is already completed: submission disabled.'; }
+    if (sousTache.statutSousTache === 'EN_CORRECTION'){ return 'This subtask is already re-submitted: waiting for coach review.'; }
     const parentTask = this.workflowTaches.find((task) => task.id === sousTache.tacheId);
-    if (parentTask?.statutTache === 'TERMINEE') { return 'La tâche parente est terminée: nouvelle soumission désactivée.'; }
-    return 'Soumission non disponible pour cet état.';
+    if (parentTask?.statutTache === 'TERMINEE') { return 'Parent task is completed: new submission disabled.'; }
+    return 'Submission is not available for this status.';
   }
 
   submitSousTacheWithLivrable(sousTache: WorkflowSousTache): void {
@@ -1269,7 +1382,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
             this.loadDocuments(sousTache.id);
             this.loadSousTaches(sousTache.tacheId);
             if (this.selectedWorkflowProject) { this.projetService.loadEntrepreneurProjects().subscribe(); }
-            this.openSubmissionToast('Soumission réussie. Retour au Kanban...');
+            this.openSubmissionToast('Submission successful. Returning to Kanban...');
             setTimeout(() => {
               this.isSubmitting = false;
               this.closeSousTacheSubmitModal();
@@ -1575,9 +1688,156 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   private loadAssignedCoachs(projetId: string): void {
-    this.http.get<AssignedCoach[]>(`${this.apiUrl}/entrepreneur/projets/${projetId}/coachs`).subscribe({
-      next: (rows) => { this.assignedCoachs = rows; },
+    this.http.get<AssignedCoachApiRow[]>(`${this.apiUrl}/entrepreneur/projets/${projetId}/coachs`).subscribe({
+      next: (rows) => {
+        console.log('[DEBUG] assigned coaches raw payload:', rows);
+        this.assignedCoachs = (rows || [])
+          .map((row) => this.normalizeAssignedCoach(row))
+          .filter((row): row is AssignedCoach => !!row);
+        console.log('[DEBUG] assigned coaches normalized:', this.assignedCoachs);
+        const mainCoach = this.getMainAssignedCoach();
+        console.log('[DEBUG] main coach resolved name:', this.getCoachDisplayName(mainCoach), mainCoach);
+      },
       error: () => { this.submitMessage = 'Unable to load assigned coaches.'; }
+    });
+  }
+
+  getMainAssignedCoach(): AssignedCoach | null {
+    if (!this.assignedCoachs.length) { return null; }
+    return this.assignedCoachs.find((coach) => coach.roleCoachProjet === 'COACH_PRINCIPAL') ?? this.assignedCoachs[0];
+  }
+
+  getCoachDisplayName(coach: AssignedCoach | null): string {
+    if (!coach) { return ''; }
+    const fallback = `Coach #${coach.coachId}`;
+    const direct = (coach.coachNomAffiche || '').trim();
+    if (direct) { return direct; }
+    const hydrated = (this.coachNameById[coach.coachId] || '').trim();
+    return hydrated || fallback;
+  }
+
+  private normalizeAssignedCoach(row: AssignedCoachApiRow): AssignedCoach | null {
+    const coachRecord = (row?.coach ?? {}) as Record<string, unknown>;
+    const coachId = Number(row?.coachId ?? coachRecord['id'] ?? coachRecord['idUser']);
+    if (!Number.isFinite(coachId) || coachId <= 0) { return null; }
+
+    const role = row?.roleCoachProjet;
+    const roleCoachProjet: AssignedCoach['roleCoachProjet'] =
+      role === 'COACH_PRINCIPAL' || role === 'COACH_SECONDAIRE' || role === 'EXPERT_METIER'
+        ? role
+        : 'COACH_SECONDAIRE';
+
+    const coachObj = (row?.coach ?? {}) as Record<string, unknown>;
+    const userObj = (row?.user ?? {}) as Record<string, unknown>;
+    const utilisateurObj = (row?.utilisateur ?? {}) as Record<string, unknown>;
+
+    const fullName = `${this.asText(row?.firstName) || this.asText(row?.prenom) || this.asText(userObj['firstName']) || this.asText(coachObj['firstName']) || this.asText(utilisateurObj['firstName']) || ''} ${this.asText(row?.lastName) || this.asText(row?.nom) || this.asText(userObj['lastName']) || this.asText(coachObj['lastName']) || this.asText(utilisateurObj['lastName']) || ''}`.trim();
+    const nestedDisplay = this.asText(coachObj['nomAffiche']) || this.asText(coachObj['fullName']) || this.asText(utilisateurObj['nomAffiche']) || this.asText(utilisateurObj['fullName']);
+    const discoveredName = this.findDisplayNameCandidate(row);
+    const coachNomAffiche = (this.asText(row?.coachNomAffiche) || this.asText(row?.nomAffiche) || this.asText(row?.fullName) || this.asText(row?.coachName) || nestedDisplay || fullName || discoveredName || '').trim();
+
+    return { coachId, roleCoachProjet, coachNomAffiche };
+  }
+
+  private asText(value: unknown): string {
+    return typeof value === 'string' ? value.trim() : '';
+  }
+
+  private findDisplayNameCandidate(source: unknown): string {
+    if (!source || typeof source !== 'object') { return ''; }
+    const obj = source as Record<string, unknown>;
+    const directKeys = [
+      'coachNomAffiche', 'nomAffiche', 'fullName', 'coachName', 'displayName',
+      'nomCoach', 'coachNom', 'nomComplet', 'name'
+    ];
+
+    for (const key of directKeys) {
+      const value = this.asText(obj[key]);
+      if (value && !value.toUpperCase().includes('COACH_')) { return value; }
+    }
+
+    const first = this.asText(obj['firstName']) || this.asText(obj['prenom']);
+    const last = this.asText(obj['lastName']) || this.asText(obj['nom']);
+    const combined = `${first} ${last}`.trim();
+    if (combined) { return combined; }
+
+    for (const value of Object.values(obj)) {
+      if (value && typeof value === 'object') {
+        const nested = this.findDisplayNameCandidate(value);
+        if (nested) { return nested; }
+      }
+    }
+    return '';
+  }
+
+  private hydrateMissingCoachNames(): void {
+    const applyCache = (): void => {
+      this.assignedCoachs.forEach((coach) => {
+        if ((coach.coachNomAffiche || '').trim()) { return; }
+        const cached = (this.coachNameById[coach.coachId] || '').trim();
+        if (cached) { coach.coachNomAffiche = cached; }
+      });
+    };
+
+    applyCache();
+    const hasMissing = this.assignedCoachs.some((coach) => !(coach.coachNomAffiche || '').trim());
+    if (!hasMissing || this.coachDirectoryLoaded || this.coachDirectoryLoading) { return; }
+
+    this.coachDirectoryLoading = true;
+    this.tryLoadCoachDirectoryFromAdmin(applyCache);
+  }
+
+  private tryLoadCoachDirectoryFromAdmin(onDone: () => void): void {
+    this.http.get<any[]>(`${this.apiUrl}/admin/coachs/disponibles`).subscribe({
+      next: (rows) => {
+        console.log('[DEBUG] coach directory payload (/admin/coachs/disponibles):', rows);
+        this.populateCoachNameCache(rows, 'coachId');
+        this.coachDirectoryLoaded = true;
+        this.coachDirectoryLoading = false;
+        onDone();
+        console.log('[DEBUG] coach names cache map:', this.coachNameById);
+      },
+      error: () => {
+        console.warn('[DEBUG] coach directory request failed (/admin/coachs/disponibles). Trying /api/users...');
+        this.tryLoadCoachDirectoryFromUsers(onDone);
+      }
+    });
+  }
+
+  private tryLoadCoachDirectoryFromUsers(onDone: () => void): void {
+    this.http.get<any[]>(`${this.apiUrl}/api/users`).subscribe({
+      next: (rows) => {
+        console.log('[DEBUG] coach directory payload (/api/users):', rows);
+        this.populateCoachNameCache(rows, 'idUser');
+        this.coachDirectoryLoaded = true;
+        this.coachDirectoryLoading = false;
+        onDone();
+        console.log('[DEBUG] coach names cache map:', this.coachNameById);
+      },
+      error: () => {
+        this.coachDirectoryLoading = false;
+        console.warn('[DEBUG] coach directory request failed (/api/users). No more fallbacks.');
+      }
+    });
+  }
+
+  private populateCoachNameCache(rows: any[], preferredIdKey: 'coachId' | 'idUser'): void {
+    (rows || []).forEach((row) => {
+      const id = Number(row?.[preferredIdKey] ?? row?.coachId ?? row?.idUser ?? row?.id);
+      if (!Number.isFinite(id) || id <= 0) { return; }
+      const role = String(row?.role ?? 'COACH').toUpperCase();
+      if (role !== 'COACH' && preferredIdKey === 'idUser') { return; }
+      const fullName = `${String(row?.firstName ?? row?.prenom ?? '').trim()} ${String(row?.lastName ?? row?.nom ?? '').trim()}`.trim();
+      const resolved = String(
+        row?.nomAffiche ??
+        row?.coachNomAffiche ??
+        row?.fullName ??
+        row?.coachName ??
+        fullName ??
+        row?.emailAddress ??
+        ''
+      ).trim();
+      if (resolved) { this.coachNameById[id] = resolved; }
     });
   }
 
@@ -1608,6 +1868,99 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     };
     return allowed[from].includes(to);
   }
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Propriétés AI Pitch Improver
+  // ═══════════════════════════════════════════════════════════════════════════
+  aiErrorByField: { [key: string]: string | undefined } = {};
+  aiSuggestionByField: { [key: string]: string | undefined } = {};
+  aiImprovingField: string | null = null;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AI Pitch Improver
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  improveWithAi(fieldKey: PitchFieldKey): void {
+    const currentValue = this.getAiFieldValue(fieldKey);
+    if (!currentValue || String(currentValue).trim().length < 10) {
+      this.aiErrorByField[fieldKey] = 'Please write at least 10 characters before using AI improvement.';
+      return;
+    }
+
+    this.aiImprovingField = fieldKey;
+    this.aiSuggestionByField[fieldKey] = undefined;
+    this.aiErrorByField[fieldKey] = undefined;
+
+    this.aiPitchService.improveText(fieldKey, String(currentValue)).subscribe({
+      next: (res) => {
+        this.aiSuggestionByField[fieldKey] = res.improvedText;
+        this.aiImprovingField = null;
+      },
+      error: () => {
+        this.aiErrorByField[fieldKey] = 'AI service unavailable. Please try again.';
+        this.aiImprovingField = null;
+      }
+    });
+  }
+
+  acceptAiSuggestion(fieldKey: PitchFieldKey): void {
+    const suggestion = this.aiSuggestionByField[fieldKey];
+    if (suggestion) {
+      this.setAiFieldValue(fieldKey, suggestion);
+    }
+    this.aiSuggestionByField[fieldKey] = undefined;
+    this.aiErrorByField[fieldKey] = undefined;
+  }
+
+  rejectAiSuggestion(fieldKey: PitchFieldKey): void {
+    this.aiSuggestionByField[fieldKey] = undefined;
+    this.aiErrorByField[fieldKey] = undefined;
+  }
+
+  isAiImproving(fieldKey: PitchFieldKey): boolean {
+    return this.aiImprovingField === fieldKey;
+  }
+
+  hasAiSuggestion(fieldKey: PitchFieldKey): boolean {
+    return !!this.aiSuggestionByField[fieldKey];
+  }
+
+  getAiSuggestion(fieldKey: PitchFieldKey): string {
+    return this.aiSuggestionByField[fieldKey] ?? '';
+  }
+
+  getAiError(fieldKey: PitchFieldKey): string {
+    return this.aiErrorByField[fieldKey] ?? '';
+  }
+
+  private getAiFieldValue(fieldKey: PitchFieldKey): string {
+    if (this.isConversationCreationContext()) {
+      if (fieldKey === 'description' || fieldKey === 'problemeAdresse') {
+        return String(this.conversationForm.pitch ?? '');
+      }
+      return String(this.conversationForm[fieldKey] ?? '');
+    }
+    return String(this.form[fieldKey] ?? '');
+  }
+
+  private setAiFieldValue(fieldKey: PitchFieldKey, value: string): void {
+    if (this.isConversationCreationContext()) {
+      if (fieldKey === 'description' || fieldKey === 'problemeAdresse') {
+        this.conversationForm.pitch = value;
+        return;
+      }
+      this.conversationForm[fieldKey] = value;
+      return;
+    }
+    this.form[fieldKey] = value;
+  }
+
+  private isConversationCreationContext(): boolean {
+  // Step 4 = pitch/solution, step 5 = BMC — les 2 sont dans le modal de création
+  return this.showCreateProjectModal && (this.createProjectStep === 4 || this.createProjectStep === 5);
+}
 
   private updateTaskStatus(task: WorkflowTache, targetStatus: StatutTache): void {
     this.isSubmitting = true;
@@ -1627,11 +1980,8 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   }
 
   private getCurrentEntrepreneurId(): number {
-    const u = this.authService.currentUser;
-    if (u?.idUser != null && Number.isFinite(u.idUser) && u.idUser > 0) {
-      return u.idUser;
-    }
-    const parsed = Number(u?.id ?? '');
+    const rawId = this.authService.currentUser?.id ?? '';
+    const parsed = Number(rawId);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
@@ -1648,28 +1998,6 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.uploadDocTypeBySousTacheId[sousTache.id] = '';
     this.loadDocuments(sousTache.id);
     if (this.selectedWorkflowProject) { this.loadProjectDocuments(this.selectedWorkflowProject.id); }
-  }
-
-  contactPrimaryCoach(): void {
-    const currentUserId = this.getCurrentEntrepreneurId();
-    if (!currentUserId) {
-      this.submitMessage = 'Entrepreneur session not found. Please sign in again.';
-      return;
-    }
-    const primaryCoach = this.assignedCoachs.find(c => c.roleCoachProjet === 'COACH_PRINCIPAL') ?? this.assignedCoachs[0];
-    if (!primaryCoach?.coachId) {
-      this.submitMessage = 'Primary coach is not assigned yet.';
-      return;
-    }
-    this.messageService.ensureDirectConversation(currentUserId, primaryCoach.coachId).subscribe({
-      next: (conversation: any) => {
-        const conversationId = conversation?.id ?? conversation?.conversationId ?? primaryCoach.coachId;
-        this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId } });
-      },
-      error: () => {
-        this.submitMessage = 'Unable to open coach conversation right now.';
-      }
-    });
   }
 
   private openSubmissionToast(message: string): void {
@@ -1724,4 +2052,44 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     if (normalized === 'poc')               { return 'pocDisponible'; }
     return label;
   }
+// ═══════════════════════════════════════════════════════════════════════════
+// BMC — Business Model Canvas helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+parseBmc(businessModel: string | undefined): Record<string, string> | null {
+  if (!businessModel) { return null; }
+  try {
+    const parsed = JSON.parse(businessModel);
+    if (typeof parsed === 'object' && parsed !== null && 'propositionValeur' in parsed) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
+
+isBmcFormat(businessModel: string | undefined): boolean {
+  return this.parseBmc(businessModel) !== null;
+}
+
+getBmcLabel(key: string): string {
+  const labels: Record<string, string> = {
+    propositionValeur: '💎 Proposition de valeur',
+    segmentsClientele: '👥 Segments de clientèle',
+    canaux:            '📢 Canaux',
+    relationsClients:  '🤝 Relations clients',
+    sourcesRevenus:    '💰 Sources de revenus',
+    ressourcesCles:    '⚙️ Ressources clés',
+    activitesCles:     '🔧 Activités clés',
+    structureCouts:    '📊 Structure des coûts',
+    partenaires:       '🤲 Partenaires clés',
+  };
+  return labels[key] ?? key;
+}
+
+  
+
+}
+
+

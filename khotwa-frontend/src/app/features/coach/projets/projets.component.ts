@@ -3,11 +3,14 @@ import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProjetService } from '../../../core/services/projet.service';
+import { BmcAnalysisService, BmcAnalysisResult } from '../../../core/services/bmc-analysis.service';
+import { Projet, SecteurProjet, parseBmc, BmcData } from '../../../core/models';
+
 
 type PrioriteTache = 'BASSE' | 'MOYENNE' | 'HAUTE' | 'CRITIQUE';
 type TypeTache = 'DOCUMENT' | 'ANALYSE' | 'PITCH' | 'POC' | 'BUSINESS_MODEL' | 'ETUDE_MARCHE' | 'LEGAL' | 'FINANCIER' | 'TECHNIQUE' | 'AUTRE';
 type TaskStatus = 'A_FAIRE' | 'EN_COURS' | 'A_CORRIGER' | 'EN_CORRECTION' | 'TERMINEE' | 'EN_RETARD' | 'BLOQUEE';
-type CoachWorkspaceView = 'TRIAGE' | 'KANBAN' | 'CORRECTIONS' | 'DELIVERABLES';
+type CoachWorkspaceView = 'TRIAGE' | 'KANBAN' | 'CORRECTIONS' | 'DELIVERABLES' | 'DETAILS';
 type TriageFilter = 'ALL' | 'NEEDS_CORRECTION' | 'RESUBMITTED' | 'BLOCKED_LATE' | 'READY_TO_VALIDATE';
 
 interface CoachBoardColumn {
@@ -119,6 +122,65 @@ export class CoachProjetsComponent implements OnInit {
 
   selectedProjetId = '';
   activeWorkspaceView: CoachWorkspaceView = 'TRIAGE';
+  // ─────────────────────────────────────────────
+  // BMC AI ANALYSIS
+  // ─────────────────────────────────────────────
+  bmcAnalysis: BmcAnalysisResult | null = null;
+  bmcAnalysisLoading: boolean = false;
+  bmcAnalysisError: string = '';
+  bmcAnalysedForId: string = '';
+
+  getSelectedProjetBmc(): BmcData {
+    return parseBmc(this.selectedProjet?.businessModel);
+  }
+
+  // Helper for BMC field extraction for modal table
+  getBmcField(field: keyof BmcData): string {
+    return this.getSelectedProjetBmc()[field] || '';
+  }
+
+  lancerAnalyseBmc(): void {
+    const p = this.selectedProjet;
+    if (!p) { return; }
+    if (this.bmcAnalysedForId === p.id && this.bmcAnalysis) { return; }
+
+    this.bmcAnalysisLoading = true;
+    this.bmcAnalysisError = '';
+    this.bmcAnalysis = null;
+
+    this.bmcAnalysisService.analyser(
+      p.titre,
+      p.secteur ?? 'Non précisé',
+      p.stadeProjet ?? 'Non précisé',
+      parseBmc(p.businessModel)
+    ).subscribe({
+      next: result => {
+        this.bmcAnalysis = result;
+        this.bmcAnalysedForId = p.id;
+        this.bmcAnalysisLoading = false;
+      },
+      error: err => {
+        this.bmcAnalysisError = err?.error?.message || 'Erreur lors de l\'analyse IA. Réessayez.';
+        this.bmcAnalysisLoading = false;
+      }
+    });
+  }
+
+  getBmcScoreColor(): string {
+    const s = this.bmcAnalysis?.scoreGlobal ?? 0;
+    if (s >= 8) { return '#059669'; }
+    if (s >= 5) { return '#d97706'; }
+    return '#ef4444';
+  }
+
+  resetBmcAnalysisOnProjectChange(newId: string): void {
+    if (newId !== this.selectedProjetId) {
+      this.bmcAnalysis = null;
+      this.bmcAnalysedForId = '';
+      this.bmcAnalysisError = '';
+    }
+  }
+
   activeTriageFilter: TriageFilter = 'ALL';
   expandedTaskId: number | null = null;
   showCreateTaskModal = false;
@@ -182,7 +244,7 @@ export class CoachProjetsComponent implements OnInit {
     public projetService: ProjetService,
     private http: HttpClient,
     private authService: AuthService,
-  ) {}
+    private bmcAnalysisService: BmcAnalysisService,  ) {}
 
   ngOnInit(): void {
     this.projetService.loadCoachAssignedProjects().subscribe({
@@ -190,6 +252,14 @@ export class CoachProjetsComponent implements OnInit {
         if (projets.length > 0) {
           this.selectedProjetId = projets[0].id;
           this.loadTachesForSelectedProjet();
+          // CHARGEMENT AUTO DES TÂCHES ET SOUS-TÂCHES POUR LE PROJET SÉLECTIONNÉ
+          this.http.get<any[]>(`${this.apiUrl}/coach/projets/${projets[0].id}/taches`).subscribe({
+            next: (tasks) => {
+              this.taches = tasks;
+              tasks.forEach(task => this.loadSousTaches(task.id));
+            },
+            error: () => {}
+          });
         }
       },
       error: () => {
@@ -225,9 +295,12 @@ export class CoachProjetsComponent implements OnInit {
   }
 
   selectProjectFromList(projectId: string): void {
+    this.resetBmcAnalysisOnProjectChange(projectId);
+
     if (!projectId || this.selectedProjetId === projectId) {
       return;
     }
+
     this.selectedProjetId = projectId;
     this.onSelectedProjetChange();
   }
@@ -276,7 +349,7 @@ export class CoachProjetsComponent implements OnInit {
     this.showDocumentPreviewModal = false;
     this.showCorrectionModal = false;
     this.projectCorrectionPanelOpen = true;
-    this.message = 'Write correction comments under each project field, then submit.';
+    this.message = '';
   }
 
   passerProjetEnRevue(): void {
@@ -301,27 +374,48 @@ export class CoachProjetsComponent implements OnInit {
     });
   }
 
-  validerProjet(): void {
-    if (!this.selectedProjetId) {
-      this.message = 'Please select a project first.';
-      return;
-    }
+ validerProjet(): void {
+  if (!this.selectedProjetId) {
+    this.message = 'Please select a project first.';
+    return;
+  }
 
-    if (!this.canValidateProject()) {
-      this.message = 'The project must already be in review before validation.';
-      return;
-    }
+  if (!this.canValidateProject()) {
+    this.message = 'Project cannot be validated: check progression (≥80%), score (≥0), and that no task is blocked or pending correction.';
+    return;
+  }
 
+  const doValidate = () => {
     this.http.post<unknown>(`${this.apiUrl}/coach/projets/${this.selectedProjetId}/valider`, {}).subscribe({
       next: () => {
-        this.message = 'Project approved and returned to assignment phase.';
+        this.message = 'Project validated successfully.';
         this.refreshProjects();
       },
       error: (err) => {
         this.message = this.parseHttpError(err, 'Unable to validate project.');
       }
     });
+  };
+
+  const doPasserEnRevue = (then: () => void) => {
+    this.http.post<unknown>(`${this.apiUrl}/coach/projets/${this.selectedProjetId}/passer-en-revue`, {}).subscribe({
+      next: () => then(),
+      error: (err) => {
+        this.message = this.parseHttpError(err, 'Unable to move project to review before validation.');
+      }
+    });
+  };
+
+  const state = this.selectedProjet?.etatValidation;
+
+  if (state === 'AFFECTE_COACH' || state === 'A_CORRIGER') {
+    // Passer en EN_REVUE d'abord, puis valider
+    doPasserEnRevue(() => doValidate());
+    return;
   }
+
+  doValidate();
+}
 
   updateTaskStatus(tache: BackendTache): void {
     const statutTache = this.taskStatusDraft[tache.id] ?? tache.statutTache;
@@ -877,7 +971,7 @@ export class CoachProjetsComponent implements OnInit {
       { key: 'businessModel', label: 'Business model', currentValue: p.businessModel?.trim() || 'N/A' },
       { key: 'innovationDescription', label: 'Innovation', currentValue: p.innovationDescription?.trim() || 'N/A' },
       { key: 'scalabiliteDescription', label: 'Scalability', currentValue: p.scalabiliteDescription?.trim() || 'N/A' },
-      { key: 'pocDisponible', label: 'POC', currentValue: p.pocDisponible ? 'Available' : 'Not available' },
+
     ];
   }
 
@@ -1178,6 +1272,19 @@ export class CoachProjetsComponent implements OnInit {
     return statut === 'EN_RETARD' || statut === 'BLOQUEE' || statut === 'A_CORRIGER';
   }
 
+  getStatusLabel(statut: string): string {
+    const labels: Record<string, string> = {
+      A_FAIRE:       'À faire',
+      EN_COURS:      'En cours',
+      A_CORRIGER:    'À corriger',
+      EN_CORRECTION: 'En correction',
+      TERMINEE:      'Terminée',
+      EN_RETARD:     'En retard',
+      BLOQUEE:       'Bloquée',
+    };
+    return labels[statut] ?? statut;
+  }
+
   isCorrectionResubmittedTask(task: BackendTache): boolean {
     return task.statutTache === 'EN_CORRECTION';
   }
@@ -1299,25 +1406,44 @@ export class CoachProjetsComponent implements OnInit {
   }
 
   canPassProjectToReview(): boolean {
-    if (!this.selectedProjetId || !this.selectedProjet?.etatValidation) {
-      return false;
-    }
+  // "Send to Review" est fusionné avec "Validate Project" — on le désactive toujours
+  return false;
+}
 
-    if (this.selectedProjet.etatValidation !== 'AFFECTE_COACH') {
-      return false;
-    }
+ canValidateProject(): boolean {
+  if (!this.selectedProjet) return false;
 
-    // First-time review can start even without task decomposition.
-    if (this.taches.length === 0) {
-      return true;
-    }
+  const progression = this.selectedProjet.progression ?? 0;
+  const score = this.selectedProjet.disciplineScore ?? 0;
 
-    return this.taches.every((task) => task.statutTache !== 'A_FAIRE');
-  }
+  const validStates = ['AFFECTE_COACH', 'EN_REVUE', 'A_CORRIGER'];
+  if (!this.selectedProjet.etatValidation || !validStates.includes(this.selectedProjet.etatValidation)) return false;
 
-  canValidateProject(): boolean {
-    return this.selectedProjet?.etatValidation === 'EN_REVUE';
-  }
+  if (progression < 80) return false;
+  if (score < 0) return false;
+
+  const hasBlockedTasks = this.taches.some(
+    (t) => t.statutTache === 'BLOQUEE' || t.statutTache === 'A_CORRIGER'
+  );
+  if (hasBlockedTasks) return false;
+
+  const hasPendingTasks = this.taches.some((t) => t.statutTache === 'A_FAIRE');
+  if (hasPendingTasks) return false;
+
+  return true;
+}
+getValidateHint(): string {
+  if (!this.selectedProjet) return '';
+  if ((this.selectedProjet.progression ?? 0) < 80) 
+    return 'Progression must reach 80% before validation';
+  if ((this.selectedProjet.disciplineScore ?? 0) < 0) 
+    return 'Discipline score cannot be negative';
+  if (this.taches.some(t => t.statutTache === 'A_FAIRE')) 
+    return 'All tasks must be started before validation';
+  if (this.taches.some(t => t.statutTache === 'BLOQUEE' || t.statutTache === 'A_CORRIGER')) 
+    return 'No task can be blocked or pending correction';
+  return '';
+}
 
   canAskProjectCorrection(): boolean {
     if (!this.selectedProjet || !this.selectedProjet.etatValidation) {

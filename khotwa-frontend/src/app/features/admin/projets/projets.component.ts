@@ -41,6 +41,44 @@ interface BackendCoachDisponibilite {
   nombreProjetsActifs: number;
 }
 
+interface CoachDisponibiliteApiRow {
+  coachId?: number | string;
+  id?: number | string;
+  idUser?: number | string;
+  nomAffiche?: string;
+  coachNomAffiche?: string;
+  fullName?: string;
+  coachName?: string;
+  nom?: string;
+  prenom?: string;
+  firstName?: string;
+  lastName?: string;
+  specialite?: string | null;
+  secteur?: string | null;
+  disponibilite?: string | null;
+  chargeActuelle?: number;
+  nombreProjetsActifs?: number;
+}
+
+interface AdminProjetApiRow {
+  id?: number | string;
+  nomStartup?: string;
+  titre?: string;
+  description?: string;
+  secteur?: string;
+  stadeProjet?: string;
+  dateSoumission?: string | null;
+  entrepreneurId?: number | string;
+  entrepreneurNomAffiche?: string | null;
+  entrepreneurName?: string | null;
+  nomEntrepreneur?: string | null;
+  firstName?: string;
+  lastName?: string;
+  statutProjet?: 'EN_COURS' | 'SUSPENDU' | 'TERMINE' | 'ARCHIVE';
+  etatValidation?: BackendEtatValidation;
+  scoreDisciplineGlobal?: number;
+}
+
 interface BackendProjetResponse {
   id: number;
   nomStartup: string;
@@ -560,17 +598,11 @@ export class AdminProjetsComponent implements OnInit {
     this.coachsLoading = true;
     this.coachsError = '';
 
-    this.http.get<BackendCoachDisponibilite[]>(`${this.apiUrl}/admin/coachs/disponibles`).subscribe({
+    this.http.get<CoachDisponibiliteApiRow[]>(`${this.apiUrl}/admin/coachs/disponibles`).subscribe({
       next: (rows) => {
-        this.coachs = rows.map((row) => ({
-          id: String(row.coachId),
-          nom: row.nomAffiche,
-          specialite: row.specialite ?? 'General coaching',
-          secteur: row.secteur ?? 'N/A',
-          disponibilite: row.disponibilite ?? 'N/A',
-          chargeActuelle: row.chargeActuelle,
-          nombreProjetsActifs: row.nombreProjetsActifs,
-        }));
+        this.coachs = (rows || [])
+          .map((row) => this.toCoachOption(row))
+          .filter((row): row is CoachOption => !!row);
         this.coachsLoading = false;
       },
       error: () => {
@@ -584,25 +616,14 @@ export class AdminProjetsComponent implements OnInit {
     this.loadingProjects = true;
     this.projectsError = '';
 
-    this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/admin/projets/soumis`).subscribe({
+    this.http.get<AdminProjetApiRow[]>(`${this.apiUrl}/admin/projets/soumis`).subscribe({
       next: (soumisRows) => {
-        this.http.get<BackendProjetResponse[]>(`${this.apiUrl}/admin/projets/affectes`).subscribe({
+        this.http.get<AdminProjetApiRow[]>(`${this.apiUrl}/admin/projets/affectes`).subscribe({
           next: (affectesRows) => {
             const allRows = [...soumisRows, ...affectesRows];
-            this.projects = allRows.map((row) => ({
-              id: String(row.id),
-              titre: row.nomStartup,
-              description: row.description,
-              secteur: row.secteur,
-              stadeProjet: row.stadeProjet,
-              dateSoumission: row.dateSoumission ? new Date(row.dateSoumission) : undefined,
-              entrepreneur: row.entrepreneurNomAffiche ?? `Entrepreneur #${row.entrepreneurId}`,
-              etatValidation: row.etatValidation,
-              submitted: row.etatValidation === 'SOUMIS_ADMIN',
-              status: this.toUiStatus(row.statutProjet),
-              progression: Math.max(0, Math.min(100, row.scoreDisciplineGlobal)),
-              etapesCount: 0,
-            }));
+            this.projects = allRows
+              .map((row) => this.toAdminProject(row))
+              .filter((row): row is AdminProject => !!row);
             this.loadingProjects = false;
           },
           error: () => {
@@ -738,6 +759,54 @@ export class AdminProjetsComponent implements OnInit {
     const rawId = this.authService.currentUser?.id ?? '';
     const parsed = Number(rawId);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  private toCoachOption(row: CoachDisponibiliteApiRow): CoachOption | null {
+    const id = Number(row?.coachId ?? row?.idUser ?? row?.id);
+    if (!Number.isFinite(id) || id <= 0) { return null; }
+    const fullName = `${(row?.firstName || row?.prenom || '').trim()} ${(row?.lastName || row?.nom || '').trim()}`.trim();
+    const nom = (row?.nomAffiche || row?.coachNomAffiche || row?.fullName || row?.coachName || fullName || `Coach #${id}`).trim();
+    return {
+      id: String(id),
+      nom,
+      specialite: row?.specialite ?? 'General coaching',
+      secteur: row?.secteur ?? 'N/A',
+      disponibilite: row?.disponibilite ?? 'N/A',
+      chargeActuelle: Number(row?.chargeActuelle ?? 0),
+      nombreProjetsActifs: Number(row?.nombreProjetsActifs ?? 0),
+    };
+  }
+
+  private toAdminProject(row: AdminProjetApiRow): AdminProject | null {
+    const id = Number(row?.id);
+    if (!Number.isFinite(id) || id <= 0) { return null; }
+    const entrepreneurId = Number(row?.entrepreneurId);
+    const entrepreneurFullName = `${(row?.firstName || '').trim()} ${(row?.lastName || '').trim()}`.trim();
+    const entrepreneur = (
+      row?.entrepreneurNomAffiche ||
+      row?.entrepreneurName ||
+      row?.nomEntrepreneur ||
+      entrepreneurFullName ||
+      (Number.isFinite(entrepreneurId) && entrepreneurId > 0 ? `Entrepreneur #${entrepreneurId}` : 'Entrepreneur')
+    ).trim();
+
+    const etatValidation = row?.etatValidation ?? 'SOUMIS_ADMIN';
+    const statutProjet = row?.statutProjet ?? 'EN_COURS';
+
+    return {
+      id: String(id),
+      titre: (row?.nomStartup || row?.titre || `Project #${id}`).trim(),
+      description: row?.description || '',
+      secteur: row?.secteur || 'N/A',
+      stadeProjet: row?.stadeProjet || 'IDEE',
+      dateSoumission: row?.dateSoumission ? new Date(row.dateSoumission) : undefined,
+      entrepreneur,
+      etatValidation,
+      submitted: etatValidation === 'SOUMIS_ADMIN',
+      status: this.toUiStatus(statutProjet),
+      progression: Math.max(0, Math.min(100, Number(row?.scoreDisciplineGlobal ?? 0))),
+      etapesCount: 0,
+    };
   }
 
   private toUiStatus(statut: BackendProjetResponse['statutProjet']): UiStatus {

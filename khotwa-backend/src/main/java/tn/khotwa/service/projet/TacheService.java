@@ -254,6 +254,7 @@ public class TacheService {
         tache.setCommentaireCoach(commentaireCoach);
         tache.setStatutTache(StatutTache.A_CORRIGER);
         tache.setDateMiseAJour(LocalDateTime.now());
+        tache.setNbCorrections(tache.getNbCorrections() + 1);
         tacheRepository.save(tache);
         markProjetEnCorrectionEtEnCours(tache.getProjetId());
         scoreService.updateTaskScoreAndProject(tache);
@@ -270,6 +271,7 @@ public class TacheService {
         sousTache.setCommentaireCoach(commentaireCoach);
         sousTache.setStatutSousTache(StatutTache.A_CORRIGER);
         sousTache.setDateMiseAJour(LocalDateTime.now());
+        sousTache.setNbCorrections(sousTache.getNbCorrections() + 1);
         sousTacheRepository.save(sousTache);
 
         Tache parent = synchronizeParentTaskStatus(sousTache.getTacheId());

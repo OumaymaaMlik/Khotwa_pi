@@ -63,6 +63,13 @@ public class UserServiceImpl implements IUserService {
         if (request.startup() != null) {
             user.setStartup(trimToNull(request.startup()));
         }
+
+        if (request.specialite() != null) {
+            user.setSpecialite(trimToNull(request.specialite()));
+        }
+        if (request.disponibilite() != null) {
+            user.setDisponibilite(trimToNull(request.disponibilite()));
+        }
         return userMapper.toResponse(userRepository.save(user));
     }
 

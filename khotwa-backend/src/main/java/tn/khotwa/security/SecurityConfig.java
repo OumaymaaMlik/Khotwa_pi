@@ -63,6 +63,9 @@ public class SecurityConfig {
 
                         // ── COACH ────────────────────────────────────────────────────
                         .requestMatchers("/coach/**").hasRole("COACH")
+                        // ── IA (coach uniquement) ─────────────────────────────────────
+                        .requestMatchers("/ai/analyser-bmc").hasRole("COACH")
+                        .requestMatchers("/ai/analyser-bmc").authenticated()
 
                         // ── ENTREPRENEUR ─────────────────────────────────────────────
                         .requestMatchers("/entrepreneur/**").hasRole("ENTREPRENEUR")

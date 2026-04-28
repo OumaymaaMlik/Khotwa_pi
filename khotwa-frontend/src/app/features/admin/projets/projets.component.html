@@ -47,8 +47,8 @@
   </div>
 
   <div class="assign-modal-overlay" *ngIf="showAssignModal" (click)="closeAssignCoach()">
-    <div class="assign-modal assign-modal--wide" (click)="$event.stopPropagation()">
-      <div class="assign-modal-header">
+    <div class="assign-modal assign-modal--wide assign-modal--coachs" (click)="$event.stopPropagation()">
+      <div class="assign-modal-header assign-modal-header--coachs">
         <h3>Affecter des coachs</h3>
         <button class="assign-modal-close" (click)="closeAssignCoach()">×</button>
       </div>
@@ -83,28 +83,36 @@
         </div>
       </div>
 
-      <p class="assign-flow-step">1. Choisir le coach principal</p>
-      <label class="assign-label">Coach principal</label>
-      <select [(ngModel)]="selectedPrincipalCoachId" class="assign-select" (ngModelChange)="onPrincipalCoachChange()">
-        <option value="">Choisir un coach principal</option>
-        <option *ngFor="let coach of coachs" [value]="coach.id">{{ principalCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
-      </select>
+      <div class="assign-step-card assign-step-card--primary">
+        <p class="assign-flow-step">1. Choisir le coach principal</p>
+        <label class="assign-label">Coach principal</label>
+        <select [(ngModel)]="selectedPrincipalCoachId" class="assign-select" (ngModelChange)="onPrincipalCoachChange()">
+          <option value="">Choisir un coach principal</option>
+          <option *ngFor="let coach of coachs" [value]="coach.id">{{ principalCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
+        </select>
+      </div>
 
-      <p class="assign-flow-step">2. Ajouter des coachs secondaires (optionnel)</p>
-      <label class="assign-label">Coachs secondaires (optionnel)</label>
-      <select [(ngModel)]="selectedSecondaryCoachId" class="assign-select">
-        <option value="">Aucun coach secondaire</option>
-        <option *ngFor="let coach of selectableSecondaryCoachs" [value]="coach.id">{{ secondaryCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
-      </select>
+      <div class="assign-step-grid">
+        <div class="assign-step-card">
+          <p class="assign-flow-step">2. Ajouter un coach secondaire (optionnel)</p>
+          <label class="assign-label">Coach secondaire (optionnel)</label>
+          <select [(ngModel)]="selectedSecondaryCoachId" class="assign-select">
+            <option value="">Aucun coach secondaire</option>
+            <option *ngFor="let coach of selectableSecondaryCoachs" [value]="coach.id">{{ secondaryCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
+          </select>
+        </div>
 
-      <p class="assign-flow-step">3. Ajouter des experts métier (optionnel)</p>
-      <label class="assign-label">Experts métier (optionnel)</label>
-      <select [(ngModel)]="selectedExpertCoachId" class="assign-select">
-        <option value="">Aucun expert métier</option>
-        <option *ngFor="let coach of selectableExpertCoachs" [value]="coach.id">{{ expertCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
-      </select>
+        <div class="assign-step-card">
+          <p class="assign-flow-step">3. Ajouter un expert métier (optionnel)</p>
+          <label class="assign-label">Expert métier (optionnel)</label>
+          <select [(ngModel)]="selectedExpertCoachId" class="assign-select">
+            <option value="">Aucun expert métier</option>
+            <option *ngFor="let coach of selectableExpertCoachs" [value]="coach.id">{{ expertCoachOptionLabel(coach) }}{{ isRecommendedCoach(coach.id) ? ' · Recommandé' : '' }}</option>
+          </select>
+        </div>
+      </div>
 
-      <div class="assign-actions">
+      <div class="assign-actions assign-actions--coachs">
         <button class="kh-btn kh-btn--ghost" (click)="closeAssignCoach()">Annuler</button>
         <button class="kh-btn kh-btn--primary" [disabled]="!selectedPrincipalCoachId || coachsLoading || !!coachsError" (click)="confirmAssignCoach()">Confirmer l'affectation</button>
       </div>
@@ -196,22 +204,35 @@
 
   <div class="assign-modal-overlay" *ngIf="showDetailsModal" (click)="closeProjectDetails()">
     <div class="assign-modal project-details-modal" (click)="$event.stopPropagation()">
-      <div class="assign-modal-header">
-        <h3>Project details</h3>
+      <div class="assign-modal-header project-details-header">
+        <div class="project-details-title-wrap">
+          <span class="project-details-kicker">Overview</span>
+          <h3>Project details</h3>
+        </div>
         <button class="assign-modal-close" (click)="closeProjectDetails()">×</button>
       </div>
 
-      <p class="assign-modal-sub" *ngIf="selectedProjectDetails">Full details for <strong>{{ selectedProjectDetails.titre }}</strong>.</p>
+      <div class="project-details-summary" *ngIf="selectedProjectDetails">
+        <p class="assign-modal-sub">Full details for <strong>{{ selectedProjectDetails.titre }}</strong>.</p>
+        <span class="project-status-pill" [class]="selectedProjectDetails.status==='in_progress' ? 'project-status-pill--teal' : selectedProjectDetails.status==='completed' ? 'project-status-pill--green' : 'project-status-pill--amber'">
+          {{ selectedProjectDetails.status | uppercase }}
+        </span>
+      </div>
 
       <div *ngIf="selectedProjectDetails" class="project-details-grid">
         <div class="project-details-item"><span>Project</span><strong>{{ selectedProjectDetails.titre }}</strong></div>
-        <div class="project-details-item"><span>Status</span><strong>{{ selectedProjectDetails.status | uppercase }}</strong></div>
         <div class="project-details-item"><span>Validation</span><strong>{{ etatLabel(selectedProjectDetails) }}</strong></div>
         <div class="project-details-item"><span>Entrepreneur</span><strong>{{ selectedProjectDetails.entrepreneur }}</strong></div>
         <div class="project-details-item"><span>Sector</span><strong>{{ formatSecteurLabel(selectedProjectDetails.secteur) }}</strong></div>
         <div class="project-details-item"><span>Stage</span><strong>{{ formatStadeLabel(selectedProjectDetails.stadeProjet) }}</strong></div>
         <div class="project-details-item"><span>Submitted</span><strong>{{ selectedProjectDetails.dateSoumission ? (selectedProjectDetails.dateSoumission | date:'short') : 'N/A' }}</strong></div>
-        <div class="project-details-item"><span>Progress</span><strong>{{ selectedProjectDetails.progression }}%</strong></div>
+        <div class="project-details-item">
+          <span>Progress</span>
+          <strong>{{ selectedProjectDetails.progression }}%</strong>
+          <div class="project-details-progress">
+            <div class="kh-progress"><div class="kh-progress__fill" [style.width.%]="selectedProjectDetails.progression"></div></div>
+          </div>
+        </div>
       </div>
 
       <div *ngIf="selectedProjectDetails" class="project-details-section">
@@ -225,7 +246,8 @@
         <p class="project-details-text" *ngIf="affectationsLoading">Loading assignments...</p>
         <ul class="project-details-list" *ngIf="!affectationsLoading && activeAffectations.length > 0">
           <li *ngFor="let affectation of activeAffectations">
-            {{ getCoachName(affectation.coachId) }} · {{ formatRoleLabel(affectation.roleCoachProjet) }}
+            <span>{{ getCoachName(affectation.coachId) }}</span>
+            <span class="coach-role-pill">{{ formatRoleLabel(affectation.roleCoachProjet) }}</span>
           </li>
         </ul>
       </div>

@@ -30,17 +30,15 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
 
   // ── Navigation ──────────────────────────────────────────────────────────
   navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: 'dashboard'    },
-    { label: 'Projects',  icon: 'folder',    route: 'projets'       },
-    { label: 'Workflows', icon: 'workflow',  route: 'workflows'     },
-    { label: 'Planning',  icon: 'calendar',  route: 'planning'      },
-    { label: 'Messages',  icon: 'message',   route: 'messages'      },
-    { label: 'Library',   icon: 'book',      route: 'bibliotheque'  },
-    { label: 'Progress',  icon: 'progress',  route: 'progressions'  },
-    { label: 'Talent',    icon: 'people',    route: 'talent'        },
-    { label: 'Profile',   icon: 'user',      route: 'profile'       },
-     { label :'Events' , icon :'events' , route : 'evenements'},
-    { label: 'Account',   icon: 'settings',  route: 'account'       },
+    { label: 'Dashboard', icon: '', route: 'dashboard'    },
+    { label: 'Projects',  icon: '',    route: 'projets'       },
+    { label: 'Messages',  icon: '',   route: 'messages'      },
+    { label: 'Library',   icon: '',      route: 'bibliotheque'  },
+    { label: 'Progress',  icon: '',  route: 'progressions'  },
+    { label: 'Talent',    icon: '',    route: 'talent'        },
+    { label: 'Profile',   icon: '',      route: 'profile'       },
+     { label :'Events' , icon :'' , route : 'evenements'},
+    { label: 'Account',   icon: '',  route: 'account'       },
   ];
 
   svgIcons: Record<string, string> = {

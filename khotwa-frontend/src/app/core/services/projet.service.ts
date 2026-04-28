@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap, switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
-import { Projet, ProjetStatut, SecteurProjet } from '../models';
+import { Projet, ProjetStatut, SecteurProjet, parseBmc, BmcData } from '../models';
 
 type SecteurProjetInput = SecteurProjet | '';
 
@@ -12,7 +12,7 @@ export interface ProjetDraftInput {
   secteur: SecteurProjetInput;
   problemeAdresse: string;
   solutionProposee: string;
-  businessModel: string;
+  businessModel: string;           // JSON stringifié du BMC (fourni par le composant)
   stadeProjet: 'IDEE' | 'POC' | 'MVP' | 'PROTOTYPE' | 'COMMERCIALISATION' | 'SCALING';
   innovationDescription: string;
   scalabiliteDescription: string;
@@ -57,6 +57,10 @@ export interface AdminReportingResponse {
   retardsTachesActifs: number;
   retardsSousTachesActifs: number;
   scoreMoyenDiscipline: number;
+  totalUtilisateurs?: number;
+  totalAbonnements?: number;
+  totalEvenements?: number;
+  totalTalents?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -127,12 +131,10 @@ export class ProjetService {
     );
   }
 
-  /** Loads projects assigned to the current coach (`coachId` is ignored; session defines the coach). */
   getProjetsCoach(_coachId?: number | string | null): Observable<Projet[]> {
     return this.loadCoachAssignedProjects();
   }
 
-  /** Loads projects for the logged-in entrepreneur (`userId` is ignored; session defines the user). */
   getProjetsEntrepreneur(_userId?: number | string | null): Observable<Projet[]> {
     return this.loadEntrepreneurProjects();
   }
@@ -158,7 +160,6 @@ export class ProjetService {
   createProjet(form: ProjetDraftInput): Observable<Projet> {
     const entrepreneurId = this.currentUserNumericId();
     
-    // Defensive check: prevent invalid FK constraint violation
     if (entrepreneurId <= 0) {
       return new Observable(observer => {
         observer.error(new Error('Invalid entrepreneur authentication. Please log in and try again.'));
@@ -171,7 +172,7 @@ export class ProjetService {
       secteur: form.secteur,
       problemeAdresse: form.problemeAdresse,
       solutionProposee: form.solutionProposee,
-      businessModel: form.businessModel,
+      businessModel: form.businessModel,        // JSON stringifié du BMC
       stadeProjet: form.stadeProjet,
       innovationDescription: form.innovationDescription,
       scalabiliteDescription: form.scalabiliteDescription,
@@ -198,7 +199,7 @@ export class ProjetService {
       secteur: form.secteur,
       problemeAdresse: form.problemeAdresse,
       solutionProposee: form.solutionProposee,
-      businessModel: form.businessModel,
+      businessModel: form.businessModel,        // JSON stringifié du BMC
       stadeProjet: form.stadeProjet,
       innovationDescription: form.innovationDescription,
       scalabiliteDescription: form.scalabiliteDescription,
@@ -253,12 +254,19 @@ export class ProjetService {
 
   updateStatut(id: string, status: ProjetStatut): void {
     const p = this._projets.find(p => p.id === id);
-    if (p) { p.status = status; p.updatedAt = new Date(); }
+    if (p) { 
+      p.status = status; 
+      p.updatedAt = new Date(); 
+    }
   }
-  delete(id: string): void { this._projets = this._projets.filter(p => p.id !== id); }
+
+  delete(id: string): void { 
+    this._projets = this._projets.filter(p => p.id !== id); 
+  }
 
   private toProjetModel(row: BackendProjetResponse & { projectCorrectionRequired?: boolean }): Projet {
     const disciplineScore = row.scoreDisciplineGlobal ?? 0;
+
     return {
       id: String(row.id),
       titre: row.nomStartup,
@@ -275,6 +283,7 @@ export class ProjetService {
       problemeAdresse: row.problemeAdresse,
       solutionProposee: row.solutionProposee,
       businessModel: row.businessModel,
+      bmc: parseBmc(row.businessModel),                    // ← Nouveau champ parsé
       innovationDescription: row.innovationDescription,
       scalabiliteDescription: row.scalabiliteDescription,
       pocDisponible: row.pocDisponible,

@@ -12,4 +12,6 @@ public class KhotwaBackendApplication {
         SpringApplication.run(KhotwaBackendApplication.class, args);
     }
 
+
+
 }

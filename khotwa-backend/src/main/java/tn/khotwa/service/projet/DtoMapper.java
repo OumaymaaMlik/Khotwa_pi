@@ -5,10 +5,28 @@ import tn.khotwa.dto.projet.ProjetCoachResponseDto;
 import tn.khotwa.dto.projet.ProjetResponseDto;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.ProjetCoach;
+import tn.khotwa.entity.UserEntities.User;
 
 
 @Component
 public class DtoMapper {
+
+    private String resolveDisplayName(User user) {
+        if (user == null) {
+            return null;
+        }
+        String nomAffiche = user.getNomAffiche();
+        if (nomAffiche != null && !nomAffiche.trim().isEmpty()) {
+            return nomAffiche.trim();
+        }
+        String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
+        String fullName = (firstName + " " + lastName).trim();
+        if (!fullName.isEmpty()) {
+            return fullName;
+        }
+        return user.getEmailAddress();
+    }
 
     public ProjetResponseDto toProjetResponse(Projet projet) {
         return ProjetResponseDto.builder()
@@ -33,7 +51,7 @@ public class DtoMapper {
                 .etatValidation(projet.getEtatValidation())
                 .scoreDisciplineGlobal(projet.getScoreDisciplineGlobal())
                 .entrepreneurId(projet.getEntrepreneurId())
-                .entrepreneurNomAffiche(projet.getEntrepreneur() != null ? projet.getEntrepreneur().getNomAffiche() : null)
+                .entrepreneurNomAffiche(resolveDisplayName(projet.getEntrepreneur()))
                 .adminId(projet.getAdminId())
                 .build();
     }
@@ -43,7 +61,7 @@ public class DtoMapper {
                 .id(pc.getId())
                 .projetId(pc.getProjetId())
                 .coachId(pc.getCoachId())
-            .coachNomAffiche(pc.getCoach() != null ? pc.getCoach().getNomAffiche() : null)
+                .coachNomAffiche(resolveDisplayName(pc.getCoach()))
                 .dateAffectation(pc.getDateAffectation())
                 .affecteParAdminId(pc.getAffecteParAdminId())
                 .roleCoachProjet(pc.getRoleCoachProjet())

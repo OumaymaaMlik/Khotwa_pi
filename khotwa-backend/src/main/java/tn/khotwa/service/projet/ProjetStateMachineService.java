@@ -78,8 +78,30 @@ public class ProjetStateMachineService {
     public Projet validerProjet(Long projetId) {
         Projet projet = getProjet(projetId);
         ensureState(projet, EtatValidationProjet.EN_REVUE);
-        projet.setEtatValidation(EtatValidationProjet.AFFECTE_COACH);
-        projet.setStatutProjet(StatutProjet.EN_COURS);
+
+        // Discipline score non négatif
+        if (projet.getScoreDisciplineGlobal() < 0) {
+            throw new BusinessException(
+                    "Le discipline score ne peut pas être négatif pour valider (actuel : "
+                            + projet.getScoreDisciplineGlobal() + ")"
+            );
+        }
+
+        // Aucune tâche bloquée ou en correction
+        List<Tache> taches = tacheRepository.findByProjetId(projetId);
+        boolean hasBlockedTasks = taches.stream()
+                .anyMatch(t -> t.getStatutTache() == StatutTache.BLOQUEE
+                        || t.getStatutTache() == StatutTache.A_CORRIGER);
+        if (hasBlockedTasks) {
+            throw new BusinessException(
+                    "Impossible de valider : certaines tâches sont bloquées ou en attente de correction"
+            );
+        }
+
+        // Projet vraiment validé et terminé
+        projet.setEtatValidation(EtatValidationProjet.VALIDE);
+        projet.setStatutProjet(StatutProjet.TERMINE);
+
         projetCorrectionRepository.findTopByProjetIdOrderByDateDemandeCorrectionDesc(projetId)
                 .ifPresent(correction -> {
                     correction.setStatutCorrection(ProjetCorrectionStatut.APPROUVEE_PAR_COACH);

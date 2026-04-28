@@ -34,7 +34,6 @@ export interface SousTache {
   tacheId?: number;
 }
 
-
 export interface CountdownInfo {
   id: number;
   titre: string;
@@ -62,7 +61,6 @@ export interface Tache {
   projetId?: string;
   slaJours?: number;
   derniereMaj?: Date;
- 
 }
 
 export interface Etape {
@@ -73,6 +71,63 @@ export interface Etape {
   taches?: Tache[];
   dateDebut?: Date;
   dateFin?: Date;
+}
+
+/* ============================================================================
+   BMC — Business Model Canvas (sérialisé en JSON dans le champ businessModel)
+   ============================================================================ */
+export interface BmcData {
+  propositionValeur: string;
+  segmentsClientele: string;
+  canaux: string;
+  relationsClients: string;
+  sourcesRevenus: string;
+  ressourcesCles: string;
+  activitesCles: string;
+  structureCouts: string;
+  partenaires: string;
+}
+
+export const EMPTY_BMC: BmcData = {
+  propositionValeur: '',
+  segmentsClientele: '',
+  canaux: '',
+  relationsClients: '',
+  sourcesRevenus: '',
+  ressourcesCles: '',
+  activitesCles: '',
+  structureCouts: '',
+  partenaires: '',
+};
+
+/** Parse le champ businessModel (JSON ou texte brut) vers BmcData */
+export function parseBmc(businessModel?: string): BmcData {
+  if (!businessModel) { 
+    return { ...EMPTY_BMC }; 
+  }
+  try {
+    const parsed = JSON.parse(businessModel);
+    if (typeof parsed === 'object' && parsed !== null) {
+      return {
+        propositionValeur: parsed.propositionValeur || '',
+        segmentsClientele: parsed.segmentsClientele || '',
+        canaux: parsed.canaux || '',
+        relationsClients: parsed.relationsClients || '',
+        sourcesRevenus: parsed.sourcesRevenus || '',
+        ressourcesCles: parsed.ressourcesCles || '',
+        activitesCles: parsed.activitesCles || '',
+        structureCouts: parsed.structureCouts || '',
+        partenaires: parsed.partenaires || '',
+      };
+    }
+  } catch (_) {}
+  // Fallback : texte libre dans propositionValeur
+  return { ...EMPTY_BMC, propositionValeur: businessModel };
+}
+
+/** Sérialise BmcData en JSON string pour stockage dans businessModel */
+export function stringifyBmc(bmc: BmcData): string {
+  return JSON.stringify(bmc);
 }
 
 export interface Projet {
@@ -90,7 +145,8 @@ export interface Projet {
   secteur?: SecteurProjet;
   problemeAdresse?: string;
   solutionProposee?: string;
-  businessModel?: string;
+  businessModel?: string; 
+  bmc?: BmcData;          // Peut contenir du JSON (BmcData) ou du texte
   innovationDescription?: string;
   scalabiliteDescription?: string;
   pocDisponible?: boolean;
