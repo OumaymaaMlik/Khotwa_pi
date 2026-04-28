@@ -1,5 +1,6 @@
-<aside class="sidebar" [class.open]="sidebarOpen" [class.collapsed]="!sidebarOpen"></aside>
-<div class="app-shell" [class.sidebar-open]="sidebarOpen">
+<div class="app-shell"
+     [class.sidebar-open]="sidebarOpen"
+     [class.sidebar-collapsed]="!sidebarOpen && !sidebarMobile">
 
   <!-- ══ Mobile overlay ══ -->
   <div class="overlay" *ngIf="sidebarOpen && sidebarMobile" (click)="closeOnMobile()"></div>
@@ -8,13 +9,11 @@
     <!-- Brand -->
     <div class="sidebar__brand">
       <img src="assets/khotwa-logo.png" alt="KHOTWA" style="height:36px;width:auto;object-fit:contain;" />
-    
+      
       <div class="brand-text">
-  <div style="display:flex; align-items:center; gap:6px;">
-    <span class="brand-name">KHOTWA</span>
-<span class="brand-badge" *ngIf="roleLabel === 'ADMIN'">ADMIN</span>  </div>
-  <span class="brand-role" [style.color]="roleColor">{{ roleLabel }}</span>
-</div>
+        <span class="brand-name">KHOTWA</span>
+        <span class="brand-role" [style.color]="roleColor">{{ roleLabel }}</span>
+      </div>
 
       <!-- Collapse button (desktop only) -->
       <button class="sidebar__toggle sidebar__toggle--collapse" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'">
@@ -60,9 +59,8 @@
            [title]="item.label">
           <span class="nav-item__icon" [innerHTML]="getIcon(item.icon)"></span>
           <span class="nav-item__label">{{ item.label }}</span>
-          <!-- Notification pill for Messages -->
-          <span class="nav-item__pill" *ngIf="item.route === 'messages' && nonLus > 0">
-            {{ nonLus }}
+          <span class="nav-item__pill" *ngIf="item.route === 'feedbacks' && unreadFeedbackCount > 0">
+            {{ unreadFeedbackCount > 99 ? '99+' : unreadFeedbackCount }}
           </span>
         </a>
 
@@ -83,7 +81,7 @@
         </div>
         <div class="user-info">
           <p class="user-name">{{ auth.currentUser?.firstName }} {{ auth.currentUser?.lastName }}</p>
-          <p class="user-email">{{ auth.currentUser?.emailAddress || '' }}</p>
+          <p class="user-email">{{ userEmail }}</p>
         </div>
         <button class="logout-btn" (click)="logout()" title="Sign out">
           <span [innerHTML]="getIcon('logout')"></span>
@@ -103,7 +101,7 @@
 
       <!-- Expand hint shown when collapsed on desktop -->
       <button class="topbar__expand-brand" *ngIf="!sidebarOpen && !sidebarMobile" (click)="toggleSidebar()">
-        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#FF9A5C)'">
+        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#5AD5D5)'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
@@ -111,11 +109,7 @@
       </button>
 
       <!-- Breadcrumb -->
-      <div class="topbar__breadcrumb">
-        <span class="bc-root">{{ roleLabel }}</span>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">{{ currentPageLabel }}</span>
-      </div>
+     
 
       <!-- Search -->
       <div class="topbar__search">
@@ -139,7 +133,15 @@
             <div *ngFor="let n of notifs" class="notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
               <div class="notif-item__dot dot-info"></div>
               <div>
-                <p class="notif-item__titre">{{ n.type === 'NEW_MESSAGE' ? 'New Message' : n.type === 'STATUS_UPDATED' ? 'Message Read' : 'Ticket Resolved' }}</p>
+                <p class="notif-item__titre">{{
+                  ((n.message || '').toLowerCase().includes('assigned to project') || (n.message || '').toLowerCase().includes('assigned to your project') || (n.message || '').toLowerCase().includes('unassigned from project')) ? 'Project Assignment'
+                  : n.type === 'NEW_MESSAGE' ? 'New Message'
+                  : n.type === 'STATUS_UPDATED' ? 'Message Read'
+                  : n.type === 'PROJECT_ASSIGNMENT' ? 'Project Assignment'
+                  : n.type === 'PROJECT_UNASSIGNED' ? 'Project Assignment'
+                  : n.type === 'FEEDBACK_SUBMITTED' ? 'New Feedback'
+                  : 'Ticket Resolved'
+                }}</p>
                 <p class="notif-item__msg">{{ n.message }}</p>
               </div>
             </div>

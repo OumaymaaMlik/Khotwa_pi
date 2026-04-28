@@ -18,7 +18,7 @@ export class AuthService {
 
   private _currentUser: User | null = null;
   public currentUserSubject = new BehaviorSubject<User | null>(null);
-
+  currentUser$ = this.currentUserSubject.asObservable();
   constructor(private http: HttpClient) {
     this._loadSession();
   }

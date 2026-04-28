@@ -1,16 +1,21 @@
 <div class="landing">
 
   <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
+  <!-- CHANGEMENTS : btn-orange-sm → btn-primary-sm -->
   <nav class="navbar" [class.navbar--scrolled]="scrolled">
     <a class="nav-logo" routerLink="/">
       <img src="assets/khotwa-logo.png" alt="KHOTWA" class="nav-logo-img" />
     </a>
     <ul class="nav-menu">
-      <li *ngFor="let item of navItems; trackBy: trackByLabel"><a [href]="item.anchor">{{ item.label }}</a></li>
+      <li *ngFor="let item of navItems; trackBy: trackByLabel">
+        <a *ngIf="item.anchor" [href]="item.anchor">{{ item.label }}</a>
+        <a *ngIf="!item.anchor" (click)="goTalentMarket()" style="cursor:pointer">{{ item.label }}</a>
+      </li>
     </ul>
     <div class="nav-right">
       <button class="btn-ghost-sm" (click)="goLogin()">Sign in</button>
-      <button class="btn-orange-sm" (click)="goLogin()">Get started →</button>
+      <!-- ✏️ CHANGEMENT : btn-orange-sm → btn-primary-sm -->
+      <button class="btn-ghost-sm" (click)="goLogin()">Get started →</button>
     </div>
     <button class="nav-burger" (click)="mobileMenuOpen=!mobileMenuOpen">
       <span></span><span></span><span></span>
@@ -19,13 +24,17 @@
 
   <!-- Mobile menu -->
   <div class="mobile-menu" [class.open]="mobileMenuOpen">
-    <a *ngFor="let item of navItems" [href]="item.anchor" (click)="mobileMenuOpen=false">{{ item.label }}</a>
-    <button class="btn-orange-sm" style="margin-top:8px" (click)="goLogin()">Get started →</button>
+    <ng-container *ngFor="let item of navItems">
+      <a *ngIf="item.anchor"  [href]="item.anchor"  (click)="mobileMenuOpen=false">{{ item.label }}</a>
+      <a *ngIf="!item.anchor" (click)="goTalentMarket(); mobileMenuOpen=false" style="cursor:pointer">{{ item.label }}</a>
+    </ng-container>
+    <!-- ✏️ CHANGEMENT : btn-orange-sm → btn-primary-sm -->
+    <button class="btn-primary-sm" style="margin-top:8px" (click)="goLogin()">Get started →</button>
   </div>
 
   <!-- ══ HERO SLIDER ══════════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT dans cette section -->
   <section class="hero-slider">
-    <!-- Slides -->
     <div class="slider-track">
       <div *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
            class="slide"
@@ -42,7 +51,9 @@
           <p class="hero-sub">{{ slide.sub }}</p>
           <div class="hero-actions">
             <button class="btn-primary-lg" (click)="goLogin()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
               Start for free
             </button>
             <button class="btn-outline-lg" (click)="goLogin()">Explore the demo →</button>
@@ -51,15 +62,17 @@
       </div>
     </div>
 
-    <!-- Contrôles slider -->
     <button class="slider-arrow slider-arrow--prev" (click)="prevSlide()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
     </button>
     <button class="slider-arrow slider-arrow--next" (click)="nextSlide()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
     </button>
 
-    <!-- Dots -->
     <div class="slider-dots">
       <button *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
               class="slider-dot"
@@ -67,19 +80,16 @@
               (click)="goSlide(i)"></button>
     </div>
 
-    <!-- Stats wave -->
-    <div class="hero-stats-bar">
-      <div class="stat-item"><span class="stat-val">120+</span><span class="stat-lbl">Active projects</span></div>
-      <div class="stat-sep"></div>
-      <div class="stat-item"><span class="stat-val">98%</span><span class="stat-lbl">Satisfaction</span></div>
-      <div class="stat-sep"></div>
-      <div class="stat-item"><span class="stat-val">50+</span><span class="stat-lbl">Incubated startups</span></div>
-      <div class="stat-sep"></div>
-      <div class="stat-item"><span class="stat-val">3</span><span class="stat-lbl">Dedicated roles</span></div>
-    </div>
+   
   </section>
 
   <!-- ══ ESPACES / RÔLES ══════════════════════════════════════════ -->
+  <!--
+    ✏️ CHANGEMENTS dans les role-card :
+      - Founder : [style.--rc]="'#1d4e89'"  (était --orange)
+      - Coach   : [style.--rc]="'#0d4a38'"  (reste pareil)
+      Adapter selon les couleurs de tes rôles dans roles[]
+  -->
   <section class="roles-section" id="roles">
     <div class="section-inner">
       <div class="section-header">
@@ -99,7 +109,9 @@
             <ul class="role-list">
               <li *ngFor="let feat of r.features; trackBy: trackByText">
                 <div class="role-check-icon">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                 </div>
                 {{ feat }}
               </li>
@@ -112,6 +124,7 @@
   </section>
 
   <!-- ══ FONCTIONNALITÉS ══════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT HTML dans cette section -->
   <section class="features-section" id="fonctionnalites">
     <div class="section-inner">
       <div class="section-header">
@@ -130,6 +143,7 @@
   </section>
 
   <!-- ══ COMMENT ÇA MARCHE ════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT HTML dans cette section -->
   <section class="steps-section" id="processus">
     <div class="section-inner">
       <div class="section-header">
@@ -147,46 +161,8 @@
     </div>
   </section>
 
-  <!-- ══ TARIFS ═══════════════════════════════════════════════════ -->
-  <section class="pricing-section" id="pricing">
-    <div class="section-inner">
-      <div class="section-header">
-        <span class="section-eyebrow">Simple pricing</span>
-        <h2 class="section-title">Choose your plan</h2>
-        <p class="section-sub">Start for free, scale as you grow. No hidden fees.</p>
-      </div>
-      <div class="pricing-grid">
-        <div *ngFor="let plan of plans; trackBy: trackByName"
-             class="pricing-card"
-             [class.pricing-card--featured]="plan.featured"
-             [style.--pc]="plan.color">
-          <div class="pricing-header">
-            <span class="plan-badge" *ngIf="plan.badge">{{ plan.badge }}</span>
-            <div class="plan-icon">{{ plan.icon }}</div>
-            <h3 class="plan-name">{{ plan.name }}</h3>
-            <p class="plan-desc">{{ plan.desc }}</p>
-            <div class="plan-price">
-              <span class="price-amount">{{ plan.price }}</span>
-              <span class="price-period" *ngIf="plan.period">{{ plan.period }}</span>
-            </div>
-          </div>
-          <ul class="plan-features">
-            <li *ngFor="let feat of plan.features; trackBy: trackByText">
-              <div class="plan-check">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              {{ feat }}
-            </li>
-          </ul>
-          <button class="plan-cta" [class.plan-cta--featured]="plan.featured" (click)="goLogin()">
-            {{ plan.cta }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ══ CTA ══════════════════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT dans cette section -->
   <section class="cta-section" id="contact">
     <div class="cta-inner">
       <div class="cta-badge">🚀 Join KHOTWA today</div>
@@ -194,7 +170,9 @@
       <p class="cta-sub">Join teams who trust KHOTWA to turn their ideas into measurable success. Get started in under 5 minutes.</p>
       <div class="cta-btns">
         <button class="btn-primary-lg" (click)="goLogin()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
           Access the platform
         </button>
         <button class="btn-outline-lg">Contact us →</button>

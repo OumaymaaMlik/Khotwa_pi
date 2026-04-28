@@ -1,6 +1,8 @@
 <div class="vis-page">
   <div class="vis-hero vis-card">
-    <h1>Bonjour, {{ auth.currentUser?.prenom }}</h1>
+    <h1>
+      Bonjour, {{ (auth.currentUser$ | async)?.firstName }}
+    </h1>
     <p>Un espace visitor plus clair, moderne et aligne avec le style entrepreneur pour piloter vos candidatures.</p>
     <div class="vis-highlights">
       <span class="vis-pill">Experience premium</span>

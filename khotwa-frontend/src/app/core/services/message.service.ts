@@ -92,20 +92,17 @@ export class MessageService {
     return this.http.post(`${this.apiUrl}/conversations/direct/ensure?senderId=${senderId}&receiverId=${receiverId}`, {});
   }
 
-  getConversationRecap(user1: number, user2: number): Observable<ConversationRecap> {
+  getConversationRecap(conversationId: number, userId: number): Observable<ConversationRecap> {
     const params = new HttpParams()
-      .set('user1', user1)
-      .set('user2', user2);
+      .set('conversationId', conversationId)
+      .set('userId', userId);
     return this.http.get<ConversationRecap>(`${this.apiUrl}/messages/recap`, { params });
   }
 
-  getReplySuggestions(currentUserId: number, otherUserId: number): Observable<ReplySuggestions> {
+  getReplySuggestions(conversationId: number, currentUserId: number): Observable<ReplySuggestions> {
     const params = new HttpParams()
-      .set('currentUserId', currentUserId)
-      .set('otherUserId', otherUserId)
-      // Backward-compatibility: support older backend query param names.
-      .set('user1', currentUserId)
-      .set('user2', otherUserId);
+      .set('conversationId', conversationId)
+      .set('currentUserId', currentUserId);
     return this.http.get<ReplySuggestions>(`${this.apiUrl}/messages/suggestions`, { params });
   }
 

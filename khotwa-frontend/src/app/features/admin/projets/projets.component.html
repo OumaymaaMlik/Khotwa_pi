@@ -21,7 +21,7 @@
   <div class="grid animate-3">
     <div *ngFor="let p of filteredProjets" class="card" [style.opacity]="loadingProjects ? 0.6 : 1">
       <div class="card-top">
-        <div class="card-icon" [style.background]="p.status==='in_progress'?'linear-gradient(135deg,#2ABFBF,#1a9999)':p.status==='completed'?'linear-gradient(135deg,#27AE7A,#1a8a5e)':'linear-gradient(135deg,#F5A623,#d4881e)'">
+        <div class="card-icon" [style.background]="p.status==='in_progress'?'linear-gradient(135deg,#2ABFBF,#1a9999)':p.status==='completed'?'linear-gradient(135deg,#27AE7A,#1a8a5e)':'linear-gradient(135deg,#2ABFBF,#1ca0a0)'">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </div>
         <span class="kh-badge" [class]="p.status==='in_progress'?'kh-badge--teal':p.status==='completed'?'kh-badge--green':'kh-badge--amber'">{{ p.status | uppercase }}</span>
@@ -66,7 +66,7 @@
           <p class="rec-panel__title">Top 3 recommandés</p>
           <button class="kh-btn kh-btn--ghost kh-btn--sm" type="button" (click)="toggleRecommendationPanel()">Masquer</button>
         </div>
-        <p class="rec-panel__subtitle">Lecture rapide: vert = fort, orange = moyen, rouge = faible.</p>
+        <p class="rec-panel__subtitle">Lecture rapide: vert = fort, teal = medium, rouge = faible.</p>
         <div class="rec-card" *ngFor="let rec of topRecommendationCandidates; let i = index">
           <div class="rec-card__head">
             <strong>#{{ i + 1 }} {{ rec.coachNomAffiche }}</strong>
@@ -236,3 +236,4 @@
     </div>
   </div>
 </div>
+

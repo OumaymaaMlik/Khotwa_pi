@@ -11,6 +11,7 @@ import { VisitorAnnoncesComponent } from './annonces/annonces.component';
 import { VisitorCandidaturesComponent } from './candidatures/candidatures.component';
 import { VisitorProfilComponent } from './profil/profil.component';
 import { VisitorTalentComponent } from './talent/talent.component';
+import { VisitorEventsComponent } from './events/events.component';
 
 const routes: Routes = [
   {
@@ -33,7 +34,9 @@ const routes: Routes = [
     VisitorAnnoncesComponent,
     VisitorCandidaturesComponent,
     VisitorProfilComponent,
-    VisitorTalentComponent, // ✅ important
+    VisitorTalentComponent,
+    VisitorEventsComponent
+    // ✅ important
   ],
   imports: [
     CommonModule,

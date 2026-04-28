@@ -15,14 +15,16 @@ public class AIController {
     private final MessageService messageService;
 
     @GetMapping("/recap")
-    public ResponseEntity<ConversationSummary> getRecap(@RequestParam Long user1, @RequestParam Long user2) {
-        return ResponseEntity.ok(messageService.generateRecap(user1, user2));
+    public ResponseEntity<ConversationSummary> getRecap(
+            @RequestParam Long conversationId,
+            @RequestParam Long userId) {
+        return ResponseEntity.ok(messageService.generateRecap(conversationId, userId));
     }
 
     @GetMapping("/suggestions")
     public ResponseEntity<SmartSuggestions> getSuggestions(
-            @RequestParam Long currentUserId,
-            @RequestParam Long otherUserId) {
-        return ResponseEntity.ok(messageService.generateSuggestions(currentUserId, otherUserId));
+            @RequestParam Long conversationId,
+            @RequestParam Long currentUserId) {
+        return ResponseEntity.ok(messageService.generateSuggestions(conversationId, currentUserId));
     }
 }
