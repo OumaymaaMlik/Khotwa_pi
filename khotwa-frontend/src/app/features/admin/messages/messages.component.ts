@@ -350,12 +350,12 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
 
   private loadReplySuggestions() {
     if (!this.selectedConv) return;
-    if (!this.selectedConv.participantId) {
+    if (!this.selectedConv.conversationId) {
       this.replySuggestions = [];
       return;
     }
     this.suggestionsLoading = true;
-    this.messageService.getReplySuggestions(this.currentUserId, this.selectedConv.participantId).subscribe({
+    this.messageService.getReplySuggestions(this.selectedConv.conversationId, this.currentUserId).subscribe({
       next: (res) => {
         this.replySuggestions = (res?.suggestions ?? []).slice(0, 3);
         this.suggestionsLoading = false;
@@ -404,9 +404,15 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
 
   private loadConversationRecap() {
     if (!this.selectedConv) return;
+    if (!this.selectedConv.conversationId) {
+      this.recapData = null;
+      this.recapError = 'No recap available for this conversation.';
+      this.recapLoading = false;
+      return;
+    }
     this.recapLoading = true;
     this.recapError = '';
-    this.messageService.getConversationRecap(this.currentUserId, this.selectedConv.participantId).subscribe({
+    this.messageService.getConversationRecap(this.selectedConv.conversationId, this.currentUserId).subscribe({
       next: (recap) => {
         this.recapData = this.normalizeRecapForCurrentUser(recap);
         this.recapLoading = false;
