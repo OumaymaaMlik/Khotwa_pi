@@ -5,9 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.khotwa.enums.ProgressStatus;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.service.ressources.IProgressionService;
-import tn.khotwa.service.UserServices.CurrentUserService;
+import tn.khotwa.service.User.CurrentUserService;
 
 import java.util.Map;
 

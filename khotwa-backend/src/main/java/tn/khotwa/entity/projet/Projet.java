@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.khotwa.config.projectConfig.SecteurProjetConverter;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.projectEnum.EtatValidationProjet;
 import tn.khotwa.enums.projectEnum.SecteurProjet;
 import tn.khotwa.enums.projectEnum.StadeProjet;

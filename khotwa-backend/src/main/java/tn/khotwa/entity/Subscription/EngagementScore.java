@@ -2,7 +2,7 @@ package tn.khotwa.entity.Subscription;
 
 import jakarta.persistence.*;
 import lombok.*;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.SubscriptionEnums.RiskLevel;
 
 import java.time.LocalDateTime;

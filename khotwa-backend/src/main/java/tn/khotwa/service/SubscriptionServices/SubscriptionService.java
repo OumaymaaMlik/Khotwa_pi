@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.khotwa.entity.Subscription.PlanOffer;
 import tn.khotwa.entity.Subscription.Subscription;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.repository.SubscriptionRepo.PlanOfferRepository;

@@ -3,7 +3,7 @@ package tn.khotwa.repository.ressources;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.dto.ressources.StagnationInfo;
+import tn.khotwa.DTO.ressources.StagnationInfo;
 import tn.khotwa.entity.ressources.ProgressionUtilisateur;
 import tn.khotwa.enums.ProgressStatus;
 import tn.khotwa.projection.ressources.ProgressionView;
@@ -72,7 +72,7 @@ public interface ProgressionRepository extends JpaRepository<ProgressionUtilisat
      * @return       Liste de {@link StagnationInfo} prête à l'emploi pour l'envoi des mails
      */
     @Query("""
-        SELECT new tn.khotwa.dto.ressources.StagnationInfo(
+        SELECT new tn.khotwa.DTO.ressources.StagnationInfo(
             u.idUser,
             u.firstName,
             u.lastName,
@@ -87,7 +87,7 @@ public interface ProgressionRepository extends JpaRepository<ProgressionUtilisat
             p.pourcentage
         )
         FROM ProgressionUtilisateur p
-        JOIN tn.khotwa.entity.UserEntities.User u
+        JOIN tn.khotwa.entity.User.User u
             ON u.idUser = p.utilisateurId
         JOIN p.ressource r
         LEFT JOIN tn.khotwa.entity.projet.ProjetCoach pc
@@ -98,7 +98,7 @@ public interface ProgressionRepository extends JpaRepository<ProgressionUtilisat
             )
             AND pc.actif = true
             AND pc.roleCoachProjet = tn.khotwa.enums.projectEnum.RoleCoachProjet.COACH_PRINCIPAL
-        LEFT JOIN tn.khotwa.entity.UserEntities.User coach
+        LEFT JOIN tn.khotwa.entity.User.User coach
             ON coach.idUser = pc.coachId
         WHERE p.statut = tn.khotwa.enums.ProgressStatus.IN_PROGRESS
           AND p.dernierAcces <= :seuil

@@ -1,6 +1,6 @@
 package tn.khotwa.service.ressources;
 
-import tn.khotwa.dto.ressources.StagnationInfo;
+import tn.khotwa.DTO.ressources.StagnationInfo;
 
 public interface INudgeEmailService {
 

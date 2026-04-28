@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.user.ChangePasswordRequest;
-import tn.khotwa.dto.user.UpdateProfileRequest;
-import tn.khotwa.dto.user.UpdateUserByAdminRequest;
-import tn.khotwa.dto.user.UpdateUserPlanRequest;
-import tn.khotwa.dto.user.UserResponse;
-import tn.khotwa.service.UserServices.impl.UserServiceImpl;
+import tn.khotwa.DTO.user.ChangePasswordRequest;
+import tn.khotwa.DTO.user.UpdateProfileRequest;
+import tn.khotwa.DTO.user.UpdateUserByAdminRequest;
+import tn.khotwa.DTO.user.UpdateUserPlanRequest;
+import tn.khotwa.DTO.user.UserResponse;
+import tn.khotwa.service.User.impl.UserServiceImpl;
 
 import java.util.List;
 

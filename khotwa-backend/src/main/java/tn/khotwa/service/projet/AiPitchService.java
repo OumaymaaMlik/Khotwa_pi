@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import tn.khotwa.dto.projet.AiPitchRequestDto;
-import tn.khotwa.dto.projet.AiPitchResponseDto;
+import tn.khotwa.DTO.projet.AiPitchRequestDto;
+import tn.khotwa.DTO.projet.AiPitchResponseDto;
 import tn.khotwa.exception.BusinessException;
 
 import java.net.URI;

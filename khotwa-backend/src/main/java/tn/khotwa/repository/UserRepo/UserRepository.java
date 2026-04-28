@@ -4,8 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import tn.khotwa.entity.UserEntities.User;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.entity.User.User;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.projection.user.UserView;
 
 import java.util.List;

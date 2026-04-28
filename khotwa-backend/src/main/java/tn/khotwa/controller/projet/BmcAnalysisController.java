@@ -3,8 +3,8 @@ package tn.khotwa.controller.projet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.projet.BmcAnalysisRequestDto;
-import tn.khotwa.dto.projet.BmcAnalysisResponseDto;
+import tn.khotwa.DTO.projet.BmcAnalysisRequestDto;
+import tn.khotwa.DTO.projet.BmcAnalysisResponseDto;
 import tn.khotwa.service.projet.BmcAnalysisService;
 
 @RestController

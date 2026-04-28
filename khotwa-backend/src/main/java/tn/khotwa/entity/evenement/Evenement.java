@@ -3,7 +3,7 @@ package tn.khotwa.entity.evenement;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;

@@ -1,11 +1,10 @@
 package tn.khotwa.service.ressources;
 
-import tn.khotwa.dto.ressources.EntrepreneurProgressionDTO;
+import tn.khotwa.DTO.ressources.EntrepreneurProgressionDTO;
 import tn.khotwa.enums.ProgressStatus;
 import tn.khotwa.projection.ressources.ProgressionView;
 
 import java.util.List;
-import java.util.Map;
 
 public interface IProgressionService {
 

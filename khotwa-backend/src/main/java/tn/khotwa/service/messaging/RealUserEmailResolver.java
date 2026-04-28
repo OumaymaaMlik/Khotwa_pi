@@ -2,7 +2,7 @@ package tn.khotwa.service.messaging;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.service.UserServices.IUserService;
+import tn.khotwa.service.User.IUserService;
 
 @Service
 @RequiredArgsConstructor

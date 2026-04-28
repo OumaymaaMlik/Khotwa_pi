@@ -7,7 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import tn.khotwa.dto.feedback.FeedbackDTO;
+import tn.khotwa.DTO.feedback.FeedbackDTO;
 import tn.khotwa.security.AppUserPrincipal;
 import tn.khotwa.service.feedback.FeedbackService;
 

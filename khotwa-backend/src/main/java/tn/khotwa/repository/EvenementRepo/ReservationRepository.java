@@ -3,7 +3,7 @@ package tn.khotwa.repository.EvenementRepo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.entity.evenement.Evenement;
 import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.enums.EventsEnums.EvenementType;

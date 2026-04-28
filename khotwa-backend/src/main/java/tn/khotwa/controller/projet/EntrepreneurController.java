@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import tn.khotwa.dto.projet.*;
+import tn.khotwa.DTO.projet.*;
 import tn.khotwa.entity.projet.Document;
 import tn.khotwa.entity.projet.SousTache;
 import tn.khotwa.entity.projet.Tache;
@@ -16,7 +16,7 @@ import tn.khotwa.service.projet.ProjetCoachService;
 import tn.khotwa.service.projet.ProjetStateMachineService;
 import tn.khotwa.service.projet.TacheService;
 
-import tn.khotwa.dto.projet.CountdownDto;
+import tn.khotwa.DTO.projet.CountdownDto;
 import tn.khotwa.service.projet.RetardService;
 
 import java.util.List;

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.dto.projet.CountdownDto;
+import tn.khotwa.DTO.projet.CountdownDto;
 import tn.khotwa.entity.projet.SousTache;
 import tn.khotwa.entity.projet.Tache;
 import tn.khotwa.enums.projectEnum.StatutTache;

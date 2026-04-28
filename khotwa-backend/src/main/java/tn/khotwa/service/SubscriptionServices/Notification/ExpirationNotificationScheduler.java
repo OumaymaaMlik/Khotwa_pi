@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import tn.khotwa.entity.Subscription.Subscription;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
 

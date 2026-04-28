@@ -3,7 +3,7 @@ package tn.khotwa.entity.Subscription;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 

@@ -12,7 +12,7 @@ import tn.khotwa.entity.ressources.Ressource;
 import tn.khotwa.entity.ressources.Tag;
 import tn.khotwa.enums.*;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.exception.ResourceNotFoundException;
 import tn.khotwa.projection.ressources.*;
 import tn.khotwa.repository.ressources.*;

@@ -1,6 +1,5 @@
 package tn.khotwa.controller.ressources;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.*;
@@ -9,15 +8,15 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.khotwa.enums.*;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.projection.ressources.RessourceSummaryView;
 import tn.khotwa.projection.ressources.RessourceView;
 import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.service.ressources.IRessourceService;
 import tn.khotwa.service.ressources.IRessourceService.EnrichedRessource;
-import tn.khotwa.service.UserServices.CurrentUserService;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.service.User.CurrentUserService;
+import tn.khotwa.entity.User.User;
 
 import java.nio.file.Path;
 import java.util.List;

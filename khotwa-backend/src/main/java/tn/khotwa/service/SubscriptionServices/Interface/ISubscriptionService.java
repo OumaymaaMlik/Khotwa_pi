@@ -1,7 +1,7 @@
 package tn.khotwa.service.SubscriptionServices.Interface;
 
 import tn.khotwa.entity.Subscription.PlanOffer;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.entity.Subscription.Subscription;
 

@@ -3,7 +3,7 @@ package tn.khotwa.entity.projet;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.projectEnum.RoleCoachProjet;
 
 import java.time.LocalDateTime;

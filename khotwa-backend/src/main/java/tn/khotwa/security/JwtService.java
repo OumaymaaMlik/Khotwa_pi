@@ -8,7 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;

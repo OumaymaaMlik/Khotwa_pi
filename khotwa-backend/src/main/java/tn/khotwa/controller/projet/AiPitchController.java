@@ -1,11 +1,10 @@
 package tn.khotwa.controller.projet;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.projet.AiPitchRequestDto;
-import tn.khotwa.dto.projet.AiPitchResponseDto;
+import tn.khotwa.DTO.projet.AiPitchRequestDto;
+import tn.khotwa.DTO.projet.AiPitchResponseDto;
 import tn.khotwa.service.projet.AiPitchService;
 
 @RestController

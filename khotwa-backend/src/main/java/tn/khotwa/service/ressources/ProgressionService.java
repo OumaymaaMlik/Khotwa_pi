@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tn.khotwa.entity.ressources.ProgressionUtilisateur;
 import tn.khotwa.entity.ressources.Ressource;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.ProgressStatus;
 import tn.khotwa.exception.ResourceNotFoundException;
 import tn.khotwa.projection.ressources.ProgressionView;
@@ -14,7 +14,7 @@ import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.ressources.ProgressionRepository;
 import tn.khotwa.repository.ressources.RessourceRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
-import tn.khotwa.dto.ressources.EntrepreneurProgressionDTO;
+import tn.khotwa.DTO.ressources.EntrepreneurProgressionDTO;
 
 import java.time.LocalDateTime;
 import java.util.*;

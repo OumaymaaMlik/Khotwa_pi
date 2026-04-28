@@ -3,8 +3,8 @@ package tn.khotwa.controller.SubscriptionController;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.Subscription.CreateDiscountRequest;
-import tn.khotwa.dto.Subscription.DiscountDTO;
+import tn.khotwa.DTO.Subscription.CreateDiscountRequest;
+import tn.khotwa.DTO.Subscription.DiscountDTO;
 import tn.khotwa.service.SubscriptionServices.DiscountService;
 
 import java.util.List;

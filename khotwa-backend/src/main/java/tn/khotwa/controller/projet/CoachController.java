@@ -6,7 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.projet.*;
+import tn.khotwa.DTO.projet.*;
 import tn.khotwa.entity.projet.Document;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.SousTache;

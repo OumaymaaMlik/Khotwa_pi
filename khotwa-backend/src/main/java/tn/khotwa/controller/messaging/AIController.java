@@ -3,8 +3,8 @@ package tn.khotwa.controller.messaging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.messaging.ConversationSummary;
-import tn.khotwa.dto.messaging.SmartSuggestions;
+import tn.khotwa.DTO.messaging.ConversationSummary;
+import tn.khotwa.DTO.messaging.SmartSuggestions;
 import tn.khotwa.service.messaging.MessageService;
 
 @RestController

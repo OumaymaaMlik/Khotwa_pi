@@ -1,11 +1,11 @@
 package tn.khotwa.service.projet;
 
 import org.springframework.stereotype.Component;
-import tn.khotwa.dto.projet.ProjetCoachResponseDto;
-import tn.khotwa.dto.projet.ProjetResponseDto;
+import tn.khotwa.DTO.projet.ProjetCoachResponseDto;
+import tn.khotwa.DTO.projet.ProjetResponseDto;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.ProjetCoach;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 
 
 @Component

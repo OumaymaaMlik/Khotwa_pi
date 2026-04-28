@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.khotwa.config.websocket.OnlineUserStore;
 import tn.khotwa.config.websocket.WebSocketEventPublisher;
-import tn.khotwa.dto.messaging.*;
+import tn.khotwa.DTO.messaging.*;
 import tn.khotwa.entity.Conversation;
 import tn.khotwa.entity.ConversationMemberRole;
 import tn.khotwa.entity.ConversationParticipant;

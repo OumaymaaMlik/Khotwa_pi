@@ -5,11 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.user.AuthResponse;
-import tn.khotwa.dto.user.LoginRequest;
-import tn.khotwa.dto.user.RegisterRequest;
-import tn.khotwa.dto.user.UserResponse;
-import tn.khotwa.service.UserServices.AuthService;
+import tn.khotwa.DTO.user.AuthResponse;
+import tn.khotwa.DTO.user.LoginRequest;
+import tn.khotwa.DTO.user.RegisterRequest;
+import tn.khotwa.DTO.user.UserResponse;
+import tn.khotwa.service.User.AuthService;
 import tn.khotwa.service.GoogleAuthService;
 
 import java.util.Map;

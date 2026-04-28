@@ -2,7 +2,7 @@ package tn.khotwa.service.messaging;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import tn.khotwa.config.websocket.WebSocketEventPublisher;
-import tn.khotwa.dto.messaging.*;
+import tn.khotwa.DTO.messaging.*;
 import tn.khotwa.entity.Conversation;
 import tn.khotwa.entity.ConversationMemberRole;
 import tn.khotwa.entity.ConversationParticipant;

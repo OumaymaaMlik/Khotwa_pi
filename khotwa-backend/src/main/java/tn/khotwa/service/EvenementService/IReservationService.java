@@ -1,5 +1,5 @@
 package tn.khotwa.service.EvenementService;
-import tn.khotwa.dto.Evenement.Reservationhistorydto;
+import tn.khotwa.DTO.Evenement.Reservationhistorydto;
 import tn.khotwa.entity.evenement.Reservation;
 import java.util.List;
 import java.util.Map;

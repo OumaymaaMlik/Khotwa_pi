@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import tn.khotwa.dto.Subscription.EngagementScoreDTO;
+import tn.khotwa.DTO.Subscription.EngagementScoreDTO;
 import tn.khotwa.enums.SubscriptionEnums.RiskLevel;
 
 import java.util.List;

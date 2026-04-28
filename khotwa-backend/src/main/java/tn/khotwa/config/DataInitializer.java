@@ -6,18 +6,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import tn.khotwa.entity.ressources.Categorie;
-import tn.khotwa.entity.ressources.Ressource;
 import tn.khotwa.entity.ressources.Tag;
-import tn.khotwa.entity.UserEntities.User;
-import tn.khotwa.enums.*;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.entity.User.User;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
 import tn.khotwa.repository.ressources.CategorieRepository;
 import tn.khotwa.repository.ressources.RessourceRepository;
 import tn.khotwa.repository.ressources.TagRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor

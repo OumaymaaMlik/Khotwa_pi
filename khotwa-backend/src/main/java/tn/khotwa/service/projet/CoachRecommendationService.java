@@ -2,13 +2,13 @@ package tn.khotwa.service.projet;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.dto.projet.CoachRecommandationDto;
-import tn.khotwa.dto.projet.RecommandationAffectationResponseDto;
+import tn.khotwa.DTO.projet.CoachRecommandationDto;
+import tn.khotwa.DTO.projet.RecommandationAffectationResponseDto;
 import tn.khotwa.entity.projet.CoachDisponibilitePeriode;
 import tn.khotwa.entity.projet.Projet;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.projectEnum.DisponibilitePeriodeStatut;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.enums.projectEnum.SecteurProjet;
 import tn.khotwa.exception.BusinessException;
 import tn.khotwa.repository.projet.CoachDisponibilitePeriodeRepository;

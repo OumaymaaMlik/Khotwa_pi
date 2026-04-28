@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import tn.khotwa.dto.ressources.StagnationInfo;
+import tn.khotwa.DTO.ressources.StagnationInfo;
 import tn.khotwa.entity.ressources.NudgeHistory;
 import tn.khotwa.enums.NudgeLevel;
 import tn.khotwa.repository.ressources.NudgeHistoryRepository;

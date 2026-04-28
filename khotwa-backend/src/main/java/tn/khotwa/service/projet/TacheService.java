@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import tn.khotwa.dto.projet.*;
+import tn.khotwa.DTO.projet.*;
 import tn.khotwa.entity.projet.Document;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.SousTache;

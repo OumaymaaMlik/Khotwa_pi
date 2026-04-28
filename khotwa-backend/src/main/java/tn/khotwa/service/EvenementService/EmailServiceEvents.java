@@ -5,7 +5,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import tn.khotwa.entity.evenement.Evenement;
 import tn.khotwa.entity.evenement.Reservation;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 
 @Service
 public class EmailServiceEvents {

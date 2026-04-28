@@ -2,7 +2,7 @@ package tn.khotwa.service;
 
 import org.springframework.stereotype.Service;
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.exception.UserException.AccessDeniedException;
 
 import java.util.ArrayList;

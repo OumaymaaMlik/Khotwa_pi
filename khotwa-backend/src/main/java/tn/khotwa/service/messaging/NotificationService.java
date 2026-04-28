@@ -1,7 +1,7 @@
 package tn.khotwa.service.messaging;
 
-import tn.khotwa.dto.messaging.MessageMapper;
-import tn.khotwa.dto.messaging.NotificationDTO;
+import tn.khotwa.DTO.messaging.MessageMapper;
+import tn.khotwa.DTO.messaging.NotificationDTO;
 import tn.khotwa.entity.Notification;
 import tn.khotwa.entity.NotificationType;
 import tn.khotwa.repository.messaging.NotificationRepository;

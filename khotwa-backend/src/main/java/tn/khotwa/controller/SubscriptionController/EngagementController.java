@@ -3,7 +3,7 @@ package tn.khotwa.controller.SubscriptionController;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.Subscription.EngagementScoreDTO;
+import tn.khotwa.DTO.Subscription.EngagementScoreDTO;
 import tn.khotwa.service.SubscriptionServices.Ia.EngagementScoreService;
 
 import java.util.List;

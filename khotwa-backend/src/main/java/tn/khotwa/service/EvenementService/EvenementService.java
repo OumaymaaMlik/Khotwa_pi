@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tn.khotwa.entity.evenement.Evenement;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
 
 import tn.khotwa.enums.SubscriptionEnums.PlanType;
-import tn.khotwa.enums.UserEnum.Role;
+import tn.khotwa.enums.User.Role;
 import tn.khotwa.repository.EvenementRepo.EvenementRepository;
 import tn.khotwa.repository.EvenementRepo.ReservationRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;

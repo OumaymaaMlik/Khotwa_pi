@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.khotwa.dto.Evenement.Reservationhistorydto;
+import tn.khotwa.DTO.Evenement.Reservationhistorydto;
 import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.service.EvenementService.IReservationService;
 

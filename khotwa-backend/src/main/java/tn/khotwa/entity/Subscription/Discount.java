@@ -3,7 +3,7 @@ package tn.khotwa.entity.SubscriptionEntities;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.khotwa.entity.Subscription.PlanOffer;
-import tn.khotwa.entity.UserEntities.User;
+import tn.khotwa.entity.User.User;
 
 import java.time.LocalDateTime;
 

@@ -1,7 +1,7 @@
 package tn.khotwa.controller.messaging;
 
 import tn.khotwa.config.websocket.OnlineUserStore;
-import tn.khotwa.dto.messaging.MessageDTO;
+import tn.khotwa.DTO.messaging.MessageDTO;
 import tn.khotwa.entity.Message;
 import tn.khotwa.entity.MessageStatus;
 import tn.khotwa.service.messaging.MessageService;

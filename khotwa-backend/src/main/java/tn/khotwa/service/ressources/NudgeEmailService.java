@@ -6,7 +6,7 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import tn.khotwa.dto.ressources.StagnationInfo;
+import tn.khotwa.DTO.ressources.StagnationInfo;
 
 /**
  * Service dédié à l'envoi des e-mails de relance (Nudging).
