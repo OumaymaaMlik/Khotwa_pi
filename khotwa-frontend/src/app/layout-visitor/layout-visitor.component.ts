@@ -57,8 +57,10 @@ export class LayoutVisitorComponent implements OnInit {
 
   get nonLus(): number { return this.notifService.nonLus(); }
   get notifs() { return this.notifService.notifs(); }
+
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.prenom?.[0] ?? ''}${u?.nom?.[0] ?? ''}`;
+    // ✅ firstName / lastName instead of prenom / nom
+    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`;
   }
 }

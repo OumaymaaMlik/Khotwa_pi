@@ -1,35 +1,47 @@
 package tn.khotwa.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import tn.khotwa.entity.UserEntities.User;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret}")
-    private String secret;
+    private final SecretKey signingKey;
+    private final long expirationMs;
 
-    @Value("${app.jwt.expiration-ms}")
-    private long expirationMs;
-
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtService(
+            @Value("${app.jwt.secret}") String secret,
+            @Value("${app.jwt.expiration-ms:86400000}") long expirationMs) {
+        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        this.expirationMs = expirationMs;
     }
 
     public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("idUser", user.getIdUser());
+        claims.put("role", user.getRole().name());
+
+        Instant now = Instant.now();
         return Jwts.builder()
+                .claims(claims)
                 .subject(user.getEmailAddress())
-                .claim("idUser", user.getIdUser())
-                .claim("role", user.getRole().name())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(getSigningKey())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(signingKey)
                 .compact();
     }
 
@@ -37,25 +49,27 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        return claimsResolver.apply(extractAllClaims(token));
     }
 
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        return extractUsername(token).equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
-    public boolean isTokenValid(String token, User user) {
-        final String username = extractUsername(token);
-        return (username.equals(user.getEmailAddress())) && !isTokenExpired(token);
+    public long getExpirationMs() {
+        return expirationMs;
     }
 
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
+    }
+
+    private Claims extractAllClaims(String token) {
+        Jws<Claims> parsedClaims = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token);
+        return parsedClaims.getPayload();
     }
 }

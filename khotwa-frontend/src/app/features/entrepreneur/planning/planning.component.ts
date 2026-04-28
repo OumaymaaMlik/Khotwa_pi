@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProjetService } from '../../../core/services/projet.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({ selector:'app-entrepreneur-planning', templateUrl:'./planning.component.html', styleUrls:['./planning.component.css'] })
 export class EntrepreneurPlanningComponent {
   constructor(public projetService: ProjetService, public auth: AuthService) {}
-  get projets() { return this.projetService.projets; }
+  projets: any[] = [];
   filtre = 'all';
   search = '';
   selectedConv: any = null;

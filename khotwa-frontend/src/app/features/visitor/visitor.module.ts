@@ -2,12 +2,15 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import { LayoutVisitorModule } from '../../layout-visitor/layout-visitor.module';
 import { LayoutVisitorComponent } from '../../layout-visitor/layout-visitor.component';
+
 import { VisitorDashboardComponent } from './dashboard/dashboard.component';
 import { VisitorAnnoncesComponent } from './annonces/annonces.component';
 import { VisitorCandidaturesComponent } from './candidatures/candidatures.component';
 import { VisitorProfilComponent } from './profil/profil.component';
+import { VisitorTalentComponent } from './talent/talent.component';
 
 const routes: Routes = [
   {
@@ -19,6 +22,7 @@ const routes: Routes = [
       { path: 'annonces', component: VisitorAnnoncesComponent },
       { path: 'candidatures', component: VisitorCandidaturesComponent },
       { path: 'profil', component: VisitorProfilComponent },
+      { path: 'talent', component: VisitorTalentComponent }, // ✅ ajouté
     ],
   },
 ];
@@ -29,10 +33,11 @@ const routes: Routes = [
     VisitorAnnoncesComponent,
     VisitorCandidaturesComponent,
     VisitorProfilComponent,
+    VisitorTalentComponent, // ✅ important
   ],
   imports: [
     CommonModule,
-    FormsModule,
+    FormsModule, // ✅ nécessaire pour ngModel
     LayoutVisitorModule,
     RouterModule.forChild(routes),
   ],

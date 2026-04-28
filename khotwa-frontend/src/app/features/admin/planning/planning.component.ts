@@ -1,9 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProjetService } from '../../../core/services/projet.service';
 
 @Component({ selector:'app-admin-planning', templateUrl:'./planning.component.html', styleUrls:['./planning.component.css'] })
-export class AdminPlanningComponent {
+export class AdminPlanningComponent implements OnInit {
   constructor(public projetService: ProjetService) {}
+
+  ngOnInit(): void {
+    this.projetService.loadAdminSubmittedProjects().subscribe({
+      error: () => {
+        // Keep current UI state if backend data cannot be fetched.
+      }
+    });
+  }
+
   get projets() { return this.projetService.projets; }
   filtre = 'all';
   search = '';

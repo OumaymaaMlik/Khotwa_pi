@@ -53,10 +53,12 @@ export class VisitorProfilComponent implements OnInit {
   ngOnInit(): void {
     const u = this.auth.currentUser;
     if (u) {
-      this.form.prenom = u.prenom ?? '';
-      this.form.nom = u.nom ?? '';
-      this.form.email = u.email ?? '';
+      // ✅ Correct User field names
+      this.form.prenom = u.firstName    ?? '';
+      this.form.nom    = u.lastName     ?? '';
+      this.form.email  = u.emailAddress ?? '';
     }
+
     const tid = u?.talentProfileId;
     if (tid != null) {
       this.loading = true;
@@ -66,7 +68,7 @@ export class VisitorProfilComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          this.loadError = 'Profil introuvable côté serveur. Vous pouvez en créer un nouveau (si l’API le permet).';
+          this.loadError = "Profil introuvable côté serveur. Vous pouvez en créer un nouveau (si l'API le permet).";
           this.loading = false;
         },
       });

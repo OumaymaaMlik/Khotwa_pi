@@ -1,0 +1,827 @@
+<div class="page animate-1">
+
+  <!-- ── Header ── -->
+  <div class="page-header animate-1">
+    <div class="page-header__left">
+      <div class="page-header__eyebrow">Subscription Management</div>
+      <h1 class="kh-page-title">Plans & Subscribers</h1>
+      <p class="page-sub">{{ subscriptions.length }} subscriber(s) · {{ plans.length }} plan(s) configured</p>
+    </div>
+    <button class="kh-btn kh-btn--primary" (click)="openAddPlan()">
+      <span [innerHTML]="icon('plus')"></span> Add Plan Offer
+    </button>
+  </div>
+
+  <!-- ── KPIs ── -->
+  <div class="kpi-row animate-2">
+    <div class="mini-kpi">
+      <span class="mini-kpi__icon mini-kpi__icon--blue" [innerHTML]="icon('users')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiTotal }}</span>
+        <span class="mini-kpi__label">Total</span>
+      </div>
+    </div>
+    <div class="mini-kpi">
+      <span class="mini-kpi__icon mini-kpi__icon--gray" [innerHTML]="icon('box')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiFree }}</span>
+        <span class="mini-kpi__label">Free</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--orange">
+      <span class="mini-kpi__icon mini-kpi__icon--orange" [innerHTML]="icon('trending')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiPremium }}</span>
+        <span class="mini-kpi__label">Premium</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--violet">
+      <span class="mini-kpi__icon mini-kpi__icon--violet" [innerHTML]="icon('box')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiInstitution }}</span>
+        <span class="mini-kpi__label">Institutional</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--green">
+      <span class="mini-kpi__icon mini-kpi__icon--green" [innerHTML]="icon('card')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiPaid }}</span>
+        <span class="mini-kpi__label">Paid</span>
+      </div>
+    </div>
+    <div class="mini-kpi mini-kpi--red">
+      <span class="mini-kpi__icon mini-kpi__icon--red" [innerHTML]="icon('chart')"></span>
+      <div class="mini-kpi__body">
+        <span class="mini-kpi__val">{{ kpiExpired }}</span>
+        <span class="mini-kpi__label">Expired</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div class="view-tabs animate-3">
+    <button class="view-tab" [class.active]="activeTab === 'subscribers'" (click)="switchTab('subscribers')">
+      <span class="tab-icon" [innerHTML]="icon('users')"></span> Subscribers
+    </button>
+    <button class="view-tab" [class.active]="activeTab === 'plans'" (click)="switchTab('plans')">
+      <span class="tab-icon" [innerHTML]="icon('box')"></span> Plan Offers
+    </button>
+    <button class="view-tab" [class.active]="activeTab === 'analytics'" (click)="switchTab('analytics')">
+      <span class="tab-icon" [innerHTML]="icon('chart')"></span> Analytics
+    </button>
+    <button class="view-tab view-tab--health" [class.active]="activeTab === 'engagement'" (click)="switchTab('engagement')">
+      <span class="tab-icon tab-health-dot"></span> Subscriber Health
+    </button>
+    <!-- ✅ NOUVEAU ONGLET REMISES -->
+    <button class="view-tab view-tab--discount" [class.active]="activeTab === 'discounts'"
+            (click)="activeTab = 'discounts'; loadDiscounts()">
+      <span class="tab-icon">🏷️</span> Discounts
+      <span class="discount-tab-count" *ngIf="discounts.length > 0">{{ discounts.length }}</span>
+    </button>
+  </div>
+
+  <!-- ══════════════ SUBSCRIBERS ══════════════ -->
+  <div *ngIf="activeTab === 'subscribers'" class="animate-4">
+    <div class="filters-bar">
+      <div class="search-box">
+        <span class="search-icon" [innerHTML]="icon('search')"></span>
+        <input type="text" placeholder="Search by name, plan, ref..." [(ngModel)]="searchQuery" (input)="onSearch()">
+      </div>
+      <div class="filter-chips">
+        <button class="tab" [class.active]="filtre === 'ALL'" (click)="setFilter('ALL')">All</button>
+        <button class="tab" [class.active]="filtre === 'FREE'" (click)="setFilter('FREE')">Free</button>
+        <button class="tab" [class.active]="filtre === 'PREMIUM'" (click)="setFilter('PREMIUM')">Premium</button>
+        <button class="tab" [class.active]="filtre === 'INSTITUTIONAL'" (click)="setFilter('INSTITUTIONAL')">Institutional</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>User</th><th>Plan</th><th>Offer</th><th>Amount</th>
+            <th>Status</th><th>Start</th><th>End</th><th>Days left</th>
+            <th>Auto-renew</th><th>Payment ref</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of filteredSubscriptions">
+            <td class="td-id">{{ s.idSubscription }}</td>
+            <td>
+              <div class="user-cell">
+                <img *ngIf="hasAvatar(s)" [src]="getAvatarUrl(s)" class="user-avatar-img" [alt]="getFullName(s)"
+                          (error)="onAvatarError($event, s)">
+                  <div *ngIf="!hasAvatar(s)" class="user-avatar" [style.background]="getAvatarColor(s)">{{ getUserInitials(s) }}</div>
+                <div class="user-meta">
+                  <div class="user-name">{{ getFullName(s) }}</div>
+                  <div class="user-sub">{{ getUserEmail(s) }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="kh-badge" [ngClass]="getPlanBadgeClass(s.plan)">{{ s.plan }}</span></td>
+            <td><span class="offer-chip">{{ getOfferLabel(s) }}</span></td>
+            <td>
+              <span class="amount-chip" *ngIf="getAmountPaid(s) !== 'Free'">{{ getAmountPaid(s) }} DT</span>
+              <span class="td-muted" *ngIf="getAmountPaid(s) === 'Free'">Free</span>
+            </td>
+            <td><span class="kh-badge" [ngClass]="getStatusBadgeClass(s.statut)">{{ s.statut }}</span></td>
+            <td class="td-date">{{ s.dateDebut | date:'dd MMM yyyy' }}</td>
+            <td class="td-date" [class.td-date--expired]="s.statut === 'EXPIRED'">{{ s.dateFin | date:'dd MMM yyyy' }}</td>
+            <td>
+                  <span class="days-badge" *ngIf="s.plan === 'FREE'">Unlimited</span>
+                  <span class="days-badge"
+                   *ngIf="s.plan !== 'FREE'"
+                   [class.days-badge--low]="getRemainingDays(s.dateFin) <= 7 && getRemainingDays(s.dateFin) > 0"
+                   [class.days-badge--expired]="getRemainingDays(s.dateFin) === 0">
+                    {{ getRemainingDays(s.dateFin) === 0 ? 'Expired' : (getRemainingDays(s.dateFin) + 'd') }}
+                  </span>
+            </td>
+            <td><span class="renew-pill" [class.renew-pill--on]="s.autoRenouvellement">{{ s.autoRenouvellement ? 'ON' : 'OFF' }}</span></td>
+            <td>
+              <div *ngIf="s.paiementRef" class="ref-cell">
+                <span *ngIf="hasDiscount(s)" class="discount-badge">−{{ getDiscountFromRef(s.paiementRef) }}</span>
+                <button class="ref-chip" [title]="s.paiementRef" (click)="viewPaymentDetails(s)">
+                  <span [innerHTML]="icon('card')"></span>
+                  <span class="ref-order-id">{{ s.paiementRef | slice:14:30 }}…</span>
+                </button>
+              </div>
+              <span *ngIf="!s.paiementRef" class="td-muted">—</span>
+            </td>
+            <td>
+              <div class="actions">
+                <button class="kh-btn kh-btn--ghost kh-btn--sm icon-btn" (click)="renewSubscription(s)" title="Renew"><span [innerHTML]="icon('renew')"></span></button>
+                <button class="kh-btn kh-btn--danger kh-btn--sm icon-btn" (click)="confirmSuspend(s)" title="Suspend"><span [innerHTML]="icon('suspend')"></span></button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredSubscriptions.length === 0">
+            <td colspan="12" class="empty-row">No subscriptions found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ SUBSCRIBER HEALTH ══════════════ -->
+  <div *ngIf="activeTab === 'engagement'" class="animate-4">
+
+    <div class="health-topbar">
+      <div class="health-copy">
+        <h3 class="health-title">Subscriber Health Insights</h3>
+        <p class="health-subtitle">Track churn risk signals and trigger retention actions in real time.</p>
+      </div>
+      <div class="health-actions">
+        <button class="kh-btn kh-btn--primary icon-btn" (click)="computeAllChurn()" [disabled]="churnLoading">
+          <span [innerHTML]="icon('renew')"></span> Refresh Scores
+        </button>
+        <button class="kh-btn kh-btn--ghost icon-btn" (click)="sendChurnEmails()">
+          <span [innerHTML]="icon('card')"></span> Send Retention Emails
+        </button>
+      </div>
+
+      <div class="health-stats" *ngIf="churnStats">
+        <span class="health-stat health-stat--high">
+          <span class="health-stat__dot"></span>
+          {{ churnStats.highRiskCount }} Critical
+        </span>
+        <span class="health-stat health-stat--medium">
+          <span class="health-stat__dot"></span>
+          {{ churnStats.mediumRiskCount }} At Risk
+        </span>
+        <span class="health-stat health-stat--low">
+          <span class="health-stat__dot"></span>
+          {{ churnStats.lowRiskCount }} Healthy
+        </span>
+        <span class="health-stat health-stat--email" *ngIf="churnStats.retentionEmailsSent > 0">
+          <span [innerHTML]="icon('card')"></span>
+          {{ churnStats.retentionEmailsSent }} email(s) sent
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="churnLoading" class="analytics-loading">
+      <span class="kh-spinner kh-spinner--dark"></span>
+      <span>Computing scores...</span>
+    </div>
+
+    <div class="table-wrap" *ngIf="!churnLoading">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Startup</th>
+            <th>Plan</th>
+            <th>Risk Score</th>
+            <th>Risk Level</th>
+            <th>Detected Signals</th>
+            <th>Retention Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of churnScores" [class.health-row--high]="c.riskLevel === 'HIGH'" [class.health-row--medium]="c.riskLevel === 'MEDIUM'">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar" [style.background]="getAvatarColorFromId(c.userId ?? 0)">
+                  {{ (c.firstName ?? '?').charAt(0).toUpperCase() }}{{ (c.lastName ?? '').charAt(0).toUpperCase() }}
+                </div>
+                <div class="user-meta">
+                  <div class="user-name">{{ c.firstName }} {{ c.lastName }}</div>
+                  <div class="user-sub">{{ c.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="td-muted">{{ c.startup || '—' }}</td>
+            <td><span class="kh-badge" [ngClass]="getPlanBadgeClass(c.planType)">{{ c.planType }}</span></td>
+            <td>
+              <div class="score-cell">
+                <div class="score-bar-wrap">
+                  <div class="score-bar"
+                    [class.score-bar--high]="c.riskLevel === 'HIGH'"
+                    [class.score-bar--medium]="c.riskLevel === 'MEDIUM'"
+                    [class.score-bar--low]="c.riskLevel === 'LOW'"
+                    [style.width.%]="c.riskScore">
+                  </div>
+                </div>
+                <strong class="score-val">{{ c.riskScore }}<span>/100</span></strong>
+              </div>
+            </td>
+            <td>
+              <span class="kh-badge" [ngClass]="getRiskClass(c.riskLevel)">{{ c.riskLevelLabel }}</span>
+            </td>
+            <td class="signals-cell">{{ c.signalsDetail }}</td>
+            <td>
+              <span class="email-status email-status--sent" *ngIf="c.emailSent">✓ Sent</span>
+              <span class="email-status email-status--pending" *ngIf="!c.emailSent && c.riskLevel === 'HIGH'">Pending</span>
+              <span class="td-muted" *ngIf="c.riskLevel !== 'HIGH' && !c.emailSent">—</span>
+            </td>
+          </tr>
+          <tr *ngIf="churnScores.length === 0">
+            <td colspan="7" class="empty-row">No data yet. Click "Refresh Scores" to compute.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ PLAN OFFERS ══════════════ -->
+  <div *ngIf="activeTab === 'plans'" class="animate-4">
+    <div class="plans-grid">
+      <div class="plan-card plan-card--add" (click)="openAddPlan()">
+        <div class="plan-add-icon" [innerHTML]="icon('plus')"></div>
+        <span>Add new plan offer</span>
+      </div>
+      <div class="plan-card" *ngFor="let plan of plans"
+        [class.plan-card--free]="plan.type === 'FREE'"
+        [class.plan-card--premium]="plan.type === 'PREMIUM'"
+        [class.plan-card--institutional]="plan.type === 'INSTITUTIONAL'">
+        <div class="plan-card-top">
+          <span class="kh-badge" [ngClass]="getPlanBadgeClass(plan.type)">{{ plan.type }}</span>
+          <div class="plan-card-actions">
+            <button class="kh-btn kh-btn--ghost kh-btn--sm icon-btn" (click)="openEditPlan(plan)"><span [innerHTML]="icon('edit')"></span> Edit</button>
+            <button class="kh-btn kh-btn--danger kh-btn--sm icon-btn" (click)="deletePlan(plan)"><span [innerHTML]="icon('trash')"></span></button>
+          </div>
+        </div>
+        <h3 class="plan-card-name">{{ plan.label }}</h3>
+        <p class="plan-card-desc">{{ plan.description }}</p>
+        <div class="plan-card-meta">
+          <div class="plan-meta-item"><span class="meta-label">Price</span><strong>{{ plan.prix === 0 ? 'Free' : (plan.prix + ' DT') }}</strong></div>
+          <div class="plan-meta-item"><span class="meta-label">Duration</span><strong>{{ plan.duree === -1 ? 'Unlimited' : (plan.duree + ' days') }}</strong></div>
+        </div>
+        <div class="plan-features" *ngIf="plan.avantages">
+          <p class="features-title">Features:</p>
+          <ul><li *ngFor="let adv of getAvantagesList(plan.avantages)">{{ adv }}</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ANALYTICS ══════════════ -->
+  <div *ngIf="activeTab === 'analytics'" class="animate-4">
+    <div *ngIf="analyticsLoading" class="analytics-loading">
+      <span class="kh-spinner kh-spinner--dark"></span>
+      <span>Loading analytics...</span>
+    </div>
+
+    <ng-container *ngIf="!analyticsLoading">
+      <div class="analytics-subnav">
+        <button class="analytics-tab" [class.active]="revenueView === 'summary'" (click)="revenueView = 'summary'">
+          <span [innerHTML]="icon('dollar')"></span> Summary
+        </button>
+        <button class="analytics-tab" [class.active]="revenueView === 'by-user'" (click)="revenueView = 'by-user'">
+          <span [innerHTML]="icon('users')"></span> By User
+        </button>
+        <button class="analytics-tab" [class.active]="revenueView === 'by-month'" (click)="revenueView = 'by-month'">
+          <span [innerHTML]="icon('calendar')"></span> By Month
+        </button>
+        <button class="analytics-tab" [class.active]="revenueView === 'by-day'" (click)="revenueView = 'by-day'">
+          <span [innerHTML]="icon('chart')"></span> By Day
+        </button>
+      </div>
+
+      <!-- SUMMARY -->
+      <div *ngIf="revenueView === 'summary'" class="summary-layout">
+        <div class="analytics-grid">
+          <div class="analytics-card analytics-card--hero">
+            <div class="analytics-card__icon analytics-card__icon--teal"><span [innerHTML]="icon('dollar')"></span></div>
+            <div class="analytics-card__body">
+              <span class="analytics-card__val">{{ (revenueSummary?.totalRevenue ?? 0) | number:'1.2-2' }} DT</span>
+              <span class="analytics-card__label">Total Revenue</span>
+              <span class="analytics-card__sub" *ngIf="paymentsWithDiscount.length > 0">incl. {{ paymentsWithDiscount.length }} discounted</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-card__icon analytics-card__icon--green"><span [innerHTML]="icon('card')"></span></div>
+            <div class="analytics-card__body">
+              <span class="analytics-card__val">{{ revenueSummary?.totalPaidSubscriptions ?? 0 }}</span>
+              <span class="analytics-card__label">Paid Subscriptions</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-card__icon analytics-card__icon--orange"><span [innerHTML]="icon('trending')"></span></div>
+            <div class="analytics-card__body">
+              <span class="analytics-card__val">{{ activeRate }}%</span>
+              <span class="analytics-card__label">Active Rate</span>
+              <div class="analytics-mini-bar">
+                <div class="analytics-mini-bar__fill analytics-mini-bar__fill--orange" [style.width.%]="activeRate"></div>
+              </div>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-card__icon analytics-card__icon--red"><span [innerHTML]="icon('chart')"></span></div>
+            <div class="analytics-card__body">
+              <span class="analytics-card__val">{{ kpiExpired }}</span>
+              <span class="analytics-card__label">Expired</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-bottom">
+          <div class="analytics-breakdown summary-breakdown">
+            <h3 class="breakdown-title">Plan Distribution</h3>
+            <div class="breakdown-bars" *ngIf="kpiTotal > 0; else noData">
+              <div class="breakdown-row">
+                <div class="breakdown-label-group"><span class="breakdown-dot breakdown-dot--neutral"></span><span class="breakdown-label">Free</span></div>
+                <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--neutral" [style.width.%]="(kpiFree / kpiTotal) * 100"></div></div>
+                <span class="breakdown-count">{{ kpiFree }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiFree / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label-group"><span class="breakdown-dot breakdown-dot--orange"></span><span class="breakdown-label">Premium</span></div>
+                <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--orange" [style.width.%]="(kpiPremium / kpiTotal) * 100"></div></div>
+                <span class="breakdown-count">{{ kpiPremium }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiPremium / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label-group"><span class="breakdown-dot breakdown-dot--violet"></span><span class="breakdown-label">Institutional</span></div>
+                <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--violet" [style.width.%]="(kpiInstitution / kpiTotal) * 100"></div></div>
+                <span class="breakdown-count">{{ kpiInstitution }}</span>
+                <span class="breakdown-pct">{{ kpiTotal > 0 ? ((kpiInstitution / kpiTotal) * 100 | number:'1.0-0') : 0 }}%</span>
+              </div>
+            </div>
+            <ng-template #noData><p class="empty-row">No data yet.</p></ng-template>
+          </div>
+
+          <div class="analytics-breakdown summary-discounts">
+            <h3 class="breakdown-title">
+              Discount Campaigns
+              <span class="discount-badge discount-badge--lg" *ngIf="paymentsWithDiscount.length > 0">{{ paymentsWithDiscount.length }}</span>
+            </h3>
+            <div *ngIf="paymentsWithDiscount.length === 0" class="empty-row">No discounted payments yet.</div>
+            <div class="discount-list" *ngIf="paymentsWithDiscount.length > 0">
+              <div class="discount-row" *ngFor="let d of paymentsWithDiscount">
+                <div class="user-cell">
+                  <div class="user-avatar" [style.background]="getAvatarColorFromId(d.userId ?? 0)">
+                    {{ (d.prenom ?? '?').charAt(0).toUpperCase() }}{{ (d.nom ?? '').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="user-meta">
+                    <div class="user-name">{{ d.prenom }} {{ d.nom }}</div>
+                    <div class="user-sub">{{ d.plan }} · {{ d.dateDebut | date:'dd MMM yyyy' }}</div>
+                  </div>
+                </div>
+                <div class="discount-row-right">
+                  <span class="discount-badge">−{{ d.discountPercent }}%</span>
+                  <div class="discount-prices">
+                    <span class="discount-original">{{ d.prixOriginal | number:'1.2-2' }} DT</span>
+                    <span class="discount-paid">{{ d.montant | number:'1.2-2' }} DT</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BY USER -->
+      <div *ngIf="revenueView === 'by-user'">
+        <div class="analytics-breakdown">
+          <h3 class="breakdown-title">Revenue per User</h3>
+          <div *ngIf="revenueByUserTotal.length === 0" class="empty-row">No paid subscriptions yet.</div>
+          <div class="revenue-user-list">
+            <div class="revenue-user-row" *ngFor="let row of revenueByUserTotal">
+              <div class="user-cell">
+                <div class="user-avatar" [style.background]="getAvatarColorFromId(row.idUser ?? 0)">{{ getRowInitials(row) }}</div>
+                <div class="user-meta">
+                  <div class="user-name">{{ row.prenom }} {{ row.nom }}</div>
+                  <div class="user-sub">{{ row.paymentsCount }} payment(s)</div>
+                </div>
+              </div>
+              <div class="revenue-bar-wrap"><div class="revenue-bar" [style.width.%]="(row.total / getMaxUserRevenue()) * 100"></div></div>
+              <span class="revenue-amount">{{ row.total | number:'1.2-2' }} DT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BY MONTH -->
+      <div *ngIf="revenueView === 'by-month'">
+        <div class="analytics-breakdown">
+          <h3 class="breakdown-title">Monthly Revenue</h3>
+          <div *ngIf="revenueByMonth.length === 0" class="empty-row">No data yet.</div>
+          <div class="chart-bars" *ngIf="revenueByMonth.length > 0">
+            <div class="chart-bar-col" *ngFor="let row of revenueByMonth">
+              <div class="chart-bar-label-top">{{ row.total | number:'1.0-0' }} DT</div>
+              <div class="chart-bar-wrap"><div class="chart-bar chart-bar--teal" [style.height.%]="(row.total / getMaxMonthRevenue()) * 100"></div></div>
+              <div class="chart-bar-label">{{ row.month }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BY DAY -->
+      <div *ngIf="revenueView === 'by-day'">
+        <div class="analytics-breakdown">
+          <h3 class="breakdown-title">Daily Revenue</h3>
+          <div *ngIf="revenueByDay.length === 0" class="empty-row">No data yet.</div>
+          <div class="revenue-day-list">
+            <div class="breakdown-row" *ngFor="let row of revenueByDay">
+              <span class="breakdown-label day-label">{{ row.date }}</span>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar breakdown-bar--teal" [style.width.%]="(row.total / getMaxDayRevenue()) * 100"></div></div>
+              <span class="revenue-amount">{{ row.total | number:'1.2-2' }} DT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+  </div>
+
+  <!-- ══════════════ REMISES (DISCOUNTS) ══════════════ -->
+  <!-- ══════════════ DISCOUNTS ══════════════ -->
+  <div *ngIf="activeTab === 'discounts'" class="animate-4">
+
+    <div class="health-topbar">
+      <div class="health-copy">
+        <h3 class="health-title">Discount Management</h3>
+        <p class="health-subtitle">Create and manage exclusive discounts for your entrepreneurs.</p>
+      </div>
+      <div class="health-actions">
+        <button class="kh-btn kh-btn--primary icon-btn" (click)="openAddDiscount()">
+          <span [innerHTML]="icon('plus')"></span> New Discount
+        </button>
+      </div>
+      <div class="health-stats" *ngIf="discounts.length > 0">
+        <span class="health-stat health-stat--low">
+          <span class="health-stat__dot"></span>
+          {{ discounts.length }} total
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="discountsLoading" class="analytics-loading">
+      <span class="kh-spinner kh-spinner--dark"></span>
+      <span>Loading discounts...</span>
+    </div>
+
+    <div class="table-wrap" *ngIf="!discountsLoading">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Target</th>
+            <th>Plan</th>
+            <th>Discount</th>
+            <th>Original Price</th>
+            <th>Discounted Price</th>
+            <th>Valid From</th>
+            <th>Valid Until</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of discounts">
+            <td class="td-id">{{ d.id }}</td>
+            <td>
+              <ng-container *ngIf="d.userId; else globalBadge">
+                <div class="user-cell">
+                  <div class="user-avatar" [style.background]="getAvatarColorFromId(d.userId ?? 0)">
+                    {{ (d.userFullName ?? '?').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="user-meta">
+                    <div class="user-name">{{ d.userFullName }}</div>
+                    <div class="user-sub">#{{ d.userId }}</div>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #globalBadge>
+                <span class="kh-badge kh-badge--violet">
+                  <i class="bi bi-people-fill"></i> All entrepreneurs
+                </span>
+              </ng-template>
+            </td>
+            <td>
+              <span class="offer-chip">{{ d.planOfferLabel }}</span>
+              <span class="kh-badge kh-badge--neutral" style="margin-left:4px;font-size:9px;">{{ d.planOfferType }}</span>
+            </td>
+            <td>
+              <span class="discount-percent-chip">
+                <i class="bi bi-tag-fill"></i> −{{ d.discountPercent }}%
+              </span>
+            </td>
+            <td class="td-muted">{{ d.planOfferPrix | number:'1.2-2' }} DT</td>
+            <td>
+              <strong style="color:#d97706;">{{ getDiscountedPrice(d) | number:'1.2-2' }} DT</strong>
+            </td>
+            <td class="td-date">{{ formatDatetime(d.validFrom) }}</td>
+            <td class="td-date">{{ formatDatetime(d.validUntil) }}</td>
+            <td>
+              <span class="kh-badge" [ngClass]="getDiscountStatusClass(d.status)">
+                {{ d.status }}
+              </span>
+            </td>
+            <td class="td-muted" style="max-width:140px;font-size:12px;">{{ d.notes || '—' }}</td>
+            <td>
+              <div class="actions">
+                <button class="kh-btn kh-btn--danger kh-btn--sm icon-btn"
+                        *ngIf="d.status === 'ACTIVE'"
+                        (click)="deactivateDiscount(d)"
+                        title="Deactivate">
+                  <span [innerHTML]="icon('suspend')"></span>
+                </button>
+                <button class="kh-btn kh-btn--ghost kh-btn--sm icon-btn"
+                        (click)="deleteDiscount(d)"
+                        title="Delete">
+                  <span [innerHTML]="icon('trash')"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="discounts.length === 0">
+            <td colspan="11" class="empty-row">No discounts created yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══ Modal — Add/Edit Plan ══ -->
+<div class="modal-overlay" *ngIf="showPlanModal" (click)="onOverlayClick($event)">
+  <div class="modal-panel">
+    <button class="modal-close" (click)="closePlanModal()">✕</button>
+    <div class="modal-header-block">
+      <h2>{{ editMode ? 'Edit Plan Offer' : 'Add New Plan Offer' }}</h2>
+      <p class="modal-subtitle">{{ editMode ? 'Modify the plan details below.' : 'Configure and publish a new subscription plan.' }}</p>
+    </div>
+    <div class="form-grid">
+      <div class="form-group" *ngIf="!editMode">
+        <label>Plan type</label>
+        <select [(ngModel)]="planForm.type">
+          <option value="FREE">FREE</option>
+          <option value="PREMIUM">PREMIUM</option>
+          <option value="INSTITUTIONAL">INSTITUTIONAL</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Label (display name)</label>
+        <input type="text" [(ngModel)]="planForm.label" placeholder="ex: Premium Plan">
+      </div>
+      <div class="form-group">
+        <label>Price (DT) — 0 for free</label>
+        <input type="number" [(ngModel)]="planForm.prix" min="0" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Duration (days) — -1 for unlimited</label>
+        <input type="number" [(ngModel)]="planForm.duree">
+      </div>
+      <div class="form-group form-full">
+        <label>Description</label>
+        <input type="text" [(ngModel)]="planForm.description">
+      </div>
+      <div class="form-group form-full">
+        <label>Features (one per line)</label>
+        <textarea [(ngModel)]="planForm.avantages" rows="5"></textarea>
+        <span class="form-hint">Each line = one bullet point shown to users</span>
+      </div>
+    </div>
+    <div class="form-error" *ngIf="planFormError">{{ planFormError }}</div>
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="closePlanModal()">Cancel</button>
+      <button class="kh-btn kh-btn--primary" (click)="savePlan()" [disabled]="planSaving">
+        <span class="kh-spinner" *ngIf="planSaving"></span>
+        {{ editMode ? 'Save changes' : 'Create plan' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal — Confirm Suspend ══ -->
+<div class="modal-overlay" *ngIf="showConfirmSuspend" (click)="onOverlayClick($event)">
+  <div class="modal-panel modal-panel--sm">
+    <div class="confirm-icon" [innerHTML]="icon('suspend')"></div>
+    <h3>Suspend this subscription?</h3>
+    <p>
+      User <strong>{{ suspendTarget?.user?.prenom ?? '' }} {{ suspendTarget?.user?.nom ?? ('#' + suspendTarget?.idUser) }}</strong> —
+      <strong>{{ suspendTarget?.plan }}</strong> plan.<br>
+      This action will permanently delete the subscription record.
+    </p>
+    <div class="confirm-actions">
+      <button class="kh-btn kh-btn--ghost" (click)="cancelSuspend()">Cancel</button>
+      <button class="kh-btn kh-btn--danger" (click)="executeSuspend()">Confirm suspend</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal — Payment Details ══ -->
+<div class="modal-overlay" *ngIf="showPaymentDetailsModal" (click)="onOverlayClick($event)">
+  <div class="modal-panel modal-panel--sm">
+    <button class="modal-close" (click)="closePaymentDetailsModal()">✕</button>
+    <div class="modal-header-block">
+      <h2>Payment Details</h2>
+      <p class="modal-subtitle">Information stored in the payment reference</p>
+    </div>
+    <div *ngIf="paymentDetailsLoading" style="text-align:center;padding:2rem">
+      <span class="kh-spinner kh-spinner--dark"></span>
+    </div>
+    <ng-container *ngIf="!paymentDetailsLoading && selectedPaymentDetails">
+      <div class="payment-details-grid">
+        <div class="payment-detail-row">
+          <span class="pd-label">Plan</span>
+          <span class="kh-badge" [ngClass]="getPlanBadgeClass(selectedPaymentDetails.plan)">{{ selectedPaymentDetails.plan }}</span>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Status</span>
+          <span class="kh-badge" [ngClass]="getStatusBadgeClass(selectedPaymentDetails.statut)">{{ selectedPaymentDetails.statut }}</span>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">PayPal Order ID</span>
+          <code class="pd-code">{{ selectedPaymentDetails.paypalOrderId ?? '—' }}</code>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Payer ID</span>
+          <code class="pd-code">{{ selectedPaymentDetails.payerId ?? '—' }}</code>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Original price</span>
+          <span class="pd-value">{{ selectedPaymentDetails.prixOriginal | number:'1.2-2' }} DT</span>
+        </div>
+        <ng-container *ngIf="selectedPaymentDetails.hasDiscount">
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Discount applied</span>
+            <span class="discount-badge discount-badge--lg">−{{ selectedPaymentDetails.discountPercent }}%</span>
+          </div>
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Amount paid</span>
+            <strong class="pd-value pd-value--green">{{ selectedPaymentDetails.montant | number:'1.2-2' }} DT</strong>
+          </div>
+          <div class="payment-detail-row payment-detail-row--highlight">
+            <span class="pd-label">Savings</span>
+            <span class="pd-value pd-value--green">{{ (selectedPaymentDetails.prixOriginal - selectedPaymentDetails.montant) | number:'1.2-2' }} DT</span>
+          </div>
+        </ng-container>
+        <div class="payment-detail-row" *ngIf="!selectedPaymentDetails.hasDiscount">
+          <span class="pd-label">Amount paid</span>
+          <strong class="pd-value">{{ selectedPaymentDetails.montant ?? selectedPaymentDetails.prixOriginal | number:'1.2-2' }} DT</strong>
+        </div>
+        <div class="payment-detail-row">
+          <span class="pd-label">Period</span>
+          <span class="pd-value">{{ selectedPaymentDetails.dateDebut | date:'dd MMM yyyy' }} → {{ selectedPaymentDetails.dateFin | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+    </ng-container>
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="closePaymentDetailsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ Modal — Create Discount ══ -->
+<div class="modal-overlay" *ngIf="showDiscountModal" (click)="onOverlayClick($event)">
+  <div class="modal-panel modal-panel--lg">
+    <button class="modal-close" (click)="closeDiscountModal()">✕</button>
+    <div class="modal-header-block">
+      <h2>🏷️ Create a Discount</h2>
+      <p class="modal-subtitle">Assign an exclusive discount to all entrepreneurs or a specific one.</p>
+    </div>
+
+    <div class="form-grid">
+
+      <!-- Target: all or specific entrepreneur -->
+      <div class="form-group form-full">
+        <label>Target</label>
+        <div class="discount-target-row">
+          <label class="discount-target-opt" [class.selected]="!discountForm.userId">
+            <input type="radio" name="targetType" [value]="null" [(ngModel)]="discountForm.userId">
+            <i class="bi bi-people-fill"></i>
+            <span>All entrepreneurs</span>
+            <small>{{ entrepreneurUsers.length }} entrepreneur(s)</small>
+          </label>
+          <label class="discount-target-opt" [class.selected]="discountForm.userId !== null && discountForm.userId !== undefined">
+            <input type="radio" name="targetType" [value]="'specific'" [(ngModel)]="discountForm.userId">
+            <i class="bi bi-person-fill"></i>
+            <span>Specific entrepreneur</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Specific entrepreneur select -->
+      <div class="form-group form-full" *ngIf="discountForm.userId !== null">
+        <label>Select entrepreneur *</label>
+        <select [(ngModel)]="discountForm.userId">
+          <option [ngValue]="null" disabled>Choose an entrepreneur...</option>
+          <option *ngFor="let e of entrepreneurUsers" [ngValue]="e.id">
+            {{ e.fullName }} — {{ e.email }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Plan -->
+      <div class="form-group">
+        <label>Plan *</label>
+        <select [(ngModel)]="discountForm.planOfferId">
+          <option [ngValue]="0" disabled>Select a plan...</option>
+          <option *ngFor="let p of plans" [ngValue]="p.id">
+            {{ p.label }} ({{ p.type }}) — {{ p.prix | number:'1.2-2' }} DT
+          </option>
+        </select>
+      </div>
+
+      <!-- Discount percent -->
+      <div class="form-group">
+        <label>
+          Discount % *
+          <strong style="color:#d97706; margin-left:6px;">{{ discountForm.discountPercent }}%</strong>
+        </label>
+        <input type="range" min="1" max="99" step="1"
+               [(ngModel)]="discountForm.discountPercent"
+               class="discount-slider">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;">
+          <span>1%</span><span>99%</span>
+        </div>
+        <!-- Live preview -->
+        <div class="discount-preview" *ngIf="discountForm.planOfferId">
+          <ng-container *ngFor="let p of plans">
+            <ng-container *ngIf="p.id === discountForm.planOfferId">
+              <span style="text-decoration:line-through;color:#9ca3af;">{{ p.prix | number:'1.2-2' }} DT</span>
+              <span style="font-size:18px;color:#d97706;font-weight:800;">
+                {{ p.prix * (1 - discountForm.discountPercent / 100) | number:'1.2-2' }} DT
+              </span>
+              <span class="discount-preview__chip">−{{ discountForm.discountPercent }}%</span>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Valid from: date + time -->
+      <div class="form-group">
+        <label>Valid from *</label>
+        <div class="datetime-row">
+          <input type="date" [(ngModel)]="discountValidFromDate" class="datetime-date">
+          <input type="time" [(ngModel)]="discountValidFromTime" class="datetime-time">
+        </div>
+      </div>
+
+      <!-- Valid until: date + time -->
+      <div class="form-group">
+        <label>Valid until *</label>
+        <div class="datetime-row">
+          <input type="date" [(ngModel)]="discountValidUntilDate" class="datetime-date">
+          <input type="time" [(ngModel)]="discountValidUntilTime" class="datetime-time">
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group form-full">
+        <label>Notes (optional)</label>
+        <textarea [(ngModel)]="discountForm.notes" rows="2"
+                  placeholder="e.g. Loyalty reward, seasonal promo, first subscription..."></textarea>
+      </div>
+
+    </div>
+
+    <div class="form-error" *ngIf="discountFormError">{{ discountFormError }}</div>
+
+    <div class="modal-footer">
+      <button class="kh-btn kh-btn--ghost" (click)="closeDiscountModal()">Cancel</button>
+      <button class="kh-btn kh-btn--primary" [disabled]="discountSaving" (click)="saveDiscount()">
+        <span class="kh-spinner" *ngIf="discountSaving"></span>
+        <span [innerHTML]="icon('plus')"></span>
+        Create Discount
+      </button>
+    </div>
+  </div>
+</div>

@@ -38,8 +38,176 @@ h1 { font-family: 'Plus Jakarta Sans',sans-serif; font-size: 24px; font-weight: 
 .btn-submit { width: 100%; padding: 13px; border-radius: 11px; background: linear-gradient(135deg,#E8622A,#FF7A40); border: none; color: white; font-family: 'Plus Jakarta Sans',sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(232,98,42,0.4); margin-top: 4px; }
 .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(232,98,42,0.55); }
 
+.google-wrap {
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.google-role-label {
+  text-align: center;
+  margin: 0 0 8px;
+  color: rgba(232, 228, 220, 0.8);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.google-btn-host {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.google-btn-host.google-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  filter: grayscale(0.25);
+}
+
+.google-helper-text {
+  text-align: center;
+  margin: 8px 0 0;
+  color: rgba(245, 166, 35, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-google-fallback {
+  width: 100%;
+  padding: 11px;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(232,228,220,0.8);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .form-switch { font-size: 13px; color: rgba(232,228,220,0.4); text-align: center; margin-top: 18px; }
 .form-switch a { color: #E8622A; cursor: pointer; font-weight: 600; }
 .form-switch a:hover { text-decoration: underline; }
 
 @keyframes fadeInDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── Visitor shortcut ─────────────────────────────── */
+.visitor-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0 12px;
+}
+.visitor-divider::before, .visitor-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+.visitor-divider span {
+  font-size: 11px; color: rgba(232,228,220,0.3);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.btn-visitor {
+  width: 100%; padding: 11px; border-radius: 11px;
+  background: rgba(245,166,35,0.10);
+  border: 1px solid rgba(245,166,35,0.25);
+  color: #F5A623;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 16px;
+}
+.btn-visitor:hover {
+  background: rgba(245,166,35,0.18);
+  border-color: rgba(245,166,35,0.45);
+  transform: translateY(-1px);
+}
+
+/* ── Brand logo image ─────────────────────────────── */
+.brand-logo { height: 56px; width: auto; object-fit: contain; }
+
+/* ── Champs en erreur ─────────────────────────────── */
+.input-err {
+  border-color: rgba(232,74,74,0.6) !important;
+  box-shadow: 0 0 0 3px rgba(232,74,74,0.12) !important;
+}
+
+/* ── Indicateur requis ────────────────────────────── */
+.req { color: #E84A4A; margin-left: 2px; }
+
+/* ── Hint mot de passe ────────────────────────────── */
+.field-hint {
+  font-size: 11px;
+  color: rgba(245,166,35,0.8);
+  margin-top: 3px;
+}
+
+/* ── Succès ───────────────────────────────────────── */
+.form-success {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: #27AE7A;
+  margin-bottom: 12px; padding: 8px 12px;
+  background: rgba(39,174,122,0.10);
+  border-radius: 8px; border: 1px solid rgba(39,174,122,0.25);
+}
+
+/* ── Spinner loading ──────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Bouton disabled ──────────────────────────────── */
+.btn-submit:disabled,
+.btn-visitor:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ── Error icon ───────────────────────────────────── */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ── Visitor button ───────────────────────────────── */
+.visitor-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0 12px;
+}
+.visitor-divider::before, .visitor-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+.visitor-divider span {
+  font-size: 11px; color: rgba(232,228,220,0.3);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.btn-visitor {
+  width: 100%; padding: 11px; border-radius: 11px;
+  background: rgba(245,166,35,0.08);
+  border: 1px solid rgba(245,166,35,0.22);
+  color: #F5A623;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 16px;
+}
+.btn-visitor:hover:not(:disabled) {
+  background: rgba(245,166,35,0.16);
+  border-color: rgba(245,166,35,0.40);
+  transform: translateY(-1px);
+}
+
+/* ── Brand logo ───────────────────────────────────── */
+.brand-logo { height: 56px; width: auto; object-fit: contain; }
+
+/* ── Form switch link ─────────────────────────────── */
+.form-switch a { cursor: pointer; }

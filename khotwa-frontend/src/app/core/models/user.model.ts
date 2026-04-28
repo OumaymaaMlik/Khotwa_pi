@@ -1,22 +1,33 @@
 // ── Types partagés (source unique de vérité) ──────────────────────
-export type UserRole = 'admin' | 'entrepreneur' | 'coach' | 'visitor';
+export type UserRole = 'ADMIN' | 'COACH' | 'ENTREPRENEUR' | 'VISITOR';
 export type PlanType = 'FREE' | 'PREMIUM' | 'INSTITUTIONAL';
 
 export interface User {
   idUser?: number;
-  id: string;
-  nom: string;
-  prenom: string;
+  id?: string;
   firstName?: string;
   lastName?: string;
   emailAddress?: string;
-  email: string;
   role: UserRole;
   planType?: PlanType;
   pendingPlan?: PlanType;
   avatar?: string;
   startup?: string;
   phoneNumber?: string;
-  /** Profil talent Spring (`/api/talents`) — requis pour postuler. */
-  talentProfileId?: number;
+  mustChangePassword?: boolean;
+  talentProfileId?: number; // ✅ added
+}
+
+export interface UserResponse {
+  idUser: number;
+  avatar?: string;
+  emailAddress: string;
+  firstName: string;
+  lastName: string;
+  pendingPlan?: PlanType;
+  phoneNumber?: string;
+  planType?: PlanType;
+  role: UserRole;
+  startup?: string;
+  mustChangePassword: boolean;
 }

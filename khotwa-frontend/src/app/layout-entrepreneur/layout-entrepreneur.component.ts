@@ -1,32 +1,45 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
-import { AuthService } from '../core/services/auth.service';
-import { NotificationService } from '../core/services/notification.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 
+import { AuthService }         from '../core/services/auth.service';
+import { NotificationService } from '../core/services/notification.service';
+import { MessageService } from '../core/services/message.service';
+import { WebSocketService } from '../core/services/websocket.service';
+import { OnlineStatusService } from '../core/services/online-status.service';
+
 interface NavItem { label: string; icon: string; route: string; }
+
+const BACKEND_ORIGIN = 'http://localhost:8084';
 
 @Component({
   selector: 'app-layout-entrepreneur',
   templateUrl: './layout-entrepreneur.component.html',
   styleUrls: ['./layout-entrepreneur.component.css']
 })
-export class LayoutEntrepreneurComponent implements OnInit {
-  notifOpen   = false;
-  mobileOpen  = false;
-  userMenuOpen = false;
-  currentUrl  = '';
-  scrolled    = false;
+export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
 
+  notifOpen    = false;
+  mobileOpen   = false;
+  userMenuOpen = false;
+  currentUrl   = '';
+  scrolled     = false;
+
+  private safeIconCache: Record<string, SafeHtml> = {};
+
+  // ── Navigation ──────────────────────────────────────────────────────────
   navItems: NavItem[] = [
-    { label: 'Dashboard',   icon: 'dashboard', route: 'dashboard'    },
-    { label: 'Projects',     icon: 'folder',    route: 'projets'      },
-    { label: 'Workflows',   icon: 'workflow',  route: 'workflows'    },
-    { label: 'Planning',    icon: 'calendar',  route: 'planning'     },
-    { label: 'Messages',    icon: 'message',   route: 'messages'     },
-    { label: 'Library',icon: 'book',      route: 'bibliotheque' },
-    { label: 'Progress', icon: 'progress',  route: 'progressions' },
-    { label: 'Talent',      icon: 'people',    route: 'talent'       },
+    { label: 'Dashboard', icon: 'dashboard', route: 'dashboard'    },
+    { label: 'Projects',  icon: 'folder',    route: 'projets'       },
+    { label: 'Workflows', icon: 'workflow',  route: 'workflows'     },
+    { label: 'Planning',  icon: 'calendar',  route: 'planning'      },
+    { label: 'Messages',  icon: 'message',   route: 'messages'      },
+    { label: 'Library',   icon: 'book',      route: 'bibliotheque'  },
+    { label: 'Progress',  icon: 'progress',  route: 'progressions'  },
+    { label: 'Talent',    icon: 'people',    route: 'talent'        },
+    { label: 'Profile',   icon: 'user',      route: 'profile'       },
+    { label: 'Account',   icon: 'settings',  route: 'account'       },
   ];
 
   svgIcons: Record<string, string> = {
@@ -38,31 +51,135 @@ export class LayoutEntrepreneurComponent implements OnInit {
     book:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
     progress:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
     people:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    user:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    settings:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
     bell:      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
-    home:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
     logout:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
   };
 
-  constructor(public auth: AuthService, public notifService: NotificationService, private router: Router) {}
+  constructor(
+    public  auth:               AuthService,
+    public  notifService:       NotificationService,
+    private messageService:     MessageService,
+    private wsService:          WebSocketService,
+    private onlineStatusService: OnlineStatusService,
+    private router:             Router,
+    private sanitizer:          DomSanitizer
+  ) {}
 
-  ngOnInit() {
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe((e: any) => { this.currentUrl = e.url; });
+  // ── Lifecycle ──────────────────────────────────────────────────────────
+  ngOnInit(): void {
+    // Suivre la navigation active
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe((e: any) => this.currentUrl = e.url);
     this.currentUrl = this.router.url;
+
+    // Charger le profil puis déclencher l'alerte d'expiration si entrepreneur
+    this.auth.refreshProfile().subscribe({
+      next: () => {
+        const userId = this.auth.currentUser?.idUser;
+        if (userId && this.auth.isEntrepreneur) {
+          // Charger les notifications
+          this.notifService.reload();
+        }
+      },
+      error: () => {
+        // e.g. ad-blocker, 403 on /me — keep existing login session; IDs still come from idUser in localStorage
+      },
+    });
   }
 
-  @HostListener('window:scroll', [])
-  onScroll() { this.scrolled = window.scrollY > 10; }
+  ngOnDestroy(): void {
+    // WebSocket disabled
+  }
 
-  isActive(route: string): boolean { return this.currentUrl.includes(`/${route}`); }
-  getIcon(name: string): string { return this.svgIcons[name] || ''; }
-  getRoute(route: string): string { return `/entrepreneur/${route}`; }
-  logout() { this.auth.logout(); this.router.navigateByUrl('/'); }
+  // ── Scroll ──────────────────────────────────────────────────────────────
+  @HostListener('window:scroll')
+  onScroll(): void {
+    this.scrolled = window.scrollY > 10;
+  }
 
-  get nonLus(): number { return this.notifService.nonLus(); }
-  get notifs() { return this.notifService.notifs(); }
+  // ── Helpers nav ─────────────────────────────────────────────────────────
+  isActive(route: string): boolean {
+    return this.currentUrl.includes(`/${route}`);
+  }
+
+  getRoute(route: string): string {
+    return `/entrepreneur/${route}`;
+  }
+
+  get rolePrefix(): string {
+    const r = this.auth.role;
+    if (r === 'ADMIN')        return '/khotwaadmin';
+    if (r === 'ENTREPRENEUR') return '/entrepreneur';
+    if (r === 'COACH')        return '/coach';
+    return '';
+  }
+
+  // ── Icônes (cache SafeHtml) ──────────────────────────────────────────────
+  getIcon(name: string): SafeHtml {
+    if (!this.safeIconCache[name]) {
+      this.safeIconCache[name] =
+        this.sanitizer.bypassSecurityTrustHtml(this.svgIcons[name] ?? '');
+    }
+    return this.safeIconCache[name];
+  }
+
+  // ── Notifications ────────────────────────────────────────────────────────
+  /** Nb de notifications non lues (plafonné à 99) */
+  get nonLus(): number {
+    return Math.min(this.notifService.nonLus(), 99);
+  }
+
+  /** 5 dernières notifications */
+  get notifs() {
+    return this.notifService.latestFive();
+  }
+
+  onNotifClick(notif: any): void {
+    this.notifService.markRead(notif.id);
+    this.notifOpen = false;
+
+    if (notif.link) {
+      this.router.navigateByUrl(notif.link);
+      return;
+    }
+
+    // Redirection : vers la conversation si senderId présent
+    if (notif.senderId) {
+      this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId: notif.senderId } });
+    } else {
+      this.router.navigate(['/entrepreneur/messages']);
+    }
+  }
+
+  // ── Avatar & initiales ──────────────────────────────────────────────────
   get userInitials(): string {
     const u = this.auth.currentUser;
-    return `${u?.prenom?.[0] ?? ''}${u?.nom?.[0] ?? ''}`;
+    return `${u?.firstName?.[0] ?? ''}${u?.lastName?.[0] ?? ''}`.toUpperCase() || '?';
+  }
+
+  get userAvatarUrl(): string | null {
+    const avatar = this.auth.currentUser?.avatar?.trim();
+    if (!avatar) return null;
+    return avatar.startsWith('http')
+      ? avatar
+      : `${BACKEND_ORIGIN}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
+  }
+
+  // ── Logout ───────────────────────────────────────────────────────────────
+  logout(): void {
+    const userId = this.auth.currentUser?.idUser ?? 0;
+    if (userId > 0) {
+      this.messageService.announceOffline(userId).subscribe({
+        error: () => {}
+      });
+      this.onlineStatusService.removeOnlineUser(userId);
+    }
+    this.onlineStatusService.clearOnlineUsers();
+    this.wsService.disconnect();
+    this.auth.logout();
+    this.router.navigateByUrl('/');
   }
 }

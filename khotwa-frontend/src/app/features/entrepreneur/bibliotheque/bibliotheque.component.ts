@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, NgZone } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RessourceService, Ressource, Categorie, ProgressStatus, PlanType } from '../../../core/services/ressource.service';
+import { AiService,AiRessource } from '../../../core/services/ai.service';
 import { ProjetService } from '../../../core/services/projet.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { forkJoin } from 'rxjs';
@@ -57,49 +59,103 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
     PDF: '📄', VIDEO: '🎥', EXCEL: '📊', WORD: '📝', IMAGE: '🖼️', LINK: '🔗'
   };
 
-  userId = 2;
-  userRole = 'ENTREPRENEUR';
-  userPlan: PlanType = 'FREE'; // FREE | PREMIUM | INSTITUTIONAL
-  
+  get userId(): number   { return this.auth.currentUser?.idUser ?? 0; }
+  get userRole(): string { return this.auth.currentUser?.role   ?? 'ENTREPRENEUR'; }
+  get userPlan(): PlanType {
+    const p = this.auth.currentUser?.planType;
+    return (p as PlanType) ?? 'FREE';
+  }
+
   private apiBase = this.svc.getApiOrigin();
+
+  // ── IA ──────────────────────────────────────────────
+  showResumeModal  = false;
+  resumeRessource: Ressource | null = null;
+  aiSearchActive   = false;
+  aiSearchResults: AiRessource[] = [];
+  private allRessources: Ressource[] = [];
 
   constructor(
     public projetService: ProjetService,
     public auth: AuthService,
     private svc: RessourceService,
+    private aiService: AiService,
     private sanitizer: DomSanitizer,
-    private zone: NgZone
+    private zone: NgZone,
+    private route: ActivatedRoute
   ) {}
 
-  ngOnInit() { this.loadCategories(); this.loadStats(); this.load(); }
+  openResumeModal(r: Ressource, event: Event) {
+    event.stopPropagation();
+    this.resumeRessource = r;
+    this.showResumeModal = true;
+  }
+
+  closeResumeModal() {
+    this.showResumeModal  = false;
+    this.resumeRessource = null;
+  }
+
+  onAiResults(results: AiRessource[]) {
+    this.aiSearchActive  = true;
+    this.aiSearchResults = results || [];
+    if (results && results.length > 0) {
+      const ids = new Set(results.map(r => Number(r.id)).filter(id => !isNaN(id)));
+      this.ressources = this.allRessources.filter(r => ids.has(r.id));
+    } else {
+      this.ressources = [];
+    }
+  }
+
+  onAiSearchCleared() {
+    this.aiSearchActive  = false;
+    this.aiSearchResults = [];
+    this.ressources = [...this.allRessources];
+  }
+
+  ngOnInit() {
+    this.loadCategories();
+    this.loadStats();
+    this.load();
+    this.route.queryParams.subscribe(params => {
+      const openId = params['openId'];
+      if (openId) {
+        setTimeout(() => {
+          const r = this.ressources.find(res => String(res.id) === String(openId));
+          if (r) this.openViewer(r);
+          else {
+            this.svc.getRessourceByIdHttp(openId, this.userId, this.userRole, this.userPlan).subscribe({
+              next: (res) => {
+                const detail = res.data?.ressource ?? res.data;
+                if (detail) this.openViewer(detail);
+              },
+              error: () => {}
+            });
+          }
+        }, 800);
+      }
+    });
+  }
+
   ngOnDestroy() { this.stopSaveInterval(); this.revokeBlobUrl(); }
 
   private formatFullUrl(path: string | undefined): string {
     if (!path || path === '#' || path === '') return '';
     if (path.startsWith('http')) return path;
-
-    const base = this.apiBase.replace(/\/+$/, ''); 
+    const base = this.apiBase.replace(/\/+$/, '');
     let cleanPath = path;
-
     if (cleanPath.includes('khotwa/api')) {
-        const parts = cleanPath.split('khotwa/api');
-        cleanPath = parts[parts.length - 1]; 
+      const parts = cleanPath.split('khotwa/api');
+      cleanPath = parts[parts.length - 1];
     }
-
-    if (!cleanPath.startsWith('/')) {
-        cleanPath = '/' + cleanPath;
-    }
-
-    const finalUrl = base + cleanPath;
-    console.log("URL de la ressource :", finalUrl);
-    return finalUrl;
+    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
+    return base + cleanPath;
   }
 
   load() {
     this.loading = true; this.error = '';
-    const filters: any = { userId: this.userId, role: this.userRole, plan: this.userPlan };
+    const filters: any = {};
     if (this.filterType !== 'ALL') filters.type = this.filterType;
-    if (this.filterAccess !== 'ALL') filters.access = this.filterAccess;
     if (this.filterCategorieId) filters.categorieId = this.filterCategorieId;
     if (this.search) filters.search = this.search;
 
@@ -118,14 +174,15 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
         this.ressources = list.map(r => ({
           ...r,
           maProgress: pm.has(r.id)
-            ? { 
-                status: pm.get(r.id).statut as any, 
+            ? {
+                status: pm.get(r.id).statut as any,
                 pourcentage: pm.get(r.id).pourcentage,
                 positionVideoSec: pm.get(r.id).positionVideoSec,
-                currentPage: pm.get(r.id).positionVideoSec 
+                currentPage: pm.get(r.id).positionVideoSec
               }
             : r.maProgress
         }));
+        this.allRessources = [...this.ressources];
         this.buildFolders();
         this.loading = false;
       },
@@ -137,14 +194,15 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
   loadCategories() { this.svc.getCategoriesHttp().subscribe({ next: r => this.categories = r.data ?? [], error: () => {} }); }
   onSearch() { this.load(); }
 
-  openViewer(r: Ressource) {
+  openViewer(r: Ressource | AiRessource | any) {
+    if (!r || !r.id) { alert("Impossible d'ouvrir cette ressource (ID manquant)"); return; }
     this.svc.getRessourceByIdHttp(r.id, this.userId, this.userRole, this.userPlan).subscribe({
-      next: res => {
+      next: (res) => {
         const detail = res.data?.ressource ?? res.data ?? r;
         const tags = res.data?.tags ?? detail.tags ?? r.tags ?? [];
-        this.startViewer({ ...r, ...detail, tags, maProgress: r.maProgress ?? detail.maProgression });
+        this.startViewer({ ...r, ...detail, tags, maProgress: r.maProgress ?? detail.maProgress ?? detail.maProgression });
       },
-      error: () => this.startViewer(r)
+      error: (err) => { this.startViewer(r as Ressource); }
     });
   }
 
@@ -155,24 +213,38 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
     this.revokeBlobUrl();
     this.blobUrl = null; this.rawBlobUrl = ''; this.pdfDoc = null;
 
-    if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
+    if (r.type === 'LINK' || (!r.urlFichier && r.urlExterne)) {
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+      window.open(r.urlExterne!, '_blank');
+      this.showViewer = false;
+    } else if (r.type === 'IMAGE') {
+      this.svc.updateProgressionHttp(this.userId, r.id, 'COMPLETED', 100).subscribe();
+      if (r.maProgress) { r.maProgress.status = 'COMPLETED'; r.maProgress.pourcentage = 100; }
+    } else if (!r.maProgress || r.maProgress.status === 'NOT_STARTED') {
       this.svc.updateProgressionHttp(this.userId, r.id, 'IN_PROGRESS', 1).subscribe();
     }
 
     if (r.type === 'VIDEO') {
-      this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+      if (r.urlFichier && !r.urlFichier.startsWith('http')) {
+        this.viewerLoading = true;
+        this.showViewer = true;
+        this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+          next: (blob: Blob) => { this.rawBlobUrl = URL.createObjectURL(blob); this.viewerUrl = this.rawBlobUrl; this.viewerLoading = false; },
+          error: () => { this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne); this.viewerLoading = false; }
+        });
+      } else {
+        this.viewerUrl = this.formatFullUrl(r.urlFichier || r.urlExterne);
+        this.showViewer = true;
+      }
       this.showViewer = true;
       this.startSaveInterval(r);
     } else if (r.type === 'PDF' || r.type === 'IMAGE') {
       this.viewerLoading = true;
       this.showViewer = true;
       this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
-        next: (blob: Blob) => {
-          this.rawBlobUrl = URL.createObjectURL(blob);
-          this.viewerLoading = false;
-          if (r.type === 'PDF') this.loadPdfJs(this.rawBlobUrl, r);
-        },
-        error: () => { this.viewerLoading = false; }
+        next: (blob: Blob) => { this.rawBlobUrl = URL.createObjectURL(blob); this.viewerLoading = false; if (r.type === 'PDF') this.loadPdfJs(this.rawBlobUrl, r); },
+        error: (err: any) => { this.viewerLoading = false; this.showViewer = false; alert(err?.error?.message || 'Impossible de charger la ressource.'); }
       });
     } else {
       this.viewerUrl = this.formatFullUrl(r.urlExterne || r.urlFichier);
@@ -183,7 +255,6 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
   private loadPdfJs(blobUrl: string, r: Ressource) {
     if (typeof pdfjsLib === 'undefined') return;
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
     pdfjsLib.getDocument(blobUrl).promise.then((doc: any) => {
       this.zone.run(() => {
         this.pdfDoc = doc;
@@ -199,13 +270,11 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
     if (!this.pdfDoc || this.pdfRendering) return;
     this.pdfRendering = true;
     this.pdfCurrentPage = pageNum;
-
     this.pdfDoc.getPage(pageNum).then((page: any) => {
       const canvas = this.pdfCanvasRef?.nativeElement;
       if (!canvas) { this.pdfRendering = false; return; }
       const viewport = page.getViewport({ scale: this.pdfScale });
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      canvas.height = viewport.height; canvas.width = viewport.width;
       const ctx = canvas.getContext('2d');
       page.render({ canvasContext: ctx, viewport }).promise.then(() => {
         this.zone.run(() => {
@@ -241,11 +310,8 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
   private stopSaveInterval() { if (this.saveInterval) clearInterval(this.saveInterval); }
 
   closeViewer() {
-    this.stopSaveInterval();
-    this.revokeBlobUrl();
-    this.showViewer = false;
-    this.viewerRessource = null;
-    this.pdfDoc = null;
+    this.stopSaveInterval(); this.revokeBlobUrl();
+    this.showViewer = false; this.viewerRessource = null; this.pdfDoc = null;
   }
 
   onVideoLoaded() {
@@ -258,25 +324,16 @@ export class EntrepreneurBibliothequeComponent implements OnInit, OnDestroy {
   }
 
   downloadRessource(r: Ressource) {
-    const url = this.formatFullUrl(r.urlFichier || (r as any).urlExterne);
-    if (!url) { alert('No file available.'); return; }
-
-    fetch(url, { headers: { 'X-User-Id': String(this.userId), 'X-User-Role': this.userRole } })
-      .then(res => {
-        if (!res.ok) throw new Error('Server error lors du téléchargement');
-        return res.blob();
-      })
-      .then(blob => {
+    if (r.urlExterne) { window.open(r.urlExterne, '_blank'); return; }
+    this.svc.downloadAsBlob(r.id, this.userId, this.userRole, this.userPlan).subscribe({
+      next: (blob: Blob) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = (r as any).nomFichierOriginal || r.titre || 'document';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      })
-      .catch(err => {
-        console.error("Download fallback:", err);
-        window.open(url, '_blank');
-      });
+        a.click(); URL.revokeObjectURL(a.href);
+      },
+      error: (err: any) => { alert(err?.error?.message || 'Impossible de telecharger la ressource.'); }
+    });
   }
 
   isCompleted(r: Ressource): boolean { return r.maProgress?.status === 'COMPLETED'; }

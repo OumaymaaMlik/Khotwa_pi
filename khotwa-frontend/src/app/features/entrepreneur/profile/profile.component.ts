@@ -1,0 +1,449 @@
+import { Component, OnInit, Inject } from '@angular/core';
+import { SubscriptionService } from '../../../core/services/subscription.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { Subscription, PlanOffer, SubscriptionStatus } from '../../../core/models/subscription.model';
+import { PlanType } from '../../../core/models/user.model';
+import { DiscountService } from '../../../core/services/discount.service';
+import { Discount } from '../../../core/models/discount.model';
+ 
+
+declare var paypal: any;
+
+@Component({
+  selector: 'app-profile',
+  templateUrl: './profile.component.html',
+  styleUrls: ['./profile.component.css']
+})
+export class ProfileComponent implements OnInit {
+
+  currentSubscription: Subscription | null = null;
+  plans: PlanOffer[] = [];
+  isProcessing = false;
+
+  showModal         = false;
+  selectedPlan: PlanOffer | null = null;
+  isDowngrade       = false;
+  modalAutoRenew    = false;
+  modalNotifyBefore = false;
+  modalStartDate    = '';
+
+  showPayment       = false;
+  paymentProcessing = false;
+  paymentSuccess    = false;
+  paymentError      = '';
+  paypalRendered    = false;
+
+  // ── Upgrade suggestion popup ──────────────────────────────────────────────
+  showUpgradePopup        = false;
+  upgradeSuggestion: any  = null;
+
+  discountedPaymentPrice: number | null = null;
+
+  activeDiscounts: Discount[] = [];
+
+  activeDiscountId: number | null = null;
+
+
+  plansWithDiscounts: { offer: PlanOffer; bestDiscount: Discount | null }[] = [];
+
+
+  get currentUserId(): number {
+    return this.authService.currentUser?.idUser ?? 0;
+  }
+
+  constructor(
+    @Inject(SubscriptionService) private subscriptionService: SubscriptionService,
+    private authService: AuthService,
+    private discountService: DiscountService 
+  ) {}
+
+  ngOnInit(): void {
+  this.loadCurrentSubscription();
+  this.loadPlans();
+  this.loadActiveDiscounts();
+}
+  // ── Chargements ───────────────────────────────────────────────────────────
+
+  loadCurrentSubscription(): void {
+    if (!this.currentUserId) return;
+    this.subscriptionService.getCurrentSubscriptionByUser(this.currentUserId).subscribe({
+      next: (data: Subscription) => { this.currentSubscription = data; },
+      error: () => { this.currentSubscription = null; }
+    });
+  }
+
+  loadPlans(): void {
+  this.subscriptionService.getAvailablePlans().subscribe({
+    next: (data: PlanOffer[]) => {
+      this.plans = data;
+      this.buildPlansWithDiscounts();
+      this.checkUpgradeSuggestion();
+    },
+    error: (err: any) => { console.error('Error loading plans', err); }
+  });
+}
+loadActiveDiscounts(): void {
+  if (!this.currentUserId) return;
+  this.discountService.getActiveDiscountsForUser(this.currentUserId).subscribe({
+    next: (discounts: Discount[]) => {
+      this.activeDiscounts = discounts ?? [];
+      this.buildPlansWithDiscounts();
+    },
+    error: () => { this.activeDiscounts = []; }
+  });
+}
+buildPlansWithDiscounts(): void {
+  if (!this.plans.length) return;
+ 
+  const currentPlanRank = this.currentSubscription
+    ? this.getPlanRank(this.currentSubscription.plan)
+    : 0;
+ 
+  this.plansWithDiscounts = this.plans.map(offer => {
+    // Ne montrer les remises que pour les plans supérieurs au plan actuel
+    const planRank = this.getPlanRank(offer.type);
+    let bestDiscount: Discount | null = null;
+ 
+    if (planRank > currentPlanRank) {
+      // Cherche la meilleure remise pour ce plan parmi les remises actives
+      const discountsForPlan = this.activeDiscounts.filter(
+        d => d.planOfferId === offer.id
+      );
+      if (discountsForPlan.length > 0) {
+        // Prend celle avec le plus grand pourcentage
+        bestDiscount = discountsForPlan.reduce((best, curr) =>
+          curr.discountPercent > best.discountPercent ? curr : best
+        );
+      }
+    }
+ 
+    return { offer, bestDiscount };
+  });
+}
+  checkUpgradeSuggestion(): void {
+    if (!this.currentUserId) return;
+    this.subscriptionService.getUpgradeSuggestion(this.currentUserId).subscribe({
+      next: (data: any) => {
+        if (data?.shouldSuggest) {
+          this.upgradeSuggestion = data;
+          setTimeout(() => { this.showUpgradePopup = true; }, 10000);
+        }
+      },
+      error: () => {  }
+    });
+  }
+
+  dismissUpgradePopup(): void {
+    this.showUpgradePopup = false;
+  }
+
+ 
+  acceptUpgradeSuggestion(): void {
+    if (!this.upgradeSuggestion) return;
+    const basePlan = this.plans.find(
+      p => p.id === this.upgradeSuggestion.institutionalPlanOfferId
+    );
+
+    if (!basePlan) return;
+    this.discountedPaymentPrice = this.upgradeSuggestion.discountedPrice;
+
+    this.showUpgradePopup = false;
+    this.openPlanModal(basePlan);
+  }
+
+  // ── Helpers d'affichage ───────────────────────────────────────────────────
+
+  getStatusLabel(status: SubscriptionStatus): string {
+    const labels: Record<string, string> = {
+      ACTIVE: 'Active', EXPIRED: 'Expired', CANCELLED: 'Cancelled', PENDING: 'Pending'
+    };
+    return labels[status] ?? status;
+  }
+
+  isCurrentPlan(plan: PlanOffer): boolean {
+    if (!this.currentSubscription) return false;
+    if (this.currentSubscription.planOffer?.id != null && plan.id != null) {
+      return this.currentSubscription.planOffer.id === plan.id;
+    }
+    return this.currentSubscription.plan === plan.type;
+  }
+
+  getButtonLabel(plan: PlanOffer): string {
+    if (this.isCurrentPlan(plan)) return 'Current Plan';
+    if (!this.currentSubscription) return 'Choose Plan';
+    return this.isUpgrade(plan.type) ? 'Upgrade now' : 'Switch at renewal';
+  }
+
+  canChangePlan(type: PlanType): boolean {
+    if (!this.currentSubscription) return true;
+    if (this.currentSubscription.planOffer?.id != null) {
+      const activePlanType = this.currentSubscription.planOffer.type;
+      const activePlanId   = this.currentSubscription.planOffer.id;
+      if (activePlanType !== type) return true;
+      return this.plans.filter(p => p.type === type && p.id !== activePlanId).length > 0;
+    }
+    return this.currentSubscription.plan !== type;
+  }
+
+  isUpgrade(type: PlanType): boolean {
+    if (!this.currentSubscription) return true;
+    return this.getPlanRank(type) > this.getPlanRank(this.currentSubscription.plan);
+  }
+
+  getPlanRank(plan: PlanType): number {
+    switch (plan) {
+      case 'FREE':          return 1;
+      case 'PREMIUM':       return 2;
+      case 'INSTITUTIONAL': return 3;
+    }
+  }
+
+  getRemainingDays(): number {
+    if (!this.currentSubscription?.dateFin) return 0;
+    const diff = new Date(this.currentSubscription.dateFin).getTime() - Date.now();
+    return Math.max(Math.ceil(diff / 86_400_000), 0);
+  }
+
+  getAvantagesList(avantages: string): string[] {
+    if (!avantages) return [];
+    return avantages.split('\n').map((a: string) => a.trim()).filter((a: string) => a.length > 0);
+  }
+
+  getDuration(plan: PlanOffer): string {
+    if (!plan.duree || plan.duree <= 0 || plan.type === 'FREE') return 'Unlimited';
+    if (plan.duree >= 365) return Math.round(plan.duree / 365) + ' year(s)';
+    if (plan.duree >= 30)  return Math.round(plan.duree / 30)  + ' month(s)';
+    return plan.duree + ' days';
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  toggleAutoRenew(): void {
+    if (!this.currentSubscription || this.isProcessing) return;
+    const subscriptionId = this.currentSubscription.idSubscription;
+    if (subscriptionId == null) return;
+    const newValue = !this.currentSubscription.autoRenouvellement;
+    if (!window.confirm(newValue ? 'Enable auto-renewal?' : 'Disable auto-renewal?')) return;
+    this.isProcessing = true;
+    this.subscriptionService.updateAutoRenew(subscriptionId, newValue).subscribe({
+      next: (updated: Subscription) => {
+        this.currentSubscription = { ...this.currentSubscription!, autoRenouvellement: updated.autoRenouvellement ?? newValue };
+        this.isProcessing = false;
+      },
+      error: () => {
+        this.currentSubscription = { ...this.currentSubscription!, autoRenouvellement: newValue };
+        this.isProcessing = false;
+      }
+    });
+  }
+
+  openPlanModal(plan: PlanOffer): void {
+    if (this.isCurrentPlan(plan) || this.isProcessing) return;
+    this.selectedPlan      = plan;
+    this.isDowngrade       = this.currentSubscription
+      ? this.getPlanRank(plan.type) < this.getPlanRank(this.currentSubscription.plan) : false;
+    this.modalAutoRenew    = this.currentSubscription?.autoRenouvellement ?? false;
+    this.modalNotifyBefore = false;
+    this.showModal         = true;
+    this.showPayment       = false;
+    this.paymentSuccess    = false;
+    this.paymentError      = '';
+    this.paypalRendered    = false;
+    this.modalStartDate    = this.isDowngrade && this.currentSubscription?.dateFin
+      ? new Date(this.currentSubscription.dateFin).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
+  }
+
+  closeModal(): void {
+    this.showModal             = false;
+    this.selectedPlan          = null;
+    this.showPayment           = false;
+    this.paymentSuccess        = false;
+    this.paymentError          = '';
+    this.paypalRendered        = false;
+    this.discountedPaymentPrice = null; 
+  }
+
+  onOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-overlay')) this.closeModal();
+  }
+
+  proceedToPayment(): void {
+    if (!this.selectedPlan || !this.currentUserId) {
+      this.paymentError = 'Missing selected plan or user.';
+      return;
+    }
+
+    this.paymentError = '';
+
+    if (this.selectedPlan.prix === 0) {
+      this._doFreeSubscribe();
+      return;
+    }
+
+    this.isProcessing = true;
+
+    this.subscriptionService.selectPlan(this.currentUserId, this.selectedPlan.id!).subscribe({
+      next: (res: Subscription) => {
+        this.currentSubscription = res;
+        this.isProcessing = false;
+        this.showPayment = true;
+        this.paypalRendered = false;
+        setTimeout(() => this._mountPaypalButton(), 150);
+      },
+      error: (err: any) => {
+        console.error('Erreur démarrage paiement', err);
+        this.isProcessing = false;
+        this.paymentError = 'Unable to start payment. Please try again.';
+      }
+    });
+  }
+  get effectivePrice(): number {
+    return this.discountedPaymentPrice ?? (this.selectedPlan?.prix ?? 0);
+  }
+
+  backToDetails(): void {
+    if (this.currentSubscription?.idSubscription && this.currentSubscription.statut === 'PENDING') {
+      this.subscriptionService.cancelPending(this.currentSubscription.idSubscription).subscribe({
+        next: (res: Subscription) => { this.currentSubscription = res; }
+      });
+    }
+    this.showPayment = false; this.paymentError = ''; this.paypalRendered = false;
+  }
+
+  private _mountPaypalButton(): void {
+    const paypalSDK = (window as any)['paypal'];
+    if (!paypalSDK) { this.paymentError = '⚠️ PayPal SDK not loaded. Check your index.html.'; return; }
+    if (this.paypalRendered) return;
+    // Si une remise est active (offre upgrade suggestion), on l'utilise pour PayPal
+    const effectivePrice = this.discountedPaymentPrice ?? (this.selectedPlan?.prix ?? 0);
+    const prixUSD = (effectivePrice / 3.1).toFixed(2);
+    const nomPlan = this.selectedPlan?.label ?? 'Plan';
+    paypalSDK.Buttons({
+      style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay' },
+      createOrder: (_data: any, actions: any) => actions.order.create({
+        purchase_units: [{ description: `Subscription ${nomPlan}`, amount: { currency_code: 'USD', value: prixUSD } }],
+        application_context: {
+          return_url: 'http://localhost:4200/entrepreneur/profile',
+          cancel_url:  'http://localhost:4200/entrepreneur/profile',
+          user_action: 'PAY_NOW'
+        }
+      }),
+      onApprove: (data: any, actions: any) => {
+        this.paymentProcessing = true;
+        return actions.order.capture().then((_d: any) => this._confirmPayment(data.orderID, data.payerID, this.discountedPaymentPrice, this.upgradeSuggestion?.discountPercent));
+      },
+      onCancel: () => {
+        this.paymentError = 'Payment cancelled.'; this.paymentProcessing = false;
+        if (this.currentSubscription?.idSubscription) {
+          this.subscriptionService.cancelPending(this.currentSubscription.idSubscription).subscribe({
+            next: (res: Subscription) => { this.currentSubscription = res; this.showPayment = false; }
+          });
+        } else { this.showPayment = false; }
+      },
+      onError: (err: any) => {
+        console.error('PayPal error:', err); this.paymentProcessing = false;
+        this.paymentError = 'An error occurred. Please try again.';
+        if (this.currentSubscription?.idSubscription) {
+          this.subscriptionService.cancelPending(this.currentSubscription.idSubscription).subscribe({
+            next: (res: Subscription) => { this.currentSubscription = res; }
+          });
+        }
+      }
+    }).render('#paypal-button-container');
+    this.paypalRendered = true;
+  }
+
+  private _confirmPayment(
+  orderId: string,
+  payerId: string,
+  montantPaye?: number | null,
+  discountPercent?: number | null
+): void {
+  if (!this.selectedPlan || !this.currentUserId) {
+    this.paymentError = 'Missing data. Please try again.';
+    this.paymentProcessing = false;
+    return;
+  }
+
+  this.paymentProcessing = true;
+  this.paymentError = '';
+
+  this.subscriptionService.confirmPaypalPayment(
+    this.currentUserId,
+    this.selectedPlan.id!,
+    orderId,
+    payerId,
+    montantPaye     ?? null,
+    discountPercent ?? null
+  ).subscribe({
+    next: (res: Subscription) => {
+      this.paymentProcessing = false;
+      this.paymentSuccess    = true;
+      this.currentSubscription = res;
+
+      // Marquer la remise comme utilisée si une remise était active
+      if (this.activeDiscountId) {
+        this.discountService.markDiscountAsUsed(this.activeDiscountId).subscribe();
+        this.activeDiscountId = null;
+      }
+
+      this.loadCurrentSubscription();
+      this.loadActiveDiscounts(); // Recharge les remises (la remise utilisée disparaît)
+
+      if (res.idSubscription != null && this.modalAutoRenew !== res.autoRenouvellement) {
+        this.subscriptionService.updateAutoRenew(res.idSubscription, this.modalAutoRenew).subscribe();
+      }
+    },
+    error: (err: any) => {
+      console.error('Payment confirmation error:', err);
+      this.paymentProcessing = false;
+      this.paymentError = 'Payment received but activation failed. Please contact support.';
+    }
+  });
+}
+
+hasAnyDiscount(): boolean {
+  return this.plansWithDiscounts.some(p => p.bestDiscount !== null);
+}
+
+  private _doFreeSubscribe(): void {
+    this.isProcessing = true;
+    this.subscriptionService.selectPlan(this.currentUserId, this.selectedPlan!.id!).subscribe({
+      next: (res: Subscription) => {
+        this.currentSubscription = res; this.isProcessing = false; this.paymentSuccess = true;
+        if (res.idSubscription != null && this.modalAutoRenew !== res.autoRenouvellement) {
+          this.subscriptionService.updateAutoRenew(res.idSubscription, this.modalAutoRenew).subscribe();
+        }
+        this.loadCurrentSubscription();
+      },
+      error: () => { this.isProcessing = false; this.paymentError = 'An error occurred. Please try again.'; }
+    });
+  }
+
+  openPlanModalWithDiscount(plan: PlanOffer, discount: Discount | null): void {
+  if (this.isCurrentPlan(plan) || this.isProcessing) return;
+ 
+  if (discount) {
+    // Applique le prix remisé
+    this.discountedPaymentPrice = discount.discountedPrice ?? null;
+    // Stocke l'id de la remise pour la marquer comme utilisée après paiement
+    this.activeDiscountId = discount.id ?? null;
+  } else {
+    this.discountedPaymentPrice = null;
+    this.activeDiscountId = null;
+  }
+ 
+  this.openPlanModal(plan);
+}
+
+formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+ 
+getPlanTypeBadge(type: string): string {
+  return ({ FREE: 'badge-free', PREMIUM: 'badge-premium', INSTITUTIONAL: 'badge-institutional' } as any)[type] ?? '';
+}
+ 
+}

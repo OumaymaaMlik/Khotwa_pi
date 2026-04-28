@@ -1,4 +1,7 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { MessageService } from '../../../core/services/message.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-coach-talent',
@@ -37,4 +40,29 @@ export class CoachTalentComponent {
     this.newAnnonce = { poste: '', startup: '', type: 'stagiaire', competences: '' };
     this.view = 'annonces';
   }
+
+  constructor(
+    private router: Router,
+    private messageService: MessageService,
+    private auth: AuthService
+  ) {}
+
+  onContactTalent(talentId: string) {
+    const targetId = parseInt(talentId.replace('t', '')); 
+    const currentUserId = this.auth.currentUser?.idUser;
+
+    if (!currentUserId) {
+      console.error('User not logged in');
+      return;
+    }
+
+    this.messageService.initiateContact(currentUserId, targetId).subscribe({
+      next: (response) => {
+        console.log('Conversation started!', response);
+        this.router.navigateByUrl(`/coach/messages?conversationId=${targetId}`);
+      },
+      error: (err) => console.error('Failed to initiate contact', err)
+    });
+  }
+
 }
