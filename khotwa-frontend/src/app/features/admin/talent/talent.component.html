@@ -21,7 +21,7 @@
         <span *ngFor="let c of t.competences" class="skill-tag">{{ c }}</span>
       </div>
       <div style="margin-top:14px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;color:var(--text-muted)">Score global</span><strong style="font-size:12px;color:var(--orange)">{{ t.score }}%</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;color:var(--text-muted)">Score global</span><strong style="font-size:12px;color:var(--teal)">{{ t.score }}%</strong></div>
         <div class="kh-progress"><div class="kh-progress__fill" [style.width.%]="t.score"></div></div>
       </div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px">
@@ -45,3 +45,4 @@
     </div>
   </div>
 </div>
+

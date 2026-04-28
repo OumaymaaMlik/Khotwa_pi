@@ -1,5 +1,4 @@
-<aside class="sidebar" [class.open]="sidebarOpen" [class.collapsed]="!sidebarOpen"></aside>
-<div class="app-shell" [class.sidebar-open]="sidebarOpen">
+<div class="app-shell" [class.sidebar-open]="sidebarOpen" [class.sidebar-collapsed]="!sidebarOpen && !sidebarMobile">
 
   <!-- ══ Mobile overlay ══ -->
   <div class="overlay" *ngIf="sidebarOpen && sidebarMobile" (click)="closeOnMobile()"></div>
@@ -103,7 +102,7 @@
 
       <!-- Expand hint shown when collapsed on desktop -->
       <button class="topbar__expand-brand" *ngIf="!sidebarOpen && !sidebarMobile" (click)="toggleSidebar()">
-        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#FF9A5C)'">
+        <div class="expand-brand-mark" [style.background]="'linear-gradient(135deg,' + roleColor + ',#5AD5D5)'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
@@ -146,7 +145,7 @@
             <div style="padding:12px 16px;text-align:center;border-top:1px solid var(--border);">
               <a [routerLink]="rolePrefix + '/notifications'"
                 (click)="notifOpen=false"
-                style="font-size:12px;font-weight:600;color:var(--orange);text-decoration:none;">
+                style="font-size:12px;font-weight:600;color:var(--teal);text-decoration:none;">
                 Show all notifications
               </a>
             </div>
@@ -173,3 +172,4 @@
     </main>
   </div>
 </div>
+

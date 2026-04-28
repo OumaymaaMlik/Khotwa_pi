@@ -331,11 +331,11 @@ getRiskClass(level: string): string {
 }
   
   getAvatarColor(s: Subscription): string {
-    const colors = ['linear-gradient(135deg,#E8622A,#FF9A5C)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];
+    const colors = ['linear-gradient(135deg,#2ABFBF,#5AD5D5)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];
     return colors[(s.user?.idUser ?? s.idUser ?? 0) % colors.length];
   }
   getAvatarColorFromId(id: number): string {
-    const colors = ['linear-gradient(135deg,#E8622A,#FF9A5C)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];
+    const colors = ['linear-gradient(135deg,#2ABFBF,#5AD5D5)', 'linear-gradient(135deg,#7850c8,#a480f0)', 'linear-gradient(135deg,#27AE7A,#5de0a8)', 'linear-gradient(135deg,#2ABFBF,#6ee7e7)'];
     return colors[(id ?? 0) % colors.length];
   }
   getRowInitials(row: any): string {
