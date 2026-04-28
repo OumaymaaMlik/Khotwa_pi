@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { MessageService } from '../../../core/services/message.service';
 import { ProjetService, ProjetDraftInput } from '../../../core/services/projet.service';
 import { Projet, SecteurProjet, SECTEUR_PROJET_OPTIONS, getDisciplineLevelClass, formatProjetStatusLabel } from '../../../core/models';
 
@@ -258,6 +259,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private authService: AuthService,
     private router: Router,
+    private messageService: MessageService,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1646,6 +1648,28 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
     this.uploadDocTypeBySousTacheId[sousTache.id] = '';
     this.loadDocuments(sousTache.id);
     if (this.selectedWorkflowProject) { this.loadProjectDocuments(this.selectedWorkflowProject.id); }
+  }
+
+  contactPrimaryCoach(): void {
+    const currentUserId = this.getCurrentEntrepreneurId();
+    if (!currentUserId) {
+      this.submitMessage = 'Entrepreneur session not found. Please sign in again.';
+      return;
+    }
+    const primaryCoach = this.assignedCoachs.find(c => c.roleCoachProjet === 'COACH_PRINCIPAL') ?? this.assignedCoachs[0];
+    if (!primaryCoach?.coachId) {
+      this.submitMessage = 'Primary coach is not assigned yet.';
+      return;
+    }
+    this.messageService.ensureDirectConversation(currentUserId, primaryCoach.coachId).subscribe({
+      next: (conversation: any) => {
+        const conversationId = conversation?.id ?? conversation?.conversationId ?? primaryCoach.coachId;
+        this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId } });
+      },
+      error: () => {
+        this.submitMessage = 'Unable to open coach conversation right now.';
+      }
+    });
   }
 
   private openSubmissionToast(message: string): void {

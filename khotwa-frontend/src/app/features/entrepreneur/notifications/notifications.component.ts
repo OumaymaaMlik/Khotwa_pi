@@ -3,6 +3,7 @@ import { MessageService } from '../../../core/services/message.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Notification } from '../../../core/models/message.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-entrepreneur-notifications',
@@ -12,6 +13,8 @@ import { Notification } from '../../../core/models/message.model';
 export class EntrepreneurNotificationsComponent implements OnInit {
 
   notifications: Notification[] = [];
+  filteredNotifications: Notification[] = [];
+  groupedNotifications: { label: string, items: Notification[] }[] = [];
   checkedIds: Set<number> = new Set();
   activeFilter: 'all' | 'unread' | 'messages' | 'resolved' = 'all';
   loading = false;
@@ -19,7 +22,8 @@ export class EntrepreneurNotificationsComponent implements OnInit {
   constructor(
     private messageService: MessageService,
     private authService: AuthService,
-    public notifService: NotificationService
+    public notifService: NotificationService,
+    private router: Router
   ) {}
 
   
@@ -30,13 +34,24 @@ export class EntrepreneurNotificationsComponent implements OnInit {
   ngOnInit() {
     this.notifService.reload();
     this.notifService.notifs$().subscribe(notifs => {
-      this.notifications = notifs.sort((a, b) =>
+      this.notifications = [...notifs].sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+      this.rebuildNotificationView();
     });
   }
 
-  get filteredNotifications(): Notification[] {
+  setActiveFilter(filter: 'all' | 'unread' | 'messages' | 'resolved'): void {
+    this.activeFilter = filter;
+    this.rebuildNotificationView();
+  }
+
+  private rebuildNotificationView(): void {
+    this.filteredNotifications = this.computeFilteredNotifications();
+    this.groupedNotifications = this.computeGroupedNotifications(this.filteredNotifications);
+  }
+
+  private computeFilteredNotifications(): Notification[] {
     switch (this.activeFilter) {
       case 'unread': return this.notifications.filter(n => !n.read);
       case 'messages': return this.notifications.filter(n => n.type === 'NEW_MESSAGE');
@@ -45,7 +60,7 @@ export class EntrepreneurNotificationsComponent implements OnInit {
     }
   }
 
-  get groupedNotifications(): { label: string, items: Notification[] }[] {
+  private computeGroupedNotifications(source: Notification[]): { label: string, items: Notification[] }[] {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
@@ -58,7 +73,7 @@ export class EntrepreneurNotificationsComponent implements OnInit {
       { label: 'Older', items: [] }
     ];
 
-    this.filteredNotifications.forEach(n => {
+    source.forEach(n => {
       const date = new Date(n.createdAt);
       if (date >= today) groups[0].items.push(n);
       else if (date >= yesterday) groups[1].items.push(n);
@@ -111,4 +126,22 @@ export class EntrepreneurNotificationsComponent implements OnInit {
   }
 
   get hasChecked(): boolean { return this.checkedIds.size > 0; }
+
+  openNotification(notification: Notification, event: MouseEvent): void {
+    event.stopPropagation();
+    this.notifService.markRead(notification.id);
+    const msg = (notification.message || '').toLowerCase();
+    const isProjectNotification = notification.type === 'PROJECT_ASSIGNMENT'
+      || notification.type === 'PROJECT_UNASSIGNED'
+      || msg.includes('assigned to project')
+      || msg.includes('assigned to your project')
+      || msg.includes('unassigned from project');
+    if (notification.conversationId) {
+      this.router.navigate(['/entrepreneur/messages'], { queryParams: { conversationId: notification.conversationId } });
+      return;
+    }
+    if (!isProjectNotification && notification.type === 'NEW_MESSAGE' && notification.senderId) {
+      this.router.navigate(['/entrepreneur/messages'], { queryParams: { participantId: notification.senderId } });
+    }
+  }
 }
