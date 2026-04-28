@@ -70,4 +70,8 @@ public class SousTache {
     @OneToMany(mappedBy = "sousTache", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Document> documents = new ArrayList<>();
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int nbCorrections = 0;  // AJOUT
 }

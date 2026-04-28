@@ -15,6 +15,7 @@ import tn.khotwa.repository.projet.CoachDisponibilitePeriodeRepository;
 import tn.khotwa.repository.projet.ProjetCoachRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.UserRepo.UserRepository;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -54,13 +55,21 @@ public class CoachRecommendationService {
                 .orElse(0.0);
 
         List<CoachRecommandationDto> candidats = new ArrayList<>();
+
         for (User coach : coachs) {
             long charge = projetCoachRepository.countByCoachIdAndActifTrue(coach.getIdUser());
             if (charge >= MAX_ACTIVE_PROJECTS) {
                 continue;
             }
 
+            // === NOUVELLE LOGIQUE DE COUVERTURE AVEC FALLBACK LEGACY ===
             double coverage = computeCoverage(coach, projet.getDateDebutProjet(), projet.getDateFinProjet());
+
+            // Si aucune période formelle n'existe, on tente le fallback sur l'ancien champ `disponibilite`
+            if (coverage == 0.0) {
+                coverage = parseLegacyCoverage(coach, projet.getDateDebutProjet(), projet.getDateFinProjet());
+            }
+
             if (coverage < COVERAGE_THRESHOLD && !isLegacyAvailable(coach)) {
                 continue;
             }
@@ -121,6 +130,8 @@ public class CoachRecommendationService {
                 .build();
     }
 
+    // ====================== MÉTHODES PRIVÉES ======================
+
     private RecommandationAffectationResponseDto emptyRecommendation(Long projetId) {
         return RecommandationAffectationResponseDto.builder()
                 .projetId(projetId)
@@ -133,7 +144,8 @@ public class CoachRecommendationService {
 
     private double computeCoverage(User coach, LocalDate start, LocalDate end) {
         List<CoachDisponibilitePeriode> overlaps = disponibiliteRepository
-                .findByCoachIdAndActifTrueAndDateDebutLessThanEqualAndDateFinGreaterThanEqual(coach.getIdUser(), end, start);
+                .findByCoachIdAndActifTrueAndDateDebutLessThanEqualAndDateFinGreaterThanEqual(
+                        coach.getIdUser(), end, start);
 
         if (overlaps.isEmpty()) {
             return 0.0;
@@ -145,11 +157,11 @@ public class CoachRecommendationService {
         for (CoachDisponibilitePeriode period : overlaps) {
             LocalDate overlapStart = period.getDateDebut().isAfter(start) ? period.getDateDebut() : start;
             LocalDate overlapEnd = period.getDateFin().isBefore(end) ? period.getDateFin() : end;
-            if (overlapEnd.isBefore(overlapStart)) {
-                continue;
-            }
+
+            if (overlapEnd.isBefore(overlapStart)) continue;
 
             long days = ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
+
             if (period.getStatut() == DisponibilitePeriodeStatut.DISPONIBLE) {
                 coveredDays += days;
             } else if (period.getStatut() == DisponibilitePeriodeStatut.PARTIELLE) {
@@ -158,6 +170,52 @@ public class CoachRecommendationService {
         }
 
         return clamp(coveredDays / totalDays);
+    }
+
+    /**
+     * Nouveau format legacy : "YYYY-MM-DD/YYYY-MM-DD"
+     */
+    private double parseLegacyCoverage(User coach, LocalDate projetStart, LocalDate projetEnd) {
+        String raw = coach.getDisponibilite();
+        if (raw == null || !raw.trim().matches("\\d{4}-\\d{2}-\\d{2}/\\d{4}-\\d{2}-\\d{2}")) {
+            return 0.0;
+        }
+
+        try {
+            String[] parts = raw.trim().split("/");
+            LocalDate dispoStart = LocalDate.parse(parts[0].trim());
+            LocalDate dispoEnd = LocalDate.parse(parts[1].trim());
+
+            LocalDate overlapStart = dispoStart.isAfter(projetStart) ? dispoStart : projetStart;
+            LocalDate overlapEnd = dispoEnd.isBefore(projetEnd) ? dispoEnd : projetEnd;
+
+            if (overlapEnd.isBefore(overlapStart)) {
+                return 0.0;
+            }
+
+            long totalDays = Math.max(1, ChronoUnit.DAYS.between(projetStart, projetEnd) + 1);
+            long coveredDays = ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
+
+            return clamp((double) coveredDays / totalDays);
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    /**
+     * Détermine si le coach est considéré comme disponible via l'ancien système
+     */
+    private boolean isLegacyAvailable(User coach) {
+        String raw = normalize(coach.getDisponibilite());
+
+        // Ancien format textuel
+        if (raw.equals("OUI") || raw.equals("YES") || raw.equals("TRUE")
+                || raw.equals("AVAILABLE") || raw.equals("DISPONIBLE")) {
+            return true;
+        }
+
+        // Nouveau format date "YYYY-MM-DD/YYYY-MM-DD" → considéré comme disponible
+        return raw.matches("\\d{4}-\\d{2}-\\d{2}/\\d{4}-\\d{2}-\\d{2}");
     }
 
     private double computeMetierScore(SecteurProjet secteurProjet, User coach) {
@@ -192,23 +250,12 @@ public class CoachRecommendationService {
         return clamp(1.0 - overloadRatio);
     }
 
-    private boolean isLegacyAvailable(User coach) {
-        String raw = normalize(coach.getDisponibilite());
-        return raw.equals("OUI") || raw.equals("YES") || raw.equals("TRUE") || raw.equals("AVAILABLE") || raw.equals("DISPONIBLE");
-    }
-
     private String normalize(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
 
     private double clamp(double value) {
-        if (value < 0.0) {
-            return 0.0;
-        }
-        if (value > 1.0) {
-            return 1.0;
-        }
-        return value;
+        return Math.max(0.0, Math.min(1.0, value));
     }
 
     private double round2(double value) {

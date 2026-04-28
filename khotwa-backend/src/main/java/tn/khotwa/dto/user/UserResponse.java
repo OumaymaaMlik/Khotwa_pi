@@ -14,6 +14,8 @@ public record UserResponse(
         PlanType planType,
         Role role,
         String startup,
-        boolean mustChangePassword
+        boolean mustChangePassword,
+        String specialite,
+        String disponibilite
 ) {
 }

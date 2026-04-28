@@ -55,6 +55,7 @@ build/
 # VS Code
 # ======================
 .vscode/
+/khotwa-backend/.env/
 
 # ======================
 # Logs / System

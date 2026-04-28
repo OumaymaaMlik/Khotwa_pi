@@ -10,7 +10,7 @@
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#E8622A,#FF9A5C)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
-      <div><p class="kpi-value">{{ stats.totalProjets }}</p><p class="kpi-label">Total projects</p></div><span class="kpi-trend up">+2 this month</span>
+      <div><p class="kpi-value">{{ stats.totalProjets }}</p><p class="kpi-label">Total projects</p></div><span class="kpi-trend up">{{ stats.submitted }} submitted</span>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#F97316,#EA580C)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3l-8.47-14.14a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
@@ -18,23 +18,23 @@
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#2ABFBF,#1a9999)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-      <div><p class="kpi-value">{{ stats.utilisateurs }}</p><p class="kpi-label">Active users</p></div><span class="kpi-trend up">+5 this month</span>
+      <div><p class="kpi-value">{{ stats.projetsSoumis }}</p><p class="kpi-label">Submitted to admin</p></div><span class="kpi-trend up">{{ submissionRate }}% of portfolio</span>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#7C5CBF,#5a3a9f)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
-      <div><p class="kpi-value">{{ stats.abonnements }}</p><p class="kpi-label">Active subscriptions</p></div><span class="kpi-trend up">+3 this month</span>
+      <div><p class="kpi-value">{{ stats.projetsValides }}</p><p class="kpi-label">Validated projects</p></div><span class="kpi-trend up">{{ validationRate }}% validated</span>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#27AE7A,#1a8a5e)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div><p class="kpi-value">{{ stats.events }}</p><p class="kpi-label">Upcoming events</p></div>
+      <div><p class="kpi-value">{{ stats.completed }}</p><p class="kpi-label">Completed projects</p></div>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#F5A623,#d4881e)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-      <div><p class="kpi-value">{{ stats.talents }}</p><p class="kpi-label">Registered talents</p></div>
+      <div><p class="kpi-value">{{ stats.suspended }}</p><p class="kpi-label">Suspended projects</p></div>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon" style="background:linear-gradient(135deg,#E84A4A,#c73232)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-      <div><p class="kpi-value">{{ stats.enCours }}</p><p class="kpi-label">Active projects</p></div><span class="kpi-trend up">{{ stats.projetsValides }} validated</span>
+      <div><p class="kpi-value">{{ stats.enCours }}</p><p class="kpi-label">Active projects</p></div><span class="kpi-trend up">{{ stats.avgProgress | number:'1.0-0' }}% avg progress</span>
     </div>
   </div>
   <div class="bottom-grid animate-3">
@@ -54,20 +54,22 @@
     <div class="kh-card panel">
       <div class="panel-header"><span class="kh-section-title">Actions rapides</span></div>
       <div class="quick-actions">
-        <a routerLink="/admin/utilisateurs" class="qa-btn"><span>👥</span>Manage users</a>
-        <a routerLink="/admin/evenements" class="qa-btn"><span>📅</span>Create event</a>
-        <a routerLink="/admin/abonnements" class="qa-btn"><span>💳</span>Subscriptions</a>
-        <a routerLink="/admin/talent" class="qa-btn"><span>🎯</span>Talent Market</a>
-        <a routerLink="/admin/bibliotheque" class="qa-btn"><span>📚</span>Library</a>
-        <a routerLink="/admin/planning" class="qa-btn"><span>🗓️</span>Planning global</a>
+        <a routerLink="/admin/utilisateurs" class="qa-btn"><span>??</span>Manage users</a>
+        <a routerLink="/admin/evenements" class="qa-btn"><span>??</span>Create event</a>
+        <a routerLink="/admin/abonnements" class="qa-btn"><span>??</span>Subscriptions</a>
+        <a routerLink="/admin/talent" class="qa-btn"><span>??</span>Talent Market</a>
+        <a routerLink="/admin/bibliotheque" class="qa-btn"><span>??</span>Library</a>
+        <a routerLink="/admin/planning" class="qa-btn"><span>???</span>Planning global</a>
       </div>
     </div>
     <div class="kh-card panel panel--wide">
       <div class="panel-header"><span class="kh-section-title">SLA alerts actives</span></div>
       <div class="alert-list">
-        <div class="alert-item alert-item--red"><span class="dot-live dot-live--orange"></span><div><p class="alert-title">Prototype UI — E-Learning</p><p class="alert-meta">Blocked for 16 days · Sara Trabelsi</p></div><span class="kh-badge kh-badge--red">Urgent</span></div>
-        <div class="alert-item alert-item--amber"><span class="dot-live dot-live--amber"></span><div><p class="alert-title">Business Plan — AgriSmart</p><p class="alert-meta">Blocked for 12 days</p></div><span class="kh-badge kh-badge--amber">Watch</span></div>
-        <div class="alert-item"><span class="dot-live dot-live--green"></span><div><p class="alert-title">Tests QA — HealthMobile</p><p class="alert-meta">Updated 2 days ago</p></div><span class="kh-badge kh-badge--green">OK</span></div>
+        <div *ngFor="let alert of slaAlerts" class="alert-item" [class.alert-item--red]="alert.tone==='red'" [class.alert-item--amber]="alert.tone==='amber'">
+          <span class="dot-live" [class.dot-live--orange]="alert.tone==='red'" [class.dot-live--amber]="alert.tone==='amber'" [class.dot-live--green]="alert.tone==='green'"></span>
+          <div><p class="alert-title">{{ alert.title }}</p><p class="alert-meta">{{ alert.meta }}</p></div>
+          <span class="kh-badge" [class.kh-badge--red]="alert.tone==='red'" [class.kh-badge--amber]="alert.tone==='amber'" [class.kh-badge--green]="alert.tone==='green'">{{ alert.label }}</span>
+        </div>
       </div>
     </div>
   </div>

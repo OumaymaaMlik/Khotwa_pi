@@ -21,7 +21,6 @@
            class="coach-link"
            [class.coach-link--active]="isActive(item)"
            [routerLink]="getRoute(item)">
-          <span class="coach-link__icon" [innerHTML]="getIcon(item.icon)"></span>
           <span>{{ item.label }}</span>
           <span class="coach-link__indicator" *ngIf="isActive(item)"></span>
         </a>
@@ -105,7 +104,6 @@
          [class.active]="isActive(item)"
          [routerLink]="getRoute(item)"
          (click)="mobileOpen=false">
-        <span [innerHTML]="getIcon(item.icon)"></span>
         {{ item.label }}
       </a>
     </div>

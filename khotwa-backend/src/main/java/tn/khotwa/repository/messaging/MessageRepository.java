@@ -22,11 +22,12 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Page<Message> findByReceiverId(Long receiverId, Pageable pageable);
     Page<Message> findBySenderId(Long senderId, Pageable pageable);
     Page<Message> findByReceiverIdAndStatusNot(Long receiverId, MessageStatus status, Pageable pageable);
-    @Query("SELECT m FROM Message m WHERE (m.senderId = :userId OR m.receiverId = :userId)")
+    @Query("SELECT m FROM Message m WHERE (m.senderId = :userId OR m.receiverId = :userId) AND (LOWER(m.subject) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(m.body) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<Message> searchMessages(@Param("userId") Long userId, @Param("query") String query);
     @Query("SELECT m FROM Message m WHERE m.createdAt BETWEEN :start AND :end")
     List<Message> findTodaysMessages(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
 }

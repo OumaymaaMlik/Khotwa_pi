@@ -84,4 +84,7 @@ public class Tache {
     @OneToMany(mappedBy = "tache", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SousTache> sousTaches = new ArrayList<>();
+    @Column(nullable = false)
+    @Builder.Default
+    private int nbCorrections = 0;  // AJOUT
 }

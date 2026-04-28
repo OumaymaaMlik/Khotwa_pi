@@ -22,7 +22,6 @@
            class="ent-link"
            [class.ent-link--active]="isActive(item.route)"
            [routerLink]="['/entrepreneur', item.route]">
-          <span class="ent-link__icon" [innerHTML]="getIcon(item.icon)"></span>
           <span>{{ item.label }}</span>
           <span class="ent-link__pip" *ngIf="isActive(item.route)"></span>
         </a>
@@ -112,7 +111,6 @@
          [class.ent-mobile-link--active]="isActive(item.route)"
          [routerLink]="getRoute(item.route)"
          (click)="mobileOpen=false">
-        <span [innerHTML]="getIcon(item.icon)"></span>
         {{ item.label }}
       </a>
     </div>

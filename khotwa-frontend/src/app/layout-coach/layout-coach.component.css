@@ -6,17 +6,17 @@
 /* ── Design tokens ───────────────────────────────── */
 :host {
   /* Brand colours */
-  --c-green:        #0d4a38;
-  --c-green-dark:   #083528;
-  --c-green-glow:   rgba(13,74,56,.40);
-  --c-green-light:  rgba(13,74,56,.12);
-  --c-green-border: rgba(13,74,56,.20);
-  --c-deep:         #020d09;
-  --c-surface:      #051a10;
-  --c-mint:         #7EC8A8;
-  --c-text:         rgba(210,240,228,.9);
-  --c-text-muted:   rgba(210,240,228,.45);
-  --c-text-dim:     rgba(210,240,228,.4);
+  --c-green:        #1d4e89;
+  --c-green-dark:   #162a45;
+  --c-green-glow:   rgba(96,165,250,.35);
+  --c-green-light:  rgba(96,165,250,.14);
+  --c-green-border: rgba(96,165,250,.24);
+  --c-deep:         #0b1422;
+  --c-surface:      #132238;
+  --c-mint:         #93c5fd;
+  --c-text:         rgba(223,235,252,.92);
+  --c-text-muted:   rgba(223,235,252,.58);
+  --c-text-dim:     rgba(223,235,252,.46);
 
   /* Layout */
   --c-nav-h: 64px;
@@ -44,15 +44,15 @@
   top: 0;
   z-index: 200;
   height: var(--c-nav-h);
-  background: rgba(2,15,9,.94);
+  background: linear-gradient(135deg, rgba(11, 22, 39, 0.98), rgba(22, 30, 46, 0.97));
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(13,74,56,.15);
+  border-bottom: 1px solid rgba(96, 165, 250, 0.16);
   transition: background .3s, box-shadow .3s;
 }
 .coach-nav--scrolled {
-  background: rgba(2,15,9,.97);
-  box-shadow: 0 4px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(13,74,56,.12);
+  background: linear-gradient(135deg, rgba(11, 22, 39, 1), rgba(22, 30, 46, 0.99));
+  box-shadow: 0 4px 24px rgba(4, 10, 22, .42), 0 0 0 1px rgba(96, 165, 250, .12);
 }
 
 /* ── Nav inner : full width, space-between ── */
@@ -93,7 +93,7 @@
   text-transform: uppercase;
   color: var(--c-mint);
   background: var(--c-green-light);
-  border: 1px solid rgba(13,74,56,.25);
+  border: 1px solid rgba(96,165,250,.25);
   border-radius: 5px;
   padding: 2px 6px;
 }
@@ -329,7 +329,7 @@
 /* ── Hero band ───────────────────────────────────── */
 .coach-hero-band {
   height: var(--c-band-h);
-  background: linear-gradient(90deg, #083528, var(--c-green), #7EC8A8, var(--c-green), #083528);
+  background: linear-gradient(90deg, #162a45, var(--c-green), #93c5fd, var(--c-green), #162a45);
   background-size: 200% 100%;
   animation: gradientShift 5s linear infinite;
   position: relative; overflow: hidden;

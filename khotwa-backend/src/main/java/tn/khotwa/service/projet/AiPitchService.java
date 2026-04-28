@@ -21,14 +21,13 @@ import java.time.Duration;
 @Slf4j
 public class AiPitchService {
 
-    @Value("${gemini.api-key}")
+    @Value("${openrouter.api-key}")
     private String apiKey;
 
-    @Value("${gemini.model:gemini-1.5-flash}")
+    @Value("${openrouter.model:deepseek/deepseek-chat-v3-0324:free}")
     private String model;
 
-    private static final String GEMINI_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
+    private static final String OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
     private static final String SYSTEM_PROMPT =
             "You are an expert startup pitch consultant working with the KHOTWA incubator platform. " +
@@ -53,29 +52,38 @@ public class AiPitchService {
         }
 
         String fieldLabel = dto.getFieldLabel() != null ? dto.getFieldLabel() : dto.getFieldKey();
-        String prompt = SYSTEM_PROMPT + "\n\nField: \"" + fieldLabel + "\"\n\nOriginal text:\n"
+        String userPrompt = "Field: \"" + fieldLabel + "\"\n\nOriginal text:\n"
                 + dto.getOriginalText().trim() + "\n\nPlease improve this text.";
 
         int maxRetries = 3;
-        int[] waitSeconds = {3, 6, 12}; // attente progressive entre chaque tentative
+        int[] waitSeconds = {3, 6, 12};
 
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
+                // Construction du body OpenAI-compatible (Grok)
                 ObjectNode body = objectMapper.createObjectNode();
-                ArrayNode contents = body.putArray("contents");
-                ObjectNode content = contents.addObject();
-                ArrayNode parts = content.putArray("parts");
-                parts.addObject().put("text", prompt);
-                ObjectNode generationConfig = body.putObject("generationConfig");
-                generationConfig.put("maxOutputTokens", 1024);
-                generationConfig.put("temperature", 0.7);
+                body.put("model", model);
+                body.put("temperature", 0.7);
+                body.put("max_tokens", 1024);
+
+                ArrayNode messages = body.putArray("messages");
+
+                ObjectNode systemMsg = messages.addObject();
+                systemMsg.put("role", "system");
+                systemMsg.put("content", SYSTEM_PROMPT);
+
+                ObjectNode userMsg = messages.addObject();
+                userMsg.put("role", "user");
+                userMsg.put("content", userPrompt);
 
                 String jsonBody = objectMapper.writeValueAsString(body);
-                String url = String.format(GEMINI_URL, model, apiKey);
 
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(url))
+                        .uri(URI.create(OPENROUTER_URL))
                         .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + apiKey)
+                        .header("HTTP-Referer", "https://khotwa.tn")
+                        .header("X-Title", "Khotwa")
                         .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                         .timeout(Duration.ofSeconds(60))
                         .build();
@@ -85,7 +93,7 @@ public class AiPitchService {
 
                 // 503 ou 429 → réessayer après attente
                 if (response.statusCode() == 503 || response.statusCode() == 429) {
-                    log.warn("Gemini attempt {}/{} failed with status {}. Retrying in {}s...",
+                    log.warn("OpenRouter attempt {}/{} failed with status {}. Retrying in {}s...",
                             attempt + 1, maxRetries, response.statusCode(), waitSeconds[attempt]);
                     if (attempt < maxRetries - 1) {
                         Thread.sleep(waitSeconds[attempt] * 1000L);
@@ -96,16 +104,16 @@ public class AiPitchService {
                 }
 
                 if (response.statusCode() != 200) {
-                    log.error("Gemini API error: status={}, body={}", response.statusCode(), response.body());
+                    log.error("OpenRouter API error: status={}, body={}", response.statusCode(), response.body());
                     throw new BusinessException("Le service AI a retourné une erreur. Réessayez.");
                 }
 
+                // Parse réponse OpenAI-compatible
                 JsonNode root = objectMapper.readTree(response.body());
                 String improved = root
-                        .path("candidates").get(0)
+                        .path("choices").get(0)
+                        .path("message")
                         .path("content")
-                        .path("parts").get(0)
-                        .path("text")
                         .asText();
 
                 if (improved == null || improved.isBlank()) {
@@ -117,7 +125,7 @@ public class AiPitchService {
             } catch (BusinessException e) {
                 throw e;
             } catch (Exception e) {
-                log.error("Gemini API error: {}", e.getMessage(), e);
+                log.error("OpenRouter API error: {}", e.getMessage(), e);
                 if (attempt < maxRetries - 1) {
                     try { Thread.sleep(waitSeconds[attempt] * 1000L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                     continue;

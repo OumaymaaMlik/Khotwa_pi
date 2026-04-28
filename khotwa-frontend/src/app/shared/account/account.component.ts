@@ -1,13 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { UserService, UpdateProfilePayload, ChangePasswordPayload } from '../../core/services/user.service';
-import { UserResponse ,User} from '../../core/models/user.model';
+import { UserResponse, User } from '../../core/models/user.model';
 import { HttpClient } from '@angular/common/http';
 
 type Tab = 'info' | 'avatar' | 'password';
 
-/** URL de base du backend - Assure-toi que le port correspond à ton Spring Boot */
 const BACKEND_ORIGIN = 'http://localhost:8084';
+
+export interface SpecialiteOption {
+  value: string;
+  label: string;
+}
 
 @Component({
   selector: 'app-account',
@@ -29,6 +33,30 @@ export class AccountComponent implements OnInit {
   startup      = '';
   currentAvatar: string | null = null;
 
+  // ── Champs coach ────────────────────────────────────────────────
+  specialite        = '';   // valeur de l'enum ex: "IA_DATA"
+  disponibiliteDebut = '';  // date ISO début ex: "2025-01-01"
+  disponibiliteFin   = '';  // date ISO fin   ex: "2025-06-30"
+
+  /** Options du dropdown — alignées exactement avec SecteurProjet du backend */
+  readonly specialiteOptions: SpecialiteOption[] = [
+    { value: 'TECHNOLOGIE_LOGICIEL',    label: 'Technologie & Logiciel' },
+    { value: 'FINTECH',                 label: 'Fintech' },
+    { value: 'ECOMMERCE_RETAIL',        label: 'E-commerce & Retail' },
+    { value: 'SANTE_MEDTECH',           label: 'Santé & MedTech' },
+    { value: 'EDUCATION_EDTECH',        label: 'Éducation & EdTech' },
+    { value: 'AGRICULTURE_AGRITECH',    label: 'Agriculture & AgriTech' },
+    { value: 'ENERGIE_CLEANTECH',       label: 'Énergie & CleanTech' },
+    { value: 'MOBILITE_LOGISTIQUE',     label: 'Mobilité & Logistique' },
+    { value: 'INDUSTRIE_MANUFACTURING', label: 'Industrie & Manufacturing' },
+    { value: 'IMMOBILIER_PROPTECH',     label: 'Immobilier & PropTech' },
+    { value: 'TOURISME_HOSPITALITE',    label: 'Tourisme & Hospitalité' },
+    { value: 'MEDIA_COMMUNICATION',     label: 'Médias & Communication' },
+    { value: 'IA_DATA',                 label: 'IA & Data' },
+    { value: 'CYBERSECURITE',           label: 'Cybersécurité' },
+    { value: 'SERVICES_B2B',            label: 'Services B2B' },
+  ];
+
   avatarFile: File | null = null;
   avatarPreview: string | null = null;
   uploadingAvatar = false;
@@ -40,13 +68,13 @@ export class AccountComponent implements OnInit {
   showNewPwd      = false;
   showConfirmPwd  = false;
 
-  // Variables pour la vérification OTP
-  phoneVerified       = false;   
-  otpSent             = false;   
-  otpCode             = '';      
-  sendingOtp          = false;
-  verifyingOtp        = false;
-  phoneToVerify       = '';      
+  // Variables OTP
+  phoneVerified  = false;
+  otpSent        = false;
+  otpCode        = '';
+  sendingOtp     = false;
+  verifyingOtp   = false;
+  phoneToVerify  = '';
 
   constructor(
     public auth: AuthService,
@@ -76,12 +104,9 @@ export class AccountComponent implements OnInit {
     this.clearMessages();
   }
 
-  /** Résout l'URL de l'image pour le template */
   resolveAvatar(url: string | null): string | null {
     if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('data:')) {
-      return url;
-    }
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
     const separator = url.startsWith('/') ? '' : '/';
     return `${BACKEND_ORIGIN}${separator}${url}`;
   }
@@ -91,14 +116,43 @@ export class AccountComponent implements OnInit {
     return this.resolveAvatar(this.currentAvatar);
   }
 
+  /** Vrai seulement si le user connecté est un COACH → affiche les champs spécifiques */
+  get isCoach(): boolean {
+    return this.auth.role === 'COACH';
+  }
+
+  // ─────────────────────────────────────────────
+  // Disponibilité helpers
+  // ─────────────────────────────────────────────
+
+  /** Construit la string envoyée au backend : "YYYY-MM-DD/YYYY-MM-DD" */
+  private buildDisponibiliteString(): string {
+    if (this.disponibiliteDebut && this.disponibiliteFin) {
+      return `${this.disponibiliteDebut}/${this.disponibiliteFin}`;
+    }
+    return this.disponibiliteDebut || this.disponibiliteFin || '';
+  }
+
+  /** Validation : fin >= début */
+  get disponibiliteValid(): boolean {
+    if (!this.disponibiliteDebut || !this.disponibiliteFin) return true;
+    return this.disponibiliteFin >= this.disponibiliteDebut;
+  }
+
   // ─────────────────────────────────────────────
   // Profil Personnel
   // ─────────────────────────────────────────────
 
   saveProfile(): void {
     this.clearMessages();
+
     if (!this.firstName.trim() || !this.lastName.trim()) {
       this.errorMsg = 'First name and last name are required.';
+      return;
+    }
+
+    if (this.isCoach && !this.disponibiliteValid) {
+      this.errorMsg = 'La date de fin de disponibilité doit être postérieure à la date de début.';
       return;
     }
 
@@ -110,6 +164,12 @@ export class AccountComponent implements OnInit {
       startup:      this.startup.trim()     || undefined,
     };
 
+    // Champs coach : envoyés seulement si le user est COACH
+    if (this.isCoach) {
+      payload.specialite    = this.specialite            || undefined;
+      payload.disponibilite = this.buildDisponibiliteString() || undefined;
+    }
+
     this.saving = true;
     this.userService.updateMyProfile(payload).subscribe({
       next: (updated: UserResponse) => {
@@ -117,7 +177,7 @@ export class AccountComponent implements OnInit {
         this.saving     = false;
         this.successMsg = 'Account updated successfully!';
         this.auth.refreshProfile().subscribe();
-        
+
         if (updated.phoneNumber !== this.phoneToVerify) {
           this.otpSent = false;
           this.otpCode = '';
@@ -131,7 +191,7 @@ export class AccountComponent implements OnInit {
   }
 
   // ─────────────────────────────────────────────
-  // Gestion de l'Avatar
+  // Avatar
   // ─────────────────────────────────────────────
 
   onAvatarSelected(event: Event): void {
@@ -151,7 +211,6 @@ export class AccountComponent implements OnInit {
 
     this.clearMessages();
     this.avatarFile = file;
-
     const reader = new FileReader();
     reader.onload = (e) => { this.avatarPreview = e.target?.result as string; };
     reader.readAsDataURL(file);
@@ -167,20 +226,20 @@ export class AccountComponent implements OnInit {
         const avatarUrl = res.avatarUrl;
         this.userService.updateMyProfile({ avatar: avatarUrl }).subscribe({
           next: (updated: UserResponse) => {
-            this.currentAvatar = updated.avatar ?? null;
-            this.avatarPreview = null;
-            this.avatarFile = null;
-            this.uploadingAvatar = false; 
-            this.successMsg = 'Avatar mis à jour avec succès !';
+            this.currentAvatar   = updated.avatar ?? null;
+            this.avatarPreview   = null;
+            this.avatarFile      = null;
+            this.uploadingAvatar = false;
+            this.successMsg      = 'Avatar mis à jour avec succès !';
             this.auth.refreshProfile().subscribe();
           },
           error: () => {
-            const cacheBuster = new Date().getTime();
-            this.currentAvatar = `${avatarUrl}?t=${cacheBuster}`;
-            this.avatarPreview = null;
-            this.avatarFile = null;
+            const cacheBuster    = new Date().getTime();
+            this.currentAvatar   = `${avatarUrl}?t=${cacheBuster}`;
+            this.avatarPreview   = null;
+            this.avatarFile      = null;
             this.uploadingAvatar = false;
-            this.errorMsg = "L'avatar a été téléversé, mais le compte n'a pas pu être mis à jour.";
+            this.errorMsg        = "L'avatar a été téléversé, mais le compte n'a pas pu être mis à jour.";
           },
         });
       },
@@ -211,10 +270,8 @@ export class AccountComponent implements OnInit {
     this.clearMessages();
   }
 
-
-
   // ─────────────────────────────────────────────
-  // Sécurité (Mot de passe)
+  // Mot de passe
   // ─────────────────────────────────────────────
 
   changePassword(): void {
@@ -255,13 +312,11 @@ export class AccountComponent implements OnInit {
   }
 
   // ─────────────────────────────────────────────
-  // Getters & Internals
+  // Getters
   // ─────────────────────────────────────────────
 
   get initials(): string {
-    const f = this.firstName?.[0] ?? '';
-    const l = this.lastName?.[0]  ?? '';
-    return (f + l).toUpperCase();
+    return ((this.firstName?.[0] ?? '') + (this.lastName?.[0] ?? '')).toUpperCase();
   }
 
   get roleLabel(): string {
@@ -283,6 +338,10 @@ export class AccountComponent implements OnInit {
     return { weak: 'Too short', medium: 'Medium', strong: 'Strong' }[this.passwordStrength];
   }
 
+  // ─────────────────────────────────────────────
+  // Internals
+  // ─────────────────────────────────────────────
+
   private patchForm(profile: UserResponse): void {
     this.firstName     = profile.firstName    ?? '';
     this.lastName      = profile.lastName     ?? '';
@@ -290,10 +349,27 @@ export class AccountComponent implements OnInit {
     this.phoneNumber   = profile.phoneNumber  ?? '';
     this.startup       = profile.startup      ?? '';
     this.currentAvatar = profile.avatar       ?? null;
+    this.specialite    = profile.specialite   ?? '';
+
+    // Parse "YYYY-MM-DD/YYYY-MM-DD" → deux champs date séparés
+    const dispo = profile.disponibilite ?? '';
+    if (dispo.includes('/')) {
+      const [debut, fin]     = dispo.split('/');
+      this.disponibiliteDebut = debut?.trim() ?? '';
+      this.disponibiliteFin   = fin?.trim()   ?? '';
+    } else {
+      this.disponibiliteDebut = dispo.trim();
+      this.disponibiliteFin   = '';
+    }
   }
 
   private clearMessages(): void {
     this.successMsg = '';
     this.errorMsg   = '';
   }
+
+  // OTP stubs (déjà implémentés ailleurs dans le projet)
+  sendPhoneOtp(): void {}
+  verifyPhoneOtp(): void {}
+  resendOtp(): void {}
 }
