@@ -1,15 +1,4 @@
-<div class="requests-block kh-card">
-  <div class="requests-block__header">
-    <div>
-      <h2 class="kh-section-title">
-        {{ viewMode === 'sent' ? 'Sent requests' : viewMode === 'received' ? 'Received requests' : 'Collaboration requests' }}
-      </h2>
-      <p class="requests-block__subtitle" *ngIf="viewMode === 'sent'">Track invitations and join requests you have sent.</p>
-      <p class="requests-block__subtitle" *ngIf="viewMode === 'received'">Manage incoming invitations and collaboration requests.</p>
-      <p class="requests-block__subtitle" *ngIf="viewMode === 'collaboration'">Review requests linked directly to this collaboration.</p>
-    </div>
-  </div>
-
+<div class="requests-block">
   <div *ngIf="canShowInviteForm()" class="requests-block__invite">
     <div class="requests-block__invite-copy">
       <strong>Invite entrepreneur</strong>
@@ -50,93 +39,32 @@
     No requests found.
   </div>
 
-  <div *ngIf="viewMode === 'collaboration' && pendingRequests.length" class="requests-block__group">
-    <div class="requests-block__group-header">
-      <div>
-        <h3>Pending requests</h3>
-        <p>Requests still waiting for action appear first.</p>
-      </div>
-      <span class="kh-badge kh-badge--amber">{{ pendingRequests.length }}</span>
-    </div>
-    <ul class="requests-block__list">
-      <li *ngFor="let request of pendingRequests; trackBy: trackByRequest" class="requests-block__item">
-        <div class="requests-block__meta">
-          <div>
-            <strong>{{ requestTitle(request) }}</strong>
-            <p>{{ requestSubtitle(request) }} | {{ request.createdAt | date:'MMM d, yyyy, HH:mm' }}</p>
-            <p><strong>Scenario:</strong> {{ scenarioLabel(request) }}</p>
-            <p><strong>Requester:</strong> {{ request.requesterUserName ?? 'Unknown user' }}</p>
-            <p><strong>Target user:</strong> {{ request.targetUserName ?? 'Unknown user' }}</p>
-          </div>
-          <span class="kh-badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
-        </div>
-        <div *ngIf="canRespondToRequest(request)" class="requests-block__actions">
-          <button
-            class="kh-btn kh-btn--secondary"
-            [disabled]="isRequestActionInFlight(request)"
-            (click)="requestAccepted.emit({ requestId: request.id })">
-            {{ isRequestActionInFlight(request) ? 'Updating...' : 'Accept' }}
-          </button>
-          <button
-            class="kh-btn kh-btn--ghost"
-            [disabled]="isRequestActionInFlight(request)"
-            (click)="requestRejected.emit({ requestId: request.id })">
-            {{ isRequestActionInFlight(request) ? 'Updating...' : 'Reject' }}
-          </button>
-        </div>
-      </li>
-    </ul>
-  </div>
-
-  <div *ngIf="viewMode === 'collaboration' && historicalRequests.length" class="requests-block__group requests-block__group--secondary">
-    <div class="requests-block__group-header">
-      <div>
-        <h3>Request history</h3>
-        <p>Accepted and rejected requests are kept in a secondary history block.</p>
-      </div>
-      <span class="kh-badge kh-badge--gray">{{ historicalRequests.length }}</span>
-    </div>
-    <ul class="requests-block__list">
-      <li *ngFor="let request of historicalRequests; trackBy: trackByRequest" class="requests-block__item">
-        <div class="requests-block__meta">
-          <div>
-            <strong>{{ requestTitle(request) }}</strong>
-            <p>{{ requestSubtitle(request) }} | {{ request.createdAt | date:'MMM d, yyyy, HH:mm' }}</p>
-            <p><strong>Scenario:</strong> {{ scenarioLabel(request) }}</p>
-            <p><strong>Requester:</strong> {{ request.requesterUserName ?? 'Unknown user' }}</p>
-            <p><strong>Target user:</strong> {{ request.targetUserName ?? 'Unknown user' }}</p>
-            <p *ngIf="canShowProcessedAt(request)"><strong>Processed:</strong> {{ request.processedAt | date:'MMM d, yyyy, HH:mm' }}</p>
-          </div>
-          <span class="kh-badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
-        </div>
-      </li>
-    </ul>
-  </div>
-
-  <ul *ngIf="viewMode !== 'collaboration' && requests?.length" class="requests-block__list">
+  <ul *ngIf="requests?.length" class="requests-block__list">
     <li *ngFor="let request of displayRequests; trackBy: trackByRequest" class="requests-block__item">
-      <div class="requests-block__meta">
-        <div>
-          <strong>{{ requestTitle(request) }}</strong>
-          <p>{{ requestSubtitle(request) }} | {{ request.createdAt | date:'MMM d, yyyy, HH:mm' }}</p>
-          <p *ngIf="viewMode !== 'collaboration'">{{ requestActorLabel(request) }}</p>
-          <p *ngIf="viewMode === 'collaboration'"><strong>Scenario:</strong> {{ scenarioLabel(request) }}</p>
-          <p *ngIf="viewMode === 'collaboration'"><strong>Requester:</strong> {{ request.requesterUserName ?? 'Unknown user' }}</p>
-          <p *ngIf="viewMode === 'collaboration'"><strong>Target user:</strong> {{ request.targetUserName ?? 'Unknown user' }}</p>
-          <p *ngIf="canShowProcessedAt(request)"><strong>Processed:</strong> {{ request.processedAt | date:'MMM d, yyyy, HH:mm' }}</p>
+      <div class="requests-block__main">
+        <div class="requests-block__content">
+          <strong>{{ viewMode === 'collaboration' ? requestRouteLabel(request) : requestTitle(request) }}</strong>
+          <p *ngIf="viewMode === 'collaboration'">
+            {{ scenarioLabel(request) }} • {{ requestDate(request) | date:'MMM d, y' }}
+          </p>
+          <p *ngIf="viewMode !== 'collaboration'">
+            {{ requestSubtitle(request) }} • {{ requestActorLabel(request) }}
+          </p>
         </div>
-        <span class="kh-badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+
+        <div class="requests-block__side">
+          <span class="kh-badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+        </div>
       </div>
+
       <div *ngIf="canRespondToRequest(request)" class="requests-block__actions">
         <button
-          *ngIf="canRespondToRequest(request)"
           class="kh-btn kh-btn--secondary"
           [disabled]="isRequestActionInFlight(request)"
           (click)="requestAccepted.emit({ requestId: request.id })">
           {{ isRequestActionInFlight(request) ? 'Updating...' : 'Accept' }}
         </button>
         <button
-          *ngIf="canRespondToRequest(request)"
           class="kh-btn kh-btn--ghost"
           [disabled]="isRequestActionInFlight(request)"
           (click)="requestRejected.emit({ requestId: request.id })">

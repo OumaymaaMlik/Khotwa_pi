@@ -10,7 +10,6 @@ import tn.khotwa.entity.collaboration.ResourceRequest;
 import tn.khotwa.entity.collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
-import tn.khotwa.enums.collaboration.CollaborationType;
 import tn.khotwa.enums.collaboration.ResourceRequestStatus;
 import tn.khotwa.enums.collaboration.ResourceType;
 import tn.khotwa.enums.collaboration.Urgency;
@@ -34,12 +33,7 @@ public class ResourceRequestService {
         Collaboration collaboration = collaborationService.getCollaboration(collaborationId);
         User actor = currentUserService.requireCurrentUser();
 
-        collaborationService.ensureCollaborationType(
-                collaboration,
-                CollaborationType.RESOURCES,
-                "Resource requests are only available for RESOURCES collaborations."
-        );
-        authorizationService.checkCanCreateResourceRequest(actor, collaboration);
+        authorizationService.requireMemberOrAdmin(actor, collaboration);
         collaborationService.ensureWritableCollaboration(collaboration);
 
         if (title == null || title.trim().isEmpty()) {
@@ -71,11 +65,6 @@ public class ResourceRequestService {
         ResourceRequest request = getResourceRequest(requestId);
         User actor = currentUserService.requireCurrentUser();
 
-        collaborationService.ensureCollaborationType(
-                request.getCollaboration(),
-                CollaborationType.RESOURCES,
-                "Resource requests are only available for RESOURCES collaborations."
-        );
         authorizationService.checkCanUpdateResourceRequestStatus(actor, request);
 
         if (status == null) {
@@ -103,14 +92,11 @@ public class ResourceRequestService {
     public void deleteResourceRequest(Long requestId) {
         ResourceRequest request = getResourceRequest(requestId);
         User actor = currentUserService.requireCurrentUser();
+        Collaboration collaboration = request.getCollaboration();
 
-        collaborationService.ensureCollaborationType(
-                request.getCollaboration(),
-                CollaborationType.RESOURCES,
-                "Resource requests are only available for RESOURCES collaborations."
-        );
+        authorizationService.requireMemberOrAdmin(actor, collaboration);
         authorizationService.checkCanDeleteResourceRequest(actor, request);
-        collaborationService.ensureWritableCollaboration(request.getCollaboration());
+        collaborationService.ensureWritableCollaboration(collaboration);
 
         if (request.getStatus() == ResourceRequestStatus.MATCHED || request.getStatus() == ResourceRequestStatus.FULFILLED) {
             throw new BusinessException("Only OPEN or CANCELLED resource requests can be removed.");
@@ -124,11 +110,6 @@ public class ResourceRequestService {
         Collaboration collaboration = collaborationService.getCollaboration(collaborationId);
         User actor = currentUserService.requireCurrentUser();
 
-        collaborationService.ensureCollaborationType(
-                collaboration,
-                CollaborationType.RESOURCES,
-                "Resource requests are only available for RESOURCES collaborations."
-        );
         authorizationService.checkCanViewCollaboration(actor, collaboration, collaborationService.isMember(collaboration, actor));
 
         return resourceRequestRepository.findAllByCollaborationIdOrderByCreatedAtDesc(collaborationId);

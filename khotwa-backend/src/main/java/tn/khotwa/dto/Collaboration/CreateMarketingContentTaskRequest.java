@@ -23,6 +23,7 @@ public class CreateMarketingContentTaskRequest {
     @NotBlank
     private String title;
     private String description;
+    @NotNull
     private ContentType contentType;
     private Platform platform;
     private LocalDateTime dueDate;

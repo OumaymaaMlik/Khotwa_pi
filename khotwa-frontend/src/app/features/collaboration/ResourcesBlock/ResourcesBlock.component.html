@@ -8,9 +8,14 @@
   </div>
 
   <div *ngIf="isReadOnly" class="resources-block__section resources-block__section--readonly">
-    <div class="resources-block__empty">
-      This collaboration is {{ collaborationStatus?.toLowerCase() }}. Resource actions are read-only until it becomes active again.
+    <div *ngIf="role === 'coach'; else statusReadonly" class="resources-block__empty">
+      Coach accounts have read-only access to collaboration resources.
     </div>
+    <ng-template #statusReadonly>
+      <div class="resources-block__empty">
+        This collaboration is {{ collaborationStatus?.toLowerCase() }}. Resource actions are read-only until it becomes active again.
+      </div>
+    </ng-template>
   </div>
 
   <div *ngIf="canShowCreateResourceForm" class="resources-block__section resources-block__section--form">
@@ -241,7 +246,7 @@
         <li *ngFor="let request of sortedResourceRequests; trackBy: trackByRequest" class="resource-requests-list__item">
           <div class="resources-block__item-content">
             <div class="resources-block__item-head">
-              <strong>{{ request?.title ?? ('Request #' + request?.id) }}</strong>
+              <strong>{{ request?.title || 'Resource request' }}</strong>
               <span class="kh-badge" [ngClass]="resourceRequestBadgeClass(request?.status ?? 'OPEN')">{{ request?.status ?? 'OPEN' }}</span>
             </div>
             <div class="resources-block__meta">

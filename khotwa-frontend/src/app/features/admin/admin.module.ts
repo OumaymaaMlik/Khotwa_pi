@@ -17,6 +17,7 @@ import { AdminUtilisateursComponent }  from './utilisateurs/utilisateurs.compone
 import { AdminEvenementsComponent }    from './evenements/evenements.component';
 import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
 import { AdminTalentComponent }        from './talent/talent.component';
+import { WeeklyCollaborationReportComponent } from './weekly-collaboration-report/weekly-collaboration-report.component';
 
 const routes: Routes = [
   {
@@ -26,8 +27,19 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: AdminDashboardComponent },
       { path: 'collaborations', component: CollaborationListComponent },
+      {
+        path: 'collaborations/weekly-report',
+        component: WeeklyCollaborationReportComponent,
+        data: { viewMode: 'weekly-report' },
+      },
+      {
+        path: 'collaborations/ai-recommendations',
+        component: WeeklyCollaborationReportComponent,
+        data: { viewMode: 'ai-recommendations' },
+      },
       { path: 'collaborations/requests', component: CollaborationSentRequestsPageComponent },
       { path: 'collaborations/:id', component: CollaborationDetailComponent },
+      { path: 'collaboration-reports/weekly', redirectTo: 'collaborations/weekly-report', pathMatch: 'full' },
       { path: 'projets',      component: AdminProjetsComponent },
       { path: 'messages',     component: AdminMessagesComponent },
       { path: 'bibliotheque', component: AdminBibliothequeComponent },
@@ -44,6 +56,7 @@ const routes: Routes = [
     AdminDashboardComponent, AdminProjetsComponent,
     AdminMessagesComponent, AdminBibliothequeComponent, AdminUtilisateursComponent,
     AdminEvenementsComponent, SubscriptionsComponent, AdminTalentComponent,
+    WeeklyCollaborationReportComponent,
   ],
   imports: [CommonModule, FormsModule, LayoutModule, CollaborationModule, RouterModule.forChild(routes)],
 })

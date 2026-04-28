@@ -29,7 +29,7 @@ import tn.khotwa.entity.User.User;
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"collaboration_id", "user_id"})
         },
-        indexes = @Index(columnList = "joinedAt")
+        indexes = @Index(name = "idx_collaboration_member_joined_at", columnList = "joinedAt")
 )
 public class CollaborationMember {
 
@@ -45,12 +45,13 @@ public class CollaborationMember {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-        @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime joinedAt;
-        @PrePersist
-        public void prePersist() {
-                if (joinedAt == null) {
-                        joinedAt = LocalDateTime.now();
-                }
+
+    @PrePersist
+    public void prePersist() {
+        if (joinedAt == null) {
+            joinedAt = LocalDateTime.now();
         }
+    }
 }

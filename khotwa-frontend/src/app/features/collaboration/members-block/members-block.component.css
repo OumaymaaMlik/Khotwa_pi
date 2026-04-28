@@ -1,14 +1,8 @@
 .members-block {
-  padding: 28px;
   display: grid;
-  gap: 20px;
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at top right, rgba(42, 191, 191, 0.08), transparent 35%),
-    linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
+  gap: 10px;
 }
 
-.members-block__header,
 .members-block__item,
 .members-block__identity {
   display: flex;
@@ -17,21 +11,15 @@
   gap: 12px;
 }
 
-.members-block__header p {
-  margin-top: 6px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
 .members-block__list {
   list-style: none;
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .members-block__item {
-  padding: 20px;
-  border-radius: 20px;
+  padding: 14px 16px;
+  border-radius: 18px;
   background: linear-gradient(180deg, #fff 0%, #faf8f4 100%);
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: var(--shadow-xs);
@@ -39,24 +27,25 @@
 
 .members-block__content {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .members-block__identity strong {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.35;
 }
 
 .members-block__content p {
+  margin: 0;
   color: var(--text-secondary);
-  line-height: 1.65;
+  line-height: 1.5;
 }
 
 .members-block__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .members-block .kh-badge {
@@ -66,12 +55,12 @@
 }
 
 .members-empty {
-  padding: 22px 20px;
+  padding: 16px;
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(244, 242, 238, 0.9) 0%, rgba(244, 242, 238, 0.68) 100%);
   border: 1px dashed rgba(0, 0, 0, 0.08);
   color: var(--text-secondary);
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
 .members-block__leave {
@@ -84,7 +73,6 @@
 }
 
 @media (max-width: 640px) {
-  .members-block__header,
   .members-block__item,
   .members-block__identity {
     flex-direction: column;

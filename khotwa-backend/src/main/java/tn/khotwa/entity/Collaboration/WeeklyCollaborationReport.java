@@ -50,22 +50,70 @@ public class WeeklyCollaborationReport {
     @Column(name = "active_collaborations", nullable = false)
     private int activeCollaborations;
 
+    @Column(name = "suspended_collaborations", nullable = false)
+    private int suspendedCollaborations;
+
+    @Column(name = "closed_collaborations", nullable = false)
+    private int closedCollaborations;
+
+    @Column(name = "collaborations_closed_this_week")
+    private Integer collaborationsClosedThisWeek;
+
+    @Column(name = "collaborations_by_type_json", nullable = false, columnDefinition = "TEXT")
+    private String collaborationsByTypeJson = "{}";
+
     @Column(name = "pending_collaboration_requests", nullable = false)
     private int pendingCollaborationRequests;
+
+    @Column(name = "accepted_requests_this_week", nullable = false)
+    private int acceptedRequestsThisWeek;
+
+    @Column(name = "rejected_requests_this_week", nullable = false)
+    private int rejectedRequestsThisWeek;
+
+    @Column(name = "new_members_this_week", nullable = false)
+    private int newMembersThisWeek;
+
+    @Column(name = "invitations_sent_this_week", nullable = false)
+    private int invitationsSentThisWeek;
+
+    @Column(name = "invitations_accepted_this_week", nullable = false)
+    private int invitationsAcceptedThisWeek;
+
+    @Column(name = "invitations_rejected_this_week", nullable = false)
+    private int invitationsRejectedThisWeek;
 
     @Column(name = "open_resource_requests", nullable = false)
     private int openResourceRequests;
 
+    @Column(name = "fulfilled_resource_requests", nullable = false)
+    private int fulfilledResourceRequests;
+
+    @Column(name = "cancelled_resource_requests", nullable = false)
+    private int cancelledResourceRequests;
+
     @Column(name = "active_marketing_campaigns", nullable = false)
     private int activeMarketingCampaigns;
 
+    @Column(name = "completed_marketing_campaigns", nullable = false)
+    private int completedMarketingCampaigns;
+
     @Column(name = "overdue_marketing_tasks", nullable = false)
     private int overdueMarketingTasks;
+
+    @Column(name = "published_marketing_tasks", nullable = false)
+    private int publishedMarketingTasks;
+
+    @Column(name = "total_marketing_tasks", nullable = false)
+    private int totalMarketingTasks;
 
     @PrePersist
     public void prePersist() {
         if (generatedAt == null) {
             generatedAt = LocalDateTime.now();
+        }
+        if (collaborationsByTypeJson == null) {
+            collaborationsByTypeJson = "{}";
         }
     }
 }

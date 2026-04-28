@@ -1,10 +1,6 @@
 export type CampaignType =
-  | 'SOCIAL_MEDIA'
-  | 'EMAIL_MARKETING'
-  | 'CONTENT_MARKETING'
-  | 'PAID_ADS'
-  | 'EVENT'
-  | 'OTHER';
+  | 'CROSS_PROMOTION'
+  | 'EVENT_PROMOTION';
 
 export type MarketingCollaborationStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
@@ -29,4 +25,8 @@ export interface CreateMarketingCollaborationPayload {
   campaignType: CampaignType;
   startDate?: string | null;
   endDate?: string | null;
+}
+
+export interface UpdateMarketingCollaborationStatusPayload {
+  status: MarketingCollaborationStatus;
 }

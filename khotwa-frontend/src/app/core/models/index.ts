@@ -11,3 +11,5 @@ export * from './shared-resource.model';
 export * from './resource-request.model';
 export * from './marketing-collaboration.model';
 export * from './marketing-content-task.model';
+export * from './weekly-collaboration-report.model';
+export * from './weekly-collaboration-ai-report.model';

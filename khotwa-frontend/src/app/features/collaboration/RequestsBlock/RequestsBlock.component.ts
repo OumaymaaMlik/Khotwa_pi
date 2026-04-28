@@ -89,6 +89,25 @@ export class RequestsBlockComponent {
     return request.scenario === 'JOIN_REQUEST' ? 'Join request' : 'Invitation';
   }
 
+  requestRouteLabel(request: CollaborationRequest): string {
+    const requester = request.requesterUserName ?? 'Unknown user';
+    const target = request.targetUserName ?? 'Unknown user';
+
+    if (this.viewMode === 'sent') {
+      return `${requester} → ${target}`;
+    }
+
+    if (this.viewMode === 'received') {
+      return `${requester} → ${target}`;
+    }
+
+    return `${requester} → ${target}`;
+  }
+
+  requestDate(request: CollaborationRequest): string | null {
+    return request.processedAt ?? request.createdAt ?? null;
+  }
+
   canShowProcessedAt(request: CollaborationRequest): boolean {
     return !!request.processedAt;
   }

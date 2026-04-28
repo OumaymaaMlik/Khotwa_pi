@@ -1,6 +1,7 @@
 package tn.khotwa.repository.collaboration;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +14,7 @@ import tn.khotwa.enums.collaboration.CollaborationType;
 
 public interface CollaborationRepository extends JpaRepository<Collaboration, Long> {
 
-    boolean existsByProject_IdAndType(Long projectId, CollaborationType type);
+    boolean existsByProject_IdAndTypeAndStatusIn(Long projectId, CollaborationType type, Collection<CollaborationStatus> statuses);
 
     long countByProject_Id(Long projectId);
 
@@ -22,6 +23,12 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
     long countByStatus(CollaborationStatus status);
 
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    long countByStatusAndClosedAtBetween(
+            CollaborationStatus status,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
 
     Optional<Collaboration> findFirstByProject_IdAndTypeOrderByCreatedAtAsc(Long projectId, CollaborationType type);
 
@@ -68,7 +75,6 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
         select c.type as collaborationType,
                count(c) as collaborationCount
         from Collaboration c
-        where c.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         group by c.type
         order by c.type asc
         """)

@@ -78,7 +78,31 @@ class SharedResourceServiceTest {
 
         assertThat(resource.getQuantity()).isEqualTo(2);
         assertThat(resource.getAvailabilityStatus()).isEqualTo(AvailabilityStatus.AVAILABLE);
-        verify(authorizationService).checkCanCreateSharedResource(actor, collaboration);
+        verify(authorizationService).requireMemberOrAdmin(actor, collaboration);
+        verify(collaborationService).ensureWritableCollaboration(collaboration);
+    }
+
+    @Test
+    void createSharedResourceSupportsMarketingCollaborations() {
+        User actor = user(1L);
+        Collaboration collaboration = collaboration(10L, actor);
+        collaboration.setType(CollaborationType.MARKETING);
+
+        when(collaborationService.getCollaboration(collaboration.getId())).thenReturn(collaboration);
+        when(currentUserService.requireCurrentUser()).thenReturn(actor);
+        when(sharedResourceRepository.saveAndFlush(any(SharedResource.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SharedResource resource = sharedResourceService.createSharedResource(
+                collaboration.getId(),
+                "Camera",
+                "4k camera",
+                ResourceType.MATERIAL,
+                AvailabilityStatus.UNAVAILABLE,
+                1
+        );
+
+        assertThat(resource.getCollaboration()).isSameAs(collaboration);
+        verify(authorizationService).requireMemberOrAdmin(actor, collaboration);
         verify(collaborationService).ensureWritableCollaboration(collaboration);
     }
 
@@ -130,6 +154,7 @@ class SharedResourceServiceTest {
 
         assertThat(updated.getQuantity()).isEqualTo(1);
         assertThat(updated.getAvailabilityStatus()).isEqualTo(AvailabilityStatus.LIMITED);
+        verify(authorizationService).requireMemberOrAdmin(owner, collaboration);
         verify(authorizationService).checkCanManageSharedResource(owner, resource);
         verify(collaborationService).ensureWritableCollaboration(collaboration);
     }
@@ -176,6 +201,7 @@ class SharedResourceServiceTest {
 
         sharedResourceService.deleteSharedResource(resource.getId());
 
+        verify(authorizationService).requireMemberOrAdmin(owner, collaboration);
         verify(authorizationService).checkCanManageSharedResource(owner, resource);
         verify(collaborationService).ensureWritableCollaboration(collaboration);
         verify(sharedResourceRepository).delete(resource);

@@ -29,7 +29,13 @@ import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "marketing_collaborations", indexes = @Index(columnList = "createdAt"))
+@Table(
+        name = "marketing_collaborations",
+        indexes = {
+                @Index(name = "idx_marketing_collaboration_created_at", columnList = "createdAt"),
+                @Index(name = "idx_marketing_collaboration_status", columnList = "status")
+        }
+)
 public class MarketingCollaboration {
 
     @Id

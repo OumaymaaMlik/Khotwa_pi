@@ -16,11 +16,14 @@ import { EntrepreneurSelection } from '../models/entrepreneur-selection.model';
 import {
   MarketingCollaboration,
   CreateMarketingCollaborationPayload,
+  MarketingCollaborationStatus,
+  UpdateMarketingCollaborationStatusPayload,
 } from '../models/marketing-collaboration.model';
 import {
   CreateMarketingContentTaskPayload,
   MarketingContentTask,
   MarketingTaskStatus,
+  UpdateMarketingContentTaskStatusPayload,
 } from '../models/marketing-content-task.model';
 import {
   CreateResourceRequestPayload,
@@ -180,12 +183,32 @@ export class CollaborationService {
     return this.http.post<MarketingCollaboration>(`${API_BASE}/marketing-collaborations`, payload);
   }
 
+  updateCampaignStatus(
+    campaignId: number,
+    statusOrPayload: MarketingCollaborationStatus | UpdateMarketingCollaborationStatusPayload
+  ): Observable<MarketingCollaboration> {
+    const payload =
+      typeof statusOrPayload === 'string'
+        ? { status: statusOrPayload }
+        : statusOrPayload;
+
+    return this.http.put<MarketingCollaboration>(`${API_BASE}/marketing-collaborations/${campaignId}/status`, payload);
+  }
+
   createTask(payload: CreateMarketingContentTaskPayload): Observable<MarketingContentTask> {
     return this.http.post<MarketingContentTask>(`${API_BASE}/marketing-content-tasks`, payload);
   }
 
-  updateTaskStatus(taskId: number, status: MarketingTaskStatus): Observable<MarketingContentTask> {
-    return this.http.put<MarketingContentTask>(`${API_BASE}/marketing-content-tasks/${taskId}/status`, { status });
+  updateTaskStatus(
+    taskId: number,
+    statusOrPayload: MarketingTaskStatus | UpdateMarketingContentTaskStatusPayload
+  ): Observable<MarketingContentTask> {
+    const payload =
+      typeof statusOrPayload === 'string'
+        ? { status: statusOrPayload }
+        : statusOrPayload;
+
+    return this.http.put<MarketingContentTask>(`${API_BASE}/marketing-content-tasks/${taskId}/status`, payload);
   }
 
   private normalizeCollaboration(collaboration: Collaboration): Collaboration {

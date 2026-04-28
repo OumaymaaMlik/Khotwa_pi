@@ -1,20 +1,15 @@
 export type ContentType =
   | 'POST'
-  | 'VIDEO'
-  | 'ARTICLE'
-  | 'EMAIL'
-  | 'DESIGN'
-  | 'OTHER';
+  | 'REEL'
+  | 'VIDEO';
 
 export type Platform =
-  | 'FACEBOOK'
   | 'INSTAGRAM'
+  | 'FACEBOOK'
   | 'LINKEDIN'
   | 'TIKTOK'
   | 'YOUTUBE'
-  | 'EMAIL'
-  | 'WEBSITE'
-  | 'OTHER';
+  | 'X';
 
 export type MarketingTaskStatus = 'TODO' | 'IN_PROGRESS' | 'READY' | 'PUBLISHED';
 
@@ -40,4 +35,9 @@ export interface CreateMarketingContentTaskPayload {
   contentType: ContentType;
   platform: Platform;
   dueDate?: string | null;
+}
+
+export interface UpdateMarketingContentTaskStatusPayload {
+  status: MarketingTaskStatus;
+  publishedAt?: string | null;
 }

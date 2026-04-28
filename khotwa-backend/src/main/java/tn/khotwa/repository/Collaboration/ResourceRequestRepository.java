@@ -17,6 +17,8 @@ public interface ResourceRequestRepository extends JpaRepository<ResourceRequest
 
     boolean existsByMatchedResource_Id(Long matchedResourceId);
 
+    long countByStatus(ResourceRequestStatus status);
+
     long countByStatusAndCollaboration_Status(
             ResourceRequestStatus status,
             CollaborationStatus collaborationStatus

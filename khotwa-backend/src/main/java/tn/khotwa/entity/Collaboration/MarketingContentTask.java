@@ -28,7 +28,14 @@ import tn.khotwa.enums.collaboration.TaskStatus;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "marketing_content_tasks", indexes = @Index(columnList = "dueDate"))
+@Table(
+        name = "marketing_content_tasks",
+        indexes = {
+                @Index(name = "idx_marketing_content_task_due_date", columnList = "dueDate"),
+                @Index(name = "idx_marketing_content_task_status", columnList = "status"),
+                @Index(name = "idx_marketing_content_task_status_due_date", columnList = "status,dueDate")
+        }
+)
 public class MarketingContentTask {
 
     @Id

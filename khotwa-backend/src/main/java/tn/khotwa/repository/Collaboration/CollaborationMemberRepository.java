@@ -1,5 +1,6 @@
 package tn.khotwa.repository.collaboration;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -47,5 +48,7 @@ public interface CollaborationMemberRepository extends JpaRepository<Collaborati
         order by member.collaboration.id asc
         """)
     List<CollaborationMemberCountView> countMembersPerCollaboration();
+
+    long countByJoinedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 }
 

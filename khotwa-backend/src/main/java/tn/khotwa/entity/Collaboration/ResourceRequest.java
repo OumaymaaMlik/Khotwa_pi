@@ -28,7 +28,13 @@ import tn.khotwa.enums.collaboration.Urgency;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "resource_requests", indexes = @Index(columnList = "createdAt"))
+@Table(
+        name = "resource_requests",
+        indexes = {
+                @Index(name = "idx_resource_request_created_at", columnList = "createdAt"),
+                @Index(name = "idx_resource_request_status", columnList = "status")
+        }
+)
 public class ResourceRequest {
 
     @Id

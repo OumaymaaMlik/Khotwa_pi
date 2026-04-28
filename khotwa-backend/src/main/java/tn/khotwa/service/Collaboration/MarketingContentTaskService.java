@@ -11,6 +11,7 @@ import tn.khotwa.entity.collaboration.MarketingContentTask;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.collaboration.CollaborationType;
 import tn.khotwa.enums.collaboration.ContentType;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
 import tn.khotwa.enums.collaboration.Platform;
 import tn.khotwa.enums.collaboration.TaskStatus;
 import tn.khotwa.exception.collaboration.BusinessException;
@@ -33,10 +34,12 @@ public class MarketingContentTaskService {
 
     public MarketingContentTask createMarketingContentTask(Long marketingCollaborationId, Long assignedUserId, String title, String description, ContentType contentType, Platform platform, LocalDateTime dueDate) {
         MarketingCollaboration marketingCollaboration = marketingCollaborationService.getMarketingCollaboration(marketingCollaborationId);
+        Collaboration collaboration = marketingCollaboration.getCollaboration();
         User actor = currentUserService.requireCurrentUser();
 
         authorizationService.checkCanCreateMarketingContentTask(actor, marketingCollaboration);
-        collaborationService.ensureWritableCollaboration(marketingCollaboration.getCollaboration());
+        collaborationService.ensureWritableCollaboration(collaboration);
+        ensureCampaignIsOpen(marketingCollaboration);
 
         if (title == null || title.trim().isEmpty()) {
             throw new BusinessException("Task title is required.");
@@ -51,11 +54,7 @@ public class MarketingContentTaskService {
         }
 
         User assignedUser = getUser(assignedUserId);
-
-        Collaboration collaboration = marketingCollaboration.getCollaboration();
-        if (!collaborationService.isMember(collaboration, assignedUser)) {
-            throw new BusinessException("Assigned user must be a member of the collaboration.");
-        }
+        ensureAssignedUserIsMember(collaboration, assignedUser);
 
         MarketingContentTask task = new MarketingContentTask();
         task.setMarketingCollaboration(marketingCollaboration);
@@ -73,14 +72,16 @@ public class MarketingContentTaskService {
     public MarketingContentTask updateMarketingContentTaskStatus(Long taskId, TaskStatus status, LocalDateTime publishedAt) {
         MarketingContentTask task = getMarketingContentTask(taskId);
         User actor = currentUserService.requireCurrentUser();
+        Collaboration collaboration = task.getMarketingCollaboration().getCollaboration();
 
         collaborationService.ensureCollaborationType(
-                task.getMarketingCollaboration().getCollaboration(),
+                collaboration,
                 CollaborationType.MARKETING,
                 "Marketing tasks are only available for MARKETING collaborations."
         );
         authorizationService.checkCanUpdateMarketingContentTaskStatus(actor, task);
-        collaborationService.ensureWritableCollaboration(task.getMarketingCollaboration().getCollaboration());
+        collaborationService.ensureWritableCollaboration(collaboration);
+        ensureCampaignIsOpen(task.getMarketingCollaboration());
 
         if (status == null) {
             throw new BusinessException("Status is required.");
@@ -118,6 +119,19 @@ public class MarketingContentTaskService {
 
     private User getUser(Long userId) {
         return userService.getRequiredUser(userId);
+    }
+
+    private void ensureAssignedUserIsMember(Collaboration collaboration, User assignedUser) {
+        if (!collaborationService.isMember(collaboration, assignedUser)) {
+            throw new BusinessException("Assigned user must be a member of the collaboration.");
+        }
+    }
+
+    private void ensureCampaignIsOpen(MarketingCollaboration marketingCollaboration) {
+        if (marketingCollaboration.getStatus() == MarketingCollaborationStatus.COMPLETED
+                || marketingCollaboration.getStatus() == MarketingCollaborationStatus.CANCELLED) {
+            throw new BusinessException("This campaign is closed. Create a new campaign to continue.");
+        }
     }
 }
 

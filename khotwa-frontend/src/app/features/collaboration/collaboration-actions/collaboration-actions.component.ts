@@ -31,7 +31,7 @@ export class CollaborationActionsComponent {
   }
 
   get canShowStatusActions(): boolean {
-    return !!this.canUpdateStatus && !this.isReadOnly && this.collaboration?.status !== 'CLOSED';
+    return !!this.canUpdateStatus && !this.isReadOnly;
   }
 
   get canShowLeaveAction(): boolean {
@@ -39,7 +39,8 @@ export class CollaborationActionsComponent {
   }
 
   get canActivate(): boolean {
-    return this.canShowStatusActions && this.collaboration?.status === 'SUSPENDED';
+    return this.canShowStatusActions
+      && (this.collaboration?.status === 'SUSPENDED' || this.collaboration?.status === 'CLOSED');
   }
 
   get canSuspend(): boolean {
@@ -47,6 +48,10 @@ export class CollaborationActionsComponent {
   }
 
   get canClose(): boolean {
-    return this.canShowStatusActions;
+    return this.canShowStatusActions && this.collaboration?.status !== 'CLOSED';
+  }
+
+  get activateLabel(): string {
+    return this.collaboration?.status === 'CLOSED' ? 'Reopen' : 'Activate';
   }
 }

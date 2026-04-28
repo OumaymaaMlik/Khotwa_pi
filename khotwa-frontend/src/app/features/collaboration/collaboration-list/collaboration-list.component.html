@@ -4,6 +4,11 @@
       <h1 class="kh-page-title">Collaborations</h1>
       <p class="page-sub">Manage and view collaboration workspaces.</p>
     </div>
+
+    <div class="collaboration-page-actions" *ngIf="auth.isAdmin">
+      <a routerLink="/khotwaadmin/collaborations/weekly-report" class="kh-btn kh-btn--ghost">Weekly Report</a>
+      <a routerLink="/khotwaadmin/collaborations/ai-recommendations" class="kh-btn kh-btn--primary">AI Recommendations</a>
+    </div>
   </div>
 
   <div *ngIf="showBody && error" class="kh-card collab-alert collab-alert--error">{{ error }}</div>

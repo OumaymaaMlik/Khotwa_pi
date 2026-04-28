@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { forkJoin, of, Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, finalize, map, switchMap, tap } from 'rxjs/operators';
 import {
   Collaboration,
   CollaborationStatus,
@@ -11,6 +11,16 @@ import { CollaborationMember } from '../../../core/models/collaboration-member.m
 import { CollaborationRequest } from '../../../core/models/collaboration-request.model';
 import { EntrepreneurSelection } from '../../../core/models/entrepreneur-selection.model';
 import {
+  CreateMarketingCollaborationPayload,
+  MarketingCollaboration,
+  MarketingCollaborationStatus,
+} from '../../../core/models/marketing-collaboration.model';
+import {
+  CreateMarketingContentTaskPayload,
+  MarketingContentTask,
+  MarketingTaskStatus,
+} from '../../../core/models/marketing-content-task.model';
+import {
   CreateResourceRequestPayload,
   ResourceRequest,
   ResourceRequestStatus
@@ -18,6 +28,7 @@ import {
 import { CreateSharedResourcePayload, SharedResource, UpdateSharedResourcePayload } from '../../../core/models/shared-resource.model';
 import { CollaborationService } from '../../../core/services/collaboration.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ResourcesBlockComponent } from '../ResourcesBlock/ResourcesBlock.component';
 
 type Role = 'entrepreneur' | 'admin' | 'coach';
 
@@ -30,16 +41,31 @@ export class CollaborationDetailComponent implements OnInit {
   collaboration: Collaboration | null = null;
   members: CollaborationMember[] = [];
   collaborationRequests: CollaborationRequest[] = [];
-  inviteCandidates: EntrepreneurSelection[] = [];
   sharedResources: SharedResource[] = [];
   resourceRequests: ResourceRequest[] = [];
+  marketingCampaigns: MarketingCollaboration[] = [];
+  marketingTasks: MarketingContentTask[] = [];
   currentUserRole: Role = 'entrepreneur';
   currentUserId = 0;
+  private collaborationId: number | null = null;
   collaborationRequestActionInFlightId: number | null = null;
-  inviteActionInFlight = false;
   resourceRequestActionInFlightId: number | null = null;
+  inviteCandidates: EntrepreneurSelection[] = [];
+  inviteSelectedUserId: number | null = null;
+  inviteSearch = '';
+  inviteLoading = false;
+  inviteActionInFlight = false;
+  inviteError: string | null = null;
   loading = false;
   error: string | null = null;
+  membersExpanded = false;
+  requestsExpanded = false;
+  inviteExpanded = false;
+  private inviteCandidatesRaw: EntrepreneurSelection[] = [];
+  private inviteSearch$ = new Subject<string>();
+
+  @ViewChild('resourcesSection') resourcesSection?: ElementRef<HTMLElement>;
+  @ViewChild('resourcesBlock') resourcesBlock?: ResourcesBlockComponent;
 
   constructor(
     private route: ActivatedRoute,
@@ -52,6 +78,38 @@ export class CollaborationDetailComponent implements OnInit {
     this.currentUserRole = (userRole ? userRole.toLowerCase() : 'entrepreneur') as Role;
     this.currentUserId = this.authService.currentUser?.idUser ?? 0;
 
+    this.inviteSearch$
+      .pipe(
+        map(value => value.trim()),
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap(search => {
+          this.inviteError = null;
+          this.inviteSelectedUserId = null;
+
+          if (search.length < 2) {
+            this.inviteCandidatesRaw = [];
+            this.inviteCandidates = [];
+            this.inviteLoading = false;
+          }
+        }),
+        filter(search => search.length >= 2),
+        tap(() => { this.inviteLoading = true; }),
+        switchMap(search =>
+          this.collaborationService.getEntrepreneurs(search).pipe(
+            catchError(err => {
+              this.inviteError = this.extractError(err);
+              return of([] as EntrepreneurSelection[]);
+            }),
+            finalize(() => { this.inviteLoading = false; })
+          )
+        )
+      )
+      .subscribe(candidates => {
+        this.inviteCandidatesRaw = candidates ?? [];
+        this.applyInviteCandidateFilter();
+      });
+
     this.route.paramMap.subscribe(params => {
       const id = Number(params.get('id'));
       if (id) {
@@ -61,6 +119,11 @@ export class CollaborationDetailComponent implements OnInit {
   }
 
   private loadCollaboration(id: number): void {
+    if (this.collaborationId !== id) {
+      this.resetInviteState();
+      this.collaborationId = id;
+    }
+
     this.loading = true;
     this.error = null;
 
@@ -78,25 +141,73 @@ export class CollaborationDetailComponent implements OnInit {
   }
 
   private loadCollaborationDetails(collaboration: Collaboration): void {
-    const loadResources = collaboration.type === 'RESOURCES';
-    const loadInviteCandidates = this.canLoadInviteCandidates(collaboration);
+    const collaborationRequests$ = this.collaborationService.getCollaborationScopedRequests(collaboration.id);
+
+    if (collaboration.type === 'MARKETING') {
+      this.sharedResources = [];
+      this.resourceRequests = [];
+
+      forkJoin({
+        collaborationRequests: collaborationRequests$,
+        marketingCampaigns: this.collaborationService.getMarketingCampaigns(collaboration.id),
+      }).pipe(
+        switchMap(({ collaborationRequests, marketingCampaigns }) => {
+          const openCampaign = this.findOpenMarketingCampaign(marketingCampaigns);
+
+          if (!openCampaign) {
+            return of({
+              collaborationRequests,
+              marketingCampaigns,
+              marketingTasks: [] as MarketingContentTask[],
+            });
+          }
+
+          return this.collaborationService.getMarketingTasks(openCampaign.id).pipe(
+            map(marketingTasks => ({
+              collaborationRequests,
+              marketingCampaigns,
+              marketingTasks,
+            }))
+          );
+        })
+      ).subscribe({
+        next: ({
+          collaborationRequests,
+          marketingCampaigns,
+          marketingTasks,
+        }) => {
+          this.collaborationRequests = collaborationRequests ?? [];
+          this.marketingCampaigns = marketingCampaigns ?? [];
+          this.marketingTasks = marketingTasks ?? [];
+          this.applyInviteCandidateFilter();
+          this.loading = false;
+        },
+        error: err => {
+          this.loading = false;
+          this.error = this.extractError(err);
+        }
+      });
+
+      return;
+    }
+
+    this.marketingCampaigns = [];
+    this.marketingTasks = [];
 
     forkJoin({
-      collaborationRequests: this.collaborationService.getCollaborationScopedRequests(collaboration.id),
-      inviteCandidates: loadInviteCandidates ? this.collaborationService.getEntrepreneurs() : of([]),
-      sharedResources: loadResources ? this.collaborationService.getSharedResources(collaboration.id) : of([]),
-      resourceRequests: loadResources ? this.collaborationService.getResourceRequests(collaboration.id) : of([]),
+      collaborationRequests: collaborationRequests$,
+      sharedResources: this.collaborationService.getSharedResources(collaboration.id),
+      resourceRequests: this.collaborationService.getResourceRequests(collaboration.id),
     }).subscribe({
       next: ({
         collaborationRequests,
-        inviteCandidates,
         sharedResources,
         resourceRequests
       }) => {
         this.collaborationRequests = collaborationRequests ?? [];
-        this.inviteCandidates = this.buildInviteCandidates(inviteCandidates ?? []);
         this.sharedResources = sharedResources ?? [];
         this.resourceRequests = resourceRequests ?? [];
+        this.applyInviteCandidateFilter();
         this.loading = false;
       },
       error: err => {
@@ -112,6 +223,16 @@ export class CollaborationDetailComponent implements OnInit {
     }
   }
 
+  private resetInviteState(): void {
+    this.inviteCandidates = [];
+    this.inviteCandidatesRaw = [];
+    this.inviteSelectedUserId = null;
+    this.inviteSearch = '';
+    this.inviteLoading = false;
+    this.inviteActionInFlight = false;
+    this.inviteError = null;
+  }
+
   private extractError(err: unknown): string {
     const error = err as { error?: { message?: string }; message?: string };
     return error?.error?.message ?? error?.message ?? 'Unable to load collaboration details.';
@@ -121,50 +242,209 @@ export class CollaborationDetailComponent implements OnInit {
     return (this.collaboration?.ownerId ?? 0) === this.currentUserId;
   }
 
+  get isAdmin(): boolean {
+    return this.currentUserRole === 'admin';
+  }
+
   get isMember(): boolean {
     return this.members.some(member => member?.userId === this.currentUserId);
   }
 
-  get canRemoveMembers(): boolean {
-    return this.currentUserRole !== 'coach'
-      && this.collaboration?.status === 'ACTIVE'
-      && (this.currentUserRole === 'admin' || this.isOwner);
+  get belongsToCollaboration(): boolean {
+    return this.currentUserId > 0 && (this.isOwner || this.isMember);
+  }
+
+  get isEntrepreneurMember(): boolean {
+    return this.currentUserRole === 'entrepreneur' && this.belongsToCollaboration;
+  }
+
+  get isMarketingCollaboration(): boolean {
+    return this.collaboration?.type === 'MARKETING';
+  }
+
+  get canManageCollaboration(): boolean {
+    return this.currentUserRole !== 'coach' && (this.currentUserRole === 'admin' || this.isOwner);
   }
 
   get canInviteToCollaboration(): boolean {
-    return this.collaboration?.status === 'ACTIVE' && this.currentUserRole === 'admin';
+    return this.canManageCollaboration && this.collaboration?.status === 'ACTIVE';
+  }
+
+  get canRemoveMembers(): boolean {
+    return this.canManageCollaboration && this.collaboration?.status === 'ACTIVE';
   }
 
   get canLeaveCollaboration(): boolean {
     return this.collaboration?.status === 'ACTIVE'
       && this.currentUserRole === 'entrepreneur'
-      && (this.isOwner || this.isMember);
+      && this.belongsToCollaboration;
   }
 
   get canUpdateStatus(): boolean {
-    return this.currentUserRole !== 'coach'
-      && (this.currentUserRole === 'admin' || this.isOwner)
-      && this.collaboration?.status !== 'CLOSED';
+    return this.canManageCollaboration
+      && (this.isAdmin || this.collaboration?.status !== 'CLOSED');
   }
 
   get canUpdateResourceRequestStatuses(): boolean {
-    return this.currentUserRole !== 'coach' && (this.currentUserRole === 'admin' || this.isOwner);
+    return this.canManageCollaboration;
   }
 
-  get isResourcesCollaboration(): boolean {
-    return this.collaboration?.type === 'RESOURCES';
+  get showContributionActions(): boolean {
+    return !this.isMarketingCollaboration
+      && this.currentUserRole !== 'coach'
+      && (this.currentUserRole === 'admin' || this.belongsToCollaboration);
+  }
+
+  get canContributeResources(): boolean {
+    return this.canCreateResource;
+  }
+
+  get canContributeRequests(): boolean {
+    return this.canCreateResourceRequest;
+  }
+
+  get canCreateMarketingCampaign(): boolean {
+    return this.currentUserRole !== 'coach'
+      && this.collaboration?.status === 'ACTIVE'
+      && (this.currentUserRole === 'admin' || this.isOwner);
+  }
+
+  get canCreateMarketingTask(): boolean {
+    return this.currentUserRole !== 'coach'
+      && this.collaboration?.status === 'ACTIVE'
+      && (this.currentUserRole === 'admin' || this.belongsToCollaboration);
+  }
+
+  get contributionHelperText(): string {
+    if (!this.collaboration) {
+      return '';
+    }
+
+    if (this.collaboration.status !== 'ACTIVE') {
+      return `This collaboration is ${this.collaboration.status.toLowerCase()}. Contributions are disabled.`;
+    }
+
+    return 'Add a shared resource or submit a request for something you need.';
+  }
+
+  get pendingInvitations(): CollaborationRequest[] {
+    return this.collaborationRequests
+      .filter(request => request.scenario === 'COLLAB_INVITATION' && request.status === 'PENDING')
+      .sort((left, right) => (right.createdAt ?? '').localeCompare(left.createdAt ?? ''));
+  }
+
+  get memberCount(): number {
+    return this.members.length;
+  }
+
+  get requestCount(): number {
+    return this.collaborationRequests.length;
+  }
+
+  toggleMembersExpanded(): void {
+    this.membersExpanded = !this.membersExpanded;
+  }
+
+  toggleRequestsExpanded(): void {
+    this.requestsExpanded = !this.requestsExpanded;
+  }
+
+  toggleInviteExpanded(): void {
+    if (!this.canManageCollaboration) {
+      return;
+    }
+
+    this.inviteExpanded = !this.inviteExpanded;
+  }
+
+  onInviteSearchChange(value: string): void {
+    this.inviteSearch = value;
+
+    if (!this.canManageCollaboration) {
+      return;
+    }
+
+    if (!this.canInviteToCollaboration) {
+      this.inviteCandidatesRaw = [];
+      this.inviteCandidates = [];
+      return;
+    }
+
+    this.inviteSearch$.next(value);
+  }
+
+  onInviteeSelected(value: string): void {
+    const inviteeId = Number(value);
+    this.inviteSelectedUserId = Number.isFinite(inviteeId) && inviteeId > 0 ? inviteeId : null;
+  }
+
+  get canSendInvitation(): boolean {
+    return this.canInviteToCollaboration && !this.inviteActionInFlight && !!this.inviteSelectedUserId;
+  }
+
+  sendInvitation(): void {
+    if (!this.collaboration?.id || !this.canSendInvitation) {
+      return;
+    }
+
+    const selectedUserId = this.inviteSelectedUserId as number;
+    this.inviteActionInFlight = true;
+    this.inviteError = null;
+
+    this.collaborationService.createCollaborationRequest({
+      targetCollaborationId: this.collaboration.id,
+      targetUserId: selectedUserId,
+    }).pipe(
+      finalize(() => { this.inviteActionInFlight = false; })
+    ).subscribe({
+      next: () => {
+        this.inviteSelectedUserId = null;
+        this.reloadDetail();
+        if (this.inviteSearch.trim().length >= 2) {
+          this.inviteSearch$.next(this.inviteSearch);
+        }
+      },
+      error: err => { this.inviteError = this.extractError(err); }
+    });
+  }
+
+  openContributionAction(action: 'resource' | 'request'): void {
+    if (action === 'resource' && !this.canCreateResource) {
+      return;
+    }
+
+    if (action === 'request' && !this.canCreateResourceRequest) {
+      return;
+    }
+
+    const sectionEl = this.resourcesSection?.nativeElement;
+    if (sectionEl) {
+      sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    setTimeout(() => {
+      if (!this.resourcesBlock) {
+        return;
+      }
+
+      if (action === 'resource') {
+        this.resourcesBlock.openCreateResourceForm();
+      } else {
+        this.resourcesBlock.openCreateRequestForm();
+      }
+    });
   }
 
   get canCreateResource(): boolean {
     return this.currentUserRole !== 'coach'
       && this.collaboration?.status === 'ACTIVE'
-      && (this.currentUserRole === 'admin' || this.isMember);
+      && (this.currentUserRole === 'admin' || this.belongsToCollaboration);
   }
 
   get canCreateResourceRequest(): boolean {
     return this.currentUserRole !== 'coach'
       && this.collaboration?.status === 'ACTIVE'
-      && (this.currentUserRole === 'admin' || this.isMember);
+      && (this.currentUserRole === 'admin' || this.belongsToCollaboration);
   }
 
   get collaborationTypeLabel(): string {
@@ -224,20 +504,39 @@ export class CollaborationDetailComponent implements OnInit {
     });
   }
 
-  onInviteRequestCreated(event: { targetUserId: number }): void {
-    if (!this.collaboration?.id || this.inviteActionInFlight) {
+  onCreateCampaign(event: { payload: CreateMarketingCollaborationPayload }): void {
+    if (!this.collaboration?.id) {
       return;
     }
 
-    this.inviteActionInFlight = true;
-    this.collaborationService.createCollaborationRequest({
-      targetCollaborationId: this.collaboration.id,
-      targetUserId: event.targetUserId
-    }).pipe(
-      finalize(() => {
-        this.inviteActionInFlight = false;
-      })
-    ).subscribe({
+    this.collaborationService.createCampaign({
+      ...event.payload,
+      collaborationId: this.collaboration.id,
+    }).subscribe({
+      next: () => this.reloadDetail(),
+      error: err => { this.error = this.extractError(err); }
+    });
+  }
+
+  onCreateMarketingTask(event: { payload: CreateMarketingContentTaskPayload }): void {
+    this.collaborationService.createTask(event.payload).subscribe({
+      next: () => this.reloadDetail(),
+      error: err => { this.error = this.extractError(err); }
+    });
+  }
+
+  onUpdateMarketingCampaignStatus(event: { campaignId: number; status: MarketingCollaborationStatus }): void {
+    this.collaborationService.updateCampaignStatus(event.campaignId, event.status).subscribe({
+      next: () => this.reloadDetail(),
+      error: err => { this.error = this.extractError(err); }
+    });
+  }
+
+  onUpdateMarketingTaskStatus(event: { taskId: number; status: MarketingTaskStatus; publishedAt?: string | null }): void {
+    this.collaborationService.updateTaskStatus(event.taskId, {
+      status: event.status,
+      publishedAt: event.publishedAt ?? null,
+    }).subscribe({
       next: () => this.reloadDetail(),
       error: err => { this.error = this.extractError(err); }
     });
@@ -324,8 +623,19 @@ export class CollaborationDetailComponent implements OnInit {
     });
   }
 
-  private canLoadInviteCandidates(collaboration: Collaboration): boolean {
-    return collaboration.status === 'ACTIVE' && this.currentUserRole === 'admin';
+  private applyInviteCandidateFilter(): void {
+    if (!this.canManageCollaboration) {
+      this.inviteCandidates = [];
+      this.inviteCandidatesRaw = [];
+      this.inviteSelectedUserId = null;
+      return;
+    }
+
+    this.inviteCandidates = this.buildInviteCandidates(this.inviteCandidatesRaw ?? []);
+
+    if (this.inviteSelectedUserId && !this.inviteCandidates.some(candidate => candidate.id === this.inviteSelectedUserId)) {
+      this.inviteSelectedUserId = null;
+    }
   }
 
   private buildInviteCandidates(candidates: EntrepreneurSelection[]): EntrepreneurSelection[] {
@@ -341,5 +651,9 @@ export class CollaborationDetailComponent implements OnInit {
       && !blockedUserIds.has(candidate.id)
       && candidate.id !== this.collaboration?.ownerId
     );
+  }
+
+  private findOpenMarketingCampaign(campaigns: MarketingCollaboration[]): MarketingCollaboration | null {
+    return campaigns.find(campaign => campaign.status === 'DRAFT' || campaign.status === 'ACTIVE') ?? null;
   }
 }

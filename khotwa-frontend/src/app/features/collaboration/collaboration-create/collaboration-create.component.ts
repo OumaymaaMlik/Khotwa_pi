@@ -23,6 +23,8 @@ type CreateCollaborationFormErrors = {
   styleUrls: ['./collaboration-create.component.css'],
 })
 export class CollaborationCreateComponent implements OnInit {
+  private readonly openStatuses = new Set<string>(['ACTIVE', 'SUSPENDED']);
+
   model: CreateCollaborationRequest = {
     projectId: 0,
     type: 'MARKETING',
@@ -73,6 +75,10 @@ export class CollaborationCreateComponent implements OnInit {
     return this.availableTypes.length > 0;
   }
 
+  get noAvailableTypesMessage(): string {
+    return 'All collaboration types already have an open collaboration for this project.';
+  }
+
   typeLabel(type: CollaborationType): string {
     return getCollaborationTypeLabel(type);
   }
@@ -118,7 +124,11 @@ export class CollaborationCreateComponent implements OnInit {
       .pipe(finalize(() => { this.typeAvailabilityLoading = false; }))
       .subscribe({
         next: collaborations => {
-          const usedTypes = new Set(collaborations.map(collaboration => collaboration.type));
+          const usedTypes = new Set(
+            collaborations
+              .filter(collaboration => this.openStatuses.has(collaboration.status))
+              .map(collaboration => collaboration.type)
+          );
           this.availableTypes = this.types.filter(type => !usedTypes.has(type));
 
           if (!this.availableTypes.length) {
@@ -156,7 +166,7 @@ export class CollaborationCreateComponent implements OnInit {
     }
 
     if (!this.hasAvailableTypes || !this.availableTypes.includes(this.model.type)) {
-      this.error = 'All collaboration types are already used for this project.';
+      this.error = this.noAvailableTypesMessage;
       return;
     }
 

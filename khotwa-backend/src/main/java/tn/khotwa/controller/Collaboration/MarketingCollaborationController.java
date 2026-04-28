@@ -8,11 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tn.khotwa.dto.collaboration.CreateMarketingCollaborationRequest;
 import tn.khotwa.dto.collaboration.MarketingCollaborationDTO;
+import tn.khotwa.dto.collaboration.UpdateMarketingCollaborationStatusRequest;
 import tn.khotwa.service.collaboration.MarketingCollaborationService;
 
 @RestController
@@ -42,5 +44,15 @@ public class MarketingCollaborationController {
                 .stream()
                 .map(MarketingCollaborationDTO::fromEntity)
                 .toList();
+    }
+
+    @PutMapping("/{id}/status")
+    public MarketingCollaborationDTO updateMarketingCollaborationStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateMarketingCollaborationStatusRequest request
+    ) {
+        return MarketingCollaborationDTO.fromEntity(
+                marketingCollaborationService.updateMarketingCollaborationStatus(id, request.getStatus())
+        );
     }
 }

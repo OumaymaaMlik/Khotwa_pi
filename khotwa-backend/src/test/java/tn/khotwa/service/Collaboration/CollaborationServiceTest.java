@@ -8,8 +8,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
+import java.util.EnumSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -150,7 +152,11 @@ class CollaborationServiceTest {
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(currentUserService.requireCurrentUser()).thenReturn(owner);
-        when(collaborationRepository.existsByProject_IdAndType(project.getId(), CollaborationType.RESOURCES)).thenReturn(false);
+        when(collaborationRepository.existsByProject_IdAndTypeAndStatusIn(
+                project.getId(),
+                CollaborationType.RESOURCES,
+                EnumSet.of(CollaborationStatus.ACTIVE, CollaborationStatus.SUSPENDED)
+        )).thenReturn(false);
         when(collaborationRepository.save(any(Collaboration.class))).thenAnswer(invocation -> {
             Collaboration collaboration = invocation.getArgument(0);
             collaboration.setId(50L);
@@ -161,6 +167,68 @@ class CollaborationServiceTest {
         Collaboration collaboration = collaborationService.createCollaboration(project.getId(), CollaborationType.RESOURCES);
 
         assertThat(collaboration.getProject().getId()).isEqualTo(project.getId());
+        assertThat(collaboration.getStatus()).isEqualTo(CollaborationStatus.ACTIVE);
+        verify(collaborationMemberRepository).save(any(CollaborationMember.class));
+    }
+
+    @Test
+    void cannotCreateDuplicateActiveCollaborationOfSameType() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        Project project = project(10L, owner);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(currentUserService.requireCurrentUser()).thenReturn(owner);
+        when(collaborationRepository.existsByProject_IdAndTypeAndStatusIn(
+                project.getId(),
+                CollaborationType.RESOURCES,
+                EnumSet.of(CollaborationStatus.ACTIVE, CollaborationStatus.SUSPENDED)
+        )).thenReturn(true);
+
+        assertThatThrownBy(() -> collaborationService.createCollaboration(project.getId(), CollaborationType.RESOURCES))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("An open collaboration of this type already exists for the project.");
+    }
+
+    @Test
+    void cannotCreateDuplicateSuspendedCollaborationOfSameType() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        Project project = project(10L, owner);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(currentUserService.requireCurrentUser()).thenReturn(owner);
+        when(collaborationRepository.existsByProject_IdAndTypeAndStatusIn(
+                project.getId(),
+                CollaborationType.MARKETING,
+                EnumSet.of(CollaborationStatus.ACTIVE, CollaborationStatus.SUSPENDED)
+        )).thenReturn(true);
+
+        assertThatThrownBy(() -> collaborationService.createCollaboration(project.getId(), CollaborationType.MARKETING))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("An open collaboration of this type already exists for the project.");
+    }
+
+    @Test
+    void canCreateSameTypeAfterPreviousClosedCollaboration() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        Project project = project(10L, owner);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(currentUserService.requireCurrentUser()).thenReturn(owner);
+        when(collaborationRepository.existsByProject_IdAndTypeAndStatusIn(
+                project.getId(),
+                CollaborationType.MARKETING,
+                EnumSet.of(CollaborationStatus.ACTIVE, CollaborationStatus.SUSPENDED)
+        )).thenReturn(false);
+        when(collaborationRepository.save(any(Collaboration.class))).thenAnswer(invocation -> {
+            Collaboration collaboration = invocation.getArgument(0);
+            collaboration.setId(51L);
+            return collaboration;
+        });
+        when(collaborationMemberRepository.existsByCollaborationIdAndUserId(51L, owner.getIdUser())).thenReturn(false);
+
+        Collaboration collaboration = collaborationService.createCollaboration(project.getId(), CollaborationType.MARKETING);
+
+        assertThat(collaboration.getType()).isEqualTo(CollaborationType.MARKETING);
         assertThat(collaboration.getStatus()).isEqualTo(CollaborationStatus.ACTIVE);
         verify(collaborationMemberRepository).save(any(CollaborationMember.class));
     }
@@ -181,7 +249,88 @@ class CollaborationServiceTest {
         );
 
         assertThat(updated.getStatus()).isEqualTo(CollaborationStatus.SUSPENDED);
+        assertThat(updated.getClosedAt()).isNull();
         verify(collaborationRepository).save(collaboration);
+    }
+
+    @Test
+    void closingCollaborationSetsClosedAt() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        Project project = project(10L, owner);
+        Collaboration collaboration = collaboration(50L, project, CollaborationType.RESOURCES);
+
+        when(collaborationRepository.findById(collaboration.getId())).thenReturn(Optional.of(collaboration));
+        when(currentUserService.requireCurrentUser()).thenReturn(owner);
+        when(collaborationRepository.save(collaboration)).thenReturn(collaboration);
+
+        Collaboration updated = collaborationService.updateCollaboration(
+                collaboration.getId(),
+                CollaborationStatus.CLOSED
+        );
+
+        assertThat(updated.getStatus()).isEqualTo(CollaborationStatus.CLOSED);
+        assertThat(updated.getClosedAt()).isNotNull();
+        verify(collaborationRepository).save(collaboration);
+    }
+
+    @Test
+    void ownerLeavingCollaborationClosesItAndSetsClosedAt() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        Project project = project(10L, owner);
+        Collaboration collaboration = collaboration(50L, project, CollaborationType.RESOURCES);
+
+        when(collaborationRepository.findById(collaboration.getId())).thenReturn(Optional.of(collaboration));
+        when(currentUserService.requireCurrentUser()).thenReturn(owner);
+        when(collaborationMemberRepository.existsByCollaborationIdAndUserId(collaboration.getId(), owner.getIdUser()))
+                .thenReturn(true);
+        when(collaborationRepository.save(collaboration)).thenReturn(collaboration);
+
+        collaborationService.leaveCollaboration(collaboration.getId());
+
+        assertThat(collaboration.getStatus()).isEqualTo(CollaborationStatus.CLOSED);
+        assertThat(collaboration.getClosedAt()).isNotNull();
+        verify(collaborationRepository).save(collaboration);
+    }
+
+    @Test
+    void adminCanReopenClosedCollaboration() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        User admin = user(2L, Role.ADMIN);
+        Project project = project(10L, owner);
+        Collaboration collaboration = collaboration(50L, project, CollaborationType.RESOURCES);
+        collaboration.setStatus(CollaborationStatus.CLOSED);
+        collaboration.setClosedAt(LocalDateTime.of(2026, 4, 27, 10, 15));
+
+        when(collaborationRepository.findById(collaboration.getId())).thenReturn(Optional.of(collaboration));
+        when(currentUserService.requireCurrentUser()).thenReturn(admin);
+        when(collaborationRepository.save(collaboration)).thenReturn(collaboration);
+
+        Collaboration updated = collaborationService.updateCollaboration(
+                collaboration.getId(),
+                CollaborationStatus.ACTIVE
+        );
+
+        assertThat(updated.getStatus()).isEqualTo(CollaborationStatus.ACTIVE);
+        assertThat(updated.getClosedAt()).isNull();
+        verify(collaborationRepository).save(collaboration);
+    }
+
+    @Test
+    void ownerCannotReopenClosedCollaboration() {
+        User owner = user(1L, Role.ENTREPRENEUR);
+        Project project = project(10L, owner);
+        Collaboration collaboration = collaboration(50L, project, CollaborationType.RESOURCES);
+        collaboration.setStatus(CollaborationStatus.CLOSED);
+
+        when(collaborationRepository.findById(collaboration.getId())).thenReturn(Optional.of(collaboration));
+        when(currentUserService.requireCurrentUser()).thenReturn(owner);
+
+        assertThatThrownBy(() -> collaborationService.updateCollaboration(
+                collaboration.getId(),
+                CollaborationStatus.ACTIVE
+        ))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Closed collaborations cannot be changed.");
     }
 
     @Test

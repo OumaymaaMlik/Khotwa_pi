@@ -1,5 +1,6 @@
 package tn.khotwa.repository.collaboration;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -64,6 +65,25 @@ public interface CollaborationRequestRepository extends JpaRepository<Collaborat
     );
 
     List<CollaborationRequest> findAllByTargetCollaboration_Project_IdOrderByCreatedAtDesc(Long projectId);
+
+    long countByStatusAndProcessedAtBetween(
+            RequestStatus status,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
+
+    long countByScenarioAndCreatedAtBetween(
+            CollaborationRequestScenario scenario,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
+
+    long countByStatusAndScenarioAndProcessedAtBetween(
+            RequestStatus status,
+            CollaborationRequestScenario scenario,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
 
     @Query("""
         select request

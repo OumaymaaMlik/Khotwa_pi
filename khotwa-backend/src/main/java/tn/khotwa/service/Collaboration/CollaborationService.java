@@ -1,6 +1,7 @@
 package tn.khotwa.service.collaboration;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,11 @@ import tn.khotwa.service.User.UserService;
 @Transactional
 public class CollaborationService {
 
+    private static final EnumSet<CollaborationStatus> OPEN_COLLABORATION_STATUSES = EnumSet.of(
+            CollaborationStatus.ACTIVE,
+            CollaborationStatus.SUSPENDED
+    );
+
     private final CollaborationRepository collaborationRepository;
     private final CollaborationMemberRepository collaborationMemberRepository;
     private final CollaborationRequestRepository collaborationRequestRepository;
@@ -51,7 +57,7 @@ public class CollaborationService {
         Collaboration collaboration = getCollaborationOrThrow(collaborationId);
         User actor = currentUserService.requireCurrentUser();
 
-        authorizationService.checkCanRemoveMember(actor, collaboration);
+        authorizationService.requireOwnerOrAdmin(actor, collaboration);
         ensureWritableCollaboration(collaboration);
 
         CollaborationMember member = collaborationMemberRepository
@@ -72,7 +78,7 @@ public class CollaborationService {
         if (actor.getIdUser().equals(collaboration.getProject().getOwner().getIdUser())) {
             authorizationService.checkCanLeaveCollaboration(actor);
             ensureWritableCollaboration(collaboration);
-            collaboration.setStatus(CollaborationStatus.CLOSED);
+            applyStatus(collaboration, CollaborationStatus.CLOSED);
             collaborationRepository.save(collaboration);
             return;
         }
@@ -92,16 +98,17 @@ public class CollaborationService {
         User actor = currentUserService.requireCurrentUser();
 
         authorizationService.checkCanUpdateStatus(actor, collaboration);
+        boolean hasLifecycleOverride = authorizationService.hasLifecycleOverride(actor);
 
         if (status == null) {
             throw new BusinessException("Collaboration status is required.");
         }
 
-        if (collaboration.getStatus() == CollaborationStatus.CLOSED) {
+        if (!hasLifecycleOverride && collaboration.getStatus() == CollaborationStatus.CLOSED) {
             throw new BusinessException("Closed collaborations cannot be changed.");
         }
 
-        collaboration.setStatus(status);
+        applyStatus(collaboration, status);
 
         if (status == CollaborationStatus.CLOSED) {
             ensureOwnerMembership(collaboration);
@@ -305,13 +312,17 @@ public class CollaborationService {
     private Collaboration createCollaborationInternal(Project project, CollaborationType type) {
         ensureProjectOwnerCanBeMember(project);
 
-        if (collaborationRepository.existsByProject_IdAndType(project.getId(), type)) {
-            throw new BusinessException("A collaboration of this type already exists for the project.");
+        if (collaborationRepository.existsByProject_IdAndTypeAndStatusIn(
+                project.getId(),
+                type,
+                OPEN_COLLABORATION_STATUSES
+        )) {
+            throw new BusinessException("An open collaboration of this type already exists for the project.");
         }
 
         Collaboration collaboration = new Collaboration();
         collaboration.setProject(project);
-        collaboration.setStatus(CollaborationStatus.ACTIVE);
+        applyStatus(collaboration, CollaborationStatus.ACTIVE);
         collaboration.setType(type);
         collaboration.setCreatedAt(LocalDateTime.now());
 
@@ -413,6 +424,20 @@ public class CollaborationService {
         if (collaborationMemberRepository.existsByCollaborationIdAndUserId(collaboration.getId(), user.getIdUser())) {
             throw new BusinessException(message);
         }
+    }
+
+    private void applyStatus(Collaboration collaboration, CollaborationStatus status) {
+        CollaborationStatus previousStatus = collaboration.getStatus();
+        collaboration.setStatus(status);
+
+        if (status == CollaborationStatus.CLOSED) {
+            if (previousStatus != CollaborationStatus.CLOSED || collaboration.getClosedAt() == null) {
+                collaboration.setClosedAt(LocalDateTime.now());
+            }
+            return;
+        }
+
+        collaboration.setClosedAt(null);
     }
 
     private CollaborationRequest saveCollaborationRequest(

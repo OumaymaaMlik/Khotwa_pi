@@ -1,12 +1,4 @@
-<div class="members-block kh-card">
-  <div class="members-block__header">
-    <div>
-      <h2 class="kh-section-title">Members</h2>
-      <p>{{ members?.length || 0 }} participant{{ (members?.length || 0) === 1 ? '' : 's' }}</p>
-    </div>
-    <span class="kh-badge kh-badge--teal">Core team</span>
-  </div>
-
+<div class="members-block">
   <div *ngIf="members?.length; else noMembers">
     <ul class="members-block__list">
       <li *ngFor="let member of members; trackBy: trackByMember" class="members-block__item">

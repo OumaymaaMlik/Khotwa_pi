@@ -88,6 +88,30 @@ class ResourceRequestServiceTest {
     }
 
     @Test
+    void createResourceRequestSupportsMarketingCollaborations() {
+        User requester = user(1L);
+        Collaboration collaboration = collaboration(10L, requester, CollaborationStatus.ACTIVE);
+        collaboration.setType(CollaborationType.MARKETING);
+
+        when(collaborationService.getCollaboration(collaboration.getId())).thenReturn(collaboration);
+        when(currentUserService.requireCurrentUser()).thenReturn(requester);
+        when(resourceRequestRepository.save(any(ResourceRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ResourceRequest created = resourceRequestService.createResourceRequest(
+                collaboration.getId(),
+                "Need a camera",
+                "For campaign shoot",
+                ResourceType.MATERIAL,
+                Urgency.HIGH
+        );
+
+        assertThat(created.getCollaboration()).isSameAs(collaboration);
+        assertThat(created.getRequesterUser()).isSameAs(requester);
+        verify(authorizationService).requireMemberOrAdmin(requester, collaboration);
+        verify(collaborationService).ensureWritableCollaboration(collaboration);
+    }
+
+    @Test
     void cancelMatchedRequestRestoresQuantity() {
         User owner = user(1L);
         Collaboration collaboration = collaboration(10L, owner, CollaborationStatus.ACTIVE);
@@ -218,6 +242,7 @@ class ResourceRequestServiceTest {
 
         resourceRequestService.deleteResourceRequest(request.getId());
 
+        verify(authorizationService).requireMemberOrAdmin(requester, collaboration);
         verify(authorizationService).checkCanDeleteResourceRequest(requester, request);
         verify(collaborationService).ensureWritableCollaboration(collaboration);
         verify(resourceRequestRepository).delete(request);

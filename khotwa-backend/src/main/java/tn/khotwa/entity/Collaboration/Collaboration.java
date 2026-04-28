@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,7 +34,16 @@ import tn.khotwa.enums.collaboration.CollaborationType;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "collaborations", indexes = @Index(columnList = "createdAt"))
+@Table(
+        name = "collaborations",
+        indexes = {
+                @Index(name = "idx_collaboration_created_at", columnList = "createdAt"),
+                @Index(name = "idx_collaboration_status", columnList = "status"),
+                @Index(name = "idx_collaboration_type", columnList = "type"),
+                @Index(name = "idx_collaboration_status_type", columnList = "status,type"),
+                @Index(name = "idx_collaboration_status_closed_at", columnList = "status,closed_at")
+        }
+)
 public class Collaboration {
 
     @Id
@@ -56,13 +66,25 @@ public class Collaboration {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "closed_at")
+    private LocalDateTime closedAt;
+
     @OneToMany(mappedBy = "collaboration", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CollaborationMember> members = new ArrayList();
 
     @PrePersist
+    @PreUpdate
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+
+        if (status == CollaborationStatus.CLOSED) {
+            if (closedAt == null) {
+                closedAt = LocalDateTime.now();
+            }
+        } else {
+            closedAt = null;
         }
     }
 

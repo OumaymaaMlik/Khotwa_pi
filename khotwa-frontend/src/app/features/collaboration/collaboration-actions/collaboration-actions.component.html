@@ -16,13 +16,13 @@
   </div>
 
   <div class="collaboration-actions__buttons">
-    <button *ngIf="canActivate" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('ACTIVE')">Activate</button>
+    <button *ngIf="canActivate" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('ACTIVE')">{{ activateLabel }}</button>
     <button *ngIf="canSuspend" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('SUSPENDED')">Suspend</button>
     <button *ngIf="canClose" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('CLOSED')">Close</button>
     <button *ngIf="canShowLeaveAction" class="kh-btn kh-btn--secondary" (click)="onLeaveCollaboration()">Leave</button>
   </div>
 
-  <div *ngIf="collaboration?.status === 'CLOSED'" class="collaboration-actions__note">
+  <div *ngIf="collaboration?.status === 'CLOSED' && isReadOnly" class="collaboration-actions__note">
     This collaboration is {{ collaboration?.status?.toLowerCase() }}. Lifecycle actions are read-only.
   </div>
   <div *ngIf="canShowLeaveAction && currentUserId === collaboration?.ownerId" class="collaboration-actions__note">

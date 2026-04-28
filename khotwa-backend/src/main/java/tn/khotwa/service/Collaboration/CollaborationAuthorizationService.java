@@ -21,6 +21,38 @@ public class CollaborationAuthorizationService {
 
     private final CollaborationMemberRepository collaborationMemberRepository;
 
+    public void requireMemberOrAdmin(User actor, Collaboration collaboration) {
+        if (isAdmin(actor)) {
+            return;
+        }
+
+        if (isCoach(actor)) {
+            throw new AccessDeniedException("Coach accounts have read-only access to collaborations.");
+        }
+
+        if (collaborationMemberRepository.existsByCollaborationIdAndUserId(collaboration.getId(), actor.getIdUser())) {
+            return;
+        }
+
+        throw new AccessDeniedException("You must be a collaboration member to perform this action.");
+    }
+
+    public void requireOwnerOrAdmin(User actor, Collaboration collaboration) {
+        if (isAdmin(actor)) {
+            return;
+        }
+
+        if (isCoach(actor)) {
+            throw new AccessDeniedException("Coach accounts have read-only access to collaborations.");
+        }
+
+        if (collaboration.getOwner() != null && actor.getIdUser().equals(collaboration.getOwner().getIdUser())) {
+            return;
+        }
+
+        throw new AccessDeniedException("Only the collaboration owner or admin can perform this action.");
+    }
+
     public void checkCanCreateCollaboration(User actor, Project project) {
         if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(project.getOwner().getIdUser()))) {
             return;
@@ -30,27 +62,15 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanInviteToCollaboration(User actor, Collaboration collaboration) {
-        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(collaboration.getOwner().getIdUser()))) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only the collaboration owner or admin can invite members to this collaboration.");
+        requireOwnerOrAdmin(actor, collaboration);
     }
 
     public void checkCanManageOwnedCollaboration(User actor, Collaboration collaboration) {
-        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(collaboration.getOwner().getIdUser()))) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only the collaboration owner or admin can manage the collaboration.");
+        requireOwnerOrAdmin(actor, collaboration);
     }
 
     public void checkCanRemoveMember(User actor, Collaboration collaboration) {
-        if (isAdmin(actor)) {
-            return;
-        }
-
-        checkCanManageOwnedCollaboration(actor, collaboration);
+        requireOwnerOrAdmin(actor, collaboration);
     }
 
     public void checkCanLeaveCollaboration(User actor) {
@@ -62,11 +82,11 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanUpdateStatus(User actor, Collaboration collaboration) {
-        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(collaboration.getOwner().getIdUser()))) {
-            return;
-        }
+        requireOwnerOrAdmin(actor, collaboration);
+    }
 
-        throw new ForbiddenOperationException("Only the project owner or admin can update collaboration status.");
+    public boolean hasLifecycleOverride(User actor) {
+        return isAdmin(actor);
     }
 
     public void checkCanReviewPendingRequests(User actor) {
@@ -140,29 +160,11 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanCreateSharedResource(User actor, Collaboration collaboration) {
-        if (isAdmin(actor)) {
-            return;
-        }
-
-        if (isEntrepreneur(actor) && collaborationMemberRepository.existsByCollaborationIdAndUserId(
-                collaboration.getId(), actor.getIdUser())) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only collaboration members or admin can create shared resources.");
+        requireMemberOrAdmin(actor, collaboration);
     }
 
     public void checkCanCreateResourceRequest(User actor, Collaboration collaboration) {
-        if (isAdmin(actor)) {
-            return;
-        }
-
-        if (isEntrepreneur(actor) && collaborationMemberRepository.existsByCollaborationIdAndUserId(
-                collaboration.getId(), actor.getIdUser())) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only collaboration members or admin can create resource requests.");
+        requireMemberOrAdmin(actor, collaboration);
     }
 
     public void checkCanManageSharedResource(User actor, SharedResource resource) {
@@ -178,16 +180,7 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanUpdateResourceRequestStatus(User actor, ResourceRequest request) {
-        if (isAdmin(actor)) {
-            return;
-        }
-
-        if (isEntrepreneur(actor)
-                && actor.getIdUser().equals(request.getCollaboration().getOwner().getIdUser())) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only the collaboration owner or admin can update resource request status.");
+        requireOwnerOrAdmin(actor, request.getCollaboration());
     }
 
     public void checkCanDeleteResourceRequest(User actor, ResourceRequest request) {
@@ -203,29 +196,15 @@ public class CollaborationAuthorizationService {
     }
 
     public void checkCanCreateMarketingCollaboration(User actor, Collaboration collaboration) {
-        if (isAdmin(actor)) {
-            return;
-        }
+        requireOwnerOrAdmin(actor, collaboration);
+    }
 
-        if (isEntrepreneur(actor) && collaborationMemberRepository.existsByCollaborationIdAndUserId(
-                collaboration.getId(), actor.getIdUser())) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only collaboration members or admin can create marketing collaborations.");
+    public void checkCanUpdateMarketingCollaborationStatus(User actor, MarketingCollaboration marketingCollaboration) {
+        requireOwnerOrAdmin(actor, marketingCollaboration.getCollaboration());
     }
 
     public void checkCanCreateMarketingContentTask(User actor, MarketingCollaboration marketingCollaboration) {
-        if (isAdmin(actor)) {
-            return;
-        }
-
-        if (isEntrepreneur(actor) && collaborationMemberRepository.existsByCollaborationIdAndUserId(
-                marketingCollaboration.getCollaboration().getId(), actor.getIdUser())) {
-            return;
-        }
-
-        throw new ForbiddenOperationException("Only collaboration members or admin can create marketing content tasks.");
+        requireMemberOrAdmin(actor, marketingCollaboration.getCollaboration());
     }
 
     public void checkCanUpdateMarketingContentTaskStatus(User actor, MarketingContentTask task) {

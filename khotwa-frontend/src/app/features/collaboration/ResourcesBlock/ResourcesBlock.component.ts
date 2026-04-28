@@ -118,7 +118,7 @@ export class ResourcesBlockComponent implements OnChanges {
   }
 
   get isReadOnly(): boolean {
-    return this.collaborationStatus !== 'ACTIVE';
+    return this.role === 'coach' || this.collaborationStatus !== 'ACTIVE';
   }
 
   get canManageResourceWorkflow(): boolean {

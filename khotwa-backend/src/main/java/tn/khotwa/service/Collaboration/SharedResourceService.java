@@ -10,7 +10,6 @@ import tn.khotwa.entity.collaboration.Collaboration;
 import tn.khotwa.entity.collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.collaboration.AvailabilityStatus;
-import tn.khotwa.enums.collaboration.CollaborationType;
 import tn.khotwa.enums.collaboration.ResourceType;
 import tn.khotwa.exception.collaboration.BusinessException;
 import tn.khotwa.exception.collaboration.ResourceNotFoundException;
@@ -33,12 +32,7 @@ public class SharedResourceService {
         Collaboration collaboration = collaborationService.getCollaboration(collaborationId);
         User actor = currentUserService.requireCurrentUser();
 
-        collaborationService.ensureCollaborationType(
-                collaboration,
-                CollaborationType.RESOURCES,
-                "Shared resources are only available for RESOURCES collaborations."
-        );
-        authorizationService.checkCanCreateSharedResource(actor, collaboration);
+        authorizationService.requireMemberOrAdmin(actor, collaboration);
         collaborationService.ensureWritableCollaboration(collaboration);
 
         SharedResource resource = new SharedResource();
@@ -55,11 +49,7 @@ public class SharedResourceService {
         User actor = currentUserService.requireCurrentUser();
         Collaboration collaboration = resource.getCollaboration();
 
-        collaborationService.ensureCollaborationType(
-                collaboration,
-                CollaborationType.RESOURCES,
-                "Shared resources are only available for RESOURCES collaborations."
-        );
+        authorizationService.requireMemberOrAdmin(actor, collaboration);
         authorizationService.checkCanManageSharedResource(actor, resource);
         collaborationService.ensureWritableCollaboration(collaboration);
 
@@ -72,11 +62,7 @@ public class SharedResourceService {
         User actor = currentUserService.requireCurrentUser();
         Collaboration collaboration = resource.getCollaboration();
 
-        collaborationService.ensureCollaborationType(
-                collaboration,
-                CollaborationType.RESOURCES,
-                "Shared resources are only available for RESOURCES collaborations."
-        );
+        authorizationService.requireMemberOrAdmin(actor, collaboration);
         authorizationService.checkCanManageSharedResource(actor, resource);
         collaborationService.ensureWritableCollaboration(collaboration);
 
@@ -92,11 +78,6 @@ public class SharedResourceService {
         Collaboration collaboration = collaborationService.getCollaboration(collaborationId);
         User actor = currentUserService.requireCurrentUser();
 
-        collaborationService.ensureCollaborationType(
-                collaboration,
-                CollaborationType.RESOURCES,
-                "Shared resources are only available for RESOURCES collaborations."
-        );
         authorizationService.checkCanViewCollaboration(actor, collaboration, collaborationService.isMember(collaboration, actor));
 
         return sharedResourceRepository.findAllByCollaborationIdOrderByCreatedAtDesc(collaborationId);

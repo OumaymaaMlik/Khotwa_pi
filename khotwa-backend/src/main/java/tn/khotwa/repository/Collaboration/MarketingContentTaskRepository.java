@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import tn.khotwa.entity.collaboration.MarketingContentTask;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
 import tn.khotwa.enums.collaboration.TaskStatus;
 
 public interface MarketingContentTaskRepository extends JpaRepository<MarketingContentTask, Long> {
@@ -23,6 +24,17 @@ public interface MarketingContentTaskRepository extends JpaRepository<MarketingC
             Long projectId,
             CollaborationStatus collaborationStatus,
             TaskStatus status
+    );
+
+    long countByMarketingCollaboration_StatusAndMarketingCollaboration_Collaboration_Status(
+            MarketingCollaborationStatus marketingCollaborationStatus,
+            CollaborationStatus collaborationStatus
+    );
+
+    long countByStatusAndMarketingCollaboration_StatusAndMarketingCollaboration_Collaboration_Status(
+            TaskStatus taskStatus,
+            MarketingCollaborationStatus marketingCollaborationStatus,
+            CollaborationStatus collaborationStatus
     );
 
     @Query("""
@@ -56,5 +68,16 @@ public interface MarketingContentTaskRepository extends JpaRepository<MarketingC
           and task.status <> tn.khotwa.enums.collaboration.TaskStatus.PUBLISHED
         """)
     long countOverdueMarketingContentTasks();
+
+    @Query("""
+        select count(task)
+        from MarketingContentTask task
+        where task.marketingCollaboration.status = tn.khotwa.enums.collaboration.MarketingCollaborationStatus.ACTIVE
+          and task.marketingCollaboration.collaboration.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
+          and task.dueDate is not null
+          and task.dueDate < CURRENT_DATE
+          and task.status <> tn.khotwa.enums.collaboration.TaskStatus.PUBLISHED
+        """)
+    long countOverdueMarketingContentTasksForActiveCampaigns();
 }
 

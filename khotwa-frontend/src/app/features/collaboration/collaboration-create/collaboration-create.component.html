@@ -43,7 +43,7 @@
       <p *ngIf="projectsLoading" class="collab-note">Loading your projects...</p>
       <p *ngIf="typeAvailabilityLoading" class="collab-note">Checking available collaboration types...</p>
       <p *ngIf="!projectsLoading && !hasProjects" class="collab-note">You don't have any projects yet. Create a project first to start collaborating.</p>
-      <p *ngIf="!typeAvailabilityLoading && model.projectId && !hasAvailableTypes" class="collab-note">All collaboration types are already used for this project.</p>
+      <p *ngIf="!typeAvailabilityLoading && model.projectId && !hasAvailableTypes" class="collab-note">{{ noAvailableTypesMessage }}</p>
       <p *ngIf="projectsError" class="collab-readonly collab-readonly--error">{{ projectsError }}</p>
 
       <button type="submit" class="kh-btn kh-btn--primary" [disabled]="loading || projectsLoading || typeAvailabilityLoading || !hasProjects || !hasAvailableTypes">

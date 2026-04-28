@@ -1,6 +1,7 @@
 package tn.khotwa.service.collaboration;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import tn.khotwa.entity.collaboration.MarketingCollaboration;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.collaboration.CampaignType;
 import tn.khotwa.enums.collaboration.CollaborationType;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
 import tn.khotwa.exception.collaboration.BusinessException;
 import tn.khotwa.exception.collaboration.ResourceNotFoundException;
 import tn.khotwa.repository.collaboration.MarketingCollaborationRepository;
@@ -19,6 +21,11 @@ import tn.khotwa.service.User.CurrentUserService;
 @RequiredArgsConstructor
 @Transactional
 public class MarketingCollaborationService {
+
+    private static final EnumSet<MarketingCollaborationStatus> OPEN_CAMPAIGN_STATUSES = EnumSet.of(
+            MarketingCollaborationStatus.DRAFT,
+            MarketingCollaborationStatus.ACTIVE
+    );
 
     private final MarketingCollaborationRepository marketingCollaborationRepository;
     private final CollaborationService collaborationService;
@@ -47,6 +54,10 @@ public class MarketingCollaborationService {
 
         if (campaignType == null) {
             throw new BusinessException("Campaign type is required.");
+        }
+
+        if (marketingCollaborationRepository.existsByCollaborationAndStatusIn(collaboration, OPEN_CAMPAIGN_STATUSES)) {
+            throw new BusinessException("This collaboration already has an open marketing campaign.");
         }
 
         MarketingCollaboration marketingCollaboration = new MarketingCollaboration();
@@ -87,6 +98,45 @@ public class MarketingCollaborationService {
                 "Marketing campaigns are only available for MARKETING collaborations."
         );
         return marketingCollaboration;
+    }
+
+    public MarketingCollaboration updateMarketingCollaborationStatus(
+            Long marketingCollaborationId,
+            MarketingCollaborationStatus status
+    ) {
+        MarketingCollaboration marketingCollaboration = getMarketingCollaboration(marketingCollaborationId);
+        Collaboration collaboration = marketingCollaboration.getCollaboration();
+        User actor = currentUserService.requireCurrentUser();
+
+        authorizationService.checkCanUpdateMarketingCollaborationStatus(actor, marketingCollaboration);
+        collaborationService.ensureWritableCollaboration(collaboration);
+
+        if (status == null) {
+            throw new BusinessException("Campaign status is required.");
+        }
+
+        validateStatusTransition(marketingCollaboration.getStatus(), status);
+        marketingCollaboration.setStatus(status);
+        return marketingCollaborationRepository.save(marketingCollaboration);
+    }
+
+    private void validateStatusTransition(
+            MarketingCollaborationStatus currentStatus,
+            MarketingCollaborationStatus nextStatus
+    ) {
+        boolean isAllowed = switch (currentStatus) {
+            case DRAFT -> nextStatus == MarketingCollaborationStatus.ACTIVE
+                    || nextStatus == MarketingCollaborationStatus.CANCELLED;
+            case ACTIVE -> nextStatus == MarketingCollaborationStatus.COMPLETED
+                    || nextStatus == MarketingCollaborationStatus.CANCELLED;
+            case COMPLETED, CANCELLED -> false;
+        };
+
+        if (!isAllowed) {
+            throw new BusinessException(
+                    "Cannot change marketing campaign status from " + currentStatus + " to " + nextStatus + "."
+            );
+        }
     }
 }
 

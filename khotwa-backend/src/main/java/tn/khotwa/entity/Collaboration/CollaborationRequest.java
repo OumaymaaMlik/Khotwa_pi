@@ -34,6 +34,11 @@ import tn.khotwa.enums.collaboration.RequestStatus;
         name = "collaboration_requests",
         indexes = {
                 @Index(name = "idx_collaboration_request_created_at", columnList = "created_at"),
+                @Index(name = "idx_collaboration_request_status", columnList = "status"),
+                @Index(name = "idx_collaboration_request_processed_at", columnList = "processed_at"),
+                @Index(name = "idx_collaboration_request_status_processed_at", columnList = "status,processed_at"),
+                @Index(name = "idx_collaboration_request_scenario_created_at", columnList = "scenario,created_at"),
+                @Index(name = "idx_collaboration_request_status_scenario_processed_at", columnList = "status,scenario,processed_at"),
                 @Index(
                         name = "idx_collaboration_request_pending_lookup",
                         columnList = "requester_user_id,target_user_id,target_collaboration_id,scenario,status"
