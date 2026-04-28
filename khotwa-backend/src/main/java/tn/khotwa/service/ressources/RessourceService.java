@@ -17,7 +17,7 @@ import tn.khotwa.exception.ResourceNotFoundException;
 import tn.khotwa.projection.ressources.*;
 import tn.khotwa.repository.ressources.*;
 import tn.khotwa.service.AccessControlService;
-import tn.khotwa.service.ai.AiService;
+import tn.khotwa.service.ressources.ai.AiService;
 
 import java.nio.file.Path;
 import java.util.*;
