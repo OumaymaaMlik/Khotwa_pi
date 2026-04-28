@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.time.Duration;
@@ -340,58 +341,75 @@ public class MessageService {
                 .orElse("Unknown User");
     }
 
-    public ConversationSummary generateRecap(Long user1, Long user2) {
-        ChatClient chatClient = chatClientBuilder
-                .defaultSystem("""
-                        You are a professional business coach.
-                        You must produce a recap using ONLY these actor placeholders:
-                        - {{USER_1}}
-                        - {{USER_2}}
-                        Never output real names for conversation participants.
-                        Keep placeholders exactly as written.
-                        """)
-                .build();
-        List<Message> history = messageRepository.findRecentConversation(user1, user2, PageRequest.of(0, 30));
-        String chatLog = history.stream()
-                .map(m -> actorLabel(m.getSenderId(), user1, user2) + ": " + m.getBody())
-                .collect(Collectors.joining("\n"));
-        return chatClient.prompt()
-                .user(u -> u.text("""
-                        Recap this conversation log.
-                        Return concise JSON matching ConversationSummary with fields:
-                        - summary (string)
-                        - keyMilestones (array of strings)
-                        - nextSteps (array of strings)
-
-                        Mandatory rule:
-                        - Refer to participants ONLY as {{USER_1}} or {{USER_2}}.
-                        - Do not use first/last names.
-
-                        Conversation:
-                        {chatLog}
-                        """).param("chatLog", chatLog))
-                .call()
-                .entity(ConversationSummary.class);
-    }
-
-    private String actorLabel(Long senderId, Long user1, Long user2) {
-        if (senderId != null && senderId.equals(user1)) return "{{USER_1}}";
-        if (senderId != null && senderId.equals(user2)) return "{{USER_2}}";
-        return "{{USER_2}}";
-    }
-
-    public SmartSuggestions generateSuggestions(Long currentUserId, Long otherUserId) {
+    public ConversationSummary generateRecap(Long conversationId, Long userId) {
+        if (conversationId == null || userId == null) {
+            return new ConversationSummary("", List.of(), List.of());
+        }
         try {
-            List<Message> lastMessageList = messageRepository.findRecentConversationDesc(currentUserId, otherUserId, PageRequest.of(0, 1));
+            ensureMember(conversationId, userId);
+            List<Message> history = messageRepository
+                    .findByConversationIdOrderByCreatedAtAsc(conversationId, PageRequest.of(0, 30))
+                    .getContent();
+            if (history.isEmpty()) {
+                return new ConversationSummary("", List.of(), List.of());
+            }
+
+            ChatClient chatClient = chatClientBuilder
+                    .defaultSystem("""
+                            You are a professional business coach.
+                            Produce a concise recap of the conversation for the user.
+                            """)
+                    .build();
+            String chatLog = history.stream()
+                    .filter(m -> m.getBody() != null && !m.getBody().trim().isEmpty())
+                    .map(m -> getFullName(m.getSenderId()) + ": " + m.getBody())
+                    .collect(Collectors.joining("\n"));
+            if (chatLog.isBlank()) {
+                return new ConversationSummary("No text messages to recap yet.", List.of(), List.of());
+            }
+            String recapText = chatClient.prompt()
+                    .user(u -> u.text("""
+                            Recap this conversation log.
+                            Return plain text in this exact structure:
+                            SUMMARY: <one paragraph>
+                            MILESTONES:
+                            - <milestone 1>
+                            - <milestone 2>
+                            NEXT_STEPS:
+                            - <step 1>
+                            - <step 2>
+
+                            Conversation:
+                            {chatLog}
+                            """).param("chatLog", chatLog))
+                    .call()
+                    .content();
+            return parseRecapContent(recapText);
+        } catch (Exception ex) {
+            if (isQuotaExceeded(ex)) {
+                log.warn("Recap AI quota exceeded for conversationId={} userId={}", conversationId, userId);
+            } else {
+                log.error("Failed to generate recap for conversationId={} userId={}", conversationId, userId, ex);
+            }
+            return new ConversationSummary("", List.of(), List.of());
+        }
+    }
+
+    public SmartSuggestions generateSuggestions(Long conversationId, Long currentUserId) {
+        try {
+            if (conversationId == null || currentUserId == null) {
+                return new SmartSuggestions(List.of());
+            }
+            ensureMember(conversationId, currentUserId);
+            List<Message> lastMessageList = messageRepository
+                    .findByConversationIdOrderByCreatedAtDesc(conversationId, PageRequest.of(0, 1))
+                    .getContent();
             if (lastMessageList.isEmpty()) {
                 return new SmartSuggestions(List.of());
             }
 
             Message lastMessage = lastMessageList.get(0);
-            if (lastMessage.getSenderId() == null || lastMessage.getSenderId().equals(currentUserId)) {
-                return new SmartSuggestions(List.of());
-            }
-            String conversationKey = currentUserId + ":" + otherUserId;
+            String conversationKey = conversationId + ":" + currentUserId;
             String cacheKey = conversationKey + ":" + lastMessage.getId();
             Instant now = Instant.now();
 
@@ -410,8 +428,9 @@ public class MessageService {
                             "Provide 3 short, professional reply suggestions (max 6 words each).")
                     .build();
 
-            List<Message> history = messageRepository.findRecentConversationDesc(currentUserId, otherUserId, PageRequest.of(0, 10))
-                    .stream()
+            List<Message> history = messageRepository
+                    .findByConversationIdOrderByCreatedAtDesc(conversationId, PageRequest.of(0, 10))
+                    .getContent().stream()
                     .filter(m -> m.getBody() != null && !m.getBody().trim().isEmpty())
                     .sorted(Comparator.comparing(Message::getCreatedAt))
                     .collect(Collectors.toList());
@@ -424,12 +443,18 @@ public class MessageService {
                     .map(m -> getFullName(m.getSenderId()) + ": " + m.getBody())
                     .collect(Collectors.joining("\n"));
 
-            SmartSuggestions suggestions = chatClient.prompt()
-                    .user(u -> u.text("Suggest replies for the user to send next based on this:\n{chatLog}")
+            String rawSuggestions = chatClient.prompt()
+                    .user(u -> u.text("""
+                            Suggest 3 short reply options for the current user based on this conversation.
+                            Return plain text with one suggestion per line and no numbering.
+                            Conversation:
+                            {chatLog}
+                            """)
                             .param("chatLog", chatLog))
                     .call()
-                    .entity(SmartSuggestions.class);
+                    .content();
 
+            SmartSuggestions suggestions = parseSuggestionsContent(rawSuggestions);
             if (suggestions == null || suggestions.suggestions() == null || suggestions.suggestions().isEmpty()) {
                 return new SmartSuggestions(List.of());
             }
@@ -444,13 +469,63 @@ public class MessageService {
             return new SmartSuggestions(cleaned);
         } catch (Exception ex) {
             if (isQuotaExceeded(ex)) {
-                log.warn("Suggestions AI quota exceeded for currentUserId={} otherUserId={}", currentUserId, otherUserId);
-                suggestionQuotaBlockedUntil.put(currentUserId + ":" + otherUserId, Instant.now().plus(SUGGESTION_QUOTA_BACKOFF));
+                log.warn("Suggestions AI quota exceeded for conversationId={} currentUserId={}", conversationId, currentUserId);
+                suggestionQuotaBlockedUntil.put(conversationId + ":" + currentUserId, Instant.now().plus(SUGGESTION_QUOTA_BACKOFF));
             } else {
-                log.error("Failed to generate smart suggestions for currentUserId={} otherUserId={}", currentUserId, otherUserId, ex);
+                log.error("Failed to generate smart suggestions for conversationId={} currentUserId={}", conversationId, currentUserId, ex);
             }
             return new SmartSuggestions(List.of());
         }
+    }
+
+    private ConversationSummary parseRecapContent(String recapText) {
+        if (recapText == null || recapText.isBlank()) {
+            return new ConversationSummary("", List.of(), List.of());
+        }
+        String summary = "";
+        List<String> milestones = new ArrayList<>();
+        List<String> nextSteps = new ArrayList<>();
+        String section = "";
+        for (String rawLine : recapText.split("\\R")) {
+            String line = rawLine == null ? "" : rawLine.trim();
+            if (line.isEmpty()) continue;
+            String upper = line.toUpperCase();
+            if (upper.startsWith("SUMMARY:")) {
+                summary = line.substring("SUMMARY:".length()).trim();
+                section = "SUMMARY";
+                continue;
+            }
+            if (upper.startsWith("MILESTONES:")) {
+                section = "MILESTONES";
+                continue;
+            }
+            if (upper.startsWith("NEXT_STEPS:") || upper.startsWith("NEXT STEPS:")) {
+                section = "NEXT_STEPS";
+                continue;
+            }
+            String normalized = line.replaceFirst("^[-*\\d.\\s]+", "").trim();
+            if (normalized.isEmpty()) continue;
+            if ("MILESTONES".equals(section)) milestones.add(normalized);
+            else if ("NEXT_STEPS".equals(section)) nextSteps.add(normalized);
+            else if (summary.isEmpty()) summary = normalized;
+        }
+        return new ConversationSummary(summary, milestones, nextSteps);
+    }
+
+    private SmartSuggestions parseSuggestionsContent(String rawSuggestions) {
+        if (rawSuggestions == null || rawSuggestions.isBlank()) {
+            return new SmartSuggestions(List.of());
+        }
+        List<String> suggestions = new ArrayList<>();
+        for (String rawLine : rawSuggestions.split("\\R")) {
+            String line = rawLine == null ? "" : rawLine.trim();
+            if (line.isEmpty()) continue;
+            String normalized = line.replaceFirst("^[-*\\d.\\s]+", "").trim();
+            if (normalized.isEmpty()) continue;
+            suggestions.add(normalized);
+            if (suggestions.size() >= 3) break;
+        }
+        return new SmartSuggestions(suggestions);
     }
 
     private boolean isQuotaExceeded(Throwable throwable) {
