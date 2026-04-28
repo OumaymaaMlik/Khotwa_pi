@@ -22,4 +22,7 @@ khotwa-frontend/node_modules/
 *.zip
 node_modules/
 /khotwa-backend/uploads/
+# Environment files
+.env
+*.env
 
