@@ -3,7 +3,7 @@ package tn.khotwa.service.SubscriptionServices;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.khotwa.entity.Subscription.PlanOffer;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.repository.SubscriptionRepo.PlanOfferRepository;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
 import tn.khotwa.service.SubscriptionServices.Interface.IPlanOfferService;

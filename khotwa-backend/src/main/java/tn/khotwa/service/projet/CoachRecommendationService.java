@@ -11,10 +11,10 @@ import tn.khotwa.enums.projectEnum.DisponibilitePeriodeStatut;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.enums.projectEnum.SecteurProjet;
 import tn.khotwa.exception.BusinessException;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.repository.projet.CoachDisponibilitePeriodeRepository;
 import tn.khotwa.repository.projet.ProjetCoachRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;

@@ -6,7 +6,7 @@ import lombok.*;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

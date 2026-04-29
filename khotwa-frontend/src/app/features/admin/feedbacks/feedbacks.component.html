@@ -24,7 +24,7 @@
       <p class="rating">Rating: {{ feedback.rating }}/5</p>
       <p class="comment">{{ feedback.comment }}</p>
 
-      <a *ngIf="feedback.screenshotUrl" [href]="'http://localhost:8084' + feedback.screenshotUrl" target="_blank" rel="noopener">
+      <a *ngIf="feedback.screenshotUrl" [href]="feedback.screenshotUrl" target="_blank" rel="noopener">
         View attachment
       </a>
 

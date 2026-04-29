@@ -29,16 +29,16 @@ export class LayoutCoachComponent implements OnInit, OnDestroy {
 
   navItems: NavItem[] = [
     { label: 'Dashboard',   icon: 'dashboard', route: 'dashboard'    },
+    { label: 'Collaborations', icon: 'people', route: 'collaborations' },
     { label: 'Projects',    icon: 'folder',    route: 'projets'      },
     { label: 'My Startups', icon: 'rocket',    route: 'startups'     },
     { label: 'Validations', icon: 'check',     route: 'validations'  },
-    { label: 'Planning',    icon: 'calendar',  route: 'planning'     },
     { label: 'Messages',    icon: 'message',   route: 'messages'     },
     { label: 'Library',     icon: 'book',      route: 'bibliotheque' },
     { label: 'Progress',    icon: 'progress',  route: 'progressions' },
     { label: 'Talent',      icon: 'people',    route: 'talent'       },
     { label: 'Account',     icon: 'user',      route: 'account'      },
-      { label :'Events' , icon :'events' , route : 'evenements'}
+      { label :'Events' , icon :'events' , route : 'events'}
   ];
 
   svgIcons: Record<string, string> = {

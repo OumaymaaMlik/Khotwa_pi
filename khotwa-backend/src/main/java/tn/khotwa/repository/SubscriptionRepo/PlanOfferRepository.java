@@ -4,7 +4,7 @@ package tn.khotwa.repository.SubscriptionRepo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import tn.khotwa.entity.Subscription.PlanOffer;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 
 import java.util.List;
 import java.util.Optional;

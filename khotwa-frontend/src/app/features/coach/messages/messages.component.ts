@@ -15,7 +15,7 @@ import { Subscription } from 'rxjs';
 })
 export class CoachMessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
   private readonly ADMIN_ID = 1;
-  private readonly BACKEND_ORIGIN = 'http://localhost:8084';
+  private readonly BACKEND_ORIGIN = '';
 
   @ViewChild('fileInput') fileInput!: ElementRef;
   @ViewChild('messagesBody') messagesBody!: ElementRef;

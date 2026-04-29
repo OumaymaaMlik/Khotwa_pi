@@ -3,12 +3,13 @@ package tn.khotwa.service.messaging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.khotwa.service.User.IUserService;
+import tn.khotwa.service.User.UserService;
 
 @Service
 @RequiredArgsConstructor
 public class RealUserEmailResolver implements UserEmailResolver {
 
-    private final IUserService userService;
+    private final UserService userService;
 
     @Override
     public String getEmailByUserId(Long userId) {

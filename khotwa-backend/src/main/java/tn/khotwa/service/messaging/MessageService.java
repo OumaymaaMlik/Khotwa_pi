@@ -12,11 +12,11 @@ import tn.khotwa.entity.MessageStatus;
 import tn.khotwa.entity.MessageType;
 import tn.khotwa.entity.MessageReadReceipt;
 import tn.khotwa.entity.NotificationType;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.repository.messaging.ConversationParticipantRepository;
 import tn.khotwa.repository.messaging.ConversationRepository;
 import tn.khotwa.repository.messaging.MessageRepository;
 import tn.khotwa.repository.messaging.MessageReadReceiptRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

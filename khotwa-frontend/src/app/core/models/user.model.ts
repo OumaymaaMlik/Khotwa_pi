@@ -1,5 +1,5 @@
 // ── Types partagés (source unique de vérité) ──────────────────────
-export type UserRole = 'ADMIN' | 'COACH' | 'ENTREPRENEUR' | 'VISITOR';
+export type UserRole = 'ADMIN' | 'ENTREPRENEUR' | 'COACH' | 'VISITOR';
 export type PlanType = 'FREE' | 'PREMIUM' | 'INSTITUTIONAL';
 export type OrganizationType = 'STARTUP' | 'INCUBATOR' | 'ENTERPRISE' | 'UNIVERSITY' | 'NGO' | 'OTHER';
 
@@ -8,17 +8,42 @@ export interface OrganizationSummary {
   name: string;
   type?: OrganizationType;
   code?: string;
+  token: string;
+  idUser: number;
+  emailAddress: string;
+  role: UserRole;
+  mustChangePassword: boolean;
 }
 
 export interface User {
+  talentProfileId: number;
   idUser?: number;
   id?: string;
   firstName?: string;
   lastName?: string;
   emailAddress?: string;
   role: UserRole;
-  planType?: PlanType;
-  pendingPlan?: PlanType;
+  planType: PlanType | null;
+  pendingPlan: PlanType | null;
+  avatar: string | null;
+  startup: string | null;
+  phoneNumber: string | null;
+  mustChangePassword: boolean;
+}
+
+
+/** Payload envoyé à POST /api/auth/login */
+export interface LoginRequest {
+  emailAddress: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  password: string;
+  role?: string;
   avatar?: string;
   startup?: string;
   organizationId?: number;

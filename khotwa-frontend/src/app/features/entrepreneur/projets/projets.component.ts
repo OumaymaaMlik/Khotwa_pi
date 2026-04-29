@@ -297,7 +297,7 @@ export class EntrepreneurProjetsComponent implements OnInit, OnDestroy {
   editBmc: BmcData = { ...EMPTY_BMC };
 
   // ── Constantes privées ─────────────────────────────────────────────────────
-  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly apiUrl = '/khotwa';
   private readonly selectedProjectStorageKey = 'entrepreneur-selected-project-id';
   private readonly pendingCoachApprovalStorageKey = 'entrepreneur-pending-coach-approval-project-ids';
   private waitingApprovalPollHandle: ReturnType<typeof setInterval> | null = null;

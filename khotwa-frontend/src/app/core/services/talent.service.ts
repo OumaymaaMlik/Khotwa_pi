@@ -28,7 +28,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class TalentService {
 
-  private readonly API = 'http://localhost:8084/khotwa/api';
+  private readonly API = '/api';
   /** Candidatures sans backend : stockage navigateur (par appareil). */
   private readonly LS_CANDIDATURES = 'khotwa_visitor_candidatures_v1';
 

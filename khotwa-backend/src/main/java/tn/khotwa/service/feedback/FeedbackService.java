@@ -9,7 +9,7 @@ import tn.khotwa.DTO.feedback.FeedbackDTO;
 import tn.khotwa.DTO.messaging.NotificationDTO;
 import tn.khotwa.entity.Feedback;
 import tn.khotwa.entity.NotificationType;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.repository.feedback.FeedbackRepository;
 import tn.khotwa.service.messaging.NotificationService;
 

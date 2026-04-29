@@ -9,11 +9,11 @@ import tn.khotwa.entity.ressources.Categorie;
 import tn.khotwa.entity.ressources.Tag;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.User.Role;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.repository.ressources.CategorieRepository;
 import tn.khotwa.repository.ressources.RessourceRepository;
 import tn.khotwa.repository.ressources.TagRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 
 @Component
 @RequiredArgsConstructor

@@ -89,9 +89,9 @@ public class CollaborationRequestSchemaCleanup implements ApplicationRunner {
                 """
                 update collaboration_requests request
                 join collaborations collaboration on collaboration.id = request.target_collaboration_id
-                join projects project on project.id = collaboration.project_id
+                join projets project on project.id = collaboration.project_id
                 set request.scenario = case
-                    when request.target_user_id = project.owner_id then 'JOIN_REQUEST'
+                    when request.target_user_id = project.entrepreneur_id then 'JOIN_REQUEST'
                     else 'COLLAB_INVITATION'
                 end
                 where request.target_collaboration_id is not null

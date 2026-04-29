@@ -6,12 +6,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tn.khotwa.DTO.Subscription.CreateDiscountRequest;
 import tn.khotwa.DTO.Subscription.DiscountDTO;
-import tn.khotwa.entity.SubscriptionEntities.Discount;
+import tn.khotwa.entity.Subscription.Discount;
 import tn.khotwa.entity.Subscription.PlanOffer;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.repository.SubscriptionRepo.DiscountRepository;
 import tn.khotwa.repository.SubscriptionRepo.PlanOfferRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;

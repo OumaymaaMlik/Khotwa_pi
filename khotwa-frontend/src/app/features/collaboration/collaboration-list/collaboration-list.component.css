@@ -1,0 +1,60 @@
+.collaboration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 22px;
+  margin-top: 28px;
+}
+
+.page-header {
+  align-items: end;
+  padding-bottom: 6px;
+}
+
+.page-sub {
+  max-width: 640px;
+}
+
+.collaboration-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.collab-alert,
+.collab-empty {
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.collab-alert--error {
+  border: 1px solid rgba(232, 74, 74, 0.16);
+  background: linear-gradient(180deg, rgba(232, 74, 74, 0.08) 0%, rgba(232, 74, 74, 0.03) 100%);
+  color: var(--red);
+}
+
+.collab-empty,
+.collab-alert {
+  padding: 44px 28px;
+  text-align: center;
+}
+.collab-empty h2 {
+  margin-bottom: 10px;
+}
+.collab-empty p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+  max-width: 560px;
+  margin-inline: auto;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .collaboration-page-actions {
+    width: 100%;
+  }
+
+  .collaboration-page-actions .kh-btn {
+    flex: 1 1 100%;
+  }
+}

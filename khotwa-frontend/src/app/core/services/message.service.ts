@@ -22,7 +22,7 @@ export interface ConversationPresence {
 
 @Injectable({ providedIn: 'root' })
 export class MessageService {
-  private apiUrl = 'http://localhost:8084/khotwa/api';
+  private apiUrl = '/api';
 
   constructor(private http: HttpClient) {}
 

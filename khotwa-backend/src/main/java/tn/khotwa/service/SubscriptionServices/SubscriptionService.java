@@ -6,11 +6,11 @@ import org.springframework.stereotype.Service;
 import tn.khotwa.entity.Subscription.PlanOffer;
 import tn.khotwa.entity.Subscription.Subscription;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.repository.SubscriptionRepo.PlanOfferRepository;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.service.SubscriptionServices.Interface.ISubscriptionService;
 
 import java.time.LocalDate;
@@ -22,7 +22,7 @@ import java.util.*;
 public class SubscriptionService implements ISubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
-    private final UserRepository         userRepository;
+    private final UserRepository userRepository;
     private final PlanOfferRepository    planOfferRepository;
 
     @Override

@@ -5,7 +5,7 @@ import { Discount, CreateDiscountRequest } from '../models/discount.model';
 
 @Injectable({ providedIn: 'root' })
 export class DiscountService {
-  private base = 'http://localhost:8084/khotwa/discounts';
+  private base = '/khotwa/discounts';
 
   constructor(private http: HttpClient) {}
 

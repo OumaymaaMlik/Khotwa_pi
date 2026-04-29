@@ -1,0 +1,14 @@
+<article class="kh-card collaboration-card">
+  <div class="collaboration-card__header">
+    <div>
+      <h2 class="collaboration-card__title">{{ collaboration?.projectName }}</h2>
+      <p class="collaboration-card__meta"><strong>Type:</strong> {{ typeLabel(collaboration.type) }}</p>
+      <p class="collaboration-card__meta"><strong>Owner:</strong> {{ collaboration?.ownerName }}</p>
+    </div>
+    <span class="kh-badge" [ngClass]="getStatusBadgeClass()">{{ toUiLabel(collaboration?.status ?? '') }}</span>
+  </div>
+
+  <div class="collaboration-card__signals">
+    <button type="button" class="kh-btn kh-btn--secondary" (click)="onOpen()">Open</button>
+  </div>
+</article>

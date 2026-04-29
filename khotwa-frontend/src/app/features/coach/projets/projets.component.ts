@@ -110,7 +110,7 @@ interface TacheFormErrors {
 
 @Component({ selector:'app-coach-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
 export class CoachProjetsComponent implements OnInit {
-  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly apiUrl = '/khotwa';
 
   readonly boardColumns: CoachBoardColumn[] = [
     { key: 'A_FAIRE', title: 'A_FAIRE', subtitle: 'To launch', tone: 'teal' },

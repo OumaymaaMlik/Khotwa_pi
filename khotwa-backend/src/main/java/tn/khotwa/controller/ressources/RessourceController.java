@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.khotwa.enums.*;
 import tn.khotwa.enums.User.Role;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.projection.ressources.RessourceSummaryView;
 import tn.khotwa.projection.ressources.RessourceView;
 import tn.khotwa.repository.projet.ProjetRepository;

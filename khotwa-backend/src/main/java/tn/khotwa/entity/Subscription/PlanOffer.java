@@ -2,7 +2,7 @@ package tn.khotwa.entity.Subscription;
 
 import jakarta.persistence.*;
 import lombok.*;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 
 @Entity
 @Table(name = "plan_offer")

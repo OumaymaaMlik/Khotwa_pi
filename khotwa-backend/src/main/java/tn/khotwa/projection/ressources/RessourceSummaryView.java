@@ -1,6 +1,6 @@
 package tn.khotwa.projection.ressources;
 
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.ResourceType;
 
 import java.util.List;

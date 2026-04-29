@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.User.Role;
 
-import tn.khotwa.repository.UserRepo.UserRepository;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import tn.khotwa.exception.UserException.ResourceNotFoundException;
 
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.security.AppUserPrincipal;
 import tn.khotwa.service.User.CurrentUserService;
 

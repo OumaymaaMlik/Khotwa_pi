@@ -2,7 +2,7 @@ package tn.khotwa.service.ressources;
 
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.ResourceType;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.projection.ressources.ProgressionView;

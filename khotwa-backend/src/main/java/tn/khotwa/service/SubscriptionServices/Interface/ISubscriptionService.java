@@ -2,7 +2,7 @@ package tn.khotwa.service.SubscriptionServices.Interface;
 
 import tn.khotwa.entity.Subscription.PlanOffer;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.entity.Subscription.Subscription;
 
 import java.util.List;

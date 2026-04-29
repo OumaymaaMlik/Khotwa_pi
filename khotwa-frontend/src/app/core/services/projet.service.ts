@@ -65,7 +65,7 @@ export interface AdminReportingResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ProjetService {
-  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly apiUrl = '/khotwa';
   private _projets: Projet[] = [];
 
   constructor(

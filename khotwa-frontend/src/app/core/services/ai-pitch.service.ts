@@ -28,7 +28,7 @@ export interface AiPitchResponse {
 @Injectable({ providedIn: 'root' })
 export class AiPitchService {
 
-  private readonly apiUrl = 'http://localhost:8084/khotwa/ai/improve-pitch';
+  private readonly apiUrl = '/khotwa/ai/improve-pitch';
 
   constructor(private http: HttpClient) {}
 

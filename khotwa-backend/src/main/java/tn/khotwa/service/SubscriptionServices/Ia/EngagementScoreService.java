@@ -13,13 +13,13 @@ import tn.khotwa.DTO.Subscription.EngagementScoreDTO;
 import tn.khotwa.entity.Subscription.EngagementScore;
 import tn.khotwa.entity.Subscription.Subscription;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.SubscriptionEnums.RiskLevel;
 import tn.khotwa.enums.SubscriptionEnums.SubscriptionStatus;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.repository.SubscriptionRepo.EngagementRepo.EngagementScoreRepository;
 import tn.khotwa.repository.SubscriptionRepo.SubscriptionRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EngagementScoreService {
 
-    private final UserRepository         userRepository;
+    private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final EngagementScoreRepository churnSignalRepository;
     private final JavaMailSender         mailSender;

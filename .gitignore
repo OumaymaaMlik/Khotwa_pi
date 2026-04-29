@@ -26,3 +26,7 @@ node_modules/
 .env
 *.env
 
+
+# Backend temp files
+khotwa-backend/.m2/
+khotwa-backend/spring-boot-run*.log

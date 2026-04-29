@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { SharedModule } from '../../shared/shared.module';
 import { LandingComponent } from './landing.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [{ path: '', component: LandingComponent }];
 

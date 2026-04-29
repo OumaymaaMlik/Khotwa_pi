@@ -5,12 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { SharedModule } from '../../shared/shared.module';
 import { LayoutCoachModule } from '../../layout-coach/layout-coach.module';
 import { LayoutCoachComponent } from '../../layout-coach/layout-coach.component';
+import { CollaborationModule } from '../collaboration/collaboration.module';
+import { CollaborationDetailComponent } from '../collaboration/collaboration-detail/collaboration-detail.component';
+import { CollaborationListComponent } from '../collaboration/collaboration-list/collaboration-list.component';
+import { CollaborationSentRequestsPageComponent } from '../collaboration/collaboration-sent-requests-page/collaboration-sent-requests-page.component';
 
 import { CoachDashboardComponent }    from './dashboard/dashboard.component';
 import { CoachProjetsComponent }       from './projets/projets.component';
 import { CoachStartupsComponent }      from './startups/startups.component';
 import { CoachValidationsComponent }   from './validations/validations.component';
-import { CoachPlanningComponent }      from './planning/planning.component';
 import { CoachMessagesComponent }      from './messages/messages.component';
 import { CoachProgressionsComponent }  from './progressions/progressions.component';
 import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
@@ -22,14 +25,16 @@ import { CoachEventsComponent }        from './coach-events/coach-events.compone
 const routes: Routes = [
   {
     path: '',
-    component: LayoutCoachComponent,
+    component: LayoutCoachComponent,   // ← nouveau layout coach
     children: [
       { path: '',             redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: CoachDashboardComponent    },
+      { path: 'collaborations', component: CollaborationListComponent },
+      { path: 'collaborations/requests', component: CollaborationSentRequestsPageComponent },
+      { path: 'collaborations/:id', component: CollaborationDetailComponent },
       { path: 'projets',      component: CoachProjetsComponent      },
       { path: 'startups',     component: CoachStartupsComponent     },
       { path: 'validations',  component: CoachValidationsComponent  },
-      { path: 'planning',     component: CoachPlanningComponent     },
       { path: 'messages',     component: CoachMessagesComponent     },
       { path: 'bibliotheque', component: CoachBibliothequeComponent },
       { path: 'progressions', component: CoachProgressionsComponent },
@@ -44,12 +49,12 @@ const routes: Routes = [
 @NgModule({
   declarations: [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
-    CoachValidationsComponent, CoachPlanningComponent, CoachMessagesComponent,
+    CoachValidationsComponent, CoachMessagesComponent,
     CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
     CoachSettingsComponent, CoachAccountPageComponent, CoachEventsComponent,
   ],
   imports: [
-    CommonModule, FormsModule, SharedModule,
+    CommonModule, FormsModule,CollaborationModule, SharedModule,
     LayoutCoachModule,
     RouterModule.forChild(routes),
   ],

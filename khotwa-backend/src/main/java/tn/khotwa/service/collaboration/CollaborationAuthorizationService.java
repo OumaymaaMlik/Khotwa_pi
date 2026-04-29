@@ -6,10 +6,10 @@ import tn.khotwa.entity.collaboration.Collaboration;
 import tn.khotwa.entity.collaboration.CollaborationRequest;
 import tn.khotwa.entity.collaboration.MarketingCollaboration;
 import tn.khotwa.entity.collaboration.MarketingContentTask;
-import tn.khotwa.entity.collaboration.Project;
 import tn.khotwa.entity.collaboration.ResourceRequest;
 import tn.khotwa.entity.collaboration.SharedResource;
 import tn.khotwa.entity.User.User;
+import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.exception.collaboration.AccessDeniedException;
 import tn.khotwa.exception.collaboration.ForbiddenOperationException;
@@ -53,8 +53,8 @@ public class CollaborationAuthorizationService {
         throw new AccessDeniedException("Only the collaboration owner or admin can perform this action.");
     }
 
-    public void checkCanCreateCollaboration(User actor, Project project) {
-        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(project.getOwner().getIdUser()))) {
+    public void checkCanCreateCollaboration(User actor, Projet project) {
+        if (isAdmin(actor) || (isEntrepreneur(actor) && actor.getIdUser().equals(project.getEntrepreneurId()))) {
             return;
         }
 
@@ -118,12 +118,12 @@ public class CollaborationAuthorizationService {
         throw new ForbiddenOperationException("Only entrepreneurs or admin can initiate collaboration requests.");
     }
 
-    public void checkCanViewProjectRequests(User actor, Project project) {
+    public void checkCanViewProjectRequests(User actor, Projet project) {
         if (isAdmin(actor) || isCoach(actor)) {
             return;
         }
 
-        if (isEntrepreneur(actor) && actor.getIdUser().equals(project.getOwner().getIdUser())) {
+        if (isEntrepreneur(actor) && actor.getIdUser().equals(project.getEntrepreneurId())) {
             return;
         }
 
@@ -146,13 +146,13 @@ public class CollaborationAuthorizationService {
         throw new AccessDeniedException("Only the target user or admin can respond to this collaboration request.");
     }
 
-    public void checkCanViewProject(User actor, Project project, boolean isProjectCollaborationMember) {
+    public void checkCanViewProject(User actor, Projet project, boolean isProjectCollaborationMember) {
         if (isAdmin(actor) || isCoach(actor)) {
             return;
         }
 
         if (isEntrepreneur(actor)
-                && (actor.getIdUser().equals(project.getOwner().getIdUser()) || isProjectCollaborationMember)) {
+                && (actor.getIdUser().equals(project.getEntrepreneurId()) || isProjectCollaborationMember)) {
             return;
         }
 

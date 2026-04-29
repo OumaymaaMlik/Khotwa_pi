@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import tn.khotwa.entity.ressources.Ressource;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.ResourceType;
 import tn.khotwa.projection.ressources.RessourceSummaryView;
 import tn.khotwa.projection.ressources.RessourceView;

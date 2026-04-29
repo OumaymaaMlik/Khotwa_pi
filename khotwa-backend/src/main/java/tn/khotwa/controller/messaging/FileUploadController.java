@@ -1,5 +1,6 @@
 package tn.khotwa.controller.messaging;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,15 +13,28 @@ public class FileUploadController {
 
     private final String uploadDir = "uploads/";
 
+    public record FileUploadResponse(String url) {}
+
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader(value = "Accept", required = false) String acceptHeader
+    ) {
         try {
             Files.createDirectories(Paths.get(uploadDir));
             String fileName = file.getOriginalFilename();
             Path filePath = Paths.get(uploadDir + fileName);
             Files.write(filePath, file.getBytes());
-            String fileUrl = "http://localhost:8084/khotwa/api/files/" + fileName;
-            return ResponseEntity.ok(fileUrl);
+            String fileUrl = "/api/files/" + fileName;
+
+            // Backward compatible: Angular currently expects plain text (responseType: 'text')
+            if (acceptHeader != null && acceptHeader.contains(MediaType.TEXT_PLAIN_VALUE)) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(fileUrl);
+            }
+
+            return ResponseEntity.ok(new FileUploadResponse(fileUrl));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body("Failed to upload file");
         }

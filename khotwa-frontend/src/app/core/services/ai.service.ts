@@ -49,7 +49,7 @@ export interface ResumeResponse {
 @Injectable({ providedIn: 'root' })
 export class AiService {
 
-  private api = 'http://localhost:8084/khotwa/api/ai';
+  private api = '/api/ai';
 
   constructor(private http: HttpClient,private talentService: TalentService) {}
   getHiringAdvice(payload: HiringAiRequest): Observable<HiringAiResponse> {

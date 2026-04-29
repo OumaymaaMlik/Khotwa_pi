@@ -13,10 +13,10 @@ import tn.khotwa.entity.evenement.Evenement;
 import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.ReservationsStatus;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.repository.EvenementRepo.EvenementRepository;
 import tn.khotwa.repository.EvenementRepo.ReservationRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
@@ -31,7 +31,7 @@ public class ReservationService implements IReservationService {
     private static final int CANCELLATION_DEADLINE_HOURS = 24;
 
     @Autowired private ReservationRepository reservationRepository;
-    @Autowired private UserRepository        userRepository;
+    @Autowired private UserRepository userRepository;
     @Autowired private EvenementRepository   evenementRepository;
     @Autowired private EmailServiceEvents    emailService;
 

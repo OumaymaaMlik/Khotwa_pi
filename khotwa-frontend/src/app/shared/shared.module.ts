@@ -9,7 +9,7 @@ import { AiSearchComponent } from '../ressourceAi/ai-search/ai-search.component'
 import { AiChatbotComponent } from '../ressourceAi/ai-chatbot/ai-chatbot.component';
 
 @NgModule({
-  declarations: [SafeUrlPipe,AccountComponent, FooterComponent, AiSearchComponent, AiChatbotComponent],
+  declarations: [SafeUrlPipe, AccountComponent, FooterComponent, AiSearchComponent, AiChatbotComponent],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
   exports: [SafeUrlPipe,AccountComponent, FooterComponent, AiSearchComponent, AiChatbotComponent, FormsModule, ReactiveFormsModule, CommonModule],
 

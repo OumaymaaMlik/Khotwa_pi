@@ -18,6 +18,7 @@ import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.projectEnum.EtatValidationProjet;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.enums.projectEnum.StatutTache;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.service.projet.CoachDisponibilitePeriodeService;
 import tn.khotwa.service.projet.CoachRecommendationService;
 import tn.khotwa.service.projet.ProjetCoachService;
@@ -27,7 +28,6 @@ import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.projet.ProjetCoachRepository;
 import tn.khotwa.repository.projet.SousTacheRepository;
 import tn.khotwa.repository.projet.TacheRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
 
 import java.util.HashMap;
 import java.util.List;

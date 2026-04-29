@@ -1,4 +1,4 @@
-package tn.khotwa.entity.SubscriptionEntities;
+package tn.khotwa.entity.Subscription;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -136,7 +136,7 @@ interface BackendAffectationRecommendation {
 
 @Component({ selector:'app-admin-projets', templateUrl:'./projets.component.html', styleUrls:['./projets.component.css'] })
 export class AdminProjetsComponent implements OnInit {
-  private readonly apiUrl = 'http://localhost:8084/khotwa';
+  private readonly apiUrl = '/khotwa';
   private readonly recPanelStorageKey = 'admin-projets-rec-panel-state';
   private readonly secteurLabels: Record<string, string> = {
     TECHNOLOGIE_LOGICIEL: 'Technologie & Logiciel',

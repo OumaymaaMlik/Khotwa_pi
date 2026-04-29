@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, BehaviorSubject } from 'rxjs';
-import { User, UserResponse, UserRole } from '../models/user.model';
+import { PlanType, User, UserResponse, UserRole } from '../models/user.model';
 import { HttpHeaders } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
 
@@ -13,8 +13,8 @@ const ROLE_KEY    = 'khotwa_role';
 export class AuthService {
 
   // Backend JWT endpoints
-  private readonly AUTH_API  = 'http://localhost:8084/khotwa/api/auth';
-  private readonly USERS_API = 'http://localhost:8084/khotwa/api/users';
+  private readonly AUTH_API  = '/api/auth';
+  private readonly USERS_API = '/api/users';
 
   private _currentUser: User | null = null;
   public currentUserSubject = new BehaviorSubject<User | null>(null);
@@ -62,7 +62,7 @@ export class AuthService {
     );
   }
 
-    refreshProfile(): Observable<UserResponse> {
+  refreshProfile(): Observable<UserResponse> {
       const token = localStorage.getItem(TOKEN_KEY);
     const headers = token
       ? new HttpHeaders({ Authorization: `Bearer ${token}` })
@@ -71,18 +71,19 @@ export class AuthService {
     return this.http.get<UserResponse>(`${this.USERS_API}/me`, { headers }).pipe(
       tap(profile => {
         this._currentUser = {
+          talentProfileId:     (profile as any).talentProfileId ?? 0,
           idUser:             profile.idUser,
           id:                 String(profile.idUser ?? ''),
           firstName:          profile.firstName,
           lastName:           profile.lastName,
           emailAddress:       profile.emailAddress,
           role:               profile.role,
-          planType:           profile.planType,
-          pendingPlan:        profile.pendingPlan,
-          avatar:             profile.avatar,
-          startup:            profile.startup,
-          phoneNumber:        profile.phoneNumber,
-          mustChangePassword: profile.mustChangePassword,
+          planType:           profile.planType ?? null,
+          pendingPlan:        profile.pendingPlan ?? null,
+          avatar:             profile.avatar ?? null,
+          startup:            profile.startup ?? null,
+          phoneNumber:        profile.phoneNumber ?? null,
+          mustChangePassword: profile.mustChangePassword ?? false,
         };
         this.currentUserSubject.next(this._currentUser);
         localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
@@ -127,9 +128,16 @@ export class AuthService {
   // ── Visitor (local, sans backend) ────────────────────────────────
   setVisitorSession(): void {
     const visitor: User = {
+      talentProfileId: 0,
       idUser: 0, id: 'visitor',
       firstName: 'Guest', lastName: 'Visitor',
       emailAddress: '', role: 'VISITOR',
+      planType: null,
+      pendingPlan: null,
+      avatar: null,
+      startup: null,
+      phoneNumber: null,
+      mustChangePassword: false,
     };
     this._currentUser = visitor;
     this.currentUserSubject.next(this._currentUser);
@@ -172,17 +180,19 @@ export class AuthService {
     localStorage.setItem(ROLE_KEY,  res.role ?? '');
 
     this._currentUser = {
+      talentProfileId: res.talentProfileId ?? 0,
       idUser:       res.idUser,
       id:           String(res.idUser ?? ''),
       emailAddress: res.emailAddress ?? res.email,
       role:         res.role as UserRole,
       firstName:    res.firstName  ?? '',
       lastName:     res.lastName   ?? '',
-      planType:     res.planType,
-      pendingPlan:  res.pendingPlan,
-      avatar:       res.avatar,
-      startup:      res.startup,
-      phoneNumber:  res.phoneNumber,
+      planType:     (res.planType as PlanType | undefined) ?? null,
+      pendingPlan:  (res.pendingPlan as PlanType | undefined) ?? null,
+      avatar:       res.avatar ?? null,
+      startup:      res.startup ?? null,
+      phoneNumber:  res.phoneNumber ?? null,
+      mustChangePassword: res.mustChangePassword ?? false,
     };
     this.currentUserSubject.next(this._currentUser);
     localStorage.setItem(USER_KEY, JSON.stringify(this._currentUser));
@@ -191,17 +201,19 @@ export class AuthService {
   // Cas register : UserResponse sans token
   private _saveProfileOnly(profile: any): void {
     this._currentUser = {
+      talentProfileId: profile.talentProfileId ?? 0,
       idUser:       profile.idUser,
       id:           String(profile.idUser ?? ''),
       emailAddress: profile.emailAddress,
       role:         profile.role as UserRole,
       firstName:    profile.firstName ?? '',
       lastName:     profile.lastName  ?? '',
-      planType:     profile.planType,
-      pendingPlan:  profile.pendingPlan,
-      avatar:       profile.avatar,
-      startup:      profile.startup,
-      phoneNumber:  profile.phoneNumber,
+      planType:     (profile.planType as PlanType | undefined) ?? null,
+      pendingPlan:  (profile.pendingPlan as PlanType | undefined) ?? null,
+      avatar:       profile.avatar ?? null,
+      startup:      profile.startup ?? null,
+      phoneNumber:  profile.phoneNumber ?? null,
+      mustChangePassword: profile.mustChangePassword ?? false,
     };
     this.currentUserSubject.next(this._currentUser);
     localStorage.setItem(ROLE_KEY, profile.role ?? '');

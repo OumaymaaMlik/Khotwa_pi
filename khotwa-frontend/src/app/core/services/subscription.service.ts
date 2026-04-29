@@ -11,7 +11,7 @@ import {
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private base = 'http://localhost:8084/khotwa';
+  private base = '/khotwa';
 
   constructor(private http: HttpClient) {}
 

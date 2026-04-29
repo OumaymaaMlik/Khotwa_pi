@@ -10,12 +10,11 @@ import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.ProgressStatus;
 import tn.khotwa.exception.ResourceNotFoundException;
 import tn.khotwa.projection.ressources.ProgressionView;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.repository.ressources.ProgressionRepository;
 import tn.khotwa.repository.ressources.RessourceRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
 import tn.khotwa.DTO.ressources.EntrepreneurProgressionDTO;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,7 +28,7 @@ public class ProgressionService implements IProgressionService {
     private final ProgressionRepository progressionRepo;
     private final RessourceRepository   ressourceRepo;
     private final ProjetRepository      projetRepo;
-    private final UserRepository        userRepo;
+    private final UserRepository userRepo;
 
     // ── Mise à jour progression (upsert) ─────────────────────────────
 

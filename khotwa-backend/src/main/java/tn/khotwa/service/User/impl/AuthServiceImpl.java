@@ -19,7 +19,7 @@ import tn.khotwa.exception.UserException.EmailAlreadyUsedException;
 import tn.khotwa.exception.UserException.ForbiddenAdminCreationException;
 import tn.khotwa.exception.UserException.InvalidCredentialsException;
 import tn.khotwa.exception.UserException.InvalidRoleException;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.security.JwtService;
 import tn.khotwa.service.SubscriptionServices.Interface.ISubscriptionService;
 import tn.khotwa.service.User.AuthService;
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
-    private final UserRepository       userRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder      passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService           jwtService;

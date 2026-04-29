@@ -17,7 +17,7 @@ export interface FeedbackItem {
 
 @Injectable({ providedIn: 'root' })
 export class FeedbackService {
-  private readonly apiUrl = 'http://localhost:8084/khotwa/api/feedback';
+  private readonly apiUrl = '/api/feedback';
   private readonly feedbackUpdatedSubject = new Subject<void>();
   readonly feedbackUpdated$ = this.feedbackUpdatedSubject.asObservable();
 

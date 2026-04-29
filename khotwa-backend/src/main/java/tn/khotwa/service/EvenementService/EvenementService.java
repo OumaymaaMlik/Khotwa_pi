@@ -12,11 +12,11 @@ import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
 
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.repository.EvenementRepo.EvenementRepository;
 import tn.khotwa.repository.EvenementRepo.ReservationRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 
 
 import java.util.List;

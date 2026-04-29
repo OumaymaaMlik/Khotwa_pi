@@ -37,7 +37,7 @@ export interface Categorie {
 @Injectable({ providedIn: 'root' })
 export class RessourceService {
 
-  private api = 'http://localhost:8084/khotwa/api';
+  private api = '/api';
 
   constructor(private http: HttpClient) {}
 

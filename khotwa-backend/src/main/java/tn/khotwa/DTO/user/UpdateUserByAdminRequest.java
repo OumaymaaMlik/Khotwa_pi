@@ -2,7 +2,7 @@ package tn.khotwa.DTO.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 
 public record UpdateUserByAdminRequest(
         @Email(message = "Email address must be valid.")

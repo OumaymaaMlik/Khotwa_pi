@@ -38,7 +38,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
         select case when count(c) > 0 then true else false end
         from Collaboration c
         where c.id = :collaborationId
-                    and c.project.owner.idUser = :userId
+                    and c.project.entrepreneurId = :userId
         """)
     boolean isProjectOwner(@Param("collaborationId") Long collaborationId, @Param("userId") Long userId);
 
@@ -65,7 +65,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
     @Query("""
         select c
         from Collaboration c
-        where c.project.owner.idUser = :ownerUserId
+        where c.project.entrepreneurId = :ownerUserId
           and c.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         order by c.createdAt desc
         """)

@@ -13,7 +13,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ReservationService {
 
-  private apiUrl = 'http://localhost:8084/khotwa/reservation';
+  private apiUrl = '/khotwa/reservation';
 
   constructor(private http: HttpClient) {}
 

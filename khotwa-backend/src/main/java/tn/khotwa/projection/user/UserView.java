@@ -1,6 +1,6 @@
 package tn.khotwa.projection.user;
 
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.User.Role;
 
 public interface UserView {

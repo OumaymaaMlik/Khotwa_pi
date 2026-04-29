@@ -24,7 +24,7 @@ export interface ChangePasswordPayload {
 @Injectable({ providedIn: 'root' })
 export class UserService {
 
-  private readonly API = 'http://localhost:8084/khotwa/api/users';
+  private readonly API = '/api/users';
 
   constructor(
     private http: HttpClient,

@@ -103,7 +103,7 @@ entrepreneurUsers: { id: number; fullName: string; email: string }[] = [];
   const a = s.user?.avatar?.trim();
   if (!a) return '';
   if (a.startsWith('http')) return a;
-  return `http://localhost:8084${a.startsWith('/') ? '' : '/'}${a}`;
+  return a.startsWith('http') ? a : `${a.startsWith('/') ? '' : '/'}${a}`;
 }
 
   icon(name: string): SafeHtml {

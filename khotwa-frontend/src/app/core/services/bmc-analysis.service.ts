@@ -16,7 +16,7 @@ export interface BmcAnalysisResult {
 @Injectable({ providedIn: 'root' })
 export class BmcAnalysisService {
 
-  private readonly apiUrl = 'http://localhost:8084/khotwa/ai/analyser-bmc';
+  private readonly apiUrl = '/khotwa/ai/analyser-bmc';
 
   constructor(private http: HttpClient) {}
 

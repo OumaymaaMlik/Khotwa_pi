@@ -5,11 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import tn.khotwa.DTO.user.ChangePasswordRequest;
-import tn.khotwa.DTO.user.UpdateProfileRequest;
-import tn.khotwa.DTO.user.UpdateUserByAdminRequest;
-import tn.khotwa.DTO.user.UpdateUserPlanRequest;
-import tn.khotwa.DTO.user.UserResponse;
+import tn.khotwa.DTO.user.*;
 import tn.khotwa.entity.User.User;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.exception.UserException.EmailAlreadyUsedException;
@@ -17,17 +13,17 @@ import tn.khotwa.exception.UserException.ForbiddenAdminCreationException;
 import tn.khotwa.exception.UserException.InvalidCredentialsException;
 import tn.khotwa.exception.UserException.InvalidRoleException;
 import tn.khotwa.exception.UserException.LastAdminDeletionException;
-import tn.khotwa.repository.UserRepo.UserRepository;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.service.User.CurrentUserService;
-import tn.khotwa.service.User.IUserService;
 import tn.khotwa.service.User.UserMapper;
+import tn.khotwa.service.User.UserService;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UserServiceImpl implements IUserService {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
@@ -155,6 +151,11 @@ public class UserServiceImpl implements IUserService {
         user.setPlanType(request.planType());
         user.setPendingPlan(request.pendingPlan());
         return userMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public List<EntrepreneurSelectionResponse> getEntrepreneursForCollaboration(String search) {
+        return List.of();
     }
 
     @Override

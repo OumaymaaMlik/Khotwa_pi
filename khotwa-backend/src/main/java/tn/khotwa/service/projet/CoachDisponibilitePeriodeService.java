@@ -9,8 +9,9 @@ import tn.khotwa.DTO.projet.CoachDisponibilitePeriodeResponseDto;
 import tn.khotwa.entity.projet.CoachDisponibilitePeriode;
 import tn.khotwa.enums.User.Role;
 import tn.khotwa.exception.BusinessException;
+import tn.khotwa.repository.User.UserRepository;
 import tn.khotwa.repository.projet.CoachDisponibilitePeriodeRepository;
-import tn.khotwa.repository.UserRepo.UserRepository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 

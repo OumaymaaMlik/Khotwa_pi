@@ -10,7 +10,7 @@ import tn.khotwa.entity.collaboration.Collaboration;
 import tn.khotwa.entity.collaboration.CollaborationRequest;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
 import tn.khotwa.enums.collaboration.CollaborationType;
-import tn.khotwa.repository.collaboration.ProjectRepository;
+import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -19,7 +19,7 @@ public class CollaborationApiService {
 
     private final CollaborationService collaborationService;
     private final WeeklyCollaborationReportService weeklyCollaborationReportService;
-    private final ProjectRepository projectRepository;
+    private final ProjetRepository projetRepository;
     private final CurrentUserService currentUserService;
 
     public Collaboration createCollaboration(Long projectId, CollaborationType type) {
@@ -40,7 +40,7 @@ public class CollaborationApiService {
 
     public List<ProjectSummaryDTO> getMyProjects() {
         Long userId = currentUserService.getCurrentUserId();
-        return projectRepository.findAllByOwner_IdUserOrderByIdDesc(userId).stream()
+        return projetRepository.findByEntrepreneurId(userId).stream()
             .map(ProjectSummaryDTO::fromEntity)
             .collect(Collectors.toList());
     }

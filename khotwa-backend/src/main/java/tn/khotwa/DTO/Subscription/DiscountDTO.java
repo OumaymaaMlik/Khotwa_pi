@@ -2,7 +2,7 @@ package tn.khotwa.DTO.Subscription;
 
 import lombok.Builder;
 import lombok.Data;
-import tn.khotwa.entity.SubscriptionEntities.Discount;
+import tn.khotwa.entity.Subscription.Discount;
 
 import java.time.LocalDateTime;
 

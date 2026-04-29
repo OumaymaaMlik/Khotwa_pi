@@ -5,7 +5,7 @@ import { Subscription, PlanOffer, SubscriptionStatus } from '../../../core/model
 import { PlanType } from '../../../core/models/user.model';
 import { DiscountService } from '../../../core/services/discount.service';
 import { Discount } from '../../../core/models/discount.model';
- 
+
 
 declare var paypal: any;
 
@@ -54,7 +54,7 @@ export class ProfileComponent implements OnInit {
   constructor(
     @Inject(SubscriptionService) private subscriptionService: SubscriptionService,
     private authService: AuthService,
-    private discountService: DiscountService 
+    private discountService: DiscountService
   ) {}
 
   ngOnInit(): void {
@@ -94,16 +94,16 @@ loadActiveDiscounts(): void {
 }
 buildPlansWithDiscounts(): void {
   if (!this.plans.length) return;
- 
+
   const currentPlanRank = this.currentSubscription
     ? this.getPlanRank(this.currentSubscription.plan)
     : 0;
- 
+
   this.plansWithDiscounts = this.plans.map(offer => {
     // Ne montrer les remises que pour les plans supérieurs au plan actuel
     const planRank = this.getPlanRank(offer.type);
     let bestDiscount: Discount | null = null;
- 
+
     if (planRank > currentPlanRank) {
       // Cherche la meilleure remise pour ce plan parmi les remises actives
       const discountsForPlan = this.activeDiscounts.filter(
@@ -116,7 +116,7 @@ buildPlansWithDiscounts(): void {
         );
       }
     }
- 
+
     return { offer, bestDiscount };
   });
 }
@@ -137,7 +137,7 @@ buildPlansWithDiscounts(): void {
     this.showUpgradePopup = false;
   }
 
- 
+
   acceptUpgradeSuggestion(): void {
     if (!this.upgradeSuggestion) return;
     const basePlan = this.plans.find(
@@ -261,7 +261,7 @@ buildPlansWithDiscounts(): void {
     this.paymentSuccess        = false;
     this.paymentError          = '';
     this.paypalRendered        = false;
-    this.discountedPaymentPrice = null; 
+    this.discountedPaymentPrice = null;
   }
 
   onOverlayClick(event: MouseEvent): void {
@@ -423,7 +423,7 @@ hasAnyDiscount(): boolean {
 
   openPlanModalWithDiscount(plan: PlanOffer, discount: Discount | null): void {
   if (this.isCurrentPlan(plan) || this.isProcessing) return;
- 
+
   if (discount) {
     // Applique le prix remisé
     this.discountedPaymentPrice = discount.discountedPrice ?? null;
@@ -433,7 +433,7 @@ hasAnyDiscount(): boolean {
     this.discountedPaymentPrice = null;
     this.activeDiscountId = null;
   }
- 
+
   this.openPlanModal(plan);
 }
 
@@ -441,9 +441,9 @@ formatDate(dateStr: string): string {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
- 
+
 getPlanTypeBadge(type: string): string {
   return ({ FREE: 'badge-free', PREMIUM: 'badge-premium', INSTITUTIONAL: 'badge-institutional' } as any)[type] ?? '';
 }
- 
+
 }

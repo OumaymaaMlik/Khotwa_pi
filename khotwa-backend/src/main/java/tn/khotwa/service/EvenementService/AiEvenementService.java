@@ -12,7 +12,7 @@ import tn.khotwa.entity.evenement.Reservation;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
 import tn.khotwa.enums.EventsEnums.ReservationsStatus;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.repository.EvenementRepo.EvenementRepository;
 import tn.khotwa.repository.EvenementRepo.ReservationRepository;
 

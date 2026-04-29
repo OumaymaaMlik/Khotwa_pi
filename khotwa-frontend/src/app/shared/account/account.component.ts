@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 type Tab = 'info' | 'avatar' | 'password';
 
 /** URL de base du backend - Assure-toi que le port correspond à ton Spring Boot */
-const BACKEND_ORIGIN = 'http://localhost:8084';
+const BACKEND_ORIGIN = '';
 
 @Component({
   selector: 'app-account',

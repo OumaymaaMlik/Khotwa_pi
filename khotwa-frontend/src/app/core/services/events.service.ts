@@ -9,7 +9,7 @@ import { Evenement, EvenementStatus } from '../models/evenement.model';
 })
 export class EvenementService {
 
-  private readonly apiUrl = 'http://localhost:8084/khotwa/evenement';
+  private readonly apiUrl = '/khotwa/evenement';
 
   constructor(private http: HttpClient) {}
 

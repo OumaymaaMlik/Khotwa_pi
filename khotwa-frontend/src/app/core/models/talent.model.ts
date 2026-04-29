@@ -48,7 +48,7 @@ export interface CreateAnnonceRequest {
   startupId: number;
 }
 
-/** Entité `TalentProfile` renvoyée par `/api/talents` (backend JPA). */
+/** Entité TalentProfile renvoyée par /api/talents (backend JPA). */
 export interface TalentProfileEntity {
   id?: number;
   nom: string;
@@ -97,7 +97,7 @@ export interface TalentAiAdviceResponse {
   nextActions: string[];
 }
 
-/** Spring AI — assistant recrutement entrepreneur (`POST /api/ai/hiring-advice`). */
+/** Spring AI — assistant recrutement entrepreneur (POST /api/ai/hiring-advice). */
 export interface HiringAiRequest {
   titre: string;
   typePoste: string;

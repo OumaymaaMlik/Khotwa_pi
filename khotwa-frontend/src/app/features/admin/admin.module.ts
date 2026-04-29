@@ -8,7 +8,6 @@ import { SharedModule } from '../../shared/shared.module';
 
 import { AdminDashboardComponent }    from './dashboard/dashboard.component';
 import { AdminProjetsComponent }       from './projets/projets.component';
-import { AdminPlanningComponent }      from './planning/planning.component';
 import { AdminMessagesComponent }      from './messages/messages.component';
 import { AdminBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
 import { AdminUtilisateursComponent }  from './utilisateurs/utilisateurs.component';
@@ -17,6 +16,10 @@ import { SubscriptionsComponent } from './subscriptions/subscriptions.component'
 import { AdminTalentComponent }        from './talent/talent.component';
 import { AdminNotificationsComponent } from './notifications/notifications.component';
 import { AdminFeedbacksComponent } from './feedbacks/feedbacks.component';
+import { WeeklyCollaborationReportComponent } from './weekly-collaboration-report/weekly-collaboration-report.component';
+import { CollaborationModule } from '../collaboration/collaboration.module';
+import { CollaborationListComponent } from '../collaboration/collaboration-list/collaboration-list.component';
+import { CollaborationDetailComponent } from '../collaboration/collaboration-detail/collaboration-detail.component';
 
 const routes: Routes = [
   {
@@ -26,7 +29,6 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard',    component: AdminDashboardComponent },
       { path: 'projets',      component: AdminProjetsComponent },
-      { path: 'planning',     component: AdminPlanningComponent },
       { path: 'messages',     component: AdminMessagesComponent },
       { path: 'bibliotheque', component: AdminBibliothequeComponent },
       { path: 'utilisateurs', component: AdminUtilisateursComponent },
@@ -36,17 +38,21 @@ const routes: Routes = [
       { path: 'talent',       component: AdminTalentComponent },
       { path: 'notifications', component: AdminNotificationsComponent },
       { path: 'feedbacks', component: AdminFeedbacksComponent },
+      { path: 'weekly-collaboration-report', component: WeeklyCollaborationReportComponent },
+      { path: 'collaborations', component: CollaborationListComponent },
+      { path: 'collaborations/:id', component: CollaborationDetailComponent },
     ],
   },
 ];
 
 @NgModule({
   declarations: [
-    AdminDashboardComponent, AdminProjetsComponent, AdminPlanningComponent,
+    AdminDashboardComponent, AdminProjetsComponent,
     AdminMessagesComponent, AdminBibliothequeComponent, AdminUtilisateursComponent,
     AdminEvenementsComponent, SubscriptionsComponent,
     AdminTalentComponent,AdminNotificationsComponent ,AdminFeedbacksComponent,
+    WeeklyCollaborationReportComponent,
   ],
-  imports: [CommonModule, FormsModule, LayoutModule, SharedModule,RouterModule.forChild(routes)],
+  imports: [CommonModule, FormsModule, LayoutModule, SharedModule, CollaborationModule, RouterModule.forChild(routes)],
 })
 export class AdminModule {}

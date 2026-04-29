@@ -28,7 +28,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   currentUrl    = '';
   unreadFeedbackCount = 0;
 
-  private readonly BACKEND_ORIGIN = 'http://localhost:8084';
+  private readonly BACKEND_ORIGIN = '';
   private readonly FEEDBACK_REFRESH_MS = 15000;
   private safeIconCache: Record<string, SafeHtml> = {};
   private feedbackUpdateSub?: Subscription;
@@ -43,6 +43,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     // ADMIN ONLY
     { label: 'Subscriptions', icon: 'card', route: 'subscriptions', roles: ['ADMIN'] },
     { label: 'Feedbacks', icon: 'message', route: 'feedbacks', roles: ['ADMIN'] },
+    { label: 'Collaborations', icon: 'people', route: 'collaborations', roles: ['ADMIN'] },
+
 
     // CONTENT
     { label: 'Library', icon: 'book', route: 'bibliotheque', roles: ['ADMIN','ENTREPRENEUR','COACH','VISITOR'], section: 'Content' },

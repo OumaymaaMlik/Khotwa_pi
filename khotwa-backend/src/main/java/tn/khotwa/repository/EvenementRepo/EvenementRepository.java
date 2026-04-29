@@ -5,9 +5,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tn.khotwa.entity.evenement.Evenement;
+import tn.khotwa.enums.PlanType;
 import tn.khotwa.enums.EventsEnums.EvenementStatus;
 import tn.khotwa.enums.EventsEnums.EvenementType;
-import tn.khotwa.enums.SubscriptionEnums.PlanType;
 
 import java.util.List;
 
@@ -26,17 +26,17 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
         SELECT e FROM Evenement e
         WHERE e.statut = tn.khotwa.enums.EventsEnums.EvenementStatus.ACCEPTED
         AND (
-            (:plan = tn.khotwa.enums.SubscriptionEnums.PlanType.FREE
-                AND e.planType = tn.khotwa.enums.SubscriptionEnums.PlanType.FREE)
+            (:plan = tn.khotwa.enums.PlanType.FREE
+                AND e.planType = tn.khotwa.enums.PlanType.FREE)
 
-         OR (:plan = tn.khotwa.enums.SubscriptionEnums.PlanType.PREMIUM
+         OR (:plan = tn.khotwa.enums.PlanType.PREMIUM
                 AND e.planType IN (
-                    tn.khotwa.enums.SubscriptionEnums.PlanType.FREE,
-                    tn.khotwa.enums.SubscriptionEnums.PlanType.PREMIUM
+                    tn.khotwa.enums.PlanType.FREE,
+                    tn.khotwa.enums.PlanType.PREMIUM
                 )
             )
 
-         OR (:plan = tn.khotwa.enums.SubscriptionEnums.PlanType.INSTITUTIONAL)
+         OR (:plan = tn.khotwa.enums.PlanType.INSTITUTIONAL)
         )
     """)
     List<Evenement> findVisibleForUser(@Param("plan") PlanType plan);
@@ -44,14 +44,14 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
 
     @Query("""
         SELECT e FROM Evenement e
-        WHERE e.planType = tn.khotwa.enums.SubscriptionEnums.PlanType.FREE
+        WHERE e.planType = tn.khotwa.enums.PlanType.FREE
         AND e.statut = tn.khotwa.enums.EventsEnums.EvenementStatus.ACCEPTED
     """)
     List<Evenement> findAllFreeEvents();
 
     @Query("""
         SELECT e FROM Evenement e
-        WHERE e.planType = tn.khotwa.enums.SubscriptionEnums.PlanType.FREE
+        WHERE e.planType = tn.khotwa.enums.PlanType.FREE
         AND e.statut = tn.khotwa.enums.EventsEnums.EvenementStatus.ACCEPTED
         AND (:month IS NULL OR FUNCTION('MONTH', e.date) = :month)
         AND (:type IS NULL OR e.type = :type)
@@ -65,13 +65,13 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
         SELECT e FROM Evenement e
         WHERE e.statut = tn.khotwa.enums.EventsEnums.EvenementStatus.ACCEPTED
         AND (
-            (:plan = tn.khotwa.enums.SubscriptionEnums.PlanType.PREMIUM
+            (:plan = tn.khotwa.enums.PlanType.PREMIUM
                 AND e.planType IN (
-                    tn.khotwa.enums.SubscriptionEnums.PlanType.FREE,
-                    tn.khotwa.enums.SubscriptionEnums.PlanType.PREMIUM
+                    tn.khotwa.enums.PlanType.FREE,
+                    tn.khotwa.enums.PlanType.PREMIUM
                 )
             )
-         OR (:plan = tn.khotwa.enums.SubscriptionEnums.PlanType.INSTITUTIONAL)
+         OR (:plan = tn.khotwa.enums.PlanType.INSTITUTIONAL)
         )
         AND (:month IS NULL OR FUNCTION('MONTH', e.date) = :month)
         AND (:type IS NULL OR e.type = :type)
