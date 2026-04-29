@@ -254,7 +254,13 @@ input:focus, select:focus, textarea:focus {
 .animate-5 { animation: fadeInUp 0.38s 0.25s both ease-out; }
 
 /* ── Table styles ─────────────────────────────────────────── */
-.table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--bg-card); }
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead tr { border-bottom: 1px solid var(--border); }
 th {
@@ -594,5 +600,14 @@ tr:hover td { background: var(--bg-app); }
 @media (max-width: 640px) {
   .kh-footer { padding: 24px 16px 16px; }
   .kh-footer__inner { grid-template-columns: 1fr !important; gap: 20px; }
+}
+
+/* ── Light accessibility polish (minimal, non-invasive) ───────────────────── */
+:where(button, [role="button"], a, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(42, 191, 191, 0.55);
+  outline-offset: 2px;
+}
+:where(button, [role="button"], a, input, select, textarea):focus:not(:focus-visible) {
+  outline: none;
 }
 
