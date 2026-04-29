@@ -190,6 +190,63 @@
           </div>
         </div>
 
+        <!-- ══════════════════════════════════════════════════════
+             CHAMPS COACH — Spécialité & Disponibilité
+        ══════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="isCoach">
+
+          <!-- Spécialité -->
+          <div class="ac-field">
+            <label>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;vertical-align:middle;">
+                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+              Spécialité <span class="ac-hint" style="font-weight:400;margin-left:6px;">(utilisée pour la recommandation de coach)</span>
+            </label>
+            <div class="ac-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <select [(ngModel)]="specialite" class="ac-select">
+                <option value="">— Sélectionner une spécialité —</option>
+                <option *ngFor="let opt of specialiteOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+            <span class="ac-hint">Doit correspondre au secteur des projets que vous accompagnez.</span>
+          </div>
+
+          <!-- Disponibilité (plage de dates) -->
+          <div class="ac-field">
+            <label>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;vertical-align:middle;">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Disponibilité
+              <span class="ac-hint" style="font-weight:400;margin-left:6px;">(comparée aux dates du projet pour le score de recommandation)</span>
+            </label>
+            <div class="ac-form__row" style="gap:12px;align-items:flex-end;">
+              <div class="ac-field" style="flex:1;margin:0;">
+                <label style="font-size:0.78rem;color:#888;">Du</label>
+                <input type="date" [(ngModel)]="disponibiliteDebut" class="ac-date-input"
+                       [max]="disponibiliteFin || ''" />
+              </div>
+              <div class="ac-field" style="flex:1;margin:0;">
+                <label style="font-size:0.78rem;color:#888;">Au</label>
+                <input type="date" [(ngModel)]="disponibiliteFin" class="ac-date-input"
+                       [min]="disponibiliteDebut || ''" />
+              </div>
+            </div>
+            <div *ngIf="!disponibiliteValid" class="ac-alert ac-alert--error" style="margin-top:6px;padding:6px 10px;font-size:0.82rem;">
+              La date de fin doit être postérieure à la date de début.
+            </div>
+            <span class="ac-hint" *ngIf="disponibiliteDebut && disponibiliteFin && disponibiliteValid">
+              ✅ Plage : {{ disponibiliteDebut }} → {{ disponibiliteFin }}
+            </span>
+          </div>
+
+        </ng-container>
+        <!-- ══════════════════════════════ FIN CHAMPS COACH ════════ -->
+
         <div class="ac-actions">
           <button class="ac-btn ac-btn--primary" (click)="saveProfile()" [disabled]="saving">
             <span class="ac-spinner ac-spinner--sm" *ngIf="saving"></span>
