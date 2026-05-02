@@ -1,0 +1,516 @@
+<!-- ══ UPGRADE SUGGESTION POPUP ══ -->
+<div class="upgrade-overlay" *ngIf="showUpgradePopup && upgradeSuggestion">
+  <div class="upgrade-popup">
+
+    <button class="upgrade-popup__close" (click)="dismissUpgradePopup()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="upgrade-popup__top">
+      <div class="upgrade-popup__icon">🏛️</div>
+      <span class="upgrade-popup__badge">
+        <i class="bi bi-tag-fill"></i>
+        Offre exclusive — {{ upgradeSuggestion.discountPercent }}% de remise
+      </span>
+    </div>
+
+    <h2 class="upgrade-popup__title">
+      Passez à l'offre <strong>{{ upgradeSuggestion.institutionalPlanLabel }}</strong> !
+    </h2>
+
+    <p class="upgrade-popup__msg">{{ upgradeSuggestion.message }}</p>
+
+    <div class="upgrade-popup__stats">
+      <div class="upgrade-popup__stat">
+        <span class="upgrade-popup__stat-val">{{ upgradeSuggestion.premiumCount }}</span>
+        <span class="upgrade-popup__stat-lbl">abonnés Premium actifs</span>
+      </div>
+      <div class="upgrade-popup__stat-divider"></div>
+      <div class="upgrade-popup__stat">
+        <span class="upgrade-popup__stat-val">{{ upgradeSuggestion.institutionalCount }}</span>
+        <span class="upgrade-popup__stat-lbl">abonnés Institutional</span>
+      </div>
+    </div>
+
+    <div class="upgrade-popup__pricing">
+      <div class="upgrade-popup__price-col">
+        <span class="upgrade-popup__price-lbl">Prix normal</span>
+        <span class="upgrade-popup__price-original">{{ upgradeSuggestion.originalPrice }} DT</span>
+      </div>
+      <i class="bi bi-arrow-right upgrade-popup__arrow"></i>
+      <div class="upgrade-popup__price-col">
+        <span class="upgrade-popup__price-lbl">Votre prix</span>
+        <span class="upgrade-popup__price-discounted">{{ upgradeSuggestion.discountedPrice }} DT</span>
+      </div>
+      <span class="upgrade-popup__discount-pill">−{{ upgradeSuggestion.discountPercent }}%</span>
+    </div>
+
+    <div class="upgrade-popup__actions">
+      <button class="kh-btn kh-btn--ghost" (click)="dismissUpgradePopup()">
+        Plus tard
+      </button>
+      <button class="kh-btn kh-btn--gold" (click)="acceptUpgradeSuggestion()">
+        <i class="bi bi-rocket-takeoff-fill"></i>
+        Profiter de l'offre
+      </button>
+    </div>
+
+    <p class="upgrade-popup__note">
+      <i class="bi bi-info-circle"></i>
+      Offre limitée · Prix valable uniquement depuis cette suggestion
+    </p>
+
+  </div>
+</div>
+
+<!-- ══ PAGE ══ -->
+<div class="page">
+
+  <div class="page-header">
+    <h1>Profile &amp; Subscription</h1>
+    <p>Manage your current plan and explore available upgrades</p>
+  </div>
+
+  <div class="overview" *ngIf="currentSubscription as sub">
+    <div class="overview-left overview-left--current">
+      <span class="overview-eyebrow">Current subscription</span>
+      <div class="overview-plan-name">
+        {{ sub.planOffer?.label || sub.plan }}
+      </div>
+      <div class="overview-status-badge overview-status-badge--current">
+        <i class="bi bi-check-circle-fill"></i>
+        {{ getStatusLabel(sub.statut) }}
+      </div>
+    </div>
+
+    <div class="overview-right">
+      <div class="overview-stat">
+        <span class="overview-stat-label">Your current plan</span>
+        <p class="overview-stat-desc">
+          Manage your subscription, billing and renewal settings.
+        </p>
+      </div>
+
+      <div class="overview-stat">
+        <span class="overview-stat-label">Days Remaining</span>
+        <span class="overview-stat-value">{{ getRemainingDays() }}</span>
+      </div>
+
+      <div class="overview-stat">
+        <span class="overview-stat-label">Expiration Date</span>
+        <span class="overview-stat-date" *ngIf="sub.plan !== 'FREE'; else freeExpiration">
+          {{ sub.dateFin | date:'dd MMM' }}<br>
+          {{ sub.dateFin | date:'yyyy' }}
+        </span>
+        <ng-template #freeExpiration>
+          <span class="overview-stat-date">Unlimited</span>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="currentSubscription as sub">
+    <div class="card-head">
+      <div>
+        <h2>Subscription Details</h2>
+        <p>Manage your subscription, billing and renewal settings</p>
+      </div>
+      <div class="card-head-right">
+        <span class="badge badge--current">
+          <i class="bi bi-check-circle-fill"></i>
+          {{ getStatusLabel(sub.statut) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-col">
+        <div class="detail-row">
+          <span class="detail-label">Plan</span>
+          <span class="detail-value">{{ sub.planOffer?.label || sub.plan }}</span>
+          <span class="detail-sub detail-sub--current">
+            <i class="bi bi-check-circle-fill"></i>
+            {{ getStatusLabel(sub.statut) }}
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-dates">
+            <div class="detail-date-item">
+              <span class="detail-label"><i class="bi bi-calendar3"></i> Start date</span>
+              <span class="detail-value" style="font-size:13px;">
+                {{ sub.dateDebut | date:'dd MMM yyyy' }}
+              </span>
+              <span class="detail-sub detail-sub--current">
+                <i class="bi bi-check-circle-fill"></i>
+              </span>
+            </div>
+            <div class="detail-date-item">
+              <span class="detail-label"><i class="bi bi-calendar3"></i> End date</span>
+              <span class="detail-value" style="font-size:13px;">
+                {{ sub.plan === 'FREE' ? 'Unlimited' : (sub.dateFin | date:'MMM yyyy') }}
+              </span>
+              <span class="detail-sub detail-sub--current">
+                <i class="bi bi-check-circle-fill"></i>
+                {{ getStatusLabel(sub.statut) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-col">
+        <div class="detail-row detail-row--inline">
+          <div>
+            <span class="detail-label">Auto-renewal</span>
+            <span class="detail-value">
+              {{ sub.autoRenouvellement ? 'Enabled' : 'Disabled' }}
+            </span>
+          </div>
+          <button
+            class="kh-btn kh-btn--outline-current kh-btn--sm"
+            [disabled]="isProcessing"
+            (click)="toggleAutoRenew()"
+          >
+            <i class="bi bi-arrow-repeat"></i>
+            {{ sub.autoRenouvellement ? 'Disable Auto-Renewal' : 'Enable Auto-Renewal' }}
+          </button>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label"><i class="bi bi-credit-card"></i> Payment ref</span>
+          <div class="ref-box">
+            {{ sub.paiementRef || 'No payment reference' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="plans-header">
+      <div>
+        <h2>Choose Your Plan</h2>
+        <p>Choose the best subscription for your business needs</p>
+      </div>
+    </div>
+
+    <!-- Discount alert banner -->
+    <div class="discount-alert" *ngIf="hasAnyDiscount()">
+      <i class="bi bi-tag-fill"></i>
+      <div class="discount-alert__body">
+        <strong>Exclusive discount available!</strong>
+        <span>Your admin has granted you a special price on an upgrade plan. See the badges below.</span>
+      </div>
+    </div>
+
+    <div class="plans-grid">
+      <div
+        *ngFor="let item of plansWithDiscounts"
+        class="plan-card"
+        [ngClass]="{
+          'plan-card--premium':        item.offer.type === 'PREMIUM',
+          'plan-card--institutional':  item.offer.type === 'INSTITUTIONAL',
+          'plan-card--current':        isCurrentPlan(item.offer),
+          'plan-card--has-discount':   item.bestDiscount !== null
+        }"
+      >
+        <!-- Current plan ribbon -->
+        <div class="plan-ribbon plan-ribbon--current"
+             *ngIf="isCurrentPlan(item.offer) && !item.bestDiscount">
+          <i class="bi bi-check2-circle"></i> Current Subscription
+        </div>
+        <!-- Enterprise ribbon -->
+        <div class="plan-ribbon plan-ribbon--institutional"
+             *ngIf="item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer) && !item.bestDiscount">
+          <i class="bi bi-star-fill"></i> Enterprise
+        </div>
+        <!-- Discount ribbon -->
+        <div class="plan-ribbon plan-ribbon--discount" *ngIf="item.bestDiscount">
+          <i class="bi bi-tag-fill"></i>
+          −{{ item.bestDiscount.discountPercent }}% · Exclusive offer
+        </div>
+
+        <div class="plan-top">
+          <div>
+            <h3>{{ item.offer.label }}</h3>
+            <p>{{ item.offer.description }}</p>
+          </div>
+          <span class="plan-badge"
+            [ngClass]="{
+              'plan-badge--free':          item.offer.type === 'FREE',
+              'plan-badge--premium':       item.offer.type === 'PREMIUM',
+              'plan-badge--institutional': item.offer.type === 'INSTITUTIONAL'
+            }">
+            {{ item.offer.type === 'FREE' ? 'Free' : (item.offer.type === 'PREMIUM' ? 'Premium' : 'Gold') }}
+          </span>
+        </div>
+
+        <!-- Normal price (no discount) -->
+        <div class="plan-price" *ngIf="!item.bestDiscount">
+          <span class="plan-price-val"
+            [ngClass]="{
+              'plan-price-val--orange': isCurrentPlan(item.offer),
+              'plan-price-val--gold':   item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer)
+            }">
+            {{ item.offer.prix === 0 ? 'Free' : item.offer.prix }}
+          </span>
+          <span class="plan-price-unit" *ngIf="item.offer.prix !== 0">DT / month</span>
+        </div>
+
+        <!-- Discounted price -->
+        <div class="plan-price plan-price--discounted" *ngIf="item.bestDiscount">
+          <div class="plan-price-row">
+            <span class="plan-price-original-struck">{{ item.offer.prix | number:'1.2-2' }} DT</span>
+            <span class="plan-price-discount-chip">−{{ item.bestDiscount.discountPercent }}%</span>
+          </div>
+          <div class="plan-price-row">
+            <span class="plan-price-val plan-price-val--discount">
+              {{ item.bestDiscount.discountedPrice | number:'1.2-2' }}
+            </span>
+            <span class="plan-price-unit">DT / month</span>
+          </div>
+          <div class="plan-price-validity">
+            Valid until {{ formatDate(item.bestDiscount.validUntil) }}
+          </div>
+        </div>
+
+        <div class="plan-duration">
+          <i class="bi bi-clock"></i>
+          {{ getDuration(item.offer) }}
+        </div>
+
+        <div class="plan-divider"></div>
+
+        <ul class="plan-features">
+          <li *ngFor="let feat of getAvantagesList(item.offer.avantages || '')"
+            [ngClass]="{
+              'plan-features--orange': isCurrentPlan(item.offer),
+              'plan-features--gold':   item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer)
+            }">
+            <i class="bi bi-check2"
+              [ngClass]="{
+                'icon--orange': isCurrentPlan(item.offer),
+                'icon--gold':   item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer),
+                'icon--teal':   !isCurrentPlan(item.offer) && item.offer.type !== 'INSTITUTIONAL'
+              }"></i>
+            <span>{{ feat }}</span>
+          </li>
+        </ul>
+
+        <button
+          class="kh-btn kh-btn--full"
+          [ngClass]="{
+            'kh-btn--current-disabled': isCurrentPlan(item.offer) && !item.bestDiscount,
+            'kh-btn--discount':         !!item.bestDiscount,
+            'kh-btn--gold':             item.offer.type === 'INSTITUTIONAL' && !isCurrentPlan(item.offer) && !item.bestDiscount,
+            'kh-btn--action':           !isCurrentPlan(item.offer) && item.offer.type !== 'INSTITUTIONAL' && !item.bestDiscount
+          }"
+          [disabled]="(isCurrentPlan(item.offer) && !item.bestDiscount) || isProcessing || !canChangePlan(item.offer.type)"
+          (click)="openPlanModalWithDiscount(item.offer, item.bestDiscount)"
+          style="margin-top:auto;"
+        >
+          <i class="bi"
+            [ngClass]="{
+              'bi-check2-circle':  isCurrentPlan(item.offer) && !item.bestDiscount,
+              'bi-tag-fill':       !!item.bestDiscount,
+              'bi-arrow-up-right': !isCurrentPlan(item.offer) && !item.bestDiscount && isUpgrade(item.offer.type),
+              'bi-arrow-repeat':   !isCurrentPlan(item.offer) && !item.bestDiscount && !isUpgrade(item.offer.type)
+            }"></i>
+          {{ item.bestDiscount ? 'Subscribe with −' + item.bestDiscount.discountPercent + '% off' : getButtonLabel(item.offer) }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal" (click)="onOverlayClick($event)">
+    <div class="modal-card">
+
+      <div *ngIf="!showPayment && !paymentSuccess">
+        <div class="modal-head modal-head--orange">
+          <div>
+            <h3>{{ selectedPlan?.label }}</h3>
+            <p>{{ selectedPlan?.description }}</p>
+          </div>
+          <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body" *ngIf="selectedPlan as plan">
+
+          <div class="discount-banner" *ngIf="discountedPaymentPrice !== null">
+            <div class="discount-banner__left">
+              <i class="bi bi-tag-fill"></i>
+              <div>
+                <strong>Offre exclusive appliquée !</strong>
+                <span>Remise de {{ upgradeSuggestion?.discountPercent }}% sur ce plan</span>
+              </div>
+            </div>
+            <div class="discount-banner__right">
+              <span class="discount-banner__original">{{ plan.prix }} DT</span>
+              <span class="discount-banner__discounted">{{ discountedPaymentPrice }} DT</span>
+            </div>
+          </div>
+
+          <div class="modal-summary-grid">
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Plan</div>
+              <div class="modal-stat-value">{{ plan.label }}</div>
+            </div>
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Type</div>
+              <div class="modal-stat-value">{{ plan.type }}</div>
+            </div>
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Price</div>
+              <div class="modal-stat-value modal-stat-value--orange" *ngIf="discountedPaymentPrice === null">
+                {{ plan.prix === 0 ? 'Free' : (plan.prix + ' DT') }}
+              </div>
+              <div class="modal-stat-value" *ngIf="discountedPaymentPrice !== null">
+                <s class="modal-price-struck">{{ plan.prix }} DT</s>
+                <span class="modal-price-discounted">{{ discountedPaymentPrice }} DT</span>
+              </div>
+            </div>
+            <div class="modal-stat-box">
+              <div class="modal-stat-label">Duration</div>
+              <div class="modal-stat-value">{{ getDuration(plan) }}</div>
+            </div>
+          </div>
+
+          <div class="modal-check-row">
+            <input id="modalAutoRenew" type="checkbox" [(ngModel)]="modalAutoRenew" />
+            <label for="modalAutoRenew">Enable auto-renewal</label>
+          </div>
+
+          <div class="modal-check-row">
+            <input id="modalNotifyBefore" type="checkbox" [(ngModel)]="modalNotifyBefore" />
+            <label for="modalNotifyBefore">Notify me before renewal</label>
+          </div>
+
+          <div class="form-group" *ngIf="isDowngrade">
+            <label for="modalStartDate">Start date</label>
+            <input id="modalStartDate" type="date" [(ngModel)]="modalStartDate" />
+          </div>
+
+          <p class="form-error" *ngIf="paymentError">{{ paymentError }}</p>
+
+          <div class="modal-actions">
+            <button type="button" class="kh-btn kh-btn--ghost" (click)="closeModal()">Cancel</button>
+            <button
+              type="button"
+              class="kh-btn kh-btn--orange"
+              [disabled]="isProcessing"
+              (click)="proceedToPayment()"
+            >
+              <i class="bi bi-credit-card"></i>
+              {{ plan.prix === 0 ? 'Confirm Plan' : 'Proceed to Payment' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="showPayment && !paymentSuccess">
+        <div class="modal-head modal-head--dark">
+          <div>
+            <h3>Secure Payment</h3>
+            <p>Choose your preferred payment method</p>
+          </div>
+          <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="discount-banner discount-banner--sm" *ngIf="discountedPaymentPrice !== null">
+            <i class="bi bi-tag-fill"></i>
+            <span>
+              Remise de <strong>{{ upgradeSuggestion?.discountPercent }}%</strong> appliquée —
+              vous payez <strong>{{ discountedPaymentPrice }} DT</strong>
+              au lieu de {{ selectedPlan?.prix }} DT
+            </span>
+          </div>
+
+          <div class="amount-due">
+            <div>
+              <div class="amount-due-label">Amount due</div>
+              <div class="amount-due-sub">
+                {{ selectedPlan?.label }} · {{ getDuration(selectedPlan!) }}
+              </div>
+            </div>
+            <div class="amount-due-value">
+              <span class="amount-due-number">{{ effectivePrice }}</span>
+              <span class="amount-due-unit">DT</span>
+            </div>
+          </div>
+
+          <div id="paypal-button-container"></div>
+
+          <p class="form-error" *ngIf="paymentError">{{ paymentError }}</p>
+
+          <button
+            type="button"
+            class="kh-btn kh-btn--ghost kh-btn--full"
+            (click)="backToDetails()"
+          >
+            <i class="bi bi-arrow-left"></i> Back
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="paymentSuccess">
+        <div class="modal-head modal-head--green">
+          <div>
+            <h3>Payment Confirmed</h3>
+            <p>Your subscription has been activated</p>
+          </div>
+          <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="payment-success-box">
+            <div class="payment-success-icon">
+              <i class="bi bi-check-lg"></i>
+            </div>
+            <h4>Payment Successful!</h4>
+            <p>Your {{ selectedPlan?.label }} plan is now active. Welcome aboard!</p>
+
+            <div class="payment-ref-grid" *ngIf="currentSubscription">
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Payment reference</span>
+                <span class="payment-ref-value payment-ref-value--orange">{{ currentSubscription.paiementRef }}</span>
+              </div>
+              <div class="payment-ref-divider"></div>
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Subscription starts</span>
+                <span class="payment-ref-value">{{ currentSubscription.dateDebut | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="payment-ref-divider"></div>
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Subscription ends</span>
+                <span class="payment-ref-value">{{ currentSubscription.dateFin | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="payment-ref-divider"></div>
+              <div class="payment-ref-row">
+                <span class="payment-ref-label">Amount paid</span>
+                <span class="payment-ref-value payment-ref-value--green">
+                  {{ effectivePrice }} DT
+                  <span class="payment-discount-note" *ngIf="discountedPaymentPrice !== null">
+                    <i class="bi bi-tag-fill"></i>
+                    −{{ upgradeSuggestion?.discountPercent }}% appliqué
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="kh-btn kh-btn--teal kh-btn--full"
+              (click)="closeModal()"
+            >
+              <i class="bi bi-check2-circle"></i> Done
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

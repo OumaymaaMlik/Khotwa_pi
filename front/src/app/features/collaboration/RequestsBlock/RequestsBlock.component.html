@@ -1,0 +1,76 @@
+<div class="requests-block">
+  <div *ngIf="canShowInviteForm()" class="requests-block__invite">
+    <div class="requests-block__invite-copy">
+      <strong>Invite entrepreneur</strong>
+      <p>Create a collaboration-scoped invitation for one eligible entrepreneur.</p>
+    </div>
+    <div *ngIf="inviteCandidates.length; else noInviteCandidates" class="requests-block__invite-controls">
+      <label class="requests-block__field">
+        <span class="requests-block__label">Entrepreneur</span>
+        <select
+          [disabled]="inviteActionInFlight"
+          [value]="selectedInviteeId ?? ''"
+          (change)="onInviteeChange($any($event.target).value)">
+          <option value="">Select entrepreneur</option>
+          <option
+            *ngFor="let candidate of inviteCandidates; trackBy: trackByInviteCandidate"
+            [value]="candidate.id">
+            {{ candidate.fullName }} | {{ candidate.email }}
+          </option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="kh-btn kh-btn--secondary"
+        [disabled]="!canSubmitInvite()"
+        (click)="submitInvite()">
+        {{ inviteActionInFlight ? 'Sending...' : 'Invite entrepreneur' }}
+      </button>
+    </div>
+  </div>
+
+  <ng-template #noInviteCandidates>
+    <div class="requests-block__empty">
+      No eligible entrepreneurs are currently available for invitation.
+    </div>
+  </ng-template>
+
+  <div *ngIf="!requests?.length" class="requests-block__empty">
+    No requests found.
+  </div>
+
+  <ul *ngIf="requests?.length" class="requests-block__list">
+    <li *ngFor="let request of displayRequests; trackBy: trackByRequest" class="requests-block__item">
+      <div class="requests-block__main">
+        <div class="requests-block__content">
+          <strong>{{ viewMode === 'collaboration' ? requestRouteLabel(request) : requestTitle(request) }}</strong>
+          <p *ngIf="viewMode === 'collaboration'">
+            {{ scenarioLabel(request) }} • {{ requestDate(request) | date:'MMM d, y' }}
+          </p>
+          <p *ngIf="viewMode !== 'collaboration'">
+            {{ requestSubtitle(request) }} • {{ requestActorLabel(request) }}
+          </p>
+        </div>
+
+        <div class="requests-block__side">
+          <span class="kh-badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="canRespondToRequest(request)" class="requests-block__actions">
+        <button
+          class="kh-btn kh-btn--secondary"
+          [disabled]="isRequestActionInFlight(request)"
+          (click)="requestAccepted.emit({ requestId: request.id })">
+          {{ isRequestActionInFlight(request) ? 'Updating...' : 'Accept' }}
+        </button>
+        <button
+          class="kh-btn kh-btn--ghost"
+          [disabled]="isRequestActionInFlight(request)"
+          (click)="requestRejected.emit({ requestId: request.id })">
+          {{ isRequestActionInFlight(request) ? 'Updating...' : 'Reject' }}
+        </button>
+      </div>
+    </li>
+  </ul>
+</div>

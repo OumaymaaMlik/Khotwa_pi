@@ -1,0 +1,24 @@
+/back/target/
+/back/*.jar
+/back/.env
+
+/front/node_modules/
+/front/dist/
+/front/.angular/
+
+# Angular
+front/.angular/
+front/dist/
+front/node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Archives
+*.zip
+node_modules/
+/back/uploads/

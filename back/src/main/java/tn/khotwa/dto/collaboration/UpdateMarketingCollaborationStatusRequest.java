@@ -1,0 +1,18 @@
+package tn.khotwa.dto.collaboration;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateMarketingCollaborationStatusRequest {
+
+    @NotNull
+    private MarketingCollaborationStatus status;
+}

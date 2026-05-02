@@ -1,0 +1,186 @@
+<div class="landing">
+
+  <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
+  <!-- CHANGEMENTS : btn-orange-sm → btn-primary-sm -->
+  <nav class="navbar" [class.navbar--scrolled]="scrolled">
+    <a class="nav-logo" routerLink="/">
+      <img src="assets/khotwa-logo.png" alt="KHOTWA" class="nav-logo-img" />
+    </a>
+    <ul class="nav-menu">
+      <li *ngFor="let item of navItems; trackBy: trackByLabel">
+        <a *ngIf="item.anchor" [href]="item.anchor">{{ item.label }}</a>
+        <a *ngIf="!item.anchor" (click)="goTalentMarket()" class="nav-talent-btn" style="cursor:pointer">{{ item.label }}</a>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <button class="btn-ghost-sm" (click)="goLogin()">Sign in</button>
+      <!-- ✏️ CHANGEMENT : btn-orange-sm → btn-primary-sm -->
+      <button class="btn-ghost-sm" (click)="goLogin()">Get started →</button>
+    </div>
+    <button class="nav-burger" (click)="mobileMenuOpen=!mobileMenuOpen">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" [class.open]="mobileMenuOpen">
+    <ng-container *ngFor="let item of navItems">
+      <a *ngIf="item.anchor"  [href]="item.anchor"  (click)="mobileMenuOpen=false">{{ item.label }}</a>
+      <a *ngIf="!item.anchor" (click)="goTalentMarket(); mobileMenuOpen=false" style="cursor:pointer">{{ item.label }}</a>
+    </ng-container>
+    <!-- ✏️ CHANGEMENT : btn-orange-sm → btn-primary-sm -->
+    <button class="btn-primary-sm" style="margin-top:8px" (click)="goLogin()">Get started →</button>
+  </div>
+
+  <!-- ══ HERO SLIDER ══════════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT dans cette section -->
+  <section class="hero-slider">
+    <div class="slider-track">
+      <div *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
+           class="slide"
+           [class.slide--active]="i === sliderIndex"
+           [class]="slide.bg + (i === sliderIndex ? ' slide--active' : '')">
+        <div class="slide-inner">
+          <div class="hero-badge">
+            <span class="badge-pulse"></span>{{ slide.badge }}
+          </div>
+          <h1 class="hero-title">
+            {{ slide.title }}<br>
+            <em>{{ slide.titleAccent }}</em>
+          </h1>
+          <p class="hero-sub">{{ slide.sub }}</p>
+          <div class="hero-actions">
+            <button class="btn-primary-lg" (click)="goLogin()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              Start for free
+            </button>
+            <button class="btn-outline-lg" (click)="goLogin()">Explore the demo →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="slider-arrow slider-arrow--prev" (click)="prevSlide()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button class="slider-arrow slider-arrow--next" (click)="nextSlide()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+
+    <div class="slider-dots">
+      <button *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
+              class="slider-dot"
+              [class.slider-dot--active]="i === sliderIndex"
+              (click)="goSlide(i)"></button>
+    </div>
+
+   
+  </section>
+
+  <!-- ══ ESPACES / RÔLES ══════════════════════════════════════════ -->
+  <!--
+    ✏️ CHANGEMENTS dans les role-card :
+      - Founder : [style.--rc]="'#1d4e89'"  (était --orange)
+      - Coach   : [style.--rc]="'#0d4a38'"  (reste pareil)
+      Adapter selon les couleurs de tes rôles dans roles[]
+  -->
+  <section class="roles-section" id="roles">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-eyebrow">2 dedicated spaces</span>
+        <h2 class="section-title">A space for every role</h2>
+        <p class="section-sub">KHOTWA tailors each interface to the user's exact role for an optimal experience.</p>
+      </div>
+      <div class="roles-grid">
+        <div *ngFor="let r of roles; trackBy: trackByName"
+             class="role-card" [style.--rc]="r.color" (click)="loginAs(r.role)">
+          <div class="role-top">
+            <div class="role-emoji-bg">{{ r.emoji }}</div>
+            <p class="role-name">{{ r.name }}</p>
+            <p class="role-desc">{{ r.desc }}</p>
+          </div>
+          <div class="role-bottom">
+            <ul class="role-list">
+              <li *ngFor="let feat of r.features; trackBy: trackByText">
+                <div class="role-check-icon">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+                {{ feat }}
+              </li>
+            </ul>
+            <button class="role-cta-btn">Access space →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FONCTIONNALITÉS ══════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT HTML dans cette section -->
+  <section class="features-section" id="fonctionnalites">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-eyebrow">Everything you need</span>
+        <h2 class="section-title">Key features</h2>
+        <p class="section-sub">Built for teams who want to move fast and structure their growth from day one.</p>
+      </div>
+      <div class="features-grid">
+        <div *ngFor="let f of features; trackBy: trackByTitle" class="feat-card">
+          <div class="feat-icon-wrap" [style.background]="f.bg">{{ f.icon }}</div>
+          <h3 class="feat-title">{{ f.title }}</h3>
+          <p class="feat-desc">{{ f.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ COMMENT ÇA MARCHE ════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT HTML dans cette section -->
+  <section class="steps-section" id="processus">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-eyebrow">Simple &amp; effective</span>
+        <h2 class="section-title">How it works</h2>
+        <p class="section-sub">From sign-up to certification in 4 structured steps.</p>
+      </div>
+      <div class="steps-grid">
+        <div *ngFor="let s of steps; trackBy: trackByStep" class="step-item">
+          <div class="step-circle" [class]="s.cls">{{ s.n }}</div>
+          <h3 class="step-title">{{ s.title }}</h3>
+          <p class="step-desc">{{ s.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CTA ══════════════════════════════════════════════════════ -->
+  <!-- PAS DE CHANGEMENT dans cette section -->
+  <section class="cta-section" id="contact">
+    <div class="cta-inner">
+      <div class="cta-badge">🚀 Join KHOTWA today</div>
+      <h2 class="cta-title">Ready to accelerate<br>your startup?</h2>
+      <p class="cta-sub">Join teams who trust KHOTWA to turn their ideas into measurable success. Get started in under 5 minutes.</p>
+      <div class="cta-btns">
+        <button class="btn-primary-lg" (click)="goLogin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          Access the platform
+        </button>
+        <button class="btn-outline-lg">Contact us →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+  <app-footer></app-footer>
+
+</div>

@@ -1,0 +1,278 @@
+<div class="collaboration-detail-page">
+  <div *ngIf="loading" class="kh-card collab-empty">Loading collaboration details...</div>
+  <div *ngIf="error" class="kh-card collab-alert collab-alert--error">{{ error }}</div>
+
+  <ng-container *ngIf="collaboration as currentCollaboration">
+    <section class="detail-section detail-section--header">
+      <div class="detail-section__intro">
+        <span class="detail-section__eyebrow">Header</span>
+        <div>
+          <h1 class="kh-page-title">Collaboration detail</h1>
+          <p class="detail-section__description">Overview, access, and workspace in one place.</p>
+        </div>
+      </div>
+
+      <div class="detail-header-grid">
+        <div class="kh-card collaboration-overview-card">
+          <div class="collaboration-overview-card__header">
+            <div>
+              <h2 class="kh-section-title">{{ currentCollaboration.projectName }}</h2>
+              <p class="detail-section__description">Shared collaboration workspace.</p>
+            </div>
+            <span class="kh-badge kh-badge--teal">{{ collaborationTypeLabel }}</span>
+          </div>
+          <div class="collaboration-overview-card__grid">
+            <div class="collaboration-overview-card__item">
+              <span class="detail-section__eyebrow">Owner</span>
+              <strong>{{ currentCollaboration.ownerName || 'Unknown owner' }}</strong>
+              <p>{{ currentCollaboration.ownerEmail || 'No email available' }}</p>
+            </div>
+            <div class="collaboration-overview-card__item">
+              <span class="detail-section__eyebrow">Status</span>
+              <strong>{{ currentCollaboration.status }}</strong>
+              <p>{{ members.length }} member{{ members.length === 1 ? '' : 's' }}</p>
+            </div>
+            <div class="collaboration-overview-card__item">
+              <span class="detail-section__eyebrow">Project</span>
+              <strong>{{ currentCollaboration.projectName || 'Unnamed project' }}</strong>
+              <p>Linked project for this collaboration.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-header-aside">
+          <app-collaboration-actions
+            [collaboration]="currentCollaboration"
+            [role]="currentUserRole"
+            [currentUserId]="currentUserId"
+            [canUpdateStatus]="canUpdateStatus"
+            [canLeave]="canLeaveCollaboration"
+            [isReadOnly]="currentCollaboration.status === 'CLOSED' && !isAdmin"
+            (statusUpdated)="onStatusUpdated($event)"
+            (collaborationLeft)="onCollaborationLeft($event)">
+          </app-collaboration-actions>
+
+          <div *ngIf="showContributionActions" class="kh-card contribution-card">
+            <div class="contribution-card__header">
+              <div>
+                <h3 class="kh-section-title">Contribution actions</h3>
+                <p class="contribution-card__subtitle">{{ contributionHelperText }}</p>
+              </div>
+              <span class="kh-badge kh-badge--teal">Entrepreneur</span>
+            </div>
+            <div class="contribution-card__actions">
+              <button
+                type="button"
+                class="kh-btn kh-btn--secondary"
+                [disabled]="!canContributeResources"
+                (click)="openContributionAction('resource')">
+                Add resource
+              </button>
+              <button
+                type="button"
+                class="kh-btn kh-btn--secondary"
+                [disabled]="!canContributeRequests"
+                (click)="openContributionAction('request')">
+                Add request
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-section detail-section--compact">
+      <div class="kh-card detail-toggle-card detail-toggle-card--members">
+        <button
+          type="button"
+          class="detail-toggle-card__header"
+          [attr.aria-expanded]="membersExpanded"
+          (click)="toggleMembersExpanded()">
+          <div>
+            <h2 class="kh-section-title">Team members</h2>
+          </div>
+          <div class="detail-toggle-card__meta">
+            <span class="kh-badge kh-badge--teal">{{ memberCount }} member{{ memberCount === 1 ? '' : 's' }}</span>
+            <span class="detail-toggle-card__chevron" [class.detail-toggle-card__chevron--expanded]="membersExpanded" aria-hidden="true"></span>
+          </div>
+        </button>
+
+        <div *ngIf="membersExpanded" class="detail-toggle-card__body detail-toggle-card__body--members">
+          <app-members-block
+            [members]="members"
+            [collaborationId]="currentCollaboration.id"
+            [ownerUserId]="currentCollaboration.ownerId"
+            [role]="currentUserRole"
+            [currentUserId]="currentUserId"
+            [canRemoveMembers]="canRemoveMembers"
+            (memberRemoved)="onMemberRemoved($event)">
+          </app-members-block>
+
+          <div *ngIf="canManageCollaboration" class="invite-panel">
+            <div class="invite-panel__header">
+              <button
+                type="button"
+                class="kh-btn kh-btn--secondary"
+                [attr.aria-expanded]="inviteExpanded"
+                (click)="toggleInviteExpanded()">
+                {{ inviteExpanded ? 'Hide invite form' : 'Invite entrepreneur' }}
+              </button>
+              <span *ngIf="pendingInvitations.length" class="kh-badge kh-badge--amber">{{ pendingInvitations.length }} pending</span>
+            </div>
+
+            <div *ngIf="inviteExpanded" class="invite-panel__body">
+              <div *ngIf="currentCollaboration.status !== 'ACTIVE'" class="invite-card__hint">
+                This collaboration is {{ currentCollaboration.status.toLowerCase() }}. Invitations can only be sent when it is active.
+              </div>
+
+              <div class="invite-card__controls">
+                <label class="invite-card__field">
+                  <span class="invite-card__label">Search</span>
+                  <input
+                    type="text"
+                    [disabled]="!canInviteToCollaboration || inviteActionInFlight"
+                    [value]="inviteSearch"
+                    placeholder="Type at least 2 characters"
+                    (input)="onInviteSearchChange($any($event.target).value)">
+                </label>
+
+                <label class="invite-card__field">
+                  <span class="invite-card__label">Entrepreneur</span>
+                  <select
+                    [disabled]="!canInviteToCollaboration || inviteActionInFlight || inviteLoading || inviteSearch.trim().length < 2"
+                    [value]="inviteSelectedUserId ?? ''"
+                    (change)="onInviteeSelected($any($event.target).value)">
+                    <option value="">Select entrepreneur</option>
+                    <option *ngFor="let candidate of inviteCandidates" [value]="candidate.id">
+                      {{ candidate.fullName }} | {{ candidate.email }}
+                    </option>
+                  </select>
+                </label>
+
+                <button
+                  type="button"
+                  class="kh-btn kh-btn--secondary"
+                  [disabled]="!canSendInvitation"
+                  (click)="sendInvitation()">
+                  {{ inviteActionInFlight ? 'Sending...' : 'Send invitation' }}
+                </button>
+              </div>
+
+              <div *ngIf="inviteLoading" class="invite-card__hint">Searching entrepreneurs...</div>
+              <div *ngIf="!inviteLoading && inviteSearch.trim().length >= 2 && !inviteCandidates.length && !inviteError" class="invite-card__hint">
+                No eligible entrepreneurs found for this search.
+              </div>
+              <div *ngIf="inviteError" class="invite-card__error">{{ inviteError }}</div>
+
+              <div class="invite-card__pending" *ngIf="pendingInvitations.length">
+                <div class="invite-card__pending-head">
+                  <strong>Pending invitations</strong>
+                  <span class="kh-badge kh-badge--amber">{{ pendingInvitations.length }}</span>
+                </div>
+                <ul class="invite-card__pending-list">
+                  <li *ngFor="let request of pendingInvitations" class="invite-card__pending-item">
+                    <div>
+                      <strong>{{ request.targetUserName ?? 'Unknown user' }}</strong>
+                      <p>{{ request.targetUserEmail ?? 'No email available' }}</p>
+                      <p class="invite-card__pending-meta">Sent {{ request.createdAt | date:'MMM d, yyyy, HH:mm' }}</p>
+                    </div>
+                    <span class="kh-badge kh-badge--amber">Pending</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-section detail-section--compact">
+      <div class="kh-card detail-toggle-card">
+        <button
+          type="button"
+          class="detail-toggle-card__header"
+          [attr.aria-expanded]="requestsExpanded"
+          (click)="toggleRequestsExpanded()">
+          <div>
+            <h2 class="kh-section-title">Collaboration requests</h2>
+          </div>
+          <div class="detail-toggle-card__meta">
+            <span class="kh-badge kh-badge--teal">{{ requestCount }} request{{ requestCount === 1 ? '' : 's' }}</span>
+            <span class="detail-toggle-card__chevron" [class.detail-toggle-card__chevron--expanded]="requestsExpanded" aria-hidden="true"></span>
+          </div>
+        </button>
+
+        <div *ngIf="requestsExpanded" class="detail-toggle-card__body">
+          <app-requests-block
+            [requests]="collaborationRequests"
+            [viewMode]="'collaboration'"
+            [role]="currentUserRole"
+            [currentUserId]="currentUserId"
+            [collaborationStatus]="currentCollaboration.status"
+            [requestActionInFlightId]="collaborationRequestActionInFlightId"
+            [canRespond]="canManageCollaboration"
+            (requestAccepted)="onRequestAccepted($event)"
+            (requestRejected)="onRequestRejected($event)">
+          </app-requests-block>
+        </div>
+      </div>
+    </section>
+
+    <section *ngIf="isMarketingCollaboration" class="detail-section">
+      <div class="detail-section__intro">
+        <span class="detail-section__eyebrow">Marketing</span>
+        <div>
+          <h2 class="kh-section-title">Campaign workspace</h2>
+          <p class="detail-section__description">Progress first, campaign details and tasks on demand.</p>
+        </div>
+      </div>
+
+      <app-marketing-block
+        [campaigns]="marketingCampaigns"
+        [tasks]="marketingTasks"
+        [members]="members"
+        [role]="currentUserRole"
+        [currentUserId]="currentUserId"
+        [collaborationOwnerId]="currentCollaboration.ownerId"
+        [collaborationStatus]="currentCollaboration.status"
+        [canCreateCampaign]="canCreateMarketingCampaign"
+        [canCreateTasks]="canCreateMarketingTask"
+        (createCampaign)="onCreateCampaign($event)"
+        (updateCampaignStatus)="onUpdateMarketingCampaignStatus($event)"
+        (createTask)="onCreateMarketingTask($event)"
+        (updateTaskStatus)="onUpdateMarketingTaskStatus($event)">
+      </app-marketing-block>
+    </section>
+
+    <section *ngIf="!isMarketingCollaboration" #resourcesSection class="detail-section">
+      <div class="detail-section__intro">
+        <span class="detail-section__eyebrow">Resources</span>
+        <div>
+          <h2 class="kh-section-title">Resources and requests</h2>
+          <p class="detail-section__description">Shared assets and requests for this collaboration.</p>
+        </div>
+      </div>
+
+      <app-resources-block
+        #resourcesBlock
+        [resources]="sharedResources"
+        [resourceRequests]="resourceRequests"
+        [role]="currentUserRole"
+        [currentUserId]="currentUserId"
+        [collaborationOwnerId]="currentCollaboration.ownerId"
+        [collaborationStatus]="currentCollaboration.status"
+        [resourceRequestActionInFlightId]="resourceRequestActionInFlightId"
+        [canCreateResource]="canCreateResource"
+        [canRequestResource]="canCreateResourceRequest"
+        [canUpdateResourceRequestStatuses]="canUpdateResourceRequestStatuses"
+        [errorMessage]="error"
+        (createResource)="onCreateResource($event)"
+        (updateResource)="onUpdateResource($event)"
+        (removeResource)="onRemoveResource($event)"
+        (createResourceRequest)="onCreateResourceRequest($event)"
+        (removeResourceRequest)="onRemoveResourceRequest($event)"
+        (updateResourceRequestStatus)="onUpdateResourceRequestStatus($event)">
+      </app-resources-block>
+    </section>
+  </ng-container>
+</div>

@@ -1,0 +1,17 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="kh-page-title">Collaborations</h1>
+      <p class="page-sub">Manage and view collaboration workspaces.</p>
+    </div>
+    <div class="collaboration-page-actions">
+      <a routerLink="/entrepreneur/collaborations/requests" class="kh-btn kh-btn--ghost">Collaboration Requests</a>
+      <a routerLink="/entrepreneur/collaborations/create" class="kh-btn kh-btn--primary">Create Collaboration</a>
+    </div>
+  </div>
+  <app-collaboration-list
+    [showHeader]="false"
+    emptyStateTitle="No collaborations yet"
+    emptyStateDescription="No collaborations were returned by the backend.">
+  </app-collaboration-list>
+</div>

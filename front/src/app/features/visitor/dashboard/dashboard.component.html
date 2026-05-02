@@ -1,0 +1,66 @@
+<div class="vis-page">
+  <div class="vis-hero vis-card">
+    <h1>
+      Bonjour, {{ (auth.currentUser$ | async)?.firstName }}
+    </h1>
+    <p>Un espace visitor plus clair, moderne et aligne avec le style entrepreneur pour piloter vos candidatures.</p>
+    <div class="vis-highlights">
+      <span class="vis-pill">Experience premium</span>
+      <span class="vis-pill">Insights dynamiques</span>
+      <span class="vis-pill">IA Gemini</span>
+    </div>
+    <div class="vis-actions">
+      <a routerLink="/visitor/annonces" class="vis-btn vis-btn--primary">Voir les offres</a>
+      <a routerLink="/visitor/profil" class="vis-btn vis-btn--ghost">Mettre a jour mon profil</a>
+      <a routerLink="/visitor/candidatures" class="vis-btn vis-btn--ghost">Mes candidatures</a>
+    </div>
+  </div>
+
+  <div *ngIf="!hasProfil" class="vis-banner vis-banner--warn">
+    <strong>Profil talent requis</strong> pour postuler. Renseignez vos compétences sur
+    <a routerLink="/visitor/profil">Mon profil talent</a>.
+  </div>
+
+  <div class="vis-stats" *ngIf="!loading">
+    <a routerLink="/visitor/annonces" class="vis-stat-card">
+      <span class="vis-stat-val">{{ annoncesCount }}</span>
+      <span class="vis-stat-lbl">Offres publiées</span>
+    </a>
+    <a routerLink="/visitor/candidatures" class="vis-stat-card">
+      <span class="vis-stat-val">{{ candidaturesCount }}</span>
+      <span class="vis-stat-lbl">Mes candidatures</span>
+    </a>
+    <a routerLink="/visitor/profil" class="vis-stat-card">
+      <span class="vis-stat-val">{{ profileCompletion }}%</span>
+      <span class="vis-stat-lbl">Complétude du profil</span>
+    </a>
+  </div>
+
+  <div class="vis-ai-card vis-card">
+    <div class="vis-ai-head">
+      <h3>Assistant IA Carrière</h3>
+      <span class="vis-ai-badge">Gemini API</span>
+    </div>
+    <p>Décris ton objectif, puis laisse l’IA proposer les prochaines actions.</p>
+    <textarea [(ngModel)]="aiGoal" rows="2" placeholder="Ex: Devenir top candidat sur les offres Spring/Angular"></textarea>
+    <button class="vis-btn vis-btn--primary" (click)="askAi()" [disabled]="aiLoading">
+      {{ aiLoading ? 'Analyse…' : 'Générer un plan IA' }}
+    </button>
+    <div style="margin-top:10px;">
+      <input [(ngModel)]="keywordInput" placeholder="Ajouter un contexte pour mots-clés (ex: backend spring remote)" />
+      <button class="vis-btn vis-btn--ghost" (click)="generateKeywordsFromGoal()">Générer keywords</button>
+    </div>
+    <div *ngIf="keywords.length" class="vis-highlights" style="margin-top:8px;">
+      <span class="vis-pill" *ngFor="let k of keywords">#{{ k }}</span>
+    </div>
+    <div *ngIf="suggestedRoles.length" class="vis-highlights" style="margin-top:8px;">
+      <span class="vis-pill" *ngFor="let r of suggestedRoles">Role: {{ r }}</span>
+    </div>
+    <div *ngIf="aiAdvice" class="vis-ai-result">
+      <p><strong>Resultat IA:</strong> {{ aiAdvice }}</p>
+      <ul>
+        <li *ngFor="let b of aiBullets">{{ b }}</li>
+      </ul>
+    </div>
+  </div>
+</div>

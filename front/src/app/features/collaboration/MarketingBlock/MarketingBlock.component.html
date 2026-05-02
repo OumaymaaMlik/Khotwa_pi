@@ -1,0 +1,351 @@
+<div class="marketing-block kh-card">
+  <div class="marketing-block__header">
+    <div>
+      <span class="marketing-block__eyebrow">Campaign Workspace</span>
+      <h2 class="kh-section-title">Marketing campaign workspace</h2>
+      <p>Progress first, then campaign details and tasks.</p>
+    </div>
+    <div class="marketing-block__header-badges">
+      <span class="kh-badge kh-badge--orange">{{ hasOpenCampaign ? 1 : 0 }} open</span>
+      <span class="kh-badge kh-badge--teal">{{ tasks.length }} task{{ tasks.length === 1 ? '' : 's' }}</span>
+    </div>
+  </div>
+
+  <section class="marketing-block__section marketing-block__section--progress">
+    <div class="marketing-block__section-header">
+      <div>
+        <h3>Progress</h3>
+        <p>Published, percentage, overdue, and next deadline.</p>
+      </div>
+      <div class="marketing-block__progress-summary">
+        <span class="kh-badge kh-badge--green">{{ publishedTaskCount }} / {{ totalTasks }} published</span>
+        <span class="marketing-block__progress-text">Progress: {{ progressPercentage }}%</span>
+      </div>
+    </div>
+
+    <div class="marketing-block__progress-bar" aria-label="Campaign progress">
+      <div class="marketing-block__progress-fill" [style.width.%]="progressPercentage"></div>
+    </div>
+
+    <div class="marketing-block__stats marketing-block__stats--compact">
+      <article class="marketing-block__stat">
+        <span class="marketing-block__stat-label">Published</span>
+        <strong>{{ publishedTaskCount }} / {{ totalTasks }}</strong>
+      </article>
+      <article class="marketing-block__stat">
+        <span class="marketing-block__stat-label">Completion</span>
+        <strong>{{ progressPercentage }}%</strong>
+      </article>
+      <article class="marketing-block__stat">
+        <span class="marketing-block__stat-label">Overdue</span>
+        <strong>{{ overdueTaskCount }}</strong>
+      </article>
+      <article class="marketing-block__stat">
+        <span class="marketing-block__stat-label">Next deadline</span>
+        <strong>{{ nextDueTask?.title ?? 'No deadline yet' }}</strong>
+        <p>{{ nextDueTask?.dueDate ? (nextDueTask?.dueDate | date:'MMM d, y, HH:mm') : 'Add due dates to plan ahead.' }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="marketing-block__section">
+    <div class="marketing-block__section-header">
+      <div>
+        <h3>Campaign</h3>
+        <p>Current campaign and key dates.</p>
+      </div>
+      <span class="kh-badge kh-badge--orange">Owner / Admin</span>
+    </div>
+
+    <div *ngIf="hasOpenCampaign" class="marketing-block__notice marketing-block__notice--active">
+      {{ campaignStateMessage }}
+    </div>
+
+    <div *ngIf="showCreateCampaignButton" class="marketing-block__actions">
+      <button type="button" class="kh-btn kh-btn--secondary" (click)="toggleCampaignForm()">
+        {{ campaignFormOpen ? 'Hide campaign form' : createCampaignButtonLabel }}
+      </button>
+    </div>
+
+    <div *ngIf="showCampaignForm" class="marketing-block__form">
+      <div class="marketing-block__form-grid">
+        <label class="marketing-block__field marketing-block__field--wide">
+          <span class="marketing-block__label">Campaign title</span>
+          <input [(ngModel)]="campaignForm.title" type="text" placeholder="Spring partner launch">
+          <span *ngIf="campaignFormErrors.title" class="marketing-block__error">{{ campaignFormErrors.title }}</span>
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">Campaign type</span>
+          <select [(ngModel)]="campaignForm.campaignType">
+            <option *ngFor="let type of campaignTypes" [ngValue]="type">{{ type }}</option>
+          </select>
+          <span *ngIf="campaignFormErrors.campaignType" class="marketing-block__error">{{ campaignFormErrors.campaignType }}</span>
+        </label>
+
+        <label class="marketing-block__field marketing-block__field--wide">
+          <span class="marketing-block__label">Objective</span>
+          <input [(ngModel)]="campaignForm.objective" type="text" placeholder="Drive awareness and direct profile visits">
+          <span *ngIf="campaignFormErrors.objective" class="marketing-block__error">{{ campaignFormErrors.objective }}</span>
+        </label>
+
+        <label class="marketing-block__field marketing-block__field--wide">
+          <span class="marketing-block__label">Description</span>
+          <textarea [(ngModel)]="campaignForm.description" rows="3" placeholder="Shared brief, key message, audience, or CTA"></textarea>
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">Start date</span>
+          <input [(ngModel)]="campaignForm.startDate" type="datetime-local">
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">End date</span>
+          <input [(ngModel)]="campaignForm.endDate" type="datetime-local">
+          <span *ngIf="campaignFormErrors.endDate" class="marketing-block__error">{{ campaignFormErrors.endDate }}</span>
+        </label>
+      </div>
+
+      <div class="marketing-block__actions">
+        <button type="button" class="kh-btn kh-btn--secondary" (click)="submitCampaign()">
+          {{ createCampaignButtonLabel }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="openCampaign as campaign; else noOpenCampaignCard" class="marketing-block__item marketing-block__item--campaign">
+      <div class="marketing-block__item-content">
+        <div class="marketing-block__item-head">
+          <div>
+            <span class="marketing-block__item-label">Open campaign</span>
+            <strong>{{ campaign.title || 'Untitled campaign' }}</strong>
+          </div>
+          <span class="kh-badge" [ngClass]="campaignStatusClass(campaign.status)">{{ campaign.status }}</span>
+        </div>
+
+        <div class="marketing-block__meta">
+          <span class="kh-badge kh-badge--orange">{{ campaign.campaignType }}</span>
+          <span class="kh-badge kh-badge--gray">{{ tasks.length }} task{{ tasks.length === 1 ? '' : 's' }}</span>
+          <span class="kh-badge kh-badge--green">{{ publishedTaskCount }} published</span>
+        </div>
+
+        <div class="marketing-block__timeline">
+          <span>{{ campaign.startDate ? (campaign.startDate | date:'MMM d, y, HH:mm') : 'Start date not set' }}</span>
+          <span>{{ campaign.endDate ? (campaign.endDate | date:'MMM d, y, HH:mm') : 'End date not set' }}</span>
+        </div>
+
+        <button
+          *ngIf="hasCampaignBrief"
+          type="button"
+          class="marketing-block__inline-toggle"
+          (click)="toggleCampaignBrief()">
+          {{ campaignBriefExpanded ? 'Hide campaign brief' : 'Show campaign brief' }}
+        </button>
+
+        <div *ngIf="campaignBriefExpanded && hasCampaignBrief" class="marketing-block__brief">
+          <p *ngIf="campaign.objective"><strong>Objective:</strong> {{ campaign.objective }}</p>
+          <p *ngIf="campaign.description"><strong>Description:</strong> {{ campaign.description }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="canManageOpenCampaign" class="marketing-block__actions marketing-block__actions--status">
+        <button
+          *ngIf="campaign.status === 'DRAFT'"
+          type="button"
+          class="kh-btn kh-btn--secondary"
+          (click)="setCampaignStatus('ACTIVE')">
+          Activate campaign
+        </button>
+        <button
+          *ngIf="campaign.status === 'ACTIVE'"
+          type="button"
+          class="kh-btn kh-btn--secondary"
+          (click)="setCampaignStatus('COMPLETED')">
+          Complete campaign
+        </button>
+        <button
+          *ngIf="campaign.status === 'DRAFT' || campaign.status === 'ACTIVE'"
+          type="button"
+          class="kh-btn kh-btn--ghost"
+          (click)="setCampaignStatus('CANCELLED')">
+          Cancel campaign
+        </button>
+      </div>
+    </div>
+
+    <ng-template #noOpenCampaignCard>
+      <ng-container *ngIf="latestCampaign as campaign; else noCampaignHistory">
+        <div class="marketing-block__item marketing-block__item--campaign marketing-block__item--readonly">
+          <div class="marketing-block__item-content">
+            <div class="marketing-block__item-head">
+              <div>
+                <span class="marketing-block__item-label">Last campaign</span>
+                <strong>{{ campaign.title || 'Untitled campaign' }}</strong>
+              </div>
+              <span class="kh-badge" [ngClass]="campaignStatusClass(campaign.status)">{{ campaign.status }}</span>
+            </div>
+
+            <div class="marketing-block__meta">
+              <span class="kh-badge kh-badge--orange">{{ campaign.campaignType }}</span>
+              <span class="kh-badge kh-badge--gray">Read-only</span>
+            </div>
+
+            <div class="marketing-block__timeline">
+              <span>{{ campaign.startDate ? (campaign.startDate | date:'MMM d, y, HH:mm') : 'Start date not set' }}</span>
+              <span>{{ campaign.endDate ? (campaign.endDate | date:'MMM d, y, HH:mm') : 'End date not set' }}</span>
+            </div>
+
+            <button
+              *ngIf="hasCampaignBrief"
+              type="button"
+              class="marketing-block__inline-toggle"
+              (click)="toggleCampaignBrief()">
+              {{ campaignBriefExpanded ? 'Hide campaign brief' : 'Show campaign brief' }}
+            </button>
+
+            <div *ngIf="campaignBriefExpanded && hasCampaignBrief" class="marketing-block__brief">
+              <p *ngIf="campaign.objective"><strong>Objective:</strong> {{ campaign.objective }}</p>
+              <p *ngIf="campaign.description"><strong>Description:</strong> {{ campaign.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="marketing-block__empty">
+          <p>{{ noOpenCampaignDetailsMessage }}</p>
+        </div>
+      </ng-container>
+
+      <ng-template #noCampaignHistory>
+        <div class="marketing-block__empty">
+          <p>{{ noOpenCampaignDetailsMessage }}</p>
+        </div>
+      </ng-template>
+    </ng-template>
+  </section>
+
+  <section class="marketing-block__section">
+    <div class="marketing-block__section-header">
+      <div>
+        <h3>Tasks</h3>
+        <p>Assign and move content through publication.</p>
+      </div>
+      <div class="marketing-block__actions">
+        <span class="kh-badge kh-badge--teal">Members</span>
+        <button
+          *ngIf="canCreateTasksInOpenCampaign"
+          type="button"
+          class="kh-btn kh-btn--secondary"
+          (click)="toggleTaskForm()">
+          {{ addTaskExpanded ? 'Hide task form' : 'Add content task' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="showTaskForm" class="marketing-block__form">
+      <div class="marketing-block__form-grid">
+        <label class="marketing-block__field marketing-block__field--wide">
+          <span class="marketing-block__label">Open campaign</span>
+          <input [value]="openCampaign?.title ?? ''" type="text" readonly>
+          <span *ngIf="taskFormErrors.marketingCollaborationId" class="marketing-block__error">{{ taskFormErrors.marketingCollaborationId }}</span>
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">Assigned member</span>
+          <select [(ngModel)]="taskForm.assignedUserId">
+            <option *ngFor="let member of members" [ngValue]="member.userId">{{ member.fullName }}</option>
+          </select>
+          <span *ngIf="taskFormErrors.assignedUserId" class="marketing-block__error">{{ taskFormErrors.assignedUserId }}</span>
+        </label>
+
+        <label class="marketing-block__field marketing-block__field--wide">
+          <span class="marketing-block__label">Task title</span>
+          <input [(ngModel)]="taskForm.title" type="text" placeholder="Draft launch reel for Instagram">
+          <span *ngIf="taskFormErrors.title" class="marketing-block__error">{{ taskFormErrors.title }}</span>
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">Content type</span>
+          <select [(ngModel)]="taskForm.contentType">
+            <option *ngFor="let type of contentTypes" [ngValue]="type">{{ type }}</option>
+          </select>
+          <span *ngIf="taskFormErrors.contentType" class="marketing-block__error">{{ taskFormErrors.contentType }}</span>
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">Platform</span>
+          <select [(ngModel)]="taskForm.platform">
+            <option *ngFor="let platform of platforms" [ngValue]="platform">{{ platform }}</option>
+          </select>
+          <span *ngIf="taskFormErrors.platform" class="marketing-block__error">{{ taskFormErrors.platform }}</span>
+        </label>
+
+        <label class="marketing-block__field marketing-block__field--wide">
+          <span class="marketing-block__label">Description</span>
+          <textarea [(ngModel)]="taskForm.description" rows="3" placeholder="Brief, format notes, CTA, and production details"></textarea>
+        </label>
+
+        <label class="marketing-block__field">
+          <span class="marketing-block__label">Due date</span>
+          <input [(ngModel)]="taskForm.dueDate" type="datetime-local">
+        </label>
+      </div>
+
+      <div class="marketing-block__actions">
+        <button type="button" class="kh-btn kh-btn--secondary" (click)="submitTask()">
+          Add content task
+        </button>
+      </div>
+    </div>
+
+    <ng-container *ngIf="!canCreateTasksInOpenCampaign">
+      <div class="marketing-block__hint">{{ taskReadOnlyMessage }}</div>
+    </ng-container>
+
+    <div *ngIf="tasks.length; else noTasks">
+      <ul class="marketing-block__cards">
+        <li *ngFor="let task of sortedTasks; trackBy: trackByTask" class="marketing-block__item">
+          <div class="marketing-block__item-content">
+            <div class="marketing-block__item-head">
+              <div>
+                <strong>{{ task.title || 'Untitled task' }}</strong>
+                <p>{{ openCampaign?.title || 'Open campaign' }}</p>
+              </div>
+              <span class="kh-badge" [ngClass]="taskBadgeClass(task.status)">{{ task.status }}</span>
+            </div>
+
+            <div class="marketing-block__meta">
+              <span class="kh-badge kh-badge--gray">Assigned to {{ task.assignedUserName || 'Unknown member' }}</span>
+              <span class="kh-badge kh-badge--orange">{{ task.contentType }}</span>
+              <span class="kh-badge kh-badge--teal">{{ task.platform }}</span>
+              <span *ngIf="task.dueDate" class="kh-badge" [ngClass]="isTaskOverdue(task) ? 'kh-badge--amber' : 'kh-badge--gray'">
+                Due {{ task.dueDate | date:'MMM d, y, HH:mm' }}
+              </span>
+              <span *ngIf="task.publishedAt" class="kh-badge kh-badge--green">
+                Published {{ task.publishedAt | date:'MMM d, y, HH:mm' }}
+              </span>
+            </div>
+
+            <p>{{ task.description || 'No task description provided.' }}</p>
+          </div>
+
+          <div *ngIf="canUpdateTask(task)" class="marketing-block__actions marketing-block__actions--status">
+            <button
+              *ngIf="nextTaskAction(task) as action"
+              type="button"
+              class="kh-btn kh-btn--ghost"
+              (click)="setTaskStatus(task, action.status)">
+              {{ action.label }}
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <ng-template #noTasks>
+      <div class="marketing-block__empty marketing-block__empty--tasks">
+        <p>No content tasks yet.</p>
+        <p>Start by adding your first task.</p>
+      </div>
+    </ng-template>
+  </section>
+</div>

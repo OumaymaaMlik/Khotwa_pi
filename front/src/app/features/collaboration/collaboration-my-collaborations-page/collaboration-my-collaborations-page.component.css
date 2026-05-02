@@ -1,0 +1,38 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.collaboration-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.collaboration-page-actions .kh-btn--ghost {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.collaboration-page-actions .kh-btn--ghost:hover {
+  border-color: rgba(42, 191, 191, 0.18);
+  background: rgba(42, 191, 191, 0.08);
+  color: #147a7a;
+}
+
+.collaboration-page-actions .kh-btn--primary {
+  min-width: 184px;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .collaboration-page-actions {
+    width: 100%;
+  }
+
+  .collaboration-page-actions .kh-btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}

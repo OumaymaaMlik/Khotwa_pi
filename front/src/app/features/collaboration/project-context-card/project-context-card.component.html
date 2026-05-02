@@ -1,0 +1,27 @@
+<div class="project-context-card kh-card">
+  <div class="project-context-card__header">
+    <div>
+      <h2 class="kh-section-title">{{ projectContext?.projectName ?? 'Project overview' }}</h2>
+      <p class="project-context-card__owner">Owned by {{ projectContext?.projectOwnerName ?? 'Unknown owner' }}</p>
+    </div>
+    <span class="kh-badge" [ngClass]="projectStatusClass(projectContext?.projectStatus ?? '')">
+      {{ projectContext?.projectStatus ?? 'UNKNOWN' }}
+    </span>
+  </div>
+
+  <p class="project-context-card__description">
+    {{ projectContext?.projectDescription ?? 'No project description available.' }}
+  </p>
+
+  <div class="project-context-card__summary">
+    <span class="project-context-card__tag">
+      Collaborations: {{ projectContext?.collaborationContext?.totalCollaborations ?? 0 }}
+    </span>
+    <span class="project-context-card__tag">
+      Resources: {{ projectContext?.resourceContext?.totalResources ?? 0 }}
+    </span>
+    <span class="project-context-card__tag">
+      Marketing tasks: {{ projectContext?.marketingContext?.totalTasks ?? 0 }}
+    </span>
+  </div>
+</div>

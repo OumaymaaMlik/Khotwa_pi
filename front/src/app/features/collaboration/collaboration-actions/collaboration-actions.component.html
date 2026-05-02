@@ -1,0 +1,31 @@
+<div class="collaboration-actions kh-card">
+  <div class="collaboration-actions__header">
+    <div>
+      <h2 class="kh-section-title">Collaboration actions</h2>
+      <p>Update lifecycle status or leave the collaboration when the workflow allows it.</p>
+    </div>
+    <span
+      class="kh-badge"
+      [ngClass]="(collaboration?.status ?? 'UNKNOWN') === 'ACTIVE'
+        ? 'kh-badge--green'
+        : (collaboration?.status ?? 'UNKNOWN') === 'SUSPENDED'
+          ? 'kh-badge--amber'
+          : 'kh-badge--gray'">
+      {{ collaboration?.status ?? 'UNKNOWN' }}
+    </span>
+  </div>
+
+  <div class="collaboration-actions__buttons">
+    <button *ngIf="canActivate" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('ACTIVE')">{{ activateLabel }}</button>
+    <button *ngIf="canSuspend" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('SUSPENDED')">Suspend</button>
+    <button *ngIf="canClose" class="kh-btn kh-btn--ghost" (click)="onUpdateStatus('CLOSED')">Close</button>
+    <button *ngIf="canShowLeaveAction" class="kh-btn kh-btn--secondary" (click)="onLeaveCollaboration()">Leave</button>
+  </div>
+
+  <div *ngIf="collaboration?.status === 'CLOSED' && isReadOnly" class="collaboration-actions__note">
+    This collaboration is {{ collaboration?.status?.toLowerCase() }}. Lifecycle actions are read-only.
+  </div>
+  <div *ngIf="canShowLeaveAction && currentUserId === collaboration?.ownerId" class="collaboration-actions__note">
+    Leaving as owner uses the backend leave endpoint and closes the collaboration.
+  </div>
+</div>

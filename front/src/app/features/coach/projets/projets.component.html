@@ -1,0 +1,1253 @@
+<div class="coach-page animate-1">
+
+  <!-- ── Page Header ─────────────────────────────────────────────── -->
+  @if (message) {
+    <div class="inline-message">{{ message }}</div>
+  }
+
+  <!-- ── Selected Project Context Bar ────────────────────────────── -->
+  @if (selectedProjet) {
+    <div class="coach-context-bar animate-2">
+      <div class="coach-context-bar__left">
+        <span class="coach-pill">Selected project</span>
+        <h2>{{ selectedProjet.titre }}</h2>
+      </div>
+      <div class="coach-context-bar__badges">
+        <div class="ctx-badge">
+          <span class="ctx-badge__label">Sector</span>
+          <strong>{{ selectedProjet.secteur || 'N/A' }}</strong>
+        </div>
+        <div class="ctx-badge">
+          <span class="ctx-badge__label">Stage</span>
+          <strong>{{ selectedProjet.stadeProjet || 'N/A' }}</strong>
+        </div>
+        <div class="ctx-badge ctx-badge--teal">
+          <span class="ctx-badge__label">Discipline</span>
+          <strong>{{ selectedProjet.disciplineScore }}</strong>
+        </div>
+        <div class="ctx-badge ctx-badge--amber">
+          <span class="ctx-badge__label">Open corrections</span>
+          <strong>{{ getCorrectionQueueCount() }}</strong>
+        </div>
+        <div class="ctx-badge ctx-badge--purple">
+          <span class="ctx-badge__label">Progress</span>
+          <strong>{{ selectedProjet.progression ?? 0 }}%</strong>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Main Shell ───────────────────────────────────────────────── -->
+  <div class="coach-shell animate-3">
+
+    <!-- ── Left Rail : project list + create task ─────────────────── -->
+    <aside class="coach-rail kh-card">
+      <div class="coach-rail__section">
+        <span class="coach-pill coach-pill--amber">Assigned projects</span>
+        <div class="project-quick-list">
+          @for (p of projets; track p.id) {
+            <button class="project-quick-item"
+                    [class.project-quick-item--active]="p.id === selectedProjetId"
+                    (click)="selectProjectFromList(p.id)">
+              <div>
+                <strong>{{ p.titre }}</strong>
+                <small>{{ p.stadeProjet || 'IDEA' }} — {{ p.secteur || 'N/A' }}</small>
+              </div>
+              <span class="score-pill" [class]="'score-pill--' + disciplineLevel(p.disciplineScore)">
+                {{ getProjectQuickCount(p.id) }}
+              </span>
+            </button>
+          } @empty {
+            <div class="empty">No assigned projects.</div>
+          }
+        </div>
+      </div>
+
+      @if (selectedProjetId) {
+        <div class="coach-rail__actions">
+          <button class="kh-btn kh-btn--primary" (click)="openCreateTaskModal()">
+            + Create task
+          </button>
+        </div>
+      }
+    </aside>
+
+    <!-- ── Center Board ─────────────────────────────────────────────── -->
+    <section class="coach-board kh-card">
+
+      <!-- Top bar: 3 tabs + filters inline -->
+      <div class="coach-board__topbar">
+        <div class="coach-board__topbar-row">
+          <div class="coach-tabs">
+            <button class="tab" [class.active]="activeWorkspaceView === 'TRIAGE' || activeWorkspaceView === 'KANBAN'"
+                    (click)="switchWorkspaceView('TRIAGE')">
+              Tasks
+            </button>
+            <button class="tab" [class.active]="activeWorkspaceView === 'CORRECTIONS'"
+                    (click)="switchWorkspaceView('CORRECTIONS')">
+              Corrections
+              @if (getCorrectionQueueCount() > 0) {
+                <span class="tab-badge tab-badge--red">{{ getCorrectionQueueCount() }}</span>
+              }
+            </button>
+            <button class="tab" [class.active]="activeWorkspaceView === 'DETAILS' || activeWorkspaceView === 'DELIVERABLES'"
+                    (click)="switchWorkspaceView('DETAILS')">
+              Details &amp; Files
+            </button>
+          </div>
+
+          <!-- View toggle (Tasks only) -->
+          @if (activeWorkspaceView === 'TRIAGE' || activeWorkspaceView === 'KANBAN') {
+            <div class="view-toggle">
+              <button class="view-toggle__btn" [class.active]="activeWorkspaceView === 'TRIAGE'"
+                      (click)="switchWorkspaceView('TRIAGE')" title="Priority queue view">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 3h12v2H2zm0 4h9v2H2zm0 4h6v2H2z"/></svg>
+              </button>
+              <button class="view-toggle__btn" [class.active]="activeWorkspaceView === 'KANBAN'"
+                      (click)="switchWorkspaceView('KANBAN')" title="Kanban board view">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1 2h4v12H1zm5 0h4v8H6zm5 0h4v10h-4z"/></svg>
+              </button>
+            </div>
+          }
+
+          <!-- Details sub-nav (Details & Files tab) -->
+          @if (activeWorkspaceView === 'DETAILS' || activeWorkspaceView === 'DELIVERABLES') {
+            <div class="view-toggle">
+              <button class="view-toggle__btn" [class.active]="activeWorkspaceView === 'DETAILS'"
+                      (click)="switchWorkspaceView('DETAILS')" title="Project details & BMC">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+              </button>
+              <button class="view-toggle__btn" [class.active]="activeWorkspaceView === 'DELIVERABLES'"
+                      (click)="switchWorkspaceView('DELIVERABLES')" title="Project files & deliverables">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 0h5.5L13 3.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5 1v3h3L9 1z"/></svg>
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Triage filters (only on list view) -->
+        @if (activeWorkspaceView === 'TRIAGE') {
+          <div class="decision-filters">
+            @for (f of triageFilters; track f.key) {
+              <button class="decision-chip"
+                      [class.decision-chip--active]="activeTriageFilter === f.key"
+                      (click)="setTriageFilter(f.key)">{{ f.label }}</button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           VIEW: TASKS — Priority Queue (list)
+      ══════════════════════════════════════════════════════════════ -->
+      @if (loadingTaches) {
+        <div class="empty" style="margin:20px;">Loading tasks...</div>
+      }
+
+      @if (!loadingTaches && activeWorkspaceView === 'TRIAGE') {
+        <div class="triage-grid">
+          <!-- NOW: coach action required -->
+          <div class="triage-column triage-column--now">
+            <div class="triage-column__head">
+              <h4>Coach action required</h4>
+              <span>{{ getTriageSectionTasks('NOW').length }}</span>
+            </div>
+            <div class="triage-column__list">
+              @for (t of getTriageSectionTasks('NOW'); track t.id) {
+                <article class="coach-row-card coach-row-card--correction" (click)="openTaskWorkspace(t)">
+                  <div>
+                    <h4>{{ t.titre }}</h4>
+                    <p>{{ t.description || 'No description' }}</p>
+                  </div>
+                  <div class="coach-row-card__meta">
+                    <span class="kh-badge kh-badge--red">{{ getStatusLabel(t.statutTache) }}</span>
+                    <span>{{ t.priorite }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">No urgent items.</div>
+              }
+            </div>
+          </div>
+
+          <!-- WAITING: pending entrepreneur -->
+          <div class="triage-column triage-column--waiting">
+            <div class="triage-column__head">
+              <h4>Waiting on entrepreneur</h4>
+              <span>{{ getTriageSectionTasks('WAITING').length }}</span>
+            </div>
+            <div class="triage-column__list">
+              @for (t of getTriageSectionTasks('WAITING'); track t.id) {
+                <article class="coach-row-card" (click)="openTaskWorkspace(t)">
+                  <div>
+                    <h4>{{ t.titre }}</h4>
+                    <p>{{ t.description || 'No description' }}</p>
+                  </div>
+                  <div class="coach-row-card__meta">
+                    <span class="kh-badge" [class]="t.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--teal'">{{ getStatusLabel(t.statutTache) }}</span>
+                    <span>{{ t.priorite }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">No pending items.</div>
+              }
+            </div>
+          </div>
+
+          <!-- STABLE: stable flow -->
+          <div class="triage-column triage-column--stable">
+            <div class="triage-column__head">
+              <h4>Stable flow</h4>
+              <span>{{ getTriageSectionTasks('STABLE').length }}</span>
+            </div>
+            <div class="triage-column__list">
+              @for (t of getTriageSectionTasks('STABLE'); track t.id) {
+                <article class="coach-row-card" (click)="openTaskWorkspace(t)">
+                  <div>
+                    <h4>{{ t.titre }}</h4>
+                    <p>{{ t.description || 'No description' }}</p>
+                  </div>
+                  <div class="coach-row-card__meta">
+                    <span class="kh-badge kh-badge--teal">{{ getStatusLabel(t.statutTache) }}</span>
+                    <span>{{ t.priorite }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">No stable items.</div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════════════════
+           VIEW: TASKS — Kanban board
+      ══════════════════════════════════════════════════════════════ -->
+      @if (!loadingTaches && activeWorkspaceView === 'KANBAN') {
+        <div class="coach-board-columns">
+          @for (column of boardColumns; track column.key) {
+            <div class="coach-column" [class]="'coach-column coach-column--' + column.tone">
+              <div class="coach-column__header">
+                <div>
+                  <h4>{{ column.title }}</h4>
+                  <p>{{ column.subtitle }}</p>
+                </div>
+                <span class="coach-column__count">{{ getWorkflowTasksByStatus(column.key).length }}</span>
+              </div>
+              <div class="coach-column__cards">
+                @for (t of getWorkflowTasksByStatus(column.key); track t.id) {
+                  <article class="coach-task-card" [class.coach-task-card--risk]="isBlockedOrLate(t.statutTache)">
+                    <div class="coach-task-card__top coach-task-card__top--compact">
+                      <div>
+                        <p class="coach-task-card__title">{{ t.titre }}</p>
+                        <p class="coach-task-card__subtitle">{{ getSubTaskCount(t.id) }} subtask{{ getSubTaskCount(t.id) !== 1 ? 's' : '' }}</p>
+                      </div>
+                      <button class="icon-action-btn icon-action-btn--ghost" type="button" title="View details" (click)="openTaskWorkspace(t)">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6.5 5 2.1 8.3 1 12c1.1 3.7 5.5 7 11 7s9.9-3.3 11-7c-1.1-3.7-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>
+                      </button>
+                    </div>
+                    <div class="coach-task-card__meta coach-task-card__meta--compact">
+                      <span>{{ t.priorite }}</span>
+                      <span class="kh-badge" [class]="t.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : (isBlockedOrLate(t.statutTache) ? 'kh-badge--red' : 'kh-badge--teal')">{{ getStatusLabel(t.statutTache) }}</span>
+                    </div>
+                  </article>
+                } @empty {
+                  <div class="empty">No tasks.</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════════════════
+           VIEW: CORRECTIONS
+      ══════════════════════════════════════════════════════════════ -->
+      @if (!loadingTaches && activeWorkspaceView === 'CORRECTIONS') {
+        <div class="coach-stack">
+          @if (getCorrectionTasks().length === 0 && selectedProjet && selectedProjet.correctionResoumiseEnAttenteCoach) {
+            <article class="coach-row-card coach-row-card--correction" (click)="openReceivedCorrectionDetails()">
+              <div>
+                <h4>Project correction resubmitted by entrepreneur</h4>
+                <p>
+                  The entrepreneur has sent the project corrections.
+                  @if (selectedProjet.dateDemandeCorrection) {
+                    Requested on {{ selectedProjet.dateDemandeCorrection | date:'short' }}.
+                  }
+                </p>
+              </div>
+              <div class="coach-row-card__meta coach-row-card__meta--actions">
+                <span class="kh-badge kh-badge--amber">IN REVIEW</span>
+                <div class="coach-row-card__icon-actions">
+                  <button class="icon-action-btn icon-action-btn--ghost" title="View corrections" (click)="$event.stopPropagation(); openReceivedCorrectionDetails()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6.5 5 2.1 8.3 1 12c1.1 3.7 5.5 7 11 7s9.9-3.3 11-7c-1.1-3.7-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>
+                  </button>
+                  <button class="icon-action-btn icon-action-btn--primary" title="Approve" [disabled]="!canValidateProject()" (click)="$event.stopPropagation(); approveResubmittedProjectCorrection()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 16.2 4.8 11.8l1.4-1.4 3 3 8.6-8.6 1.4 1.4z"/></svg>
+                  </button>
+                  <button class="icon-action-btn icon-action-btn--danger" title="Request re-correction" (click)="$event.stopPropagation(); askReCorrectionForProject()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-2.3-5.7L14 10h8V2l-2.8 2.8A9.9 9.9 0 0 0 12 2z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              @if (showReceivedCorrectionDetailsInline && selectedProjet) {
+                <div class="inline-correction-details" (click)="$event.stopPropagation()">
+                  <div class="inline-correction-details__head">
+                    <div>
+                      <strong>Correction request details</strong>
+                      <p class="inline-correction-details__subtitle">Review what was requested, what changed, then decide the next action.</p>
+                    </div>
+                  </div>
+                  <div class="inline-correction-details__chips">
+                    @if (selectedProjet.etatValidation) {
+                      <span class="kh-badge kh-badge--amber">{{ selectedProjet.etatValidation }}</span>
+                    }
+                    @if (selectedProjet.dateDemandeCorrection) {
+                      <span class="kh-badge kh-badge--teal">Requested on {{ selectedProjet.dateDemandeCorrection | date:'short' }}</span>
+                    }
+                    <span class="kh-badge kh-badge--teal">{{ getProjectCorrectionSummarySections().length }} item(s)</span>
+                  </div>
+                  @if (getProjectCorrectionSummarySections().length > 0) {
+                    <div class="correction-summary-grid">
+                      @for (section of getProjectCorrectionSummarySections(); track section.label + '-' + $index) {
+                        <article class="correction-summary-card">
+                          <div class="correction-summary-card__head"><h4>{{ section.label }}</h4></div>
+                          <div class="correction-summary-card__section">
+                            <span>Current value</span>
+                            <p>{{ section.currentValue }}</p>
+                          </div>
+                          <div class="correction-summary-card__section">
+                            <span>Requested change</span>
+                            <p>{{ section.requestedCorrection }}</p>
+                          </div>
+                        </article>
+                      }
+                    </div>
+                  } @else {
+                    <p class="inline-correction-details__text">No correction text available.</p>
+                  }
+                </div>
+              }
+            </article>
+          }
+
+          @for (t of getCorrectionTasks(); track t.id) {
+            <article class="coach-row-card" [class.coach-row-card--correction]="t.statutTache === 'A_CORRIGER'" (click)="openTaskWorkspace(t)">
+              <div>
+                <h4>{{ t.titre }}</h4>
+                <p>{{ t.description || 'No description' }}</p>
+              </div>
+              <div class="coach-row-card__meta">
+                <span class="kh-badge" [class]="t.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : 'kh-badge--red'">{{ getStatusLabel(t.statutTache) }}</span>
+                <span>{{ t.priorite }}</span>
+              </div>
+            </article>
+          } @empty {
+            <div class="empty">No corrections in queue.</div>
+          }
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════════════════
+           VIEW: DETAILS & BMC
+      ══════════════════════════════════════════════════════════════ -->
+      @if (activeWorkspaceView === 'DETAILS') {
+        @if (!selectedProjet) {
+          <div class="empty" style="padding:40px;text-align:center;">
+            <span style="font-size:2.5rem;">📂</span>
+            <p style="margin-top:12px;color:#888;">Select a project from the left list to display its details.</p>
+          </div>
+        } @else {
+          <div style="padding:20px;display:flex;flex-direction:column;gap:24px;overflow-y:auto;max-height:70vh;">
+
+            <!-- General information -->
+            <section>
+              <h3 class="details-section-title">General information</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <tbody>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;width:36%;color:#555;">Startup name</td>
+                    <td style="padding:9px 14px;font-weight:700;">{{ selectedProjet.titre || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">Sector</td>
+                    <td style="padding:9px 14px;">{{ selectedProjet.secteur || '—' }}</td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">Project stage</td>
+                    <td style="padding:9px 14px;">{{ selectedProjet.stadeProjet || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">Validation state</td>
+                    <td style="padding:9px 14px;">
+                      <span class="kh-badge kh-badge--amber">{{ selectedProjet.etatValidation || '—' }}</span>
+                    </td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">Discipline score</td>
+                    <td style="padding:9px 14px;font-weight:700;color:#6c63ff;">{{ selectedProjet.disciplineScore ?? '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">Progress</td>
+                    <td style="padding:9px 14px;">
+                      <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+                          <div [style.width.%]="selectedProjet.progression ?? 0"
+                               style="height:100%;background:linear-gradient(90deg,#6c63ff,#a78bfa);border-radius:4px;"></div>
+                        </div>
+                        <span style="font-weight:600;min-width:36px;">{{ selectedProjet.progression ?? 0 }}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">Start date</td>
+                    <td style="padding:9px 14px;">{{ selectedProjet.dateDebutProjet | date:'dd/MM/yyyy' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#555;">End date</td>
+                    <td style="padding:9px 14px;">{{ selectedProjet.dateFinProjet | date:'dd/MM/yyyy' }}</td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </section>
+
+            <!-- Pitch & Solution -->
+            <section>
+              <h3 class="details-section-title" style="border-color:#6c63ff;">Pitch &amp; Solution</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <tbody>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;width:36%;vertical-align:top;color:#555;">Description</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ selectedProjet.description || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;vertical-align:top;color:#555;">Problem addressed</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ selectedProjet.problemeAdresse || '—' }}</td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;vertical-align:top;color:#555;">Proposed solution</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ selectedProjet.solutionProposee || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;vertical-align:top;color:#555;">Innovation</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ selectedProjet.innovationDescription || '—' }}</td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;vertical-align:top;color:#555;">Scalability</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ selectedProjet.scalabiliteDescription || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <!-- BMC -->
+            <section>
+              <h3 class="details-section-title" style="border-color:#f59e0b;">Business Model Canvas</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <thead>
+                  <tr style="background:linear-gradient(135deg,#6c63ff,#a78bfa);color:#fff;">
+                    <th style="padding:10px 14px;text-align:left;width:36%;">Block</th>
+                    <th style="padding:10px 14px;text-align:left;">Content</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="background:#faf5ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#7c3aed;">Value proposition</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().propositionValeur || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#2563eb;">Customer segments</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().segmentsClientele || '—' }}</td>
+                  </tr>
+                  <tr style="background:#fffbeb;">
+                    <td style="padding:9px 14px;font-weight:600;color:#d97706;">Revenue streams</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().sourcesRevenus || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#059669;">Channels</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().canaux || '—' }}</td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#db2777;">Customer relationships</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().relationsClients || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#7c3aed;">Key resources</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().ressourcesCles || '—' }}</td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#2563eb;">Key activities</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().activitesCles || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-weight:600;color:#d97706;">Cost structure</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().structureCouts || '—' }}</td>
+                  </tr>
+                  <tr style="background:#f8f9ff;">
+                    <td style="padding:9px 14px;font-weight:600;color:#059669;">Key partners</td>
+                    <td style="padding:9px 14px;white-space:pre-wrap;">{{ getSelectedProjetBmc().partenaires || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+            <!-- ── Analyse IA du BMC (Spring AI / Mistral) ──────────────── -->
+<section>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <h3 style="margin:0;font-size:0.95rem;font-weight:700;color:#1a1a2e;border-bottom:2px solid #8b5cf6;padding-bottom:6px;flex:1;">
+      🤖 Analyse IA du Business Model Canvas
+      <span style="font-size:0.72rem;font-weight:400;color:#888;margin-left:8px;">via Spring AI · Mistral</span>
+    </h3>
+    <button class="kh-btn kh-btn--primary kh-btn--sm"
+            style="margin-left:16px;background:linear-gradient(135deg,#7c3aed,#6c63ff);border:none;min-width:160px;"
+            (click)="lancerAnalyseBmc()"
+            [disabled]="bmcAnalysisLoading">
+      @if (bmcAnalysisLoading) {
+        <span style="display:flex;align-items:center;gap:6px;justify-content:center;">
+          <span style="width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);
+                       border-top-color:#fff;border-radius:50%;
+                       animation:spin 0.8s linear infinite;display:inline-block;"></span>
+          Analyse en cours...
+        </span>
+      } @else if (bmcAnalysis && bmcAnalysedForId === selectedProjet!.id) {
+        🔄 Relancer l'analyse
+      } @else {
+        ✨ Analyser avec l'IA
+      }
+    </button>
+  </div>
+
+  @if (bmcAnalysisError) {
+    <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;
+                padding:12px;color:#b91c1c;font-size:0.88rem;margin-bottom:12px;">
+      ⚠️ {{ bmcAnalysisError }}
+    </div>
+  }
+
+  @if (!bmcAnalysis && !bmcAnalysisLoading && !bmcAnalysisError) {
+    <div style="background:#f5f3ff;border:1px dashed #c4b5fd;border-radius:8px;
+                padding:24px;text-align:center;color:#7c3aed;font-size:0.88rem;">
+      <div style="font-size:2.2rem;margin-bottom:8px;">🧠</div>
+      Clique sur <strong>"Analyser avec l'IA"</strong> pour obtenir une analyse automatique
+      du BMC par <strong>Mistral AI</strong> via Spring AI.
+    </div>
+  }
+
+  @if (bmcAnalysis && bmcAnalysedForId === selectedProjet!.id) {
+    <div style="display:flex;align-items:center;gap:20px;
+                background:#faf5ff;border:1px solid #e9d5ff;
+                border-radius:12px;padding:16px 20px;margin-bottom:16px;">
+      <div style="text-align:center;min-width:90px;">
+        <div [style.color]="getBmcScoreColor()"
+             style="font-size:3rem;font-weight:900;line-height:1;">
+          {{ bmcAnalysis.scoreGlobal }}
+          <span style="font-size:1.1rem;color:#999;font-weight:400;">/10</span>
+        </div>
+        <div style="font-size:0.72rem;color:#888;margin-top:4px;">Score BMC</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:1rem;color:#4c1d95;margin-bottom:6px;">
+          {{ bmcAnalysis.maturiteLabel }}
+        </div>
+        <p style="margin:0;font-size:0.88rem;color:#555;line-height:1.6;">
+          {{ bmcAnalysis.synthese }}
+        </p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;">
+        <h4 style="margin:0 0 10px;font-size:0.85rem;font-weight:700;color:#15803d;">✅ Points forts</h4>
+        <ul style="margin:0;padding-left:16px;font-size:0.84rem;color:#166534;line-height:1.9;">
+          @for (pt of bmcAnalysis.pointsForts; track $index) { <li>{{ pt }}</li> }
+        </ul>
+      </div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;">
+        <h4 style="margin:0 0 10px;font-size:0.85rem;font-weight:700;color:#c2410c;">⚠️ Points à améliorer</h4>
+        <ul style="margin:0;padding-left:16px;font-size:0.84rem;color:#9a3412;line-height:1.9;">
+          @for (inc of bmcAnalysis.incoherences; track $index) { <li>{{ inc }}</li> }
+          @empty { <li style="list-style:none;color:#15803d;">✅ Aucune incohérence</li> }
+        </ul>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+        <h4 style="margin:0 0 10px;font-size:0.85rem;font-weight:700;color:#1d4ed8;">❓ Questions à poser</h4>
+        <ul style="margin:0;padding-left:16px;font-size:0.84rem;color:#1e40af;line-height:1.9;">
+          @for (q of bmcAnalysis.questionsCritiques; track $index) { <li>{{ q }}</li> }
+        </ul>
+      </div>
+      <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;padding:14px;">
+        <h4 style="margin:0 0 10px;font-size:0.85rem;font-weight:700;color:#7c3aed;">💡 Recommandations</h4>
+        <ul style="margin:0;padding-left:16px;font-size:0.84rem;color:#6b21a8;line-height:1.9;">
+          @for (rec of bmcAnalysis.recommandations; track $index) { <li>{{ rec }}</li> }
+        </ul>
+      </div>
+    </div>
+
+    <p style="margin:10px 0 0;font-size:0.72rem;color:#bbb;text-align:right;">
+      Analyse générée par Spring AI · Mistral AI · Non contractuelle
+    </p>
+  }
+</section>
+
+            <!-- Last correction comment (if applicable) -->
+            @if (selectedProjet.commentaireCorrectionCoach) {
+              <section>
+                <h3 class="details-section-title" style="border-color:#ef4444;">Last correction request</h3>
+                <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:14px;font-size:0.88rem;white-space:pre-wrap;color:#7f1d1d;">
+                  {{ selectedProjet.commentaireCorrectionCoach }}
+                </div>
+              </section>
+            }
+
+          </div>
+        }
+      }
+
+      <!-- ══════════════════════════════════════════════════════════
+           VIEW: DELIVERABLES (files)
+      ══════════════════════════════════════════════════════════════ -->
+      @if (!loadingTaches && activeWorkspaceView === 'DELIVERABLES') {
+        <div class="coach-stack">
+          @for (doc of getProjectDeliverables(); track doc.id) {
+            <article class="coach-row-card">
+              <div>
+                <h4>{{ doc.nomOriginal }}</h4>
+                <p>{{ doc.typeContenu }}</p>
+              </div>
+              <div class="coach-row-card__meta">
+                <span>{{ doc.dateUpload | date:'short' }}</span>
+                <span>{{ doc.tailleFichier }} bytes</span>
+                @if (canPreviewDocument(doc)) {
+                  <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="openDocumentPreview(doc)">Preview</button>
+                }
+                <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="downloadDocument(doc)">Download</button>
+              </div>
+            </article>
+          } @empty {
+            <div class="empty">No deliverables. Open a task to load documents.</div>
+          }
+        </div>
+      }
+
+    </section>
+
+    <!-- ── Right Inspector — Snapshot + Coach Actions ─────────────── -->
+    <aside class="coach-inspector kh-card">
+      @if (selectedProjet) {
+
+        <div class="coach-inspector__hero">
+          <span class="coach-pill coach-pill--amber">Startup snapshot</span>
+          <h3>{{ selectedProjet.titre }}</h3>
+
+          <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#888;margin-bottom:4px;">
+            <span>Overall progress</span>
+            <span>{{ selectedProjet.progression ?? 0 }}%</span>
+          </div>
+          <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+            <div [style.width.%]="selectedProjet.progression ?? 0"
+                 style="height:100%;background:linear-gradient(90deg,#6c63ff,#a78bfa);border-radius:3px;"></div>
+          </div>
+        </div>
+
+        <!-- ── Coach Actions Block ──────────────────────────────── -->
+<!-- ── Coach Actions Block ──────────────────────────────── -->
+<div class="coach-actions-block">
+  <span class="coach-actions-block__label">Coach actions</span>
+
+  <!-- "Request correction" visible uniquement si pas de tâches -->
+  @if (taches.length === 0) {
+    <button class="kh-btn kh-btn--ghost kh-btn--sm coach-actions-block__btn"
+            [disabled]="!canAskProjectCorrection()"
+            [title]="getProjectCorrectionHint()"
+            (click)="demanderCorrectionProjet()">
+      Request correction
+    </button>
+  }
+
+  <!-- "Send to Review" supprimé — fusionné dans "Validate Project" -->
+
+  <!-- "Validate Project" visible uniquement si progression >= 80% -->
+  @if ((selectedProjet?.progression ?? 0) >= 80) {
+  <button class="kh-btn kh-btn--primary kh-btn--sm coach-actions-block__btn"
+          [disabled]="!canValidateProject()"
+          [title]="getValidateHint()"
+          (click)="validerProjet()">
+     Validate project
+  </button>
+}
+<!-- Badge affiché quand projet validé -->
+@if (selectedProjet?.etatValidation === 'VALIDE') {
+  <div style="text-align:center; padding: 10px; color: #15803d; font-weight: 600; font-size: 0.85rem;">
+     Project validated & completed
+  </div>
+}
+
+  <!-- Boîte jaune supprimée -->
+
+  @if (selectedProjet?.etatValidation === 'EN_REVUE' && hasReceivedProjectCorrectionSubmission()) {
+    <div class="correction-hint-box correction-hint-box--review" style="margin-top:0;">
+      <span class="correction-hint-icon">✓</span>
+      <div class="correction-hint-box__content">
+        <span>Correction received from entrepreneur.</span>
+        <div class="correction-hint-box__actions">
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="reviewReceivedCorrections()">
+            View corrections
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+      } @else {
+        <div class="empty">Select a project to display the snapshot.</div>
+      }
+    </aside>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       MODALS — all preserved, strings translated to English
+  ════════════════════════════════════════════════════════════════ -->
+
+  <!-- Project Correction Panel -->
+  @if (projectCorrectionPanelOpen && selectedProjet) {
+    <div class="project-modal-backdrop" (click)="closeProjectCorrectionPanel()">
+      <div class="project-modal coach-project-correction-modal" (click)="$event.stopPropagation()" style="max-width:780px;width:95vw;max-height:90vh;overflow-y:auto;">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Correction request</span>
+          </div>
+          <button class="project-modal__close" (click)="closeProjectCorrectionPanel()">×</button>
+
+        </div>
+        <div class="coach-correction-fields">
+          <!-- Problem, Solution, Innovation, Scalability as individual blocks -->
+          <article class="coach-inspector__metric coach-inspector__metric--editable project-correction-card">
+            <h4 class="project-correction-card__title">Problem addressed</h4>
+            <span class="project-correction-card__meta">Current value</span>
+            <div class="project-correction-card__current">{{ getProjectCorrectionFields()[0]?.currentValue }}</div>
+            <label class="project-correction-card__label" for="correction-probleme-adresse">Requested correction</label>
+            <textarea
+              id="correction-probleme-adresse"
+              class="wf-input coach-field-correction project-correction-card__textarea"
+              rows="3"
+              [ngModel]="getProjectFieldCorrectionComment('problemeAdresse')"
+              (ngModelChange)="setProjectFieldCorrectionComment('problemeAdresse', $event)"
+              placeholder="Describe what should be corrected, clarified, or added..."
+            ></textarea>
+          </article>
+          <article class="coach-inspector__metric coach-inspector__metric--editable project-correction-card">
+            <h4 class="project-correction-card__title">Proposed solution</h4>
+            <span class="project-correction-card__meta">Current value</span>
+            <div class="project-correction-card__current">{{ getProjectCorrectionFields()[1]?.currentValue }}</div>
+            <label class="project-correction-card__label" for="correction-solution-proposee">Requested correction</label>
+            <textarea
+              id="correction-solution-proposee"
+              class="wf-input coach-field-correction project-correction-card__textarea"
+              rows="3"
+              [ngModel]="getProjectFieldCorrectionComment('solutionProposee')"
+              (ngModelChange)="setProjectFieldCorrectionComment('solutionProposee', $event)"
+              placeholder="Describe what should be corrected, clarified, or added..."
+            ></textarea>
+          </article>
+          <!-- Innovation and Scalability as individual blocks -->
+          <article class="coach-inspector__metric coach-inspector__metric--editable project-correction-card">
+            <h4 class="project-correction-card__title">Innovation</h4>
+            <span class="project-correction-card__meta">Current value</span>
+            <div class="project-correction-card__current">{{ getProjectCorrectionFields()[3]?.currentValue }}</div>
+            <label class="project-correction-card__label" for="correction-innovation-description">Requested correction</label>
+            <textarea
+              id="correction-innovation-description"
+              class="wf-input coach-field-correction project-correction-card__textarea"
+              rows="3"
+              [ngModel]="getProjectFieldCorrectionComment('innovationDescription')"
+              (ngModelChange)="setProjectFieldCorrectionComment('innovationDescription', $event)"
+              placeholder="Describe what should be corrected, clarified, or added..."
+            ></textarea>
+          </article>
+          <article class="coach-inspector__metric coach-inspector__metric--editable project-correction-card">
+            <h4 class="project-correction-card__title">Scalability</h4>
+            <span class="project-correction-card__meta">Current value</span>
+            <div class="project-correction-card__current">{{ getProjectCorrectionFields()[4]?.currentValue }}</div>
+            <label class="project-correction-card__label" for="correction-scalabilite-description">Requested correction</label>
+            <textarea
+              id="correction-scalabilite-description"
+              class="wf-input coach-field-correction project-correction-card__textarea"
+              rows="3"
+              [ngModel]="getProjectFieldCorrectionComment('scalabiliteDescription')"
+              (ngModelChange)="setProjectFieldCorrectionComment('scalabiliteDescription', $event)"
+              placeholder="Describe what should be corrected, clarified, or added..."
+            ></textarea>
+          </article>
+          <!-- BMC Grouped Section -->
+          <fieldset class="bmc-correction-section">
+            <legend class="bmc-correction-section__legend">Business Model Canvas</legend>
+            <table class="bmc-correction-table">
+              <thead>
+                <tr>
+                  <th>Element</th>
+                  <th>Current value</th>
+                  <th>Correction</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="bmc-row bmc-row--value">
+                  <td class="bmc-correction-table__label">Value proposition</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('propositionValeur') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_propositionValeur')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_propositionValeur', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--segments">
+                  <td class="bmc-correction-table__label">Customer segments</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('segmentsClientele') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_segmentsClientele')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_segmentsClientele', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--revenue">
+                  <td class="bmc-correction-table__label">Revenue streams</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('sourcesRevenus') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_sourcesRevenus')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_sourcesRevenus', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--channels">
+                  <td class="bmc-correction-table__label">Channels</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('canaux') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_canaux')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_canaux', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--relationships">
+                  <td class="bmc-correction-table__label">Customer relationships</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('relationsClients') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_relationsClients')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_relationsClients', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--resources">
+                  <td class="bmc-correction-table__label">Key resources</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('ressourcesCles') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_ressourcesCles')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_ressourcesCles', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--activities">
+                  <td class="bmc-correction-table__label">Key activities</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('activitesCles') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_activitesCles')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_activitesCles', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--costs">
+                  <td class="bmc-correction-table__label">Cost structure</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('structureCouts') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_structureCouts')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_structureCouts', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+                <tr class="bmc-row bmc-row--partners">
+                  <td class="bmc-correction-table__label">Key partners</td>
+                  <td class="bmc-correction-table__value">{{ getBmcField('partenaires') }}</td>
+                  <td class="bmc-correction-table__editor">
+                    <textarea class="wf-input coach-field-correction" rows="2"
+                      [ngModel]="getProjectFieldCorrectionComment('bmc_partenaires')"
+                      (ngModelChange)="setProjectFieldCorrectionComment('bmc_partenaires', $event)"
+                      placeholder="Correction for this block..."></textarea>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </fieldset>
+        </div>
+
+        <div class="coach-correction-fields__actions">
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="closeProjectCorrectionPanel()">Cancel</button>
+          <button class="kh-btn kh-btn--primary kh-btn--sm" [disabled]="!canSubmitProjectFieldCorrections()" (click)="submitProjectFieldCorrections()">
+            Send correction request
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Project Correction Success Popup -->
+  @if (showProjectCorrectionSuccessPopup) {
+    <div class="project-modal-backdrop" (click)="closeProjectCorrectionSuccessPopup()">
+      <div class="project-modal coach-success-popup" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow project-modal__eyebrow--success">Correction sent</span>
+            <h2>Update transmitted</h2>
+            <p class="project-modal__sub">{{ projectCorrectionSuccessMessage }}</p>
+          </div>
+          <button class="project-modal__close" (click)="closeProjectCorrectionSuccessPopup()">×</button>
+        </div>
+        <div class="coach-success-popup__body">
+          <p>The workspace can be refreshed to get the latest project and task state.</p>
+          @if (refreshingWorkspace) {
+            <p class="coach-success-popup__status">Refreshing...</p>
+          }
+        </div>
+        <div class="coach-correction-fields__actions">
+          <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="closeProjectCorrectionSuccessPopup()">Close</button>
+          <button class="kh-btn kh-btn--primary kh-btn--sm" [disabled]="refreshingWorkspace" (click)="closeProjectCorrectionSuccessPopup(true)">Refresh</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Create Task Modal -->
+  @if (showCreateTaskModal) {
+    <div class="project-modal-backdrop" (click)="closeCreateTaskModal()">
+      <div class="project-modal" [class.coach-create-modal]="!createdParentTaskId" [class.coach-create-modal--expanded]="!!createdParentTaskId" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Create task</span>
+            <h2>{{ createdParentTaskId ? 'Task created — add subtasks' : 'Create task' }}</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeCreateTaskModal()">×</button>
+        </div>
+        @if (!createdParentTaskId) {
+          <div class="coach-create-task-summary">
+            Fill required fields, then create the task.
+          </div>
+          <div class="coach-form-grid coach-form-grid--task-create">
+            <section class="coach-form-section">
+              <h3 class="coach-form-section__title">Task basics</h3>
+              <div class="coach-form-field">
+                <label class="coach-form-label" for="coach-task-title">Task title <span class="req">*</span></label>
+                <input id="coach-task-title" class="wf-input" [(ngModel)]="tacheForm.titre" placeholder="Task title" />
+                <div class="form-error" *ngIf="getTacheFormError('titre')">{{ getTacheFormError('titre') }}</div>
+              </div>
+              <div class="coach-form-field">
+                <label class="coach-form-label" for="coach-task-description">Task description <span class="req">*</span></label>
+                <textarea id="coach-task-description" class="wf-input" [(ngModel)]="tacheForm.description" rows="2" placeholder="Task description"></textarea>
+                <div class="form-error" *ngIf="getTacheFormError('description')">{{ getTacheFormError('description') }}</div>
+              </div>
+              <div class="coach-form-grid coach-form-grid--inline">
+                <div class="coach-form-field">
+                  <label class="coach-form-label" for="coach-task-type">Type <span class="req">*</span></label>
+                  <select id="coach-task-type" class="wf-select" [(ngModel)]="tacheForm.typeTache">
+                    <option value="">Select a type</option>
+                    <option *ngFor="let type of typeTacheOptions" [value]="type">{{ type }}</option>
+                  </select>
+                  <div class="form-error" *ngIf="getTacheFormError('typeTache')">{{ getTacheFormError('typeTache') }}</div>
+                </div>
+                <div class="coach-form-field">
+                  <label class="coach-form-label" for="coach-task-priority">Priority <span class="req">*</span></label>
+                  <select id="coach-task-priority" class="wf-select" [(ngModel)]="tacheForm.priorite">
+                    <option value="">Select a priority</option>
+                    <option *ngFor="let p of prioriteOptions" [value]="p">{{ p }}</option>
+                  </select>
+                  <div class="form-error" *ngIf="getTacheFormError('priorite')">{{ getTacheFormError('priorite') }}</div>
+                </div>
+              </div>
+            </section>
+            <section class="coach-form-section">
+              <h3 class="coach-form-section__title">Timeline</h3>
+              <div class="coach-form-grid coach-form-grid--inline">
+                <div class="coach-form-field">
+                  <label class="coach-form-label" for="coach-task-start-date">Start date <span class="req">*</span></label>
+                  <input id="coach-task-start-date" class="wf-input" type="date" [(ngModel)]="tacheForm.dateDebut" />
+                  <div class="form-error" *ngIf="getTacheFormError('dateDebut')">{{ getTacheFormError('dateDebut') }}</div>
+                </div>
+                <div class="coach-form-field">
+                  <label class="coach-form-label" for="coach-task-end-date">End date <span class="req">*</span></label>
+                  <input id="coach-task-end-date" class="wf-input" type="date" [(ngModel)]="tacheForm.dateFin" />
+                  <div class="form-error" *ngIf="getTacheFormError('dateFin')">{{ getTacheFormError('dateFin') }}</div>
+                </div>
+              </div>
+              <div class="coach-form-field">
+                <label class="coach-form-label" for="coach-task-comment">Coach comment (optional)</label>
+                <textarea id="coach-task-comment" class="wf-input" [(ngModel)]="tacheForm.commentaireCoach" rows="2" placeholder="Coach comment (optional)"></textarea>
+              </div>
+            </section>
+          </div>
+          <div class="modal-actions">
+            <button class="kh-btn kh-btn--ghost" (click)="closeCreateTaskModal()">Cancel</button>
+            <button class="kh-btn kh-btn--primary" [disabled]="!validateTacheForm()" (click)="createTache()">Create task</button>
+          </div>
+        } @else {
+          <section class="quick-subtask-panel">
+            <div class="quick-subtask-panel__head">
+              <h3>Add subtasks</h3>
+              <p>Add at least one subtask before finishing.</p>
+            </div>
+            <div class="coach-form-grid coach-form-grid--quick-subtask-redesign">
+              <div class="coach-form-field quick-subtask-field--title">
+                <label class="coach-form-label" for="quick-subtask-title">Subtask title <span class="req">*</span></label>
+                <input
+                  id="quick-subtask-title"
+                  class="wf-input"
+                  [(ngModel)]="quickSousTacheTitre"
+                  (keydown.enter)="addQuickSousTacheFromCreateModal($event)"
+                  placeholder="Subtask title (Enter to add)"
+                />
+              </div>
+
+              <div class="coach-form-field quick-subtask-field--full">
+                <label class="coach-form-label" for="quick-subtask-impact">Impact</label>
+                <select id="quick-subtask-impact" class="wf-select" [(ngModel)]="quickSousTacheImpact">
+                  <option *ngFor="let p of prioriteOptions" [value]="p">{{ p }}</option>
+                </select>
+              </div>
+
+              <div class="quick-subtask-date-row">
+                <div class="coach-form-field">
+                  <label class="coach-form-label" for="quick-subtask-start">Start date</label>
+                  <input id="quick-subtask-start" class="wf-input" type="date" [(ngModel)]="quickSousTacheDateDebut" />
+                </div>
+                <div class="coach-form-field">
+                  <label class="coach-form-label" for="quick-subtask-end">End date</label>
+                  <input id="quick-subtask-end" class="wf-input" type="date" [(ngModel)]="quickSousTacheDateFin" />
+                </div>
+              </div>
+
+              <div class="quick-subtask-actions">
+                <button class="kh-btn kh-btn--primary kh-btn--sm" (click)="addQuickSousTacheFromCreateModal()">Add subtask</button>
+              </div>
+            </div>
+          </section>
+
+          <div *ngIf="getSubTaskCount(createdParentTaskId) > 0" class="quick-subtask-list">
+            <p><strong>Added subtasks</strong></p>
+            <ul>
+              <li *ngFor="let st of getSubTasksForTask(createdParentTaskId)">
+                <span class="quick-subtask-item__title">{{ st.titre }}</span>
+                <span class="kh-badge">{{ st.priorite }}</span>
+              </li>
+            </ul>
+          </div>
+          <p class="form-error" *ngIf="getSubTaskCount(createdParentTaskId) === 0">Add at least one subtask.</p>
+          <div class="modal-actions">
+            <button class="kh-btn kh-btn--primary" [disabled]="getSubTaskCount(createdParentTaskId) === 0" (click)="finishTaskCreationFlow()">Finish</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Correction Modal -->
+  @if (showCorrectionModal && correctionTarget) {
+    <div class="project-modal-backdrop" (click)="closeCorrectionModal()">
+      <div class="project-modal coach-create-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Correction request</span>
+            <h2>Request a correction</h2>
+            <p class="project-modal__sub">Provide a clear comment for the correction cycle.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeCorrectionModal()">×</button>
+        </div>
+        <textarea class="wf-input" rows="5" [(ngModel)]="correctionComment" placeholder="Explain what needs to be corrected and the expected result"></textarea>
+        <div class="modal-actions">
+          <button class="kh-btn kh-btn--ghost" (click)="closeCorrectionModal()">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="submitCorrectionRequest()">Send correction</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Create Subtask Modal -->
+  @if (showCreateSubTaskModal && selectedTaskForSubTaskCreation) {
+    <div class="project-modal-backdrop" (click)="closeCreateSubTaskModal()">
+      <div class="project-modal coach-create-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Create subtask</span>
+            <h2>Subtask for "{{ selectedTaskForSubTaskCreation.titre }}"</h2>
+          </div>
+          <button class="project-modal__close" (click)="closeCreateSubTaskModal()">×</button>
+        </div>
+        <div class="coach-form-grid">
+          <input class="wf-input" [(ngModel)]="sousTacheForm.titre" placeholder="Subtask title" />
+          <textarea class="wf-input" [(ngModel)]="sousTacheForm.description" rows="2" placeholder="Description"></textarea>
+          <select class="wf-select" [(ngModel)]="sousTacheForm.priorite">
+            <option *ngFor="let p of prioriteOptions" [value]="p">Priority: {{ p }}</option>
+          </select>
+          <input class="wf-input" type="date" [(ngModel)]="sousTacheForm.dateDebut" />
+          <input class="wf-input" type="date" [(ngModel)]="sousTacheForm.dateFin" />
+          <textarea class="wf-input" [(ngModel)]="sousTacheForm.commentaireCoach" rows="2" placeholder="Coach comment"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="kh-btn kh-btn--ghost" (click)="closeCreateSubTaskModal()">Cancel</button>
+          <button class="kh-btn kh-btn--primary" (click)="createSousTacheFromModal()">Create subtask</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Document Preview Modal -->
+  @if (showDocumentPreviewModal && selectedDocumentForPreview) {
+    <div class="project-modal-backdrop project-modal-backdrop--top" (click)="closeDocumentPreviewModal()">
+      <div class="project-modal project-modal--large" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Document preview</span>
+            <h2>{{ selectedDocumentForPreview.nomOriginal }}</h2>
+            <p class="project-modal__sub">{{ selectedDocumentForPreview.typeContenu }}</p>
+          </div>
+          <button class="project-modal__close" (click)="closeDocumentPreviewModal()">×</button>
+        </div>
+        <div class="deliverable-preview-body">
+          @if (selectedDocumentPreviewMimeType.startsWith('image/')) {
+            <img class="deliverable-preview-image" [src]="selectedDocumentPreviewUrl" [alt]="selectedDocumentForPreview.nomOriginal" />
+          } @else {
+            <iframe class="deliverable-preview-frame" [src]="selectedDocumentPreviewUrl | safeUrl"></iframe>
+          }
+        </div>
+        <div class="project-modal__footer">
+          <button class="kh-btn kh-btn--ghost" (click)="downloadDocument(selectedDocumentForPreview)">Download</button>
+          <button class="kh-btn kh-btn--primary" (click)="closeDocumentPreviewModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Task Details Modal -->
+  @if (showTaskDetailsModal && selectedTaskForDetails) {
+    <div class="project-modal-backdrop" (click)="closeTaskWorkspace()">
+      <div class="project-modal coach-task-details-modal" (click)="$event.stopPropagation()">
+        <div class="project-modal__header">
+          <div>
+            <span class="project-modal__eyebrow">Task details</span>
+            <h2>{{ selectedTaskForDetails.titre }}</h2>
+            <p class="project-modal__sub">Manage the parent task and its subtasks.</p>
+          </div>
+          <button class="project-modal__close" (click)="closeTaskWorkspace()">×</button>
+        </div>
+
+        <div class="task-details-summary">
+          <div class="task-details-summary__main">
+            <p>{{ selectedTaskForDetails.description || 'No description' }}</p>
+          </div>
+          <div class="task-details-summary__chips">
+            <span class="kh-badge" [class]="getTaskPriorityBadgeClass(selectedTaskForDetails.priorite)">{{ selectedTaskForDetails.priorite }}</span>
+            <span class="kh-badge" [class]="selectedTaskForDetails.statutTache === 'EN_CORRECTION' ? 'kh-badge--amber' : (isBlockedOrLate(selectedTaskForDetails.statutTache) ? 'kh-badge--red' : 'kh-badge--teal')">{{ getStatusLabel(selectedTaskForDetails.statutTache) }}</span>
+            <span class="kh-badge kh-badge--teal">{{ selectedTaskForDetails.typeTache }}</span>
+            <span class="kh-badge kh-badge--teal">{{ getTaskDelayLabel(selectedTaskForDetails) }}</span>
+            <span class="kh-badge kh-badge--teal">Score {{ selectedTaskForDetails.scoreImpact }}</span>
+          </div>
+        </div>
+
+        <div class="task-details-actions">
+          <button class="icon-action-btn icon-action-btn--primary" type="button" title="Add subtask" (click)="openCreateSubTaskModalForTask(selectedTaskForDetails)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+          </button>
+        </div>
+
+        <div class="task-details-table-wrap">
+          <table class="task-details-table">
+            <thead>
+              <tr>
+                <th>Subtask</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Delay</th>
+                <th>Score</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loadingSousTaches[selectedTaskForDetails.id]) {
+                <tr><td colspan="6"><div class="empty">Loading...</div></td></tr>
+              } @else {
+                @for (st of getSelectedTaskSubTasks(); track st.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ st.titre }}</strong>
+                      <p>{{ st.description || 'No description' }}</p>
+                    </td>
+                    <td>
+                      <span class="kh-badge" [class]="st.statutSousTache === 'EN_CORRECTION' ? 'kh-badge--amber' : (isBlockedOrLate(st.statutSousTache) ? 'kh-badge--red' : 'kh-badge--teal')">
+                        {{ getStatusLabel(st.statutSousTache) }}
+                      </span>
+                    </td>
+                    <td>{{ st.priorite }}</td>
+                    <td>{{ getSubTaskDelayLabel(st) }}</td>
+                    <td>{{ st.scoreImpact }}</td>
+                    <td>
+                      <div class="task-row-actions">
+                        @if (st.statutSousTache === 'TERMINEE') {
+                          <button class="icon-action-btn icon-action-btn--ghost" type="button" title="View documents"
+                                  [disabled]="loadingDocuments[st.id]" (click)="openOrLoadSubTaskDocuments(st)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H4v16h16V8h-6V4zm2 0v4h4"/></svg>
+                          </button>
+                          <button class="icon-action-btn icon-action-btn--danger" type="button" title="Request re-correction"
+                                  (click)="toggleReCorrectionCommentInput(st)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-2h2zm0-4h-2V7h2z"/></svg>
+                          </button>
+                        }
+                        @if (st.statutSousTache === 'EN_CORRECTION') {
+                          <button class="icon-action-btn icon-action-btn--ghost" type="button" title="Voir le livrable soumis"
+                                  [disabled]="loadingDocuments[st.id]" (click)="openOrLoadSubTaskDocuments(st)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H4v16h16V8h-6V4zm2 0v4h4"/></svg>
+                          </button>
+                          <button class="icon-action-btn icon-action-btn--primary" type="button" title="Validate subtask"
+                                  (click)="approuverCorrectionSousTache(st)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 16.2 4.8 11.8l1.4-1.4 3 3 8.6-8.6 1.4 1.4z"/></svg>
+                          </button>
+                          <button class="icon-action-btn icon-action-btn--danger" type="button" title="Demander re-correction"
+                                  (click)="toggleReCorrectionCommentInput(st)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                  @if (correctionInputOpenBySubTaskId[st.id]) {
+                    <tr>
+                      <td colspan="6">
+                        <div class="coach-subtask-card__rework-box coach-subtask-card__rework-box--table">
+                          <textarea class="wf-input" rows="3"
+                            [ngModel]="correctionCommentBySubTaskId[st.id]"
+                            (ngModelChange)="correctionCommentBySubTaskId[st.id] = $event"
+                            placeholder="Re-correction comment"></textarea>
+                          <div class="coach-subtask-card__rework-actions">
+                            <button class="kh-btn kh-btn--ghost kh-btn--sm" (click)="toggleReCorrectionCommentInput(st)">Cancel</button>
+                            <button class="kh-btn kh-btn--danger kh-btn--sm" (click)="demanderReCorrectionSousTacheAvecCommentaire(st)">Send re-correction</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                } @empty {
+                  <tr><td colspan="6"><div class="empty">No subtasks for this task.</div></td></tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
