@@ -7,17 +7,23 @@ import tn.khotwa.dto.projet.AffectationCoachRequestDto;
 import tn.khotwa.dto.projet.AffectationCoachMultipleRequestDto;
 import tn.khotwa.dto.projet.ProjetCoachResponseDto;
 import tn.khotwa.dto.projet.ReaffectationCoachRequestDto;
+import tn.khotwa.dto.messaging.NotificationDTO;
+import tn.khotwa.entity.NotificationType;
 import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.entity.projet.ProjetCoach;
 import tn.khotwa.enums.projectEnum.RoleCoachProjet;
 import tn.khotwa.exception.BusinessException;
-import tn.khotwa.repository.user.UserRepository;
+import tn.khotwa.config.websocket.WebSocketEventPublisher;
 import tn.khotwa.repository.projet.ProjetCoachRepository;
 import tn.khotwa.repository.projet.ProjetRepository;
-
+import tn.khotwa.repository.user.UserRepository;
+import tn.khotwa.service.messaging.MessageService;
+import tn.khotwa.service.messaging.NotificationService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,9 +33,17 @@ public class ProjetCoachService {
     private final ProjetRepository projetRepository;
     private final UserRepository userRepository;
     private final DtoMapper mapper;
+    private final MessageService messageService;
+    private final NotificationService notificationService;
+    private final WebSocketEventPublisher eventPublisher;
 
     @Transactional
     public ProjetCoachResponseDto affecterCoach(Long projetId, AffectationCoachRequestDto dto) {
+        return affecterCoachInternal(projetId, dto, true);
+    }
+
+    @Transactional
+    public ProjetCoachResponseDto affecterCoachInternal(Long projetId, AffectationCoachRequestDto dto, boolean createDirectConversation) {
         Projet projet = projetRepository.findById(projetId)
                 .orElseThrow(() -> new BusinessException("Projet introuvable"));
 
@@ -51,7 +65,11 @@ public class ProjetCoachService {
                 .actif(true)
                 .build();
 
-        return mapper.toProjetCoachResponse(projetCoachRepository.save(affectation));
+        ProjetCoachResponseDto response = mapper.toProjetCoachResponse(projetCoachRepository.save(affectation));
+        Long groupConversationId = synchronizeProjectConversation(projet, dto.getAdminId());
+        notifyAssignment(projet, dto.getAdminId(), dto.getCoachId(), createDirectConversation, groupConversationId);
+
+        return response;
     }
 
     @Transactional
@@ -63,8 +81,13 @@ public class ProjetCoachService {
             affectation.setAdminId(dto.getAdminId());
             affectation.setCoachId(coachSelection.getCoachId());
             affectation.setRoleCoachProjet(coachSelection.getRoleCoachProjet());
-            result.add(affecterCoach(projetId, affectation));
+            result.add(affecterCoachInternal(projetId, affectation, false));
         }
+
+        Projet projet = projetRepository.findById(projetId)
+                .orElseThrow(() -> new BusinessException("Projet introuvable"));
+        Long groupConversationId = synchronizeProjectConversation(projet, dto.getAdminId());
+        notifyEntrepreneurCoachesAssigned(projet, dto.getAdminId(), groupConversationId);
 
         return result;
     }
@@ -74,8 +97,14 @@ public class ProjetCoachService {
         ProjetCoach ancienne = projetCoachRepository.findByProjetIdAndCoachIdAndActifTrue(projetId, dto.getAncienCoachId())
                 .orElseThrow(() -> new BusinessException("Affectation active introuvable"));
 
-        ancienne.setActif(false);
-        projetCoachRepository.save(ancienne);
+        boolean replacingSameRole = ancienne.getRoleCoachProjet() == dto.getRoleCoachProjet();
+        if (replacingSameRole) {
+            ancienne.setActif(false);
+            projetCoachRepository.save(ancienne);
+            Projet projet = projetRepository.findById(projetId)
+                    .orElseThrow(() -> new BusinessException("Projet introuvable"));
+            notifyUnassignment(projet, dto.getAdminId(), ancienne.getCoachId());
+        }
 
         AffectationCoachRequestDto request = new AffectationCoachRequestDto();
         request.setCoachId(dto.getNouveauCoachId());
@@ -91,6 +120,9 @@ public class ProjetCoachService {
                 .orElseThrow(() -> new BusinessException("Affectation introuvable"));
         affectation.setActif(false);
         projetCoachRepository.save(affectation);
+        Projet projet = projetRepository.findById(affectation.getProjetId())
+                .orElseThrow(() -> new BusinessException("Projet introuvable"));
+        notifyUnassignment(projet, affectation.getAffecteParAdminId(), affectation.getCoachId());
     }
 
     public List<ProjetCoachResponseDto> historiqueProjet(Long projetId) {
@@ -103,5 +135,83 @@ public class ProjetCoachService {
 
     public List<ProjetCoachResponseDto> findAffectationsActivesCoach(Long coachId) {
         return projetCoachRepository.findByCoachIdAndActifTrue(coachId).stream().map(mapper::toProjetCoachResponse).toList();
+    }
+
+    private Long synchronizeProjectConversation(Projet projet, Long adminId) {
+        Long entrepreneurId = projet.getEntrepreneurId();
+        if (entrepreneurId == null) return null;
+
+        LinkedHashSet<Long> participantSet = new LinkedHashSet<>();
+        participantSet.add(entrepreneurId);
+        participantSet.addAll(
+                projetCoachRepository.findByProjetIdAndActifTrue(projet.getId()).stream()
+                        .map(ProjetCoach::getCoachId)
+                        .collect(Collectors.toSet())
+        );
+        if (participantSet.size() <= 1) return null;
+
+        List<Long> participantIds = new ArrayList<>(participantSet);
+        String projectName = projet.getNomStartup() == null ? String.valueOf(projet.getId()) : projet.getNomStartup();
+        var group = messageService.ensureGroupConversationByProject(
+                projet.getId(),
+                adminId,
+                "Project " + projectName + " Coaching Group",
+                participantIds
+        );
+        messageService.sendSystemMessageToConversation(
+                group.getId(),
+                adminId,
+                "Coaching assignment updated for project " + projectName + "."
+        );
+        return group.getId();
+    }
+
+    private void notifyAssignment(Projet projet, Long adminId, Long coachId, boolean notifyEntrepreneur, Long conversationId) {
+        String projectName = projet.getNomStartup() == null ? ("Project " + projet.getId()) : projet.getNomStartup();
+        Long entrepreneurId = projet.getEntrepreneurId();
+        if (notifyEntrepreneur && entrepreneurId != null) {
+            NotificationDTO entrepreneurNotif = notificationService.createNotification(
+                    entrepreneurId,
+                    adminId,
+                    conversationId,
+                    "New coaches have been assigned to your project \"" + projectName + "\".",
+                    NotificationType.PROJECT_ASSIGNMENT
+            );
+            eventPublisher.publishNotification(entrepreneurNotif);
+        }
+        NotificationDTO coachNotif = notificationService.createNotification(
+                coachId,
+                adminId,
+                conversationId,
+                "You have been assigned to project \"" + projectName + "\".",
+                NotificationType.PROJECT_ASSIGNMENT
+        );
+        eventPublisher.publishNotification(coachNotif);
+    }
+
+    private void notifyEntrepreneurCoachesAssigned(Projet projet, Long adminId, Long conversationId) {
+        Long entrepreneurId = projet.getEntrepreneurId();
+        if (entrepreneurId == null) return;
+        String projectName = projet.getNomStartup() == null ? ("Project " + projet.getId()) : projet.getNomStartup();
+        NotificationDTO entrepreneurNotif = notificationService.createNotification(
+                entrepreneurId,
+                adminId,
+                conversationId,
+                "New coaches have been assigned to your project \"" + projectName + "\".",
+                NotificationType.PROJECT_ASSIGNMENT
+        );
+        eventPublisher.publishNotification(entrepreneurNotif);
+    }
+
+    private void notifyUnassignment(Projet projet, Long adminId, Long coachId) {
+        String projectName = projet.getNomStartup() == null ? ("Project " + projet.getId()) : projet.getNomStartup();
+        NotificationDTO coachNotif = notificationService.createNotification(
+                coachId,
+                adminId,
+                null,
+                "You have been unassigned from project \"" + projectName + "\".",
+                NotificationType.PROJECT_UNASSIGNED
+        );
+        eventPublisher.publishNotification(coachNotif);
     }
 }

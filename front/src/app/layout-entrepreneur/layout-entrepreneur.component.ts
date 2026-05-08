@@ -9,7 +9,7 @@ import { MessageService } from '../core/services/message.service';
 import { WebSocketService } from '../core/services/websocket.service';
 import { OnlineStatusService } from '../core/services/online-status.service';
 
-interface NavItem { label: string; icon: string; route: string; }
+interface NavItem { label: string;  route: string; }
 
 const BACKEND_ORIGIN = '';
 
@@ -30,20 +30,18 @@ export class LayoutEntrepreneurComponent implements OnInit, OnDestroy {
 
   // ── Navigation ──────────────────────────────────────────────────────────
   navItems: NavItem[] = [
-    { label: 'Dashboard', icon: '', route: 'dashboard'    },
-    { label: 'Collaborations', icon: 'people', route: 'collaborations' },
-    { label: 'Projects',  icon: '',    route: 'projets'       },
-    { label: 'Messages',  icon: '',   route: 'messages'      },
-    { label: 'Library',   icon: '',      route: 'bibliotheque'  },
-    { label: 'Progress',  icon: '',  route: 'progressions'  },
-    { label: 'Talent',    icon: '',    route: 'talent'        },
-    { label: 'Profile',   icon: '',      route: 'profile'       },
-     { label :'Events' , icon :'' , route : 'evenements'},
-    { label: 'Account',   icon: '',  route: 'account'       },
+   { label :'Events' ,  route : 'evenements'},
+   { label: 'Projects',     route: 'projets'       },
+    { label: 'Library',       route: 'bibliotheque'  },
+   { label: 'Progress',    route: 'progressions'  },
+    { label: 'Messages',     route: 'messages'      },
+    { label: 'Talent',       route: 'talent'        },
+     { label: 'Collaborations',  route: 'collaborations' },
+    { label: 'Profile',        route: 'profile'       }, 
+    { label: 'Account',    route: 'account'       },
   ];
 
   svgIcons: Record<string, string> = {
-    dashboard: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
     folder:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
     workflow:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
     calendar:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,

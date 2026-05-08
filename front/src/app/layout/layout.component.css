@@ -522,10 +522,10 @@
 }
 
 .logout-btn {
-  background: none;
-  border: none;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
   cursor: pointer;
-  color: rgba(255,255,255,0.65);
+  color: rgba(255,255,255,0.92);
   padding: 5px;
   border-radius: 7px;
   transition: all .15s;
@@ -535,8 +535,9 @@
   flex-shrink: 0;
 }
 .logout-btn:hover {
-  color: #E84A4A;
-  background: rgba(232,74,74,0.15);
+  color: #ff9b9b;
+  border-color: rgba(232,74,74,0.45);
+  background: rgba(232,74,74,0.18);
 }
 
 .avatar-img {
@@ -681,7 +682,7 @@ kbd {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: #4b5563;
   padding: 7px;
   border-radius: 9px;
   transition: all .15s;

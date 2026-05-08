@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   { path: '',          loadChildren: () => import('./features/landing/landing.module').then(m => m.LandingModule) },
   { path: 'login',     loadChildren: () => import('./features/auth/auth.module').then(m => m.AuthModule) },
+  { path: 'contact',   loadChildren: () => import('./features/contact/contact.module').then(m => m.ContactModule) },
   { path: 'talent-market', loadChildren: () => import('./features/talent-market/talent-market.module').then(m => m.TalentMarketModule) },
   { path: 'khotwaadmin', loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule) },
   { path: 'entrepreneur', loadChildren: () => import('./features/entrepreneur/entrepreneur.module').then(m => m.EntrepreneurModule) },

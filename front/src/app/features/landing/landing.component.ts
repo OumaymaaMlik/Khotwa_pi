@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserRole } from '../../core/models';
 import { interval, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { PlanOffer } from '../../core/models/subscription.model';
 
 @Component({
   selector: 'app-landing',
@@ -10,8 +12,13 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./landing.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LandingComponent {
-  constructor(private router: Router) {}
+export class LandingComponent implements OnInit, OnDestroy {
+  constructor(
+    private router: Router,
+    private subscriptionService: SubscriptionService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
   scrolled = false;
   mobileMenuOpen = false;
 
@@ -42,15 +49,100 @@ export class LandingComponent {
 
   private readonly destroy$ = new Subject<void>();
 
+  // ── Plans dynamiques depuis l'API ──────────────────────────────
+  planOffers: PlanOffer[] = [];
+  plansLoading = true;
+  plansError = false;
+
   ngOnInit(): void {
     interval(6000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.nextSlide());
+
+    this.loadPlans();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadPlans(): void {
+    this.plansLoading = true;
+    this.plansError = false;
+    this.subscriptionService.getAvailablePlans().subscribe({
+      next: (plans) => {
+        this.planOffers = plans;
+        this.plansLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.plansError = true;
+        this.plansLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // ── Helpers pour les plan cards ───────────────────────────────
+  getPlanColor(type: string): string {
+    const t = type?.toUpperCase();
+    if (t === 'FREE')          return '#2ABFBF';
+    if (t === 'PREMIUM')       return '#E8622A';
+    if (t === 'INSTITUTIONAL') return '#d4a017';
+    return '#2ABFBF';
+  }
+
+  getPlanIcon(type: string): string {
+    const t = type?.toUpperCase();
+    if (t === 'FREE')          return '🌱';
+    if (t === 'PREMIUM')       return '🚀';
+    if (t === 'INSTITUTIONAL') return '🏛';
+    return '🌱';
+  }
+
+  getPlanCardClass(type: string): string {
+    const t = type?.toUpperCase();
+    if (t === 'FREE')          return 'plan-card--free';
+    if (t === 'PREMIUM')       return 'plan-card--premium';
+    if (t === 'INSTITUTIONAL') return 'plan-card--institutional';
+    return '';
+  }
+
+  isFeatured(type: string): boolean {
+    return type?.toUpperCase() === 'PREMIUM';
+  }
+
+  getPlanBadge(type: string): string {
+    const t = type?.toUpperCase();
+    if (t === 'PREMIUM') return 'Most popular';
+    if (t === 'INSTITUTIONAL') return 'Enterprise';
+    return '';
+  }
+
+  getPlanCta(type: string): string {
+    const t = type?.toUpperCase();
+    if (t === 'FREE')          return 'Get started free';
+    if (t === 'PREMIUM')       return 'Start free trial';
+    if (t === 'INSTITUTIONAL') return 'Contact us';
+    return 'Get started';
+  }
+
+  formatPrice(prix: number): string {
+    if (!prix || prix === 0) return 'Free';
+    return prix + ' DT';
+  }
+
+  formatPeriod(prix: number, duree: number): string {
+    if (!prix || prix === 0) return '';
+    if (duree === 1)  return '/ month';
+    if (duree === 12) return '/ year';
+    return `/ ${duree} months`;
+  }
+
+  getAvantagesList(avantages: string): string[] {
+    if (!avantages) return [];
+    return avantages.split(/[,;\n]/).map(a => a.trim()).filter(a => a.length > 0);
   }
 
   @HostListener('window:scroll')
@@ -90,50 +182,17 @@ export class LandingComponent {
     { label: 'Features', anchor: '#fonctionnalites' },
     { label: 'Roles', anchor: '#roles' },
     { label: 'How it works', anchor: '#processus' },
-    { label: 'Pricing', anchor: '#pricing' },
     { label: 'Contact', anchor: '#contact' },
     { label: 'Talent Market', anchor: null },
-  ];
-
-  readonly partnerLogos = ['EduTech Pro', 'AgriSmart', 'HealthMobile', 'BTP Connect', 'StartupLab'];
-
-
-  readonly plans = [
-    {
-      name: 'Starter', icon: '🌱', color: '#2ABFBF', price: 'Free', period: '',
-      desc: 'Perfect for individuals exploring the platform.',
-      badge: '', featured: false, cta: 'Get started free',
-      features: ['1 active project', 'Basic workflows', 'Coach access', 'Resource library', 'Email support'],
-    },
-    {
-      name: 'Growth', icon: '🚀', color: '#E8622A', price: '49dt', period: '/ month',
-      desc: 'For entrepreneurs serious about their startup journey.',
-      badge: 'Most popular', featured: true, cta: 'Start free trial',
-      features: ['Up to 5 projects', 'Advanced workflows & SLA', 'Priority coach matching', 'Analytics dashboard', 'File storage 10 GB', 'Priority support'],
-    },
-    {
-      name: 'Incubator', icon: '🏢', color: '#7C5CBF', price: '89dt', period: '/ month',
-      desc: 'For incubators managing multiple startups at scale.',
-      badge: '', featured: false, cta: 'Contact us',
-      features: ['Unlimited projects', 'Multi-coach management', 'Custom workflows', 'API access', 'White-label branding', 'Dedicated account manager'],
-    },
   ];
 
   goLogin() { this.router.navigateByUrl('/login'); }
   loginAs(role: UserRole) { this.router.navigateByUrl('/login'); }
   goTalentMarket() { this.router.navigateByUrl('/talent-market'); }
 
-  prevSlide() {
-    this.sliderIndex = (this.sliderIndex - 1 + this.slides.length) % this.slides.length;
-  }
-
-  nextSlide() {
-    this.sliderIndex = (this.sliderIndex + 1) % this.slides.length;
-  }
-
-  goSlide(i: number) {
-    this.sliderIndex = Math.max(0, Math.min(i, this.slides.length - 1));
-  }
+  prevSlide() { this.sliderIndex = (this.sliderIndex - 1 + this.slides.length) % this.slides.length; }
+  nextSlide() { this.sliderIndex = (this.sliderIndex + 1) % this.slides.length; }
+  goSlide(i: number) { this.sliderIndex = Math.max(0, Math.min(i, this.slides.length - 1)); }
 
   trackByLabel(_: number, item: { label: string }) { return item.label; }
   trackByTitle(_: number, item: { title: string }) { return item.title; }
@@ -141,4 +200,5 @@ export class LandingComponent {
   trackByStep(_: number, item: { n: string }) { return item.n; }
   trackByText(_: number, item: string) { return item; }
   trackByIndex(i: number) { return i; }
+  trackById(_: number, item: PlanOffer) { return item.id; }
 }

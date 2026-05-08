@@ -502,7 +502,7 @@ cancelBooking(ev: Evenement): void {
     setTimeout(() => { this.upgradeToastPlan = null; }, 4000);
   }
 
-  upgrade(): void { window.location.href = '/entrepreneur/profile'; }
+  upgrade(): void { window.location.href = 'http://localhost:4200/#/entrepreneur/profile'; }
   openDetails(ev: Evenement): void { this.selectedEvent = ev; }
   closeDetails(): void { this.selectedEvent = null; }
   closeBookingModal(): void { this.bookingTarget = null; this.limitErrorMessage = null; }

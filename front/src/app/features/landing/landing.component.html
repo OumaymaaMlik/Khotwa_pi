@@ -1,7 +1,6 @@
 <div class="landing">
 
   <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
-  <!-- CHANGEMENTS : btn-orange-sm → btn-primary-sm -->
   <nav class="navbar" [class.navbar--scrolled]="scrolled">
     <a class="nav-logo" routerLink="/">
       <img src="assets/khotwa-logo.png" alt="KHOTWA" class="nav-logo-img" />
@@ -14,10 +13,9 @@
     </ul>
     <div class="nav-right">
       <button class="btn-ghost-sm" (click)="goLogin()">Sign in</button>
-      <!-- ✏️ CHANGEMENT : btn-orange-sm → btn-primary-sm -->
-      <button class="btn-ghost-sm" (click)="goLogin()">Get started →</button>
+      <button class="btn-primary-sm" (click)="goLogin()">Get started →</button>
     </div>
-    <button class="nav-burger" (click)="mobileMenuOpen=!mobileMenuOpen">
+    <button class="nav-burger" (click)="mobileMenuOpen=!mobileMenuOpen" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
   </nav>
@@ -28,18 +26,16 @@
       <a *ngIf="item.anchor"  [href]="item.anchor"  (click)="mobileMenuOpen=false">{{ item.label }}</a>
       <a *ngIf="!item.anchor" (click)="goTalentMarket(); mobileMenuOpen=false" style="cursor:pointer">{{ item.label }}</a>
     </ng-container>
-    <!-- ✏️ CHANGEMENT : btn-orange-sm → btn-primary-sm -->
-    <button class="btn-primary-sm" style="margin-top:8px" (click)="goLogin()">Get started →</button>
+    <button class="btn-primary-sm" style="margin:8px 16px 16px" (click)="goLogin()">Get started →</button>
   </div>
 
   <!-- ══ HERO SLIDER ══════════════════════════════════════════════ -->
-  <!-- PAS DE CHANGEMENT dans cette section -->
   <section class="hero-slider">
     <div class="slider-track">
       <div *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
            class="slide"
            [class.slide--active]="i === sliderIndex"
-           [class]="slide.bg + (i === sliderIndex ? ' slide--active' : '')">
+           [ngClass]="'slide-bg-' + slide.bg">
         <div class="slide-inner">
           <div class="hero-badge">
             <span class="badge-pulse"></span>{{ slide.badge }}
@@ -51,9 +47,7 @@
           <p class="hero-sub">{{ slide.sub }}</p>
           <div class="hero-actions">
             <button class="btn-primary-lg" (click)="goLogin()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               Start for free
             </button>
             <button class="btn-outline-lg" (click)="goLogin()">Explore the demo →</button>
@@ -62,46 +56,82 @@
       </div>
     </div>
 
-    <button class="slider-arrow slider-arrow--prev" (click)="prevSlide()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
+    <button class="slider-arrow slider-arrow--prev" (click)="prevSlide()" aria-label="Previous slide">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <button class="slider-arrow slider-arrow--next" (click)="nextSlide()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
+    <button class="slider-arrow slider-arrow--next" (click)="nextSlide()" aria-label="Next slide">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
 
     <div class="slider-dots">
       <button *ngFor="let slide of slides; let i=index; trackBy: trackByIndex"
               class="slider-dot"
               [class.slider-dot--active]="i === sliderIndex"
-              (click)="goSlide(i)"></button>
+              (click)="goSlide(i)"
+              [attr.aria-label]="'Go to slide ' + (i+1)"></button>
     </div>
 
-   
+    <!-- Stats bar -->
+    <div class="hero-stats-bar">
+      <div class="stat-item">
+        <span class="stat-val">+1 200</span>
+        <span class="stat-lbl">Startups</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="stat-val">95%</span>
+        <span class="stat-lbl">Satisfaction</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="stat-val">48 h</span>
+        <span class="stat-lbl">Avg. onboarding</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="stat-val">3×</span>
+        <span class="stat-lbl">Faster growth</span>
+      </div>
+    </div>
   </section>
 
-  <!-- ══ ESPACES / RÔLES ══════════════════════════════════════════ -->
-  <!--
-    ✏️ CHANGEMENTS dans les role-card :
-      - Founder : [style.--rc]="'#1d4e89'"  (était --orange)
-      - Coach   : [style.--rc]="'#0d4a38'"  (reste pareil)
-      Adapter selon les couleurs de tes rôles dans roles[]
-  -->
+  <!-- ══ ROLES ══════════════════════════════════════════════════ -->
   <section class="roles-section" id="roles">
     <div class="section-inner">
       <div class="section-header">
-        <span class="section-eyebrow">2 dedicated spaces</span>
+        <span class="section-eyebrow">3 dedicated spaces</span>
         <h2 class="section-title">A space for every role</h2>
         <p class="section-sub">KHOTWA tailors each interface to the user's exact role for an optimal experience.</p>
       </div>
       <div class="roles-grid">
         <div *ngFor="let r of roles; trackBy: trackByName"
-             class="role-card" [style.--rc]="r.color" (click)="loginAs(r.role)">
+             class="role-card"
+             [style.--rc]="r.color"
+             (click)="loginAs(r.role)">
           <div class="role-top">
-            <div class="role-emoji-bg">{{ r.emoji }}</div>
+            <!-- Founder icon -->
+            <div *ngIf="r.role === 'entrepreneur'" class="role-icon-bg">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" [attr.stroke]="r.color" stroke-width="2">
+                <path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+                <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+              </svg>
+            </div>
+            <!-- Coach icon -->
+            <div *ngIf="r.role === 'coach'" class="role-icon-bg">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" [attr.stroke]="r.color" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <!-- Visitor icon -->
+            <div *ngIf="r.role === 'visitor'" class="role-icon-bg">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" [attr.stroke]="r.color" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+                <line x1="11" y1="8" x2="11" y2="14"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+            </div>
             <p class="role-name">{{ r.name }}</p>
             <p class="role-desc">{{ r.desc }}</p>
           </div>
@@ -123,8 +153,7 @@
     </div>
   </section>
 
-  <!-- ══ FONCTIONNALITÉS ══════════════════════════════════════════ -->
-  <!-- PAS DE CHANGEMENT HTML dans cette section -->
+  <!-- ══ FEATURES ════════════════════════════════════════════════ -->
   <section class="features-section" id="fonctionnalites">
     <div class="section-inner">
       <div class="section-header">
@@ -134,7 +163,36 @@
       </div>
       <div class="features-grid">
         <div *ngFor="let f of features; trackBy: trackByTitle" class="feat-card">
-          <div class="feat-icon-wrap" [style.background]="f.bg">{{ f.icon }}</div>
+          <div class="feat-icon-wrap" [style.background]="f.bg">
+            <!-- Project Management -->
+            <svg *ngIf="f.title === 'Project Management'" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="f.color" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+            </svg>
+            <!-- Smart Workflows -->
+            <svg *ngIf="f.title === 'Smart Workflows'" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="f.color" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <!-- Proof-Based Validation -->
+            <svg *ngIf="f.title === 'Proof-Based Validation'" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="f.color" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            <!-- Collaboration Workspace -->
+            <svg *ngIf="f.title === 'Collaboration Workspace'" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="f.color" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <!-- Resource Library -->
+            <svg *ngIf="f.title === 'Resource Library'" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="f.color" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+            </svg>
+            <!-- Integrated Messaging -->
+            <svg *ngIf="f.title === 'Integrated Messaging'" width="24" height="24" viewBox="0 0 24 24" fill="none" [attr.stroke]="f.color" stroke-width="2">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </div>
           <h3 class="feat-title">{{ f.title }}</h3>
           <p class="feat-desc">{{ f.desc }}</p>
         </div>
@@ -142,8 +200,7 @@
     </div>
   </section>
 
-  <!-- ══ COMMENT ÇA MARCHE ════════════════════════════════════════ -->
-  <!-- PAS DE CHANGEMENT HTML dans cette section -->
+  <!-- ══ HOW IT WORKS ════════════════════════════════════════════ -->
   <section class="steps-section" id="processus">
     <div class="section-inner">
       <div class="section-header">
@@ -153,7 +210,30 @@
       </div>
       <div class="steps-grid">
         <div *ngFor="let s of steps; trackBy: trackByStep" class="step-item">
-          <div class="step-circle" [class]="s.cls">{{ s.n }}</div>
+          <div class="step-circle" [ngClass]="s.cls">
+            <!-- Sign up -->
+            <svg *ngIf="s.cls === 's1'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <!-- Create project -->
+            <svg *ngIf="s.cls === 's2'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="12" x2="12" y2="18"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <!-- Collaborate -->
+            <svg *ngIf="s.cls === 's3'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <!-- Certified -->
+            <svg *ngIf="s.cls === 's4'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+          </div>
           <h3 class="step-title">{{ s.title }}</h3>
           <p class="step-desc">{{ s.desc }}</p>
         </div>
@@ -161,11 +241,120 @@
     </div>
   </section>
 
+  <!-- ══ PRICING ═════════════════════════════════════════════════ -->
+ <!-- ══ PRICING ═════════════════════════════════════════════════ -->
+  <section class="pricing-section" id="pricing">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-eyebrow">Transparent pricing</span>
+        <h2 class="section-title">Choose your plan</h2>
+        <p class="section-sub">Start free, scale as you grow. No hidden fees.</p>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div class="pricing-grid" *ngIf="plansLoading">
+        <div class="plan-card plan-card--skeleton" *ngFor="let i of [1,2,3]">
+          <div class="skel skel--ribbon"></div>
+          <div class="skel skel--title"></div>
+          <div class="skel skel--line"></div>
+          <div class="skel skel--price"></div>
+          <div class="skel skel--line"></div>
+          <div class="skel skel--line skel--short"></div>
+          <div class="skel skel--line skel--short"></div>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div class="plans-error" *ngIf="plansError && !plansLoading">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>Unable to load plans. Please try again.</span>
+        <button class="pricing-retry-btn" (click)="loadPlans()">Retry</button>
+      </div>
+
+      <!-- Plans grid dynamique -->
+      <div class="pricing-grid" *ngIf="!plansLoading && !plansError">
+        <div *ngFor="let p of planOffers; trackBy: trackById"
+             class="plan-card"
+             [ngClass]="[getPlanCardClass(p.type), isFeatured(p.type) ? 'plan-card--featured' : '']"
+             [style.--pc]="getPlanColor(p.type)">
+
+          <!-- Ribbon Most popular / Enterprise -->
+          <div class="plan-ribbon" *ngIf="getPlanBadge(p.type)"
+               [ngClass]="p.type?.toUpperCase() === 'PREMIUM' ? 'plan-ribbon--current' : 'plan-ribbon--institutional'">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+            </svg>
+            {{ getPlanBadge(p.type) }}
+          </div>
+
+          <!-- Top -->
+          <div class="plan-top">
+            <div>
+              <h3>{{ getPlanIcon(p.type) }} {{ p.label }}</h3>
+              <p>{{ p.description }}</p>
+            </div>
+            <span class="plan-badge"
+                  [ngClass]="p.type?.toUpperCase() === 'FREE' ? 'plan-badge--free' :
+                              p.type?.toUpperCase() === 'PREMIUM' ? 'plan-badge--premium' : 'plan-badge--institutional'">
+              {{ p.type }}
+            </span>
+          </div>
+
+          <!-- Prix -->
+          <div class="plan-price">
+            <span class="plan-price-val"
+                  [ngClass]="p.type?.toUpperCase() === 'PREMIUM' ? 'plan-price-val--orange' :
+                              p.type?.toUpperCase() === 'INSTITUTIONAL' ? 'plan-price-val--gold' : ''">
+              {{ formatPrice(p.prix) }}
+            </span>
+            <span class="plan-price-unit" *ngIf="p.prix > 0">
+              {{ formatPeriod(p.prix, p.duree) }}
+            </span>
+          </div>
+
+          <!-- Durée badge -->
+          <div class="plan-duration" *ngIf="p.duree > 0 && p.prix > 0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {{ p.duree === 1 ? 'Monthly' : p.duree === 12 ? 'Annual' : p.duree + ' months' }}
+          </div>
+
+          <div class="plan-divider"></div>
+
+          <!-- Features depuis avantages -->
+          <ul class="plan-features">
+            <li *ngFor="let feat of getAvantagesList(p.avantages); trackBy: trackByText">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                   [ngClass]="p.type?.toUpperCase() === 'FREE' ? 'icon--teal' :
+                               p.type?.toUpperCase() === 'PREMIUM' ? 'icon--orange' : 'icon--gold'">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              {{ feat }}
+            </li>
+          </ul>
+
+          <!-- CTA -->
+          <button class="pricing-cta-btn" (click)="goLogin()">
+            {{ getPlanCta(p.type) }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- ══ CTA ══════════════════════════════════════════════════════ -->
-  <!-- PAS DE CHANGEMENT dans cette section -->
   <section class="cta-section" id="contact">
     <div class="cta-inner">
-      <div class="cta-badge">🚀 Join KHOTWA today</div>
+      <div class="cta-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        Join KHOTWA today
+      </div>
       <h2 class="cta-title">Ready to accelerate<br>your startup?</h2>
       <p class="cta-sub">Join teams who trust KHOTWA to turn their ideas into measurable success. Get started in under 5 minutes.</p>
       <div class="cta-btns">
@@ -180,7 +369,7 @@
     </div>
   </section>
 
-  <!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+  <!-- ══ FOOTER ════════════════════════════════════════════════ -->
   <app-footer></app-footer>
 
 </div>

@@ -10,7 +10,7 @@ interface NavItem { label: string; icon: string; route: string; }
 @Component({
   selector: 'app-layout-visitor',
   templateUrl: './layout-visitor.component.html',
-  styleUrls: ['../layout-entrepreneur/layout-entrepreneur.component.css'],
+  styleUrls: ['./layout-visitor.component.css'],
 })
 export class LayoutVisitorComponent implements OnInit {
   notifOpen = false;

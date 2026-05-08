@@ -17,7 +17,6 @@ import { CoachValidationsComponent }   from './validations/validations.component
 import { CoachMessagesComponent }      from './messages/messages.component';
 import { CoachProgressionsComponent }  from './progressions/progressions.component';
 import { CoachBibliothequeComponent }  from './bibliotheque/bibliotheque.component';
-import { CoachTalentComponent }        from './talent/talent.component';
 import { CoachSettingsComponent }      from './settings/settings.component';
 import { CoachAccountPageComponent }   from './account-page/account-page.component';
 import { CoachEventsComponent }        from './coach-events/coach-events.component';
@@ -34,16 +33,14 @@ const routes: Routes = [
       { path: 'collaborations/requests', component: CollaborationSentRequestsPageComponent },
       { path: 'collaborations/:id', component: CollaborationDetailComponent },
       { path: 'projets',      component: CoachProjetsComponent      },
-      { path: 'startups',     component: CoachStartupsComponent     },
-      { path: 'validations',  component: CoachValidationsComponent  },
       { path: 'messages',     component: CoachMessagesComponent     },
       { path: 'bibliotheque', component: CoachBibliothequeComponent },
       { path: 'progressions', component: CoachProgressionsComponent },
-      { path: 'talent',       component: CoachTalentComponent       },
       { path: 'settings',     component: CoachSettingsComponent     },
       { path: 'account',      component: CoachAccountPageComponent  },
       { path: 'events',       component: CoachEventsComponent       },
       { path: 'notifications', component: CoachNotificationsComponent },
+      { path: 'contact',      loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
     ],
   },
 ];
@@ -52,7 +49,7 @@ const routes: Routes = [
   declarations: [
     CoachDashboardComponent, CoachProjetsComponent, CoachStartupsComponent,
     CoachValidationsComponent, CoachMessagesComponent,
-    CoachBibliothequeComponent, CoachProgressionsComponent, CoachTalentComponent,
+    CoachBibliothequeComponent, CoachProgressionsComponent,
     CoachSettingsComponent, CoachAccountPageComponent, CoachEventsComponent,
     CoachNotificationsComponent,
   ],

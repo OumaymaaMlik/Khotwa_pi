@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-footer',
@@ -7,4 +8,14 @@ import { Component } from '@angular/core';
 })
 export class FooterComponent {
   currentYear = new Date().getFullYear();
+
+  constructor(private router: Router) {}
+
+  get contactLink(): string {
+    const url = this.router.url || '';
+    if (url.startsWith('/visitor')) return '/visitor/contact';
+    if (url.startsWith('/entrepreneur')) return '/entrepreneur/contact';
+    if (url.startsWith('/coach')) return '/coach/contact';
+    return '/contact';
+  }
 }

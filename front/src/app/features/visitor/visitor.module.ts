@@ -11,7 +11,6 @@ import { VisitorAnnoncesComponent } from './annonces/annonces.component';
 import { VisitorCandidaturesComponent } from './candidatures/candidatures.component';
 import { VisitorProfilComponent } from './profil/profil.component';
 import { VisitorTalentComponent } from './talent/talent.component';
-import { VisitorEventsComponent } from './events/events.component';
 
 const routes: Routes = [
   {
@@ -24,7 +23,7 @@ const routes: Routes = [
       { path: 'candidatures', component: VisitorCandidaturesComponent },
       { path: 'profil', component: VisitorProfilComponent },
       { path: 'talent', component: VisitorTalentComponent }, // ✅ ajouté
-      { path: 'events', component: VisitorEventsComponent },
+      { path: 'contact', loadChildren: () => import('../contact/contact.module').then(m => m.ContactModule) },
     ],
   },
 ];
@@ -36,7 +35,6 @@ const routes: Routes = [
     VisitorCandidaturesComponent,
     VisitorProfilComponent,
     VisitorTalentComponent,
-    VisitorEventsComponent
     // ✅ important
   ],
   imports: [

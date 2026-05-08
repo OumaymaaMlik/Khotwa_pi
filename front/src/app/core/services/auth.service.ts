@@ -166,7 +166,7 @@ export class AuthService {
       case 'ADMIN':        return '/khotwaadmin/dashboard';
       case 'ENTREPRENEUR': return '/entrepreneur/dashboard';
       case 'COACH':        return '/coach/dashboard';
-      case 'VISITOR':      return '/visitor/events';
+      case 'VISITOR':      return '/visitor/dashboard';
       default:             return '/login';
     }
   }

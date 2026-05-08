@@ -295,6 +295,6 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
   continueAsVisitor() {
     this.auth.setVisitorSession();
-    this.router.navigateByUrl('/visitor/events');
+    this.router.navigateByUrl('/talent-market');
   }
 }

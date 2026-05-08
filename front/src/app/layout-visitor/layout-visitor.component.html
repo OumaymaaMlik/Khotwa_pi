@@ -95,7 +95,7 @@
             <path d="m6 9 6 6 6-6"/>
           </svg>
 
-          <div class="ent-user__menu" *ngIf="userMenuOpen">
+          <div class="ent-user__menu" *ngIf="userMenuOpen" (click)="$event.stopPropagation()">
 
             <div class="ent-user__menu-header">
               <p class="menu-name">
@@ -108,7 +108,7 @@
             </div>
 
             <button class="menu-item menu-item--logout"
-                    (click)="logout()"
+                    (click)="$event.stopPropagation(); logout()"
                     aria-label="Sign out">
 
               <span [innerHTML]="getIcon('logout')"></span>
