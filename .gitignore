@@ -22,3 +22,5 @@ front/node_modules/
 *.zip
 node_modules/
 /back/uploads/
+
+back/.m2/
