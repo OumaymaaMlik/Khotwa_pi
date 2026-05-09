@@ -40,8 +40,8 @@ jobs:
       - name: Build and push Backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./khotwa-backend        # dossier contenant le Dockerfile backend
-          file: ./khotwa-backend/Dockerfile
+          context: ./back     # dossier contenant le Dockerfile backend
+          file: ./back/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/khotwa-backend:latest
@@ -74,9 +74,9 @@ jobs:
       - name: Build and push Frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./khotwa-frontend       # dossier contenant le Dockerfile frontend
-          file: ./khotwa-frontend/Dockerfile
+          context: ./front       # dossier contenant le Dockerfile frontend
+          file: ./front/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/khotwa-frontend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/khotwa-frontend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/khotwa-front:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/khotwa-front:${{ github.sha }}
