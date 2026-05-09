@@ -25,7 +25,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
 import tn.khotwa.enums.collaboration.CollaborationType;
 
@@ -54,7 +53,7 @@ public class Collaboration {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "project_id", nullable = false)
-    private Projet project;
+    private Project project;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -90,6 +89,6 @@ public class Collaboration {
     }
 
     public User getOwner() {
-        return project != null ? project.getEntrepreneur() : null;
+        return project != null ? project.getOwner() : null;
     }
 }

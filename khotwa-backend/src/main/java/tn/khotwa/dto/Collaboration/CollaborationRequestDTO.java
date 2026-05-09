@@ -45,7 +45,7 @@ public class CollaborationRequestDTO {
                 request.getTargetUser().getFullName(),
                 request.getTargetUser().getEmailAddress(),
                 request.getTargetCollaboration().getProject().getId(),
-                request.getTargetCollaboration().getProject().getNomStartup(),
+                request.getTargetCollaboration().getProject().getName(),
                 request.getScenario(),
                 targetCollaborationId,
                 targetCollaborationType,

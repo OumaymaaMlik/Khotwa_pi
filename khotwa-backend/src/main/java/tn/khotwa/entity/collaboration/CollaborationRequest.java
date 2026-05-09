@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.enums.collaboration.CollaborationRequestScenario;
 import tn.khotwa.enums.collaboration.RequestStatus;
 
@@ -77,7 +76,7 @@ public class CollaborationRequest {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "project_id", nullable = false)
-    private Projet project;
+    private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "target_collaboration_id", nullable = false)

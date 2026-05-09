@@ -36,10 +36,10 @@ public class CollaborationDTO {
         return new CollaborationDTO(
                 collaboration.getId(),
                 collaboration.getProject().getId(),
-                collaboration.getProject().getNomStartup(),
-                collaboration.getOwner() != null ? collaboration.getOwner().getIdUser() : null,
-                collaboration.getOwner() != null ? collaboration.getOwner().getFullName() : null,
-                collaboration.getOwner() != null ? collaboration.getOwner().getEmailAddress() : null,
+                collaboration.getProject().getName(),
+                collaboration.getOwner().getIdUser(),
+                collaboration.getOwner().getFullName(),
+                collaboration.getOwner().getEmailAddress(),
                 collaboration.getStatus(),
                 collaboration.getType(),
                 members

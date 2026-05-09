@@ -3,9 +3,9 @@ package tn.khotwa.service.collaboration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.khotwa.DTO.collaboration.ProjectCollaborationContextDto;
+import tn.khotwa.dto.collaboration.ProjectCollaborationContextDto;
+import tn.khotwa.entity.collaboration.Project;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.enums.collaboration.AvailabilityStatus;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
 import tn.khotwa.enums.collaboration.MarketingCollaborationStatus;
@@ -17,9 +17,9 @@ import tn.khotwa.repository.collaboration.CollaborationMemberRepository;
 import tn.khotwa.repository.collaboration.CollaborationRepository;
 import tn.khotwa.repository.collaboration.MarketingCollaborationRepository;
 import tn.khotwa.repository.collaboration.MarketingContentTaskRepository;
+import tn.khotwa.repository.collaboration.ProjectRepository;
 import tn.khotwa.repository.collaboration.ResourceRequestRepository;
 import tn.khotwa.repository.collaboration.SharedResourceRepository;
-import tn.khotwa.repository.projet.ProjetRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -29,9 +29,10 @@ public class ProjectOverviewService {
 
     private static final String DEFAULT_PROJECT_DESCRIPTION =
             "Local collaboration workspace for resource and marketing activities.";
+    private static final String LOCAL_PROJECT_STATE = "LOCAL_COLLABORATION_CONTEXT";
     private static final String NOT_STARTED_STATUS = "NOT_STARTED";
 
-    private final ProjetRepository projetRepository;
+    private final ProjectRepository projectRepository;
     private final CollaborationRepository collaborationRepository;
     private final CollaborationMemberRepository collaborationMemberRepository;
     private final SharedResourceRepository sharedResourceRepository;
@@ -42,7 +43,7 @@ public class ProjectOverviewService {
     private final CollaborationAuthorizationService authorizationService;
 
     public ProjectCollaborationContextDto getProjectContext(Long projectId) {
-        Projet project = projetRepository.findById(projectId)
+        Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found."));
         User actor = currentUserService.requireCurrentUser();
 
@@ -123,14 +124,14 @@ public class ProjectOverviewService {
 
         return new ProjectCollaborationContextDto(
                 project.getId(),
-                project.getNomStartup(),
+                project.getName(),
                 projectDescription,
                 projectStatus,
-                project.getEntrepreneurId(),
-                project.getEntrepreneur() != null ? project.getEntrepreneur().getFullName() : null,
+                project.getOwner().getIdUser(),
+                project.getOwner().getFullName(),
                 new ProjectCollaborationContextDto.State(
-                        project.getEtatValidation() != null ? project.getEtatValidation().name() : null,
-                        project.getStatutProjet() != null ? project.getStatutProjet().name() : projectStatus
+                        LOCAL_PROJECT_STATE,
+                        projectStatus
                 ),
                 // Legacy compatibility for the current frontend contract.
                 new ProjectCollaborationContextDto.Coaching(false),
@@ -173,11 +174,11 @@ public class ProjectOverviewService {
         return NOT_STARTED_STATUS;
     }
 
-    private String buildProjectDescription(Projet project) {
-        if (project.getNomStartup() == null || project.getNomStartup().isBlank()) {
+    private String buildProjectDescription(Project project) {
+        if (project.getName() == null || project.getName().isBlank()) {
             return DEFAULT_PROJECT_DESCRIPTION;
         }
-        return "Collaboration workspace for " + project.getNomStartup().trim() + ".";
+        return "Collaboration workspace for " + project.getName().trim() + ".";
     }
 
     private int toInt(long value) {

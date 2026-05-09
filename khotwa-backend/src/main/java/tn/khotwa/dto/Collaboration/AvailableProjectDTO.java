@@ -1,17 +1,17 @@
 package tn.khotwa.DTO.collaboration;
 
-import tn.khotwa.entity.projet.Projet;
+import tn.khotwa.entity.collaboration.Project;
 
 public record AvailableProjectDTO(
         Long id,
         String name,
         String ownerName
 ) {
-    public static AvailableProjectDTO fromEntity(Projet project) {
+    public static AvailableProjectDTO fromEntity(Project project) {
         return new AvailableProjectDTO(
                 project.getId(),
-                project.getNomStartup(),
-                project.getEntrepreneur() != null ? project.getEntrepreneur().getFullName() : null
+                project.getName(),
+                project.getOwner().getFullName()
         );
     }
 }

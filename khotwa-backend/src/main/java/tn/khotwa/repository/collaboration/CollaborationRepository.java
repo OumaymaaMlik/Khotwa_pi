@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tn.khotwa.DTO.collaboration.CollaborationTypeCountView;
+import tn.khotwa.dto.collaboration.CollaborationTypeCountView;
 import tn.khotwa.entity.collaboration.Collaboration;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
 import tn.khotwa.enums.collaboration.CollaborationType;
@@ -38,7 +38,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
         select case when count(c) > 0 then true else false end
         from Collaboration c
         where c.id = :collaborationId
-                    and c.project.entrepreneurId = :userId
+                    and c.project.owner.idUser = :userId
         """)
     boolean isProjectOwner(@Param("collaborationId") Long collaborationId, @Param("userId") Long userId);
 
@@ -65,7 +65,7 @@ public interface CollaborationRepository extends JpaRepository<Collaboration, Lo
     @Query("""
         select c
         from Collaboration c
-        where c.project.entrepreneurId = :ownerUserId
+        where c.project.owner.idUser = :ownerUserId
           and c.status = tn.khotwa.enums.collaboration.CollaborationStatus.ACTIVE
         order by c.createdAt desc
         """)

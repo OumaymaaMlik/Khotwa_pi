@@ -18,7 +18,7 @@ import tn.khotwa.exception.collaboration.BusinessException;
 import tn.khotwa.exception.collaboration.ResourceNotFoundException;
 import tn.khotwa.repository.collaboration.MarketingContentTaskRepository;
 import tn.khotwa.service.User.CurrentUserService;
-import tn.khotwa.service.User.impl.UserServiceImpl;
+import tn.khotwa.service.User.UserService;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class MarketingContentTaskService {
     private final MarketingCollaborationService marketingCollaborationService;
     private final CollaborationService collaborationService;
     private final CurrentUserService currentUserService;
-    private final UserServiceImpl userService;
+    private final UserService userService;
     private final CollaborationAuthorizationService authorizationService;
 
     public MarketingContentTask createMarketingContentTask(Long marketingCollaborationId, Long assignedUserId, String title, String description, ContentType contentType, Platform platform, LocalDateTime dueDate) {

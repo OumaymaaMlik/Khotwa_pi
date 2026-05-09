@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.khotwa.DTO.collaboration.WeeklyCollaborationReportDTO;
-import tn.khotwa.DTO.collaboration.ProjectSummaryDTO;
+import tn.khotwa.dto.collaboration.WeeklyCollaborationReportDTO;
+import tn.khotwa.dto.collaboration.ProjectSummaryDTO;
 import tn.khotwa.entity.collaboration.Collaboration;
 import tn.khotwa.entity.collaboration.CollaborationRequest;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
 import tn.khotwa.enums.collaboration.CollaborationType;
-import tn.khotwa.repository.projet.ProjetRepository;
+import tn.khotwa.repository.collaboration.ProjectRepository;
 import tn.khotwa.service.User.CurrentUserService;
 
 @Service
@@ -19,7 +19,7 @@ public class CollaborationApiService {
 
     private final CollaborationService collaborationService;
     private final WeeklyCollaborationReportService weeklyCollaborationReportService;
-    private final ProjetRepository projetRepository;
+    private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
 
     public Collaboration createCollaboration(Long projectId, CollaborationType type) {
@@ -40,7 +40,7 @@ public class CollaborationApiService {
 
     public List<ProjectSummaryDTO> getMyProjects() {
         Long userId = currentUserService.getCurrentUserId();
-        return projetRepository.findByEntrepreneurId(userId).stream()
+        return projectRepository.findAllByOwner_IdUserOrderByIdDesc(userId).stream()
             .map(ProjectSummaryDTO::fromEntity)
             .collect(Collectors.toList());
     }

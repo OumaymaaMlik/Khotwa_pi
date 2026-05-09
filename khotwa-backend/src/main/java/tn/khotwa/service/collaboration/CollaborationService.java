@@ -9,8 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tn.khotwa.entity.collaboration.Collaboration;
 import tn.khotwa.entity.collaboration.CollaborationMember;
 import tn.khotwa.entity.collaboration.CollaborationRequest;
+import tn.khotwa.entity.collaboration.Project;
 import tn.khotwa.entity.User.User;
-import tn.khotwa.entity.projet.Projet;
 import tn.khotwa.enums.collaboration.CollaborationRequestScenario;
 import tn.khotwa.enums.collaboration.CollaborationStatus;
 import tn.khotwa.enums.collaboration.CollaborationType;
@@ -22,9 +22,9 @@ import tn.khotwa.exception.collaboration.ResourceNotFoundException;
 import tn.khotwa.repository.collaboration.CollaborationMemberRepository;
 import tn.khotwa.repository.collaboration.CollaborationRequestRepository;
 import tn.khotwa.repository.collaboration.CollaborationRepository;
-import tn.khotwa.repository.projet.ProjetRepository;
+import tn.khotwa.repository.collaboration.ProjectRepository;
 import tn.khotwa.service.User.CurrentUserService;
-import tn.khotwa.service.User.impl.UserServiceImpl;
+import tn.khotwa.service.User.UserService;
 
 @Service
 @RequiredArgsConstructor
@@ -39,13 +39,13 @@ public class CollaborationService {
     private final CollaborationRepository collaborationRepository;
     private final CollaborationMemberRepository collaborationMemberRepository;
     private final CollaborationRequestRepository collaborationRequestRepository;
-    private final ProjetRepository projetRepository;
+    private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
-    private final UserServiceImpl userService;
+    private final UserService userService;
     private final CollaborationAuthorizationService authorizationService;
 
     public Collaboration createCollaboration(Long projectId, CollaborationType type) {
-        Projet project = getProject(projectId);
+        Project project = getProject(projectId);
         User actor = currentUserService.requireCurrentUser();
 
         validateCollaborationType(type);
@@ -64,7 +64,7 @@ public class CollaborationService {
                 .findByIdAndCollaborationId(memberId, collaborationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaboration member not found."));
 
-        if (collaboration.getOwner() != null && member.getUser().getIdUser().equals(collaboration.getOwner().getIdUser())) {
+        if (member.getUser().getIdUser().equals(collaboration.getProject().getOwner().getIdUser())) {
             throw new BusinessException("The project owner cannot be removed from the collaboration.");
         }
 
@@ -75,7 +75,7 @@ public class CollaborationService {
         Collaboration collaboration = getCollaborationOrThrow(collaborationId);
         User actor = currentUserService.requireCurrentUser();
 
-        if (collaboration.getOwner() != null && actor.getIdUser().equals(collaboration.getOwner().getIdUser())) {
+        if (actor.getIdUser().equals(collaboration.getProject().getOwner().getIdUser())) {
             authorizationService.checkCanLeaveCollaboration(actor);
             ensureWritableCollaboration(collaboration);
             applyStatus(collaboration, CollaborationStatus.CLOSED);
@@ -245,7 +245,7 @@ public class CollaborationService {
     @Transactional(readOnly = true)
     public List<CollaborationRequest> getProjectCollaborationRequests(Long projectId) {
         User actor = currentUserService.requireCurrentUser();
-        Projet project = getProject(projectId);
+        Project project = getProject(projectId);
         authorizationService.checkCanViewProjectRequests(actor, project);
         return collaborationRequestRepository.findAllByTargetCollaboration_Project_IdOrderByCreatedAtDesc(projectId);
     }
@@ -293,8 +293,8 @@ public class CollaborationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Collaboration not found."));
     }
 
-    private Projet getProject(Long projectId) {
-        return projetRepository.findById(projectId)
+    private Project getProject(Long projectId) {
+        return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found."));
     }
 
@@ -309,7 +309,7 @@ public class CollaborationService {
         return request;
     }
 
-    private Collaboration createCollaborationInternal(Projet project, CollaborationType type) {
+    private Collaboration createCollaborationInternal(Project project, CollaborationType type) {
         ensureProjectOwnerCanBeMember(project);
 
         if (collaborationRepository.existsByProject_IdAndTypeAndStatusIn(
@@ -389,7 +389,7 @@ public class CollaborationService {
     private void ensureOwnerMembership(Collaboration collaboration) {
         Long collaborationId = collaboration.getId();
         User owner = requireEntrepreneurUser(
-                collaboration.getOwner(),
+                collaboration.getProject().getOwner(),
                 "Project owner must be an entrepreneur to manage a collaboration."
         );
         Long ownerId = owner.getIdUser();
@@ -405,9 +405,9 @@ public class CollaborationService {
         collaborationMemberRepository.save(ownerMember);
     }
 
-    private void ensureProjectOwnerCanBeMember(Projet project) {
+    private void ensureProjectOwnerCanBeMember(Project project) {
         requireEntrepreneurUser(
-                project.getEntrepreneur(),
+                project.getOwner(),
                 "Project owner must be an entrepreneur to manage a collaboration."
         );
     }
